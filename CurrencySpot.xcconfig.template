@@ -1,0 +1,5 @@
+// Copy this file to CurrencySpot.xcconfig and fill in your values
+// CurrencySpot.xcconfig is git-ignored for security
+
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+BUNDLE_ID_PREFIX = com.example

@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "3C50A907-92D8-493B-B0D5-D16B933A001B",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:CurrencySpot.xcodeproj",
+        "identifier" : "0A42BCE12D6F14E6009B4F56",
+        "name" : "CurrencySpotTests"
+      }
+    }
+  ],
+  "version" : 1
+}
