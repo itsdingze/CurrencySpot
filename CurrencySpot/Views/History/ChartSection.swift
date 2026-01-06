@@ -311,7 +311,7 @@ struct CurrencyChart: View {
         }
         .chartXAxis {
             AxisMarks {
-                AxisValueLabel()
+                AxisValueLabel(format: viewModel.selectedTimeRange.chartAxisDateFormat)
             }
         }
         .chartYAxis {

@@ -75,6 +75,18 @@ enum TimeRange: String, CaseIterable, Identifiable {
             return calendar.date(byAdding: .year, value: -5, to: endDate) ?? endDate
         }
     }
+
+    /// Date format style for chart X-axis labels
+    var chartAxisDateFormat: Date.FormatStyle {
+        switch self {
+        case .oneWeek, .oneMonth:
+            .dateTime.month(.abbreviated).day()
+        case .threeMonths, .sixMonths, .oneYear:
+            .dateTime.month(.abbreviated)
+        case .fiveYears:
+            .dateTime.year()
+        }
+    }
 }
 
 /// Optimized cache structure with precomputed metadata to avoid O(n log n) operations
@@ -215,12 +227,21 @@ final class HistoryViewModel {
 
     /// Resets displayed data and time range (called when navigating to new currency)
     func resetDisplayedDataAndTimeRange() {
+        // Cancel any existing fetch task to prevent race conditions
+        fetchTask?.cancel()
+        fetchTask = nil
+        isLoading = false
+
+        // Reset data and UI state
         displayedChartDataPoints = []
         selectedTimeRange = .threeMonths
-        // Reset toggle states when switching currencies
+        _cachedDateRange = nil
+        _cachedTimeRange = nil
         showAverageLine = false
         showHighestPoint = false
         showLowestPoint = false
+
+        // Start fresh load
         loadDataForCurrentConfiguration()
     }
 
@@ -264,7 +285,6 @@ final class HistoryViewModel {
 
     private func startNewLoadTask() {
         fetchTask = Task {
-            defer { fetchTask = nil }
             self.isLoading = true
             self.errorMessage = nil
 
@@ -280,8 +300,8 @@ final class HistoryViewModel {
 
                 // Always try to update chart even with partial data
                 if !result.dataPoints.isEmpty {
-                    // Update UI with new data
-                    await self.updateChartDataPoints()
+                    // Update UI with new data (pass the same dateRange used for fetching)
+                    await self.updateChartDataPoints(dateRange: dateRange)
 
                     // Clear error if we successfully got data
                     self.errorMessage = nil
@@ -307,10 +327,13 @@ final class HistoryViewModel {
                     )
                 }
 
+                // Clear task reference before setting loading to false to prevent race conditions
+                self.fetchTask = nil
                 self.isLoading = false
 
             } catch is CancellationError {
                 AppLogger.debug("Fetch cancelled", category: .viewModel)
+                self.fetchTask = nil
                 self.isLoading = false
             } catch {
                 AppLogger.error("Load failed: \(error.localizedDescription)", category: .viewModel)
@@ -324,7 +347,7 @@ final class HistoryViewModel {
                 if !cachedData.isEmpty {
                     // We have some cached data, use it
                     AppLogger.info("Using cached data as fallback", category: .viewModel)
-                    await self.updateChartDataPoints()
+                    await self.updateChartDataPoints(dateRange: dateRange)
                     self.errorMessage = "Using cached data (offline)"
                 } else {
                     // No cached data available
@@ -342,6 +365,7 @@ final class HistoryViewModel {
                     }
                 }
 
+                self.fetchTask = nil
                 self.isLoading = false
             }
         }
@@ -454,8 +478,8 @@ final class HistoryViewModel {
     // MARK: - Chart Data Processing
 
     /// Updates chart data points based on current currency pair and time range
-    private func updateChartDataPoints() async {
-        let dateRange = calculateDateRange()
+    /// - Parameter dateRange: The date range to use for filtering data (must match the range used for fetching)
+    private func updateChartDataPoints(dateRange: DateRange) async {
         let historicalData = await dataOrchestrationUseCase.getCachedData(for: targetCurrency, dateRange: dateRange)
 
         // Guard against empty data
