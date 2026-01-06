@@ -41,7 +41,14 @@ DEVELOPMENT_TEAM = ABC123XYZ   // Your Team ID from developer.apple.com
 BUNDLE_ID_PREFIX = com.example // Your reverse domain prefix
 ```
 
-Then open the project in Xcode and build.
+Then link the config file in Xcode:
+
+1. Open the project in Xcode
+2. Select the **CurrencySpot** project (blue icon) in the navigator
+3. Go to **Info** tab → **Configurations**
+4. For both Debug and Release, set the configuration file to `CurrencySpot.xcconfig`
+
+Now you can build and run.
 
 ## Credits
 
