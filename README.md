@@ -29,7 +29,7 @@
 ## Building from Source
 
 ```bash
-git clone https://github.com/dingzeyu1029/CurrencySpot.git
+git clone https://github.com/itsdingze/CurrencySpot.git
 cd CurrencySpot
 cp CurrencySpot.xcconfig.template CurrencySpot.xcconfig
 ```
