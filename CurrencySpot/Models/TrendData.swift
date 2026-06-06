@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-enum TrendDirection {
+enum TrendDirection: Sendable {
     case up
     case down
     case stable

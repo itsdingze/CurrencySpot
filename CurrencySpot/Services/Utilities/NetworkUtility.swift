@@ -34,21 +34,21 @@ class NetworkUtility {
         // First attempt (not counted as a retry)
         do {
             let result = try await performRequest(url: url, urlSession: urlSession, responseType: responseType)
-            retryManager.recordSuccess(for: endpointKey)
+            await retryManager.recordSuccess(for: endpointKey)
             return result
         } catch {
             lastError = error
 
             // Check if this error should be retried
-            guard retryManager.shouldRetry(error: error), retryManager.canRetry(for: endpointKey) else {
+            guard retryManager.shouldRetry(error: error), await retryManager.canRetry(for: endpointKey) else {
                 // Not retryable or no more attempts - throw the error
                 throw error
             }
         }
 
         // Retry loop with cancellation cleanup
-        while retryManager.canRetry(for: endpointKey) {
-            guard let retryInfo = retryManager.recordAttempt(for: endpointKey) else {
+        while await retryManager.canRetry(for: endpointKey) {
+            guard let retryInfo = await retryManager.recordAttempt(for: endpointKey) else {
                 // No more attempts available
                 break
             }
@@ -60,19 +60,19 @@ class NetworkUtility {
                 try await Task.sleep(for: .seconds(retryInfo.delay))
             } catch is CancellationError {
                 // Task was cancelled - reset retry state and rethrow
-                retryManager.reset(for: endpointKey)
+                await retryManager.reset(for: endpointKey)
                 AppLogger.info("Request to \(endpointKey) was cancelled during retry delay", category: .network)
                 throw CancellationError()
             }
 
             do {
                 let result = try await performRequest(url: url, urlSession: urlSession, responseType: responseType)
-                retryManager.recordSuccess(for: endpointKey)
+                await retryManager.recordSuccess(for: endpointKey)
                 AppLogger.info("Request to \(endpointKey) succeeded on attempt \(retryInfo.attempt)", category: .network)
                 return result
             } catch is CancellationError {
                 // Task was cancelled during request - reset retry state and rethrow
-                retryManager.reset(for: endpointKey)
+                await retryManager.reset(for: endpointKey)
                 AppLogger.info("Request to \(endpointKey) was cancelled during network request", category: .network)
                 throw CancellationError()
             } catch {
@@ -88,7 +88,7 @@ class NetworkUtility {
         }
 
         // All retries exhausted
-        let finalAttempt = retryManager.getCurrentAttempt(for: endpointKey)
+        let finalAttempt = await retryManager.getCurrentAttempt(for: endpointKey)
         AppLogger.error("All retry attempts exhausted for \(endpointKey) after \(finalAttempt) attempts", category: .network)
 
         // Convert to retry-specific error if appropriate

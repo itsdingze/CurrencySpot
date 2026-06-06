@@ -218,6 +218,8 @@ actor SwiftDataPersistenceService: PersistenceService {
 
         var currentStart = startDate
         while currentStart < endDate {
+            try Task.checkCancellation()
+
             let currentEnd = min(
                 Calendar.current.date(byAdding: .day, value: chunkSize, to: currentStart) ?? endDate,
                 endDate
@@ -406,7 +408,7 @@ actor SwiftDataPersistenceService: PersistenceService {
         let actorRef = self
 
         return AsyncStream { continuation in
-            Task {
+            let producer = Task {
                 do {
                     guard let startDateObj = TimeZoneManager.parseAPIDate(startDate),
                           let endDateObj = TimeZoneManager.parseAPIDate(endDate)
@@ -422,18 +424,21 @@ actor SwiftDataPersistenceService: PersistenceService {
                         endDate: endDateObj
                     )
 
-                    // Process and yield one record at a time
+                    // Process and yield one record at a time; stop early if the consumer dropped the stream
                     for value in dataValues {
+                        try Task.checkCancellation()
                         continuation.yield(value)
                         await Task.yield()
                     }
 
                     continuation.finish()
                 } catch {
-                    // In case of error, finish the stream
+                    // Cancellation or fetch error: end the stream
                     continuation.finish()
                 }
             }
+
+            continuation.onTermination = { _ in producer.cancel() }
         }
     }
 

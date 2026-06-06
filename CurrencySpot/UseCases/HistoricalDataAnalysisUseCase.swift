@@ -84,54 +84,50 @@ final class HistoricalDataAnalysisUseCase {
     }
 
     /// Determines if there's an actual data gap by checking business days
-    /// Runs on background thread to avoid blocking UI for large date ranges
     func hasActualDataGap(from startDate: Date, to endDate: Date) async -> Bool {
-        // Move expensive calendar operations to background task
-        await Task.detached {
-            let calendar = TimeZoneManager.cetCalendar
-            let now = Date()
-            guard var current = calendar.date(byAdding: .day, value: 1, to: startDate) else {
-                return false // Handle date calculation failure gracefully
-            }
+        let calendar = TimeZoneManager.cetCalendar
+        let now = Date()
+        guard var current = calendar.date(byAdding: .day, value: 1, to: startDate) else {
+            return false // Handle date calculation failure gracefully
+        }
 
-            // Update time constants (same as NetworkService)
-            let updateHourCET = 17
-            let updateMinuteCET = 0
+        // Update time constants (same as NetworkService)
+        let updateHourCET = 17
+        let updateMinuteCET = 0
 
-            while current <= endDate {
-                // Skip weekends entirely
-                if calendar.isDateInWeekend(current) {
-                    guard let nextDate = calendar.date(byAdding: .day, value: 1, to: current) else {
-                        return false // Handle date calculation failure gracefully
-                    }
-                    current = nextDate
-                    continue
-                }
-
-                // Check if this is today
-                if calendar.isDate(current, inSameDayAs: now) {
-                    // For today, only count as business day if past update time
-                    var todayComponents = calendar.dateComponents([.year, .month, .day], from: now)
-                    todayComponents.hour = updateHourCET
-                    todayComponents.minute = updateMinuteCET
-
-                    if let todayUpdateTime = calendar.date(from: todayComponents), now >= todayUpdateTime {
-                        return true // Found a business day gap
-                    }
-                } else {
-                    // Not today - this is a business day gap
-                    return true
-                }
-
-                // Move to next day
+        while current <= endDate {
+            // Skip weekends entirely
+            if calendar.isDateInWeekend(current) {
                 guard let nextDate = calendar.date(byAdding: .day, value: 1, to: current) else {
-                    return false
+                    return false // Handle date calculation failure gracefully
                 }
                 current = nextDate
+                continue
             }
 
-            return false // No business days found in the range
-        }.value
+            // Check if this is today
+            if calendar.isDate(current, inSameDayAs: now) {
+                // For today, only count as business day if past update time
+                var todayComponents = calendar.dateComponents([.year, .month, .day], from: now)
+                todayComponents.hour = updateHourCET
+                todayComponents.minute = updateMinuteCET
+
+                if let todayUpdateTime = calendar.date(from: todayComponents), now >= todayUpdateTime {
+                    return true // Found a business day gap
+                }
+            } else {
+                // Not today - this is a business day gap
+                return true
+            }
+
+            // Move to next day
+            guard let nextDate = calendar.date(byAdding: .day, value: 1, to: current) else {
+                return false
+            }
+            current = nextDate
+        }
+
+        return false // No business days found in the range
     }
 
     // MARK: - Data Merging

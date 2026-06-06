@@ -146,7 +146,7 @@ final class CalculatorViewModel {
         isLoading = true
         errorMessage = nil
         isUsingMockData = false
-        updateRetryState()
+        await updateRetryState()
 
         do {
             let response = try await service.fetchExchangeRates()
@@ -169,7 +169,7 @@ final class CalculatorViewModel {
 
         } catch {
             // Update retry state based on current attempt
-            updateRetryState()
+            await updateRetryState()
 
             // Error handling with fallback to cache
             if let appError = AppError.from(error) {
@@ -239,9 +239,9 @@ final class CalculatorViewModel {
     // MARK: - Retry State Management
 
     /// Updates the retry state based on the current retry manager state
-    private func updateRetryState() {
-        let currentAttempt = retryManager.getCurrentAttempt(for: exchangeRatesEndpoint)
-        let canRetry = retryManager.canRetry(for: exchangeRatesEndpoint)
+    private func updateRetryState() async {
+        let currentAttempt = await retryManager.getCurrentAttempt(for: exchangeRatesEndpoint)
+        let canRetry = await retryManager.canRetry(for: exchangeRatesEndpoint)
 
         if currentAttempt > 0, canRetry {
             // Currently retrying

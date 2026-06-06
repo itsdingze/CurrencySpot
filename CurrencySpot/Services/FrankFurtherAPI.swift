@@ -7,13 +7,13 @@
 
 import Foundation
 
-struct ExchangeRatesResponse: Codable {
+struct ExchangeRatesResponse: Codable, Sendable {
     let base: String
     let date: String
     let rates: [String: Double]
 }
 
-struct HistoricalRatesResponse: Codable {
+struct HistoricalRatesResponse: Codable, Sendable {
     let base: String
     let start_date: String
     let end_date: String

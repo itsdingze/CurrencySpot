@@ -11,6 +11,7 @@ import Foundation
 
 /// Use case responsible for chart data preparation and processing
 /// Extracted from HistoryViewModel to separate concerns
+@MainActor
 final class ChartDataPreparationUseCase {
     // MARK: - Dependencies
 
@@ -27,7 +28,6 @@ final class ChartDataPreparationUseCase {
     // MARK: - Chart Data Processing
 
     /// Processes historical rate data for the specified currency pair within the given time range
-    @MainActor
     func processHistoricalRateData(
         historicalData: [HistoricalRateDataValue],
         baseCurrency: String,
@@ -104,9 +104,9 @@ final class ChartDataPreparationUseCase {
         return chartPoints
     }
 
-    /// Intelligently samples data points for chart performance while preserving important points
-    @MainActor
-    func sampleDataPoints(from data: [ChartDataPoint], maxPoints: Int = 100) -> [ChartDataPoint] {
+    /// Intelligently samples data points for chart performance while preserving important points.
+    /// Pure computation over its inputs, so it is not actor-isolated.
+    nonisolated func sampleDataPoints(from data: [ChartDataPoint], maxPoints: Int = 100) -> [ChartDataPoint] {
         // Guard against empty data or invalid maxPoints
         guard !data.isEmpty, maxPoints > 0 else { return data }
         guard data.count > maxPoints else { return data }
@@ -167,9 +167,9 @@ final class ChartDataPreparationUseCase {
 
     // MARK: - Statistics Calculations
 
-    /// Calculates statistics for chart data points
-    @MainActor
-    func calculateStatistics(from chartData: [ChartDataPoint]) -> ChartStatistics {
+    /// Calculates statistics for chart data points.
+    /// Pure computation over its inputs, so it is not actor-isolated.
+    nonisolated func calculateStatistics(from chartData: [ChartDataPoint]) -> ChartStatistics {
         let rates = chartData.map(\.rate)
 
         let currentRate = chartData.last?.rate ?? 0
@@ -297,7 +297,7 @@ final class ChartDataPreparationUseCase {
 // MARK: - Supporting Types
 
 /// Statistics calculated from chart data
-struct ChartStatistics {
+struct ChartStatistics: Sendable {
     let currentRate: Double
     let highestRate: Double
     let lowestRate: Double

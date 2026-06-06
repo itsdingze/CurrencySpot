@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ExchangeRateDataValue: Identifiable, Equatable {
+struct ExchangeRateDataValue: Identifiable, Equatable, Sendable {
     let id = UUID()
     let currencyCode: String
     let rate: Double
@@ -17,7 +17,7 @@ struct ExchangeRateDataValue: Identifiable, Equatable {
     }
 }
 
-struct HistoricalRateDataPointValue: Identifiable, Equatable {
+struct HistoricalRateDataPointValue: Identifiable, Equatable, Sendable {
     let id = UUID()
     let currencyCode: String
     let rate: Double
@@ -27,7 +27,7 @@ struct HistoricalRateDataPointValue: Identifiable, Equatable {
     }
 }
 
-struct HistoricalRateDataValue: Identifiable, Equatable {
+struct HistoricalRateDataValue: Identifiable, Equatable, Sendable {
     let id = UUID()
     let date: Date
     let rates: [HistoricalRateDataPointValue]
@@ -52,7 +52,7 @@ struct HistoricalRateDataValue: Identifiable, Equatable {
     }
 }
 
-struct TrendDataValue: Identifiable, Equatable {
+struct TrendDataValue: Identifiable, Equatable, Sendable {
     let id = UUID()
     let currencyCode: String
     let weeklyChange: Double // % change over 7 days

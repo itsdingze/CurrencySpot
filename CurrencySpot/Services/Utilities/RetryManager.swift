@@ -5,7 +5,6 @@
 //  Created by Dingze Yu on 8/28/25.
 //
 
-import Combine
 import Foundation
 
 /// Configuration for retry behavior
@@ -41,28 +40,18 @@ private final class RetryStateWrapper {
 }
 
 /// Manages retry logic and state tracking for network operations
-final class RetryManager {
+actor RetryManager {
     static let shared = RetryManager()
 
     private let configuration = RetryConfiguration.default
-    private let queue = DispatchQueue(label: "RetryManager", qos: .utility)
 
     // Track retry state per endpoint using NSCache for automatic memory management
     private let retryStates = NSCache<NSString, RetryStateWrapper>()
-    private var networkCancellable: AnyCancellable?
 
     private init() {
         // Configure NSCache with count-based limit for predictable memory usage
         retryStates.countLimit = 100 // Limit to 100 concurrent endpoints
 
-        // Subscribe to network connectivity changes
-        setupNetworkMonitoring()
-    }
-
-    private func setupNetworkMonitoring() {
-        // Note: NetworkMonitor uses @Observable which doesn't provide publishers
-        // For now, skip automatic network monitoring integration
-        // Network state changes can be manually triggered via networkDidBecomeAvailable()
         AppLogger.info("RetryManager initialized - manual network state management available", category: .network)
     }
 
@@ -71,15 +60,15 @@ final class RetryManager {
     /// Determines if an error should be retried
     /// - Parameter error: The error to evaluate
     /// - Returns: True if the error is retryable
-    func shouldRetry(error: Error) -> Bool {
+    nonisolated func shouldRetry(error: Error) -> Bool {
         // Check for retryable network errors
         if let urlError = error as? URLError {
-            return isRetryableURLError(urlError)
+            return Self.isRetryableURLError(urlError)
         }
 
         // Check for retryable app errors
         if let appError = error as? AppError {
-            return isRetryableAppError(appError)
+            return Self.isRetryableAppError(appError)
         }
 
         return false
@@ -105,17 +94,15 @@ final class RetryManager {
     /// - Parameter endpoint: The endpoint identifier
     /// - Returns: True if more attempts are available
     func canRetry(for endpoint: String) -> Bool {
-        queue.sync { () -> Bool in
-            guard let wrapper = retryStates.object(forKey: endpoint as NSString) else { return true }
+        guard let wrapper = retryStates.object(forKey: endpoint as NSString) else { return true }
 
-            switch wrapper.state {
-            case .initial, .succeeded:
-                return true
-            case let .retrying(attempt, _):
-                return attempt < configuration.maxAttempts
-            case .exhausted:
-                return false
-            }
+        switch wrapper.state {
+        case .initial, .succeeded:
+            return true
+        case let .retrying(attempt, _):
+            return attempt < configuration.maxAttempts
+        case .exhausted:
+            return false
         }
     }
 
@@ -123,71 +110,61 @@ final class RetryManager {
     /// - Parameter endpoint: The endpoint identifier
     /// - Returns: The current attempt number and next delay, or nil if exhausted
     func recordAttempt(for endpoint: String) -> (attempt: Int, delay: TimeInterval)? {
-        queue.sync { () -> (attempt: Int, delay: TimeInterval)? in
-            let currentState = retryStates.object(forKey: endpoint as NSString)?.state ?? .initial
+        let currentState = retryStates.object(forKey: endpoint as NSString)?.state ?? .initial
 
-            switch currentState {
-            case .initial:
-                let delay = calculateDelay(for: 0)
-                retryStates.setObject(RetryStateWrapper(.retrying(attempt: 1, nextDelay: delay)), forKey: endpoint as NSString)
-                return (attempt: 1, delay: delay)
+        switch currentState {
+        case .initial:
+            let delay = calculateDelay(for: 0)
+            retryStates.setObject(RetryStateWrapper(.retrying(attempt: 1, nextDelay: delay)), forKey: endpoint as NSString)
+            return (attempt: 1, delay: delay)
 
-            case let .retrying(attempt, _):
-                if attempt >= configuration.maxAttempts {
-                    retryStates.setObject(RetryStateWrapper(.exhausted), forKey: endpoint as NSString)
-                    return nil
-                }
-
-                let nextAttempt = attempt + 1
-                let delay = calculateDelay(for: nextAttempt - 1)
-                retryStates.setObject(RetryStateWrapper(.retrying(attempt: nextAttempt, nextDelay: delay)), forKey: endpoint as NSString)
-                return (attempt: nextAttempt, delay: delay)
-
-            case .exhausted, .succeeded:
+        case let .retrying(attempt, _):
+            if attempt >= configuration.maxAttempts {
+                retryStates.setObject(RetryStateWrapper(.exhausted), forKey: endpoint as NSString)
                 return nil
             }
+
+            let nextAttempt = attempt + 1
+            let delay = calculateDelay(for: nextAttempt - 1)
+            retryStates.setObject(RetryStateWrapper(.retrying(attempt: nextAttempt, nextDelay: delay)), forKey: endpoint as NSString)
+            return (attempt: nextAttempt, delay: delay)
+
+        case .exhausted, .succeeded:
+            return nil
         }
     }
 
     /// Records a successful operation, resetting retry state
     /// - Parameter endpoint: The endpoint identifier
     func recordSuccess(for endpoint: String) {
-        queue.sync { () in
-            retryStates.setObject(RetryStateWrapper(.succeeded), forKey: endpoint as NSString)
-        }
+        retryStates.setObject(RetryStateWrapper(.succeeded), forKey: endpoint as NSString)
     }
 
     /// Gets the current retry attempt for an endpoint
     /// - Parameter endpoint: The endpoint identifier
     /// - Returns: The current attempt number, or 0 if no attempts recorded
     func getCurrentAttempt(for endpoint: String) -> Int {
-        queue.sync { () -> Int in
-            guard let wrapper = retryStates.object(forKey: endpoint as NSString) else { return 0 }
+        guard let wrapper = retryStates.object(forKey: endpoint as NSString) else { return 0 }
 
-            switch wrapper.state {
-            case .initial, .succeeded:
-                return 0
-            case let .retrying(attempt, _):
-                return attempt
-            case .exhausted:
-                return configuration.maxAttempts
-            }
+        switch wrapper.state {
+        case .initial, .succeeded:
+            return 0
+        case let .retrying(attempt, _):
+            return attempt
+        case .exhausted:
+            return configuration.maxAttempts
         }
     }
 
     /// Resets retry state for an endpoint (useful when network reconnects)
     /// - Parameter endpoint: The endpoint identifier
     func reset(for endpoint: String) {
-        queue.sync { () in
-            retryStates.setObject(RetryStateWrapper(.initial), forKey: endpoint as NSString)
-        }
+        retryStates.setObject(RetryStateWrapper(.initial), forKey: endpoint as NSString)
     }
 
     /// Resets all retry states (useful when network reconnects)
     func resetAll() {
-        queue.sync { () in
-            retryStates.removeAllObjects()
-        }
+        retryStates.removeAllObjects()
     }
 
     /// Call this when network connectivity is restored to reset all retry states
@@ -199,7 +176,7 @@ final class RetryManager {
 
     // MARK: - Private Methods
 
-    private func isRetryableURLError(_ error: URLError) -> Bool {
+    private static func isRetryableURLError(_ error: URLError) -> Bool {
         switch error.code {
         case .timedOut, .cannotConnectToHost, .networkConnectionLost,
              .notConnectedToInternet, .cannotFindHost, .dnsLookupFailed:
@@ -209,7 +186,7 @@ final class RetryManager {
         }
     }
 
-    private func isRetryableAppError(_ error: AppError) -> Bool {
+    private static func isRetryableAppError(_ error: AppError) -> Bool {
         switch error {
         case .networkError, .noInternetConnection:
             true
@@ -222,7 +199,7 @@ final class RetryManager {
         }
     }
 
-    private func extractHTTPStatusCode(from message: String) -> Int? {
+    private static func extractHTTPStatusCode(from message: String) -> Int? {
         // Extract status code from "HTTP Error: 500" format
         let pattern = #"HTTP Error: (\d{3})"#
         guard let regex = try? NSRegularExpression(pattern: pattern),
@@ -234,7 +211,7 @@ final class RetryManager {
         return Int(message[statusCodeRange])
     }
 
-    private func isRetryableHTTPStatus(_ statusCode: Int) -> Bool {
+    private static func isRetryableHTTPStatus(_ statusCode: Int) -> Bool {
         // Retry 5xx server errors, but not 4xx client errors
         (500 ... 599).contains(statusCode)
     }

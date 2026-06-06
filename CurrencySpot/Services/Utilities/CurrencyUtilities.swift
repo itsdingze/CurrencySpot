@@ -7,7 +7,9 @@
 
 import Foundation
 
-/// Centralized currency-related utilities and helpers
+/// Centralized currency-related utilities and helpers.
+/// `@MainActor` isolates the in-memory name/symbol caches; all call sites are main-actor UI code.
+@MainActor
 final class CurrencyUtilities {
     static let shared = CurrencyUtilities()
 
