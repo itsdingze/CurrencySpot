@@ -24,6 +24,7 @@
 		0A42BCD22D6F14E5009B4F56 /* CurrencySpot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CurrencySpot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A42BCE22D6F14E6009B4F56 /* CurrencySpotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CurrencySpotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A860CFE2E1E7DA20097076D /* TestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TestPlan.xctestplan; sourceTree = "<group>"; };
+		0AFF88122FD4CE5900D54E02 /* CurrencySpot.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = CurrencySpot.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -64,6 +65,7 @@
 				0A42BCD42D6F14E5009B4F56 /* CurrencySpot */,
 				0A42BCE52D6F14E6009B4F56 /* CurrencySpotTests */,
 				0A42BCD32D6F14E5009B4F56 /* Products */,
+				0AFF88122FD4CE5900D54E02 /* CurrencySpot.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -209,6 +211,7 @@
 /* Begin XCBuildConfiguration section */
 		0A42BCF42D6F14E6009B4F56 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0AFF88122FD4CE5900D54E02 /* CurrencySpot.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -242,6 +245,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 923T5AJYW6;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -273,6 +277,7 @@
 		};
 		0A42BCF52D6F14E6009B4F56 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0AFF88122FD4CE5900D54E02 /* CurrencySpot.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -306,6 +311,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 923T5AJYW6;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
