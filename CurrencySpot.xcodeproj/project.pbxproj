@@ -16,7 +16,7 @@
 			containerPortal = 0A42BCCA2D6F14E5009B4F56 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 0A42BCD12D6F14E5009B4F56;
-			remoteInfo = CurrencyConverter;
+			remoteInfo = CurrencySpot;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -99,7 +99,7 @@
 			name = CurrencySpot;
 			packageProductDependencies = (
 			);
-			productName = CurrencyConverter;
+			productName = CurrencySpot;
 			productReference = 0A42BCD22D6F14E5009B4F56 /* CurrencySpot.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -122,7 +122,7 @@
 			name = CurrencySpotTests;
 			packageProductDependencies = (
 			);
-			productName = CurrencyConverterTests;
+			productName = CurrencySpotTests;
 			productReference = 0A42BCE22D6F14E6009B4F56 /* CurrencySpotTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -345,6 +345,7 @@
 				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = CurrencySpot;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -380,6 +381,7 @@
 				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = CurrencySpot;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

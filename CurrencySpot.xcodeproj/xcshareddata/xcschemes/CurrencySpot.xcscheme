@@ -46,17 +46,6 @@
                ReferencedContainer = "container:CurrencySpot.xcodeproj">
             </BuildableReference>
          </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "0A42BCEB2D6F14E6009B4F56"
-               BuildableName = "CurrencyConverterUITests.xctest"
-               BlueprintName = "CurrencyConverterUITests"
-               ReferencedContainer = "container:CurrencySpot.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

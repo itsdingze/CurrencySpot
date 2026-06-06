@@ -95,7 +95,7 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
         .interactiveDismissDisabled()
         .allowsHitTesting(animateFooter)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Welcome to Currency Converter")
+        .accessibilityLabel("Welcome to CurrencySpot")
         .accessibilityHint("Learn about app features and get started")
         .task {
             guard !animateIcon else { return }
@@ -189,7 +189,7 @@ struct CurrencySpotOnboarding: View {
 
     var body: some View {
         AppOnboardingView(
-            title: "Welcome to Currency Converter"
+            title: "Welcome to CurrencySpot"
         ) {
             Image("Icon")
                 .resizable()
