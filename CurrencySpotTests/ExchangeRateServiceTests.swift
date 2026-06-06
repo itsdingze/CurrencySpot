@@ -47,6 +47,42 @@ struct ExchangeRateServiceTests {
         try await service.clearAllData()
     }
 
+    @Test("loadHistoricalRatesForCurrency reads persistence, not a narrower stale in-memory cache")
+    func loadHistoricalReadsPersistenceNotStaleCache() async throws {
+        // Regression: a successful wide fetch was being shadowed by a narrower cached window,
+        // so a 3-month load read back only the ~1-week trend-seed data until the app restarted.
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: ExchangeRateData.self, HistoricalRateData.self, TrendData.self,
+            configurations: config
+        )
+        let cacheService = InMemoryCacheService()
+        let coordinator = DataCoordinator(
+            networkService: FrankfurterNetworkService(),
+            persistenceService: SwiftDataPersistenceService(modelContainer: container),
+            cacheService: cacheService
+        )
+
+        // Persist a wide window: 10 distinct days.
+        let wideDates = (3 ... 12).map { String(format: "2025-03-%02d", $0) }
+        for dateString in wideDates {
+            try await coordinator.saveHistoricalExchangeRates([dateString: ["EUR": 1.21]])
+        }
+
+        // Seed the in-memory cache with only a NARROW 2-day window (this used to shadow the read).
+        let narrow = try [
+            HistoricalRateDataValue(dateString: "2025-03-11", rates: [HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.21)]),
+            HistoricalRateDataValue(dateString: "2025-03-12", rates: [HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.21)]),
+        ]
+        await cacheService.cacheHistoricalData(narrow, for: "EUR")
+
+        // Reading the full window must return the 10 persisted rows, not the 2 cached ones.
+        let result = try await coordinator.loadHistoricalRatesForCurrency(
+            currency: "EUR", startDate: "2025-03-01", endDate: "2025-03-31"
+        )
+        #expect(result.count == wideDates.count)
+    }
+
     @Test("Service initializes correctly")
     func serviceInitializesCorrectly() async throws {
         // Clear UserDefaults to ensure clean state

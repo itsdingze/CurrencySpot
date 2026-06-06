@@ -69,9 +69,8 @@ struct CurrencyList: View {
     }
 
     private func navigateToCurrency(_ currencyCode: String) {
-        historyViewModel.targetCurrency = currencyCode
-        historyViewModel.baseCurrency = calculatorViewModel.baseCurrency
-        historyViewModel.resetDisplayedDataAndTimeRange()
+        // Single load: configure() sets the pair without per-property reloads, then resets + loads once.
+        historyViewModel.configure(base: calculatorViewModel.baseCurrency, target: currencyCode)
         navigationPath.append(currencyCode)
     }
 

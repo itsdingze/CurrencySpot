@@ -179,47 +179,23 @@ final class DataCoordinator: ExchangeRateService {
         }
     }
 
-    /// Loads historical rates with cache-first strategy and error recovery.
+    /// Loads historical rates from persistence (the source of truth), with a network fallback on error.
+    ///
+    /// This deliberately does NOT read the in-memory cache: the historical cache is owned by
+    /// `DataOrchestrationUseCase`, which reads it for gap detection and writes the merged result.
+    /// Reading it here would shadow data just written by a fresh fetch (a successful 3-month fetch
+    /// would still read back only the older, narrower cached window).
     func loadHistoricalRatesForCurrency(
         currency: String,
         startDate: String,
         endDate: String
     ) async throws -> [HistoricalRateDataValue] {
-        // Check cache first
-        if let cachedData = await cacheService.getCachedHistoricalData(for: currency) {
-            // Filter cached data for the requested date range
-            guard let parsedStartDate = TimeZoneManager.parseAPIDate(startDate),
-                  let parsedEndDate = TimeZoneManager.parseAPIDate(endDate)
-            else {
-                // Date parsing error - return empty array instead of throwing
-                AppLogger.warning("Failed to parse dates, returning empty data", category: .data)
-                return []
-            }
-
-            let filteredData = cachedData.filter { data in
-                data.date >= parsedStartDate && data.date <= parsedEndDate
-            }
-
-            // Return cached data if we have complete coverage
-            if !filteredData.isEmpty {
-                return filteredData
-            }
-        }
-
-        // Try to load from persistence layer
         do {
-            let persistedHistoricalRates = try await persistenceService.loadHistoricalRatesForCurrency(
+            return try await persistenceService.loadHistoricalRatesForCurrency(
                 currency: currency,
                 startDate: startDate,
                 endDate: endDate
             )
-
-            // Update cache with fresh data if we got any
-            if !persistedHistoricalRates.isEmpty {
-                await cacheService.cacheHistoricalData(persistedHistoricalRates, for: currency)
-            }
-
-            return persistedHistoricalRates
         } catch {
             AppLogger.warning("Failed to load historical data from persistence: \(error.localizedDescription)", category: .persistence)
 

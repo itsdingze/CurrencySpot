@@ -35,8 +35,12 @@ final class ChartDataPreparationUseCase {
         dateRange: DateRange,
         exchangeRates: [ExchangeRateDataValue]
     ) async -> [ChartDataPoint] {
-        // Generate cache key for this specific configuration
-        let cacheKey = "\(baseCurrency)-\(targetCurrency)-\(dateRange.start.timeIntervalSince1970)-\(dateRange.end.timeIntervalSince1970)"
+        // Generate a cache key for this configuration AND its input coverage. The processed output
+        // depends on the actual historical rows, not just the date range: the same currency pair +
+        // range can hold a partial (e.g. 7-day) or full (3-month) dataset, so the key must include the
+        // data's size/bounds — otherwise a smaller dataset's processed result shadows a larger one.
+        let coverage = "\(historicalData.count)-\(historicalData.first?.date.timeIntervalSince1970 ?? 0)-\(historicalData.last?.date.timeIntervalSince1970 ?? 0)"
+        let cacheKey = "\(baseCurrency)-\(targetCurrency)-\(dateRange.start.timeIntervalSince1970)-\(dateRange.end.timeIntervalSince1970)-\(coverage)"
 
         // Check cache first
         if let cachedData = await cacheService.getCachedProcessedChartData(for: cacheKey) {

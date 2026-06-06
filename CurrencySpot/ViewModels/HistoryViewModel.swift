@@ -27,7 +27,7 @@ final class HistoryViewModel {
     /// Base currency (left side of conversion)
     var baseCurrency = "USD" {
         didSet {
-            if oldValue != baseCurrency {
+            if oldValue != baseCurrency, !isApplyingConfiguration {
                 loadDataForCurrentConfiguration()
             }
         }
@@ -36,7 +36,7 @@ final class HistoryViewModel {
     /// Target currency (right side of conversion)
     var targetCurrency = "EUR" {
         didSet {
-            if oldValue != targetCurrency {
+            if oldValue != targetCurrency, !isApplyingConfiguration {
                 loadDataForCurrentConfiguration()
             }
         }
@@ -49,7 +49,9 @@ final class HistoryViewModel {
                 // Clear date range cache when time range changes
                 _cachedDateRange = nil
                 _cachedTimeRange = nil
-                loadDataForCurrentConfiguration()
+                if !isApplyingConfiguration {
+                    loadDataForCurrentConfiguration()
+                }
             }
         }
     }
@@ -113,6 +115,17 @@ final class HistoryViewModel {
 
     // MARK: - Public Interface
 
+    /// Applies a new currency pair and reloads exactly once. Navigation uses this so that setting the
+    /// base and target currencies does not trigger a per-property load on top of the reset's load.
+    func configure(base: String, target: String) {
+        isApplyingConfiguration = true
+        baseCurrency = base
+        targetCurrency = target
+        isApplyingConfiguration = false
+
+        resetDisplayedDataAndTimeRange()
+    }
+
     /// Resets displayed data and time range (called when navigating to new currency)
     func resetDisplayedDataAndTimeRange() {
         // Cancel any existing fetch task to prevent race conditions
@@ -122,7 +135,10 @@ final class HistoryViewModel {
 
         // Reset data and UI state
         displayedChartDataPoints = []
+        // Reset the time range without triggering its didSet load; the single load happens below.
+        isApplyingConfiguration = true
         selectedTimeRange = .threeMonths
+        isApplyingConfiguration = false
         _cachedDateRange = nil
         _cachedTimeRange = nil
         showAverageLine = false

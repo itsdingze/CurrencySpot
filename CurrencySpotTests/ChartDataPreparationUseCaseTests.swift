@@ -77,6 +77,37 @@ struct ChartDataPreparationUseCaseTests {
     @Suite("processHistoricalRateData Method Tests")
     @MainActor
     struct ProcessHistoricalRateDataTests {
+        @Test("A larger dataset is not shadowed by a smaller dataset's processed cache (same pair/range)")
+        func largerDatasetNotShadowedByProcessedCache() async {
+            // Regression: the processed-chart cache was keyed only by base/target/range, so a 7-day
+            // result cached first would shadow a later 3-month result for the same pair and range.
+            let cacheService = InMemoryCacheService()
+            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: RateCalculationUseCase(), cacheService: cacheService)
+            let calendar = TimeZoneManager.cetCalendar
+            let end = TimeZoneManager.createCETDate(year: 2025, month: 6, day: 6)!
+            let range = DateRange(start: calendar.date(byAdding: .day, value: -90, to: end)!, end: end)
+
+            func rows(_ days: Int) -> [HistoricalRateDataValue] {
+                (0 ..< days).map { offset in
+                    HistoricalRateDataValue(
+                        date: calendar.date(byAdding: .day, value: -offset, to: end)!,
+                        rates: [HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.1)]
+                    )
+                }
+            }
+
+            // Process a small dataset first (populates the processed cache), then a large one.
+            let small = await useCase.processHistoricalRateData(
+                historicalData: rows(3), baseCurrency: "USD", targetCurrency: "EUR", dateRange: range, exchangeRates: []
+            )
+            let large = await useCase.processHistoricalRateData(
+                historicalData: rows(60), baseCurrency: "USD", targetCurrency: "EUR", dateRange: range, exchangeRates: []
+            )
+
+            #expect(small.count == 3)
+            #expect(large.count == 60) // must reflect the larger input, not the cached 3-point result
+        }
+
         @Test("Should filter data by date range inclusively")
         func shouldFilterDataByDateRangeInclusively() async {
             // GIVEN: Use case with historical data spanning multiple dates
