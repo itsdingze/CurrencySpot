@@ -8,7 +8,8 @@
 import Foundation
 
 enum TimeZoneManager {
-    static let cetTimeZone = TimeZone(identifier: "Europe/Paris")!
+    // "Europe/Paris" is always available; .gmt is an unreachable safe fallback that avoids a force-unwrap.
+    static let cetTimeZone = TimeZone(identifier: "Europe/Paris") ?? .gmt
 
     static var cetCalendar: Calendar {
         var calendar = Calendar.current

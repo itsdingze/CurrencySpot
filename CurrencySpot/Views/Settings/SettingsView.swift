@@ -41,6 +41,7 @@ struct SettingsView: View {
 
     @State private var alertType: AlertType?
     @State private var toastData: ToastData?
+    @State private var toastDismissTask: Task<Void, Never>?
 
     private var bindableSettingsViewModel: Bindable<SettingsViewModel> {
         Bindable(settingsViewModel)
@@ -158,7 +159,7 @@ struct SettingsView: View {
         Section(header: Text("About")) {
             LabeledContent {
                 Text(Bundle.main.appVersionWithBuild)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             } label: {
                 Label(title: {
                     Text("Version")
@@ -168,28 +169,30 @@ struct SettingsView: View {
                 })
             }
 
-            Link(destination: URL(string: "https://currencyspot.vercel.app")!) {
-                HStack {
-                    Label(title: {
-                        Text("Privacy Policy")
-                    }, icon: {
-                        Image(systemName: "lock.circle.fill")
-                            .symbolRenderingMode(.palette)
-                            .foregroundStyle(Color.white, Color.blue)
-                    })
+            if let privacyPolicyURL = URL(string: "https://currencyspot.vercel.app") {
+                Link(destination: privacyPolicyURL) {
+                    HStack {
+                        Label(title: {
+                            Text("Privacy Policy")
+                        }, icon: {
+                            Image(systemName: "lock.circle.fill")
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(Color.white, Color.blue)
+                        })
 
-                    Spacer()
+                        Spacer()
 
-                    Image(systemName: "arrow.up.right")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundColor(.secondary)
-                        .accessibilityHidden(true)
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                    }
                 }
+                .tint(.primary)
+                .accessibilityLabel("Privacy Policy")
+                .accessibilityHint("Opens privacy policy in your web browser")
+                .accessibilityInputLabels(["Privacy", "Privacy policy"])
             }
-            .tint(.primary)
-            .accessibilityLabel("Privacy Policy")
-            .accessibilityHint("Opens privacy policy in your web browser")
-            .accessibilityInputLabels(["Privacy", "Privacy policy"])
         }
     }
 
@@ -258,7 +261,10 @@ struct SettingsView: View {
     private func showToast(_ type: ToastType) {
         toastData = ToastData(type: type)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        toastDismissTask?.cancel()
+        toastDismissTask = Task {
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
             toastData = nil
         }
     }

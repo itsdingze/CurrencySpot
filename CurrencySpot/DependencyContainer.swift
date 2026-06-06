@@ -143,8 +143,15 @@ final class DependencyContainer {
                 configurations: configuration
             )
         } catch {
-            // If even in-memory fails, create empty container with minimal schema
-            modelContainer = try! ModelContainer(for: Schema([]))
+            // If even an in-memory store fails, fall back to an empty-schema container.
+            // This is effectively unreachable; if it ever fails, the process cannot run, so
+            // crash with a descriptive message instead of trapping on a bare `try!`.
+            do {
+                modelContainer = try ModelContainer(for: Schema([]))
+            } catch {
+                AppLogger.fault("Unrecoverable: failed to create an empty in-memory ModelContainer: \(error)", category: .app)
+                fatalError("CurrencySpot cannot start: SwiftData is unavailable (\(error))")
+            }
         }
 
         // STEP 2: Use mock services
