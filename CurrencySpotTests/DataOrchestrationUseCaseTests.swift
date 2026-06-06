@@ -57,12 +57,13 @@ final class MockExchangeRateServiceForOrchestration: ExchangeRateService {
     }
 
     func fetchAndSaveHistoricalRates(from startDate: Date, to endDate: Date) async throws {
+        // Record the attempt before any throw so failed fetches remain observable.
+        fetchAndSaveHistoricalRatesCallCount += 1
+        fetchAndSaveHistoricalRatesCalls.append((from: startDate, to: endDate))
+
         if shouldThrowErrorOnFetch {
             throw errorToThrow
         }
-
-        fetchAndSaveHistoricalRatesCallCount += 1
-        fetchAndSaveHistoricalRatesCalls.append((from: startDate, to: endDate))
     }
 
     // MARK: - Data Persistence Methods
@@ -233,51 +234,6 @@ actor MockCacheServiceForOrchestration: CacheService {
 
     func setCachedHistoricalData(_ data: [HistoricalRateDataValue], for currency: String) async {
         cachedHistoricalData[currency] = data
-    }
-}
-
-/// Mock implementation of HistoricalDataAnalysisUseCase for testing DataOrchestrationUseCase
-final class MockHistoricalDataAnalysisUseCase {
-    // MARK: - Test Configuration Properties
-
-    var calculateMissingDateRangesResult: [DateRange] = []
-    var mergeHistoricalDataResult: [HistoricalRateDataValue] = []
-
-    // Call tracking
-    private(set) var calculateMissingDateRangesCallCount = 0
-    private(set) var mergeHistoricalDataCallCount = 0
-    private(set) var lastCalculateMissingDateRangesCall: (requiredRange: DateRange, cache: CurrencyCache?)?
-    private(set) var lastMergeHistoricalDataCall: (existing: [HistoricalRateDataValue], new: [HistoricalRateDataValue])?
-
-    // MARK: - Mock Methods
-
-    func calculateMissingDateRanges(
-        requiredRange: DateRange,
-        cache: CurrencyCache?
-    ) async throws -> [DateRange] {
-        calculateMissingDateRangesCallCount += 1
-        lastCalculateMissingDateRangesCall = (requiredRange: requiredRange, cache: cache)
-        return calculateMissingDateRangesResult
-    }
-
-    func mergeHistoricalData(
-        existing: [HistoricalRateDataValue],
-        new: [HistoricalRateDataValue]
-    ) -> [HistoricalRateDataValue] {
-        mergeHistoricalDataCallCount += 1
-        lastMergeHistoricalDataCall = (existing: existing, new: new)
-        return mergeHistoricalDataResult
-    }
-
-    // MARK: - Test Helper Methods
-
-    func reset() {
-        calculateMissingDateRangesResult = []
-        mergeHistoricalDataResult = []
-        calculateMissingDateRangesCallCount = 0
-        mergeHistoricalDataCallCount = 0
-        lastCalculateMissingDateRangesCall = nil
-        lastMergeHistoricalDataCall = nil
     }
 }
 
@@ -463,28 +419,25 @@ struct DataOrchestrationUseCaseTests {
         #expect(mockService.loadHistoricalRatesCallCount == 1) // Load from SwiftData
     }
 
-    @Test("loadHistoricalData should handle multiple missing ranges correctly")
-    func loadHistoricalData_multipleMissingRanges_shouldHandleCorrectly() async throws {
-        // GIVEN: Multiple missing ranges scenario
+    @Test("loadHistoricalData fetches a separate range for each genuine gap before and after the cache")
+    func loadHistoricalData_multipleMissingRanges_shouldFetchEachGap() async throws {
+        // GIVEN: a wide required range with a small cached island in the middle, so the real
+        // analysis produces TWO genuine gaps — one before the cache (>4 days) and one after it.
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
         let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
 
-        let range1 = DateRange(start: Self.startDate, end: Self.calendar.date(byAdding: .day, value: -5, to: Self.baseDate) ?? Self.baseDate)
-        let range2 = DateRange(start: Self.calendar.date(byAdding: .day, value: -2, to: Self.baseDate) ?? Self.baseDate, end: Self.endDate)
-        // Real analysis use case will calculate missing ranges based on cache
+        func day(_ offset: Int) -> Date {
+            Self.calendar.startOfDay(for: Self.calendar.date(byAdding: .day, value: offset, to: Self.baseDate)!)
+        }
+        let requiredRange = DateRange(start: day(-20), end: day(0))
+        let cacheDates = [day(-10), day(-9), day(-8)] // sorted ascending; CurrencyCache trusts sort order
+        await mockCacheService.setCachedHistoricalData(
+            Self.createTestHistoricalData(dates: cacheDates), for: Self.testCurrency
+        )
 
-        // Configure to fetch from API for both ranges
-        mockService.getEarliestStoredDateResult = nil
-
-        let dataForRange1 = Self.createTestHistoricalData(dates: [range1.start, range1.end])
-        let dataForRange2 = Self.createTestHistoricalData(dates: [range2.start, range2.end])
-        let allNewData = dataForRange1 + dataForRange2
-
-        // Mock service will return all data for each call
-        mockService.historicalDataToReturn = allNewData
-
-        // Real analysis use case will merge data properly
+        mockService.getEarliestStoredDateResult = nil // force an API fetch for each gap
+        mockService.historicalDataToReturn = []
 
         let useCase = DataOrchestrationUseCase(
             service: mockService,
@@ -492,29 +445,40 @@ struct DataOrchestrationUseCaseTests {
             cacheService: mockCacheService
         )
 
-        // WHEN: Loading historical data
-        let result = try await useCase.loadHistoricalData(for: Self.testCurrency, dateRange: Self.testDateRange)
+        // WHEN: loading the wide range
+        let result = try await useCase.loadHistoricalData(for: Self.testCurrency, dateRange: requiredRange)
 
-        // THEN: Should handle missing ranges (may be merged into single range by analysis)
+        // THEN: exactly two distinct fetches and loads — the multi-range path is genuinely exercised.
         #expect(result.newDataFetched == true)
-        #expect(mockService.fetchAndSaveHistoricalRatesCallCount >= 1) // At least one fetch
-        #expect(mockService.loadHistoricalRatesCallCount >= 1) // At least one load
-        #expect(!mockService.fetchAndSaveHistoricalRatesCalls.isEmpty) // Some fetch calls made
+        #expect(mockService.fetchAndSaveHistoricalRatesCallCount == 2)
+        #expect(mockService.loadHistoricalRatesCallCount == 2)
 
-        // Verify that data was actually fetched and processed
-        #expect(!result.dataPoints.isEmpty) // Should have some data
-        #expect(result.dataPoints.count >= 2) // Should have data from both ranges
+        let calls = mockService.fetchAndSaveHistoricalRatesCalls.sorted { $0.from < $1.from }
+        #expect(calls.count == 2)
+        #expect(calls.first?.from == day(-20)) // before-gap starts at the required start
+        #expect(calls.last?.to == day(0)) // after-gap ends at the required end
+        if let beforeGap = calls.first, let afterGap = calls.last {
+            #expect(beforeGap.to < afterGap.from) // the two gaps are disjoint
+        }
     }
 
-    @Test("loadHistoricalData should handle network errors gracefully")
-    func loadHistoricalData_networkError_shouldHandleGracefully() async throws {
-        // GIVEN: Mock service configured to throw network error
+    @Test("loadHistoricalData degrades to cached data when every fetch fails")
+    func loadHistoricalData_networkError_returnsCachedData() async throws {
+        // GIVEN: a cached island inside a wide range, so real gaps trigger fetches that all fail,
+        // yet recoverable cached data exists to fall back on.
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
         let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
 
-        // Real analysis use case will determine missing ranges
-        mockService.getEarliestStoredDateResult = nil // Force fetch from API
+        func day(_ offset: Int) -> Date {
+            Self.calendar.startOfDay(for: Self.calendar.date(byAdding: .day, value: offset, to: Self.baseDate)!)
+        }
+        let requiredRange = DateRange(start: day(-20), end: day(0))
+        let cachedData = Self.createTestHistoricalData(dates: [day(-10), day(-9), day(-8)])
+        await mockCacheService.setCachedHistoricalData(cachedData, for: Self.testCurrency)
+
+        mockService.getEarliestStoredDateResult = nil
+        mockService.historicalDataToReturn = []
         mockService.shouldThrowErrorOnFetch = true
         mockService.errorToThrow = AppError.networkError("Test network error")
 
@@ -524,41 +488,13 @@ struct DataOrchestrationUseCaseTests {
             cacheService: mockCacheService
         )
 
-        // WHEN: Loading historical data with network error
-        let result = try await useCase.loadHistoricalData(for: Self.testCurrency, dateRange: Self.testDateRange)
+        // WHEN: loading with every fetch failing
+        let result = try await useCase.loadHistoricalData(for: Self.testCurrency, dateRange: requiredRange)
 
-        // THEN: Should handle gracefully and continue with available data
-        #expect(result.dataPoints.isEmpty) // No data available due to network error
-        #expect(result.newDataFetched == false) // No new data was fetched
-    }
-
-    @Test("loadHistoricalData should handle analysis dependency errors gracefully")
-    func loadHistoricalData_analysisNetworkError_shouldHandleGracefully() async throws {
-        // GIVEN: Mock service configured to throw error when trying to get earliest stored date
-        let mockService = MockExchangeRateServiceForOrchestration()
-        let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
-
-        // Configure analysis to indicate missing ranges, which will trigger service calls
-        // Real analysis use case will determine missing ranges
-
-        // Make the service throw an error when trying to determine if it should fetch
-        mockService.getEarliestStoredDateResult = nil // This will trigger shouldFetchMissingData logic
-        mockService.shouldThrowErrorOnFetch = true
-        mockService.errorToThrow = AppError.networkError("Test network error from analysis dependency")
-
-        let useCase = DataOrchestrationUseCase(
-            service: mockService,
-            historicalDataAnalysisUseCase: realAnalysisUseCase,
-            cacheService: mockCacheService
-        )
-
-        // WHEN: Loading historical data with network error in dependency
-        let result = try await useCase.loadHistoricalData(for: Self.testCurrency, dateRange: Self.testDateRange)
-
-        // THEN: Should handle gracefully and continue with available data
-        #expect(result.dataPoints.isEmpty) // No data available due to network error
-        #expect(result.newDataFetched == false) // No new data was fetched
+        // THEN: a fetch was attempted, but the cached island survives and nothing is reported as fetched.
+        #expect(mockService.fetchAndSaveHistoricalRatesCallCount >= 1)
+        #expect(result.newDataFetched == false)
+        #expect(result.dataPoints == cachedData)
     }
 
     // MARK: - getCachedData Tests
@@ -684,32 +620,6 @@ struct DataOrchestrationUseCaseTests {
         let result = try await useCase.loadHistoricalData(for: Self.testCurrency, dateRange: Self.testDateRange)
 
         // THEN: Should fetch from API
-        #expect(result.newDataFetched == true)
-        #expect(mockService.fetchAndSaveHistoricalRatesCallCount == 1)
-    }
-
-    @Test("loadHistoricalData should fetch when stored date is invalid")
-    func loadHistoricalData_invalidStoredDate_shouldFetch() async throws {
-        // GIVEN: Service returns invalid date string
-        let mockService = MockExchangeRateServiceForOrchestration()
-        let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
-
-        // Real analysis use case will determine missing ranges
-        mockService.getEarliestStoredDateResult = nil // Simulating invalid date by returning nil
-        mockService.historicalDataToReturn = Self.createTestHistoricalData(dates: [Self.startDate])
-        // Real analysis use case will merge data properly
-
-        let useCase = DataOrchestrationUseCase(
-            service: mockService,
-            historicalDataAnalysisUseCase: realAnalysisUseCase,
-            cacheService: mockCacheService
-        )
-
-        // WHEN: Loading historical data
-        let result = try await useCase.loadHistoricalData(for: Self.testCurrency, dateRange: Self.testDateRange)
-
-        // THEN: Should fetch from API due to invalid date
         #expect(result.newDataFetched == true)
         #expect(mockService.fetchAndSaveHistoricalRatesCallCount == 1)
     }

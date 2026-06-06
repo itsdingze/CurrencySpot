@@ -75,6 +75,7 @@ struct ChartDataPreparationUseCaseTests {
     // MARK: - processHistoricalRateData Tests
 
     @Suite("processHistoricalRateData Method Tests")
+    @MainActor
     struct ProcessHistoricalRateDataTests {
         @Test("Should filter data by date range inclusively")
         func shouldFilterDataByDateRangeInclusively() async {
@@ -175,33 +176,6 @@ struct ChartDataPreparationUseCaseTests {
             }
         }
 
-//        @Test("Should sort results by date")
-//        func shouldSortResultsByDate() async {
-//            // GIVEN: Historical data in random order
-//            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-//            let cacheService = InMemoryCacheService()
-//            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
-//
-//            let unorderedDates = [testEndDate, testStartDate, testMiddleDate] // Reversed order
-//            let historicalData = createTestHistoricalData(dates: unorderedDates)
-//            let dateRange = DateRange(start: testStartDate, end: testEndDate)
-//
-//            // WHEN: Processing historical data
-//            let result = await useCase.processHistoricalRateData(
-//                historicalData: historicalData,
-//                baseCurrency: "USD",
-//                targetCurrency: "EUR",
-//                dateRange: dateRange,
-//                exchangeRates: createTestExchangeRates()
-//            )
-//
-//            // THEN: Results should be sorted by date
-//            #expect(result.count == 3, "Should include all data points")
-//            #expect(result[0].date == testStartDate, "First should be earliest date")
-//            #expect(result[1].date == testMiddleDate, "Second should be middle date")
-//            #expect(result[2].date == testEndDate, "Third should be latest date")
-//        }
-
         @Test("Should handle empty historical data")
         func shouldHandleEmptyHistoricalData() async {
             // GIVEN: Use case with empty historical data
@@ -229,6 +203,7 @@ struct ChartDataPreparationUseCaseTests {
     // MARK: - sampleDataPoints Tests
 
     @Suite("sampleDataPoints Method Tests")
+    @MainActor
     struct SampleDataPointsTests {
         @Test("Should return original data when count is less than or equal to maxPoints")
         func shouldReturnOriginalDataWhenCountIsLessOrEqual() async {
@@ -320,6 +295,7 @@ struct ChartDataPreparationUseCaseTests {
     // MARK: - calculateStatistics Tests
 
     @Suite("calculateStatistics Method Tests")
+    @MainActor
     struct CalculateStatisticsTests {
         @Test("Should calculate basic statistics correctly")
         func shouldCalculateBasicStatisticsCorrectly() async {
@@ -528,6 +504,7 @@ struct ChartDataPreparationUseCaseTests {
     // MARK: - Integration Tests
 
     @Suite("Integration Tests")
+    @MainActor
     struct IntegrationTests {
         @Test("Should handle complete workflow from historical data to statistics")
         func shouldHandleCompleteWorkflowFromHistoricalDataToStatistics() async {

@@ -13,287 +13,115 @@ import Testing
 @Suite("ViewModel Tests")
 @MainActor
 struct ViewModelTests {
+    // Builds a HistoryViewModel backed entirely by MockExchangeRateService so trend
+    // data is the deterministic MockExchangeRates.trendData fixture and no network runs.
+    private static func makeHistoryViewModel() -> HistoryViewModel {
+        let service = MockExchangeRateService()
+        let cacheService = InMemoryCacheService()
+        let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        return HistoryViewModel(
+            service: service,
+            calculatorVM: CalculatorViewModel(service: service),
+            historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
+            dataOrchestrationUseCase: DataOrchestrationUseCase(
+                service: service,
+                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
+                cacheService: cacheService
+            ),
+            chartDataPreparationUseCase: ChartDataPreparationUseCase(
+                rateCalculationUseCase: RateCalculationUseCase(),
+                cacheService: cacheService
+            ),
+            trendDataUseCase: TrendDataUseCase(service: service)
+        )
+    }
+
     @Suite("HistoryViewModel Tests")
     @MainActor
     struct HistoryViewModelTests {
-        let service: MockExchangeRateService
-        let viewModel: HistoryViewModel
+        let viewModel = ViewModelTests.makeHistoryViewModel()
 
-        // MARK: - Setup (called before each test)
-
-        init() {
-            // Use MockExchangeRateService for testing instead of real service
-            service = MockExchangeRateService()
-            let calculatorVM = CalculatorViewModel(service: service)
-            let cacheService = InMemoryCacheService()
-            let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase()
-            let dataOrchestrationUseCase = DataOrchestrationUseCase(
-                service: service,
-                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-                cacheService: cacheService
-            )
-            let rateCalculationUseCase = RateCalculationUseCase()
-            let chartDataPreparationUseCase = ChartDataPreparationUseCase(
-                rateCalculationUseCase: rateCalculationUseCase,
-                cacheService: cacheService
-            )
-            let trendDataUseCase = TrendDataUseCase(service: service)
-
-            viewModel = HistoryViewModel(
-                service: service,
-                calculatorVM: calculatorVM,
-                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-                dataOrchestrationUseCase: dataOrchestrationUseCase,
-                chartDataPreparationUseCase: chartDataPreparationUseCase,
-                trendDataUseCase: trendDataUseCase
-            )
-        }
-
-        // MARK: - Helper Methods
-
-        private func createDate(_ year: Int, _ month: Int, _ day: Int) -> Date {
-            var components = DateComponents()
-            components.year = year
-            components.month = month
-            components.day = day
-            components.timeZone = TimeZoneManager.cetTimeZone
-            return Calendar.current.date(from: components)!
-        }
-
-        // MARK: - Test Cases
-
-        @Test("Calculate missing date ranges - weekend gaps")
-        func coversWeekendGaps() async throws {
-            // GIVEN: A required range and cached data with gaps
-            let requiredRange = DateRange(
-                start: createDate(2025, 3, 1),
-                end: createDate(2025, 3, 15)
-            )
-            let cachedData = try [
-                HistoricalRateDataValue(dateString: "2025-03-10", rates: [
-                    HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.21),
-                ]),
-                HistoricalRateDataValue(dateString: "2025-03-15", rates: [
-                    HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.22),
-                ]),
-            ]
-
-            // WHEN: We calculate the missing ranges
-            let missingRanges = calculateMissingDateRanges(
-                requiredRange: requiredRange,
-                cachedData: cachedData
-            )
-            let expectedEndDate = createDate(2025, 3, 9) // Day before cache starts
-
-            // THEN: The result should contain one range for the gap at the beginning
-            #expect(missingRanges.count == 1)
-            #expect(missingRanges.first?.start == requiredRange.start)
-            #expect(missingRanges.first?.end == expectedEndDate)
-        }
-    }
-
-    @Suite("HistoryViewModel SwiftData Tests")
-    @MainActor
-    struct HistoryViewModelSwiftDataTests {
-        let container: ModelContainer
-        let service: DataCoordinator
-        let viewModel: HistoryViewModel
-
-        init() throws {
-            // Create in-memory container for testing
-            let config = ModelConfiguration(isStoredInMemoryOnly: true)
-            container = try ModelContainer(
-                for: ExchangeRateData.self, HistoricalRateData.self, TrendData.self,
-                configurations: config
-            )
-
-            // Create service with test container
-            let networkService = FrankfurterNetworkService()
-            let persistenceService = SwiftDataPersistenceService(modelContainer: container)
-            let cacheService = InMemoryCacheService()
-            service = DataCoordinator(
-                networkService: networkService,
-                persistenceService: persistenceService,
-                cacheService: cacheService
-            )
-
-            let calculatorVM = CalculatorViewModel(service: service)
-            let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase()
-            let dataOrchestrationUseCase = DataOrchestrationUseCase(
-                service: service,
-                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-                cacheService: cacheService
-            )
-            let rateCalculationUseCase = RateCalculationUseCase()
-            let chartDataPreparationUseCase = ChartDataPreparationUseCase(
-                rateCalculationUseCase: rateCalculationUseCase,
-                cacheService: cacheService
-            )
-            let trendDataUseCase = TrendDataUseCase(service: service)
-
-            viewModel = HistoryViewModel(
-                service: service,
-                calculatorVM: calculatorVM,
-                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-                dataOrchestrationUseCase: dataOrchestrationUseCase,
-                chartDataPreparationUseCase: chartDataPreparationUseCase,
-                trendDataUseCase: trendDataUseCase
-            )
-        }
-
-        @Test("View model initializes with service")
-        func viewModelInitializesWithService() async throws {
-            // GIVEN: A view model with a service
-            // WHEN: We check the initial state
-            // THEN: It should be properly initialized
+        @Test("Initializes with default currencies and no chart data")
+        func initializesWithDefaults() {
             #expect(viewModel.baseCurrency == "USD")
             #expect(viewModel.targetCurrency == "EUR")
             #expect(viewModel.displayedChartDataPoints.isEmpty)
         }
 
-        @Test("Currency change triggers data loading")
-        func currencyChangeTriggersDataLoading() async throws {
-            // GIVEN: A view model with initial currencies
-            let initialTarget = viewModel.targetCurrency
-
-            // WHEN: We change the target currency
-            viewModel.targetCurrency = "GBP"
-
-            // THEN: The currency should be updated
-            #expect(viewModel.targetCurrency != initialTarget)
-            #expect(viewModel.targetCurrency == "GBP")
-        }
-
-        @Test("View model initializes and manages trend data")
-        func viewModelManagesTrendData() async throws {
-            // GIVEN: A view model with a service
-            // WHEN: We initialize trend data
+        @Test("initializeTrendData loads the full fixture trend set")
+        func initializeTrendDataLoadsFixture() async {
             await viewModel.initializeTrendData()
 
-            // THEN: It should complete without errors
-            // Note: Trend data management is now handled by TrendDataUseCase
-            #expect(true, "Trend data initialization should complete successfully")
+            // MockExchangeRateService.loadTrendData() returns the MockExchangeRates.trendData fixture.
+            #expect(viewModel.trendData.count == MockExchangeRates.trendData.count)
         }
-    }
-}
 
-// MARK: - Test Helper Classes
+        @Test("getTrendData returns the raw USD-based trend unchanged when base is USD")
+        func getTrendDataUSDBasePassthrough() async {
+            await viewModel.initializeTrendData()
+            // Default base currency is USD, so trends come straight from the fixture.
 
-/// A mock service that tracks calls to verify trend recalculation behavior
-class TrackingMockExchangeRateService: ExchangeRateService {
-    var calculateAndSaveTrendDataCallCount = 0
-    var doesDateRangeAffectTrendsCallCount = 0
-    private var lastCheckedDateRanges: [DateRange] = []
-    private let baseMockService = MockExchangeRateService()
+            let gbp = viewModel.getTrendData(for: "GBP")
+            #expect(gbp?.weeklyChange == -0.5)
+            #expect(gbp?.miniChartData == [0.76, 0.755, 0.753, 0.751, 0.749, 0.748, 0.75])
 
-    // MARK: - Tracking Methods
+            let eur = viewModel.getTrendData(for: "EUR")
+            #expect(eur?.weeklyChange == 0.1)
+        }
 
-    func calculateAndSaveTrendData() async throws {
-        calculateAndSaveTrendDataCallCount += 1
-        try await baseMockService.calculateAndSaveTrendData()
-    }
-
-    func doesDateRangeAffectTrends(startDate: Date, endDate: Date) async throws -> Bool {
-        doesDateRangeAffectTrendsCallCount += 1
-        lastCheckedDateRanges.append(DateRange(start: startDate, end: endDate))
-
-        // Simulate real logic: only recent data (last 7 days) affects trends
-        let calendar = Calendar.current
-        let now = Date()
-        let trendWindowStart = calendar.date(byAdding: .day, value: -7, to: now) ?? now
-        return startDate <= now && endDate >= trendWindowStart
-    }
-
-    func getLastCheckedDateRanges() -> [DateRange] {
-        lastCheckedDateRanges
-    }
-
-    // MARK: - ExchangeRateService Protocol Implementation (Delegate to base mock)
-
-    func shouldFetchNewRates() async -> Bool {
-        await baseMockService.shouldFetchNewRates()
-    }
-
-    func fetchExchangeRates() async throws -> ExchangeRatesResponse {
-        try await baseMockService.fetchExchangeRates()
-    }
-
-    func fetchAndSaveHistoricalRates(from startDate: Date, to endDate: Date) async throws {
-        try await baseMockService.fetchAndSaveHistoricalRates(from: startDate, to: endDate)
-    }
-
-    func saveExchangeRates(_ rates: [String: Double]) async throws {
-        try await baseMockService.saveExchangeRates(rates)
-    }
-
-    func saveHistoricalExchangeRates(_ rates: [String: [String: Double]]) async throws {
-        try await baseMockService.saveHistoricalExchangeRates(rates)
-    }
-
-    func loadExchangeRates() async throws -> [ExchangeRateDataValue] {
-        try await baseMockService.loadExchangeRates()
-    }
-
-    func loadHistoricalRatesForCurrency(currency: String, startDate: String, endDate: String) async throws -> [HistoricalRateDataValue] {
-        try await baseMockService.loadHistoricalRatesForCurrency(currency: currency, startDate: startDate, endDate: endDate)
-    }
-
-    func updateLastFetchDate(_ date: Date) {
-        baseMockService.updateLastFetchDate(date)
-    }
-
-    func getLastFetchDate() -> Date? {
-        baseMockService.getLastFetchDate()
-    }
-
-    func getEarliestStoredDate() async throws -> Date? {
-        try await baseMockService.getEarliestStoredDate()
-    }
-
-    func getLatestStoredDate() async throws -> Date? {
-        try await baseMockService.getLatestStoredDate()
-    }
-
-    func loadTrendData() async throws -> [TrendDataValue] {
-        try await baseMockService.loadTrendData()
-    }
-
-    func hasSufficientHistoricalDataForTrends() async throws -> Bool {
-        try await baseMockService.hasSufficientHistoricalDataForTrends()
-    }
-
-    func clearAllData() async throws {
-        try await baseMockService.clearAllData()
+        @Test("Loading the current configuration populates displayed chart data")
+        func loadPopulatesChartData() async {
+            #expect(viewModel.displayedChartDataPoints.isEmpty)
+            await viewModel.loadCurrentConfigurationAndWait()
+            #expect(!viewModel.displayedChartDataPoints.isEmpty)
+        }
     }
 }
 
 @Suite("Error Handling Tests")
 struct ErrorHandlingTests {
-    @Test("HistoricalRateDataValue handles invalid date strings")
-    func historicalRateDataValueHandlesInvalidDates() async throws {
-        let rates = [HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.21)]
-
-        // Should throw for invalid date string
-        #expect(throws: NSError.self) {
-            try HistoricalRateDataValue(dateString: "invalid-date", rates: rates)
-        }
-
-        // Should work for valid date string
-        let validValue = try HistoricalRateDataValue(dateString: "2025-03-15", rates: rates)
-        #expect(validValue.date == TimeZoneManager.parseAPIDate("2025-03-15")!)
+    /// Asserts the value's date is exactly midnight 2025-03-15 in the CET (Europe/Paris) calendar,
+    /// decomposed from the value itself rather than re-running the parser the init uses.
+    private func assertIsMarch15CET(_ date: Date) {
+        let components = TimeZoneManager.cetCalendar.dateComponents(
+            [.year, .month, .day, .hour, .minute], from: date
+        )
+        #expect(components.year == 2025)
+        #expect(components.month == 3)
+        #expect(components.day == 15)
+        #expect(components.hour == 0)
+        #expect(components.minute == 0)
     }
 
-    @Test("SwiftData model handles invalid date strings")
-    func swiftDataModelHandlesInvalidDates() async throws {
-        let rates = [HistoricalRateDataPoint(currencyCode: "EUR", rate: 1.21)]
+    @Test("HistoricalRateDataValue rejects invalid dates and parses valid ones")
+    func historicalRateDataValueHandlesInvalidDates() throws {
+        let rates = [HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.21)]
 
-        // Should throw for invalid date string
-        #expect(throws: NSError.self) {
-            try HistoricalRateData(dateString: "invalid-date", rates: rates)
+        let error = try #require(throws: AppError.self) {
+            try HistoricalRateDataValue(dateString: "invalid-date", rates: rates)
+        }
+        guard case .dataValidationError = error else {
+            Issue.record("Expected .dataValidationError, got \(error)")
+            return
         }
 
-        // Should work for valid date string
+        let validValue = try HistoricalRateDataValue(dateString: "2025-03-15", rates: rates)
+        assertIsMarch15CET(validValue.date)
+    }
+
+    @Test("SwiftData model rejects invalid dates and parses valid ones")
+    func swiftDataModelHandlesInvalidDates() throws {
+        let rates = [HistoricalRateDataPoint(currencyCode: "EUR", rate: 1.21)]
+
+        let error = try #require(throws: AppError.self) {
+            try HistoricalRateData(dateString: "invalid-date", rates: rates)
+        }
+        guard case .dataValidationError = error else {
+            Issue.record("Expected .dataValidationError, got \(error)")
+            return
+        }
+
         let validData = try HistoricalRateData(dateString: "2025-03-15", rates: rates)
-        #expect(validData.date == TimeZoneManager.parseAPIDate("2025-03-15")!)
+        assertIsMarch15CET(validData.date)
     }
 }
