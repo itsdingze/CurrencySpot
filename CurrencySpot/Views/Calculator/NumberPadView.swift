@@ -136,7 +136,7 @@ struct NumberPadView: View {
                 .font(.system(.title, design: .rounded, weight: .bold))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .foregroundColor(button.foregroundColor)
+        .foregroundStyle(button.foregroundColor)
         .background(button.backgroundColor)
         .clipShape(Capsule())
         .accessibilityLabel(button.accessibilityLabel)

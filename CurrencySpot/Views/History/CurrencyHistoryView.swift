@@ -59,7 +59,7 @@ struct CurrencyHistoryView: View {
         HStack {
             Text("Data provided by European Central Bank")
                 .font(.system(.caption, design: .rounded))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

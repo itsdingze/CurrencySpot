@@ -15,7 +15,7 @@ struct ToastView: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(.title3, design: .rounded))
-                .foregroundColor(.green)
+                .foregroundStyle(.green)
 
             Text(message)
                 .font(.system(.headline, design: .rounded))

@@ -204,7 +204,7 @@ private struct MockStatCard: View {
                 HStack(spacing: 4) {
                     Text(label)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
 
                     if let color {
                         Circle()
@@ -217,7 +217,7 @@ private struct MockStatCard: View {
                 Text(value)
                     .font(.system(.footnote, design: .rounded).monospacedDigit())
                     .fontWeight(.medium)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(6)

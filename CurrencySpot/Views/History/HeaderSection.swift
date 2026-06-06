@@ -91,7 +91,7 @@ struct HeaderSection: View {
             Text("\(priceChange.formatted(.number.precision(.fractionLength(0 ... 4)).sign(strategy: .never))) (\(abs(percentChange).toStringMax2Decimals)%)")
         }
         .font(.system(.subheadline, design: .rounded, weight: .medium))
-        .foregroundColor(historyViewModel.trendDirection.color)
+        .foregroundStyle(historyViewModel.trendDirection.color)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityChangeLabel(priceChange: priceChange, percentChange: percentChange))
         .accessibilityValue("\(historyViewModel.trendDirection.description) \(abs(percentChange).toStringMax2Decimals) percent")
@@ -120,7 +120,7 @@ struct TimeRangePicker: View {
                         .font(.system(.headline, design: .rounded, weight: selectedTimeRange == timeRange ? .semibold : .regular))
                         .padding(8)
                         .padding(.horizontal, 2)
-                        .foregroundColor(
+                        .foregroundStyle(
                             selectedTimeRange == timeRange ?
                                 Color.accentColor : Color.secondary
                         )

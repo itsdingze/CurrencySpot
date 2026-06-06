@@ -40,7 +40,7 @@ struct CurrencyPickerView: View {
                 // Custom search bar
                 HStack {
                     Image(systemName: "magnifyingglass")
-                        .foregroundColor(.textSecondary)
+                        .foregroundStyle(Color.textSecondary)
 
                     TextField("Search currency code or name", text: $searchText)
                         .disableAutocorrection(true)
@@ -53,7 +53,7 @@ struct CurrencyPickerView: View {
                             searchText = ""
                         }) {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.textSecondary)
+                                .foregroundStyle(Color.textSecondary)
                         }
                         .accessibilityLabel("Clear search")
                         .accessibilityHint("Clears the search text")
@@ -62,7 +62,7 @@ struct CurrencyPickerView: View {
                 }
                 .padding(10)
                 .background(Color.tertiaryBackground)
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal)
                 .padding(.top, 8)
 
@@ -83,8 +83,8 @@ struct CurrencyPickerView: View {
                                             .padding(.horizontal, 12)
                                     }
                                     .background(selectedCurrency == currency ? Color.accentColor : Color.clear)
-                                    .foregroundColor(selectedCurrency == currency ? .white : .textPrimary)
-                                    .cornerRadius(12)
+                                    .foregroundStyle(selectedCurrency == currency ? .white : .textPrimary)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                                     .accessibilityLabel("\(currency), \(CurrencyUtilities.shared.name(for: currency))")
                                     .accessibilityHint("Selects \(currency) as currency")
                                     .accessibilityInputLabels([currency, CurrencyUtilities.shared.name(for: currency)])
@@ -112,11 +112,11 @@ struct CurrencyPickerView: View {
 
                                 Text(CurrencyUtilities.shared.name(for: currency.currencyCode))
                                     .font(.system(.subheadline, design: .rounded))
-                                    .foregroundColor(.textSecondary)
+                                    .foregroundStyle(Color.textSecondary)
 
                                 if selectedCurrency == currency.currencyCode {
                                     Image(systemName: "checkmark")
-                                        .foregroundColor(.accentColor)
+                                        .foregroundStyle(Color.accentColor)
                                         .accessibilityHidden(true)
                                 }
                             }

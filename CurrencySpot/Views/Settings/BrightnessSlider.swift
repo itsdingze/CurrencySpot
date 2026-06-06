@@ -61,7 +61,7 @@ struct BrightnessSlider: View {
                                 .stroke(.white, lineWidth: 2)
                         }
                         .frame(width: knobSize.width, height: knobSize.height)
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .offset(x: knobOffset(in: geometry))
                         .gesture(dragGesture(in: geometry))
                     Spacer()

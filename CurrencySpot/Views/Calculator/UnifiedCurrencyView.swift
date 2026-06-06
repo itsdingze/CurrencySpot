@@ -112,7 +112,7 @@ struct UnifiedCurrencyView: View {
     private var titleView: some View {
         Text(type.title)
             .font(.system(.headline, design: .rounded, weight: .medium))
-            .foregroundColor(type.titleColor)
+            .foregroundStyle(type.titleColor)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityAddTraits(.isHeader)
     }
@@ -130,7 +130,7 @@ struct UnifiedCurrencyView: View {
     private var amountText: some View {
         Text(amount)
             .font(.system(.largeTitle, design: .rounded, weight: .bold).monospacedDigit())
-            .foregroundColor(type.amountColor)
+            .foregroundStyle(type.amountColor)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .contentTransition(.numericText())
@@ -173,7 +173,7 @@ struct UnifiedCurrencyView: View {
                     .bold()
             }
         }
-        .foregroundColor(type.buttonColor)
+        .foregroundStyle(type.buttonColor)
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 12)

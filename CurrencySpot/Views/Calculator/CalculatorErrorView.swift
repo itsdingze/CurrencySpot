@@ -16,18 +16,18 @@ struct CalculatorErrorView: View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(.largeTitle, design: .rounded))
-                .foregroundColor(.secondaryAccent)
+                .foregroundStyle(Color.secondaryAccent)
                 .accessibilityHidden(true)
 
             Text("Unable to Load Exchange Rates")
                 .font(.system(.title3, design: .rounded))
                 .fontWeight(.bold)
-                .foregroundColor(.textPrimary)
+                .foregroundStyle(Color.textPrimary)
                 .accessibilityAddTraits(.isHeader)
 
             Text(errorMessage ?? "An unexpected error occurred. Please try again.")
                 .multilineTextAlignment(.center)
-                .foregroundColor(.textSecondary)
+                .foregroundStyle(Color.textSecondary)
                 .padding(.horizontal)
 
             if appState.networkMonitor.isConnected {
@@ -38,8 +38,8 @@ struct CalculatorErrorView: View {
                 }
                 .padding(12)
                 .background(Color.accentColor)
-                .foregroundColor(.white)
-                .cornerRadius(12)
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .accessibilityLabel("Retry loading exchange rates")
                 .accessibilityHint("Attempts to fetch exchange rates from server again")
                 .accessibilityInputLabels(["Retry", "Try again", "Reload"])
@@ -49,8 +49,8 @@ struct CalculatorErrorView: View {
                 }
                 .padding(12)
                 .background(Color.accentColor)
-                .foregroundColor(.white)
-                .cornerRadius(12)
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .accessibilityLabel("Use sample data")
                 .accessibilityHint("Loads sample exchange rates for testing purposes")
                 .accessibilityInputLabels(["Mock data", "Sample data", "Demo mode"])
@@ -58,7 +58,7 @@ struct CalculatorErrorView: View {
                 Text("Note: Mock data is not accurate for real conversions")
                     .font(.system(.caption, design: .rounded))
                     .multilineTextAlignment(.center)
-                    .foregroundColor(.textSecondary)
+                    .foregroundStyle(Color.textSecondary)
                     .accessibilityLabel("Warning: Sample data is not accurate for real currency conversions")
             }
         }

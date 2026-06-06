@@ -106,7 +106,7 @@ struct CurrencyList: View {
     private var searchBar: some View {
         HStack {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.textSecondary)
+                .foregroundStyle(Color.textSecondary)
 
             TextField("Search currencies", text: $searchText)
                 .disableAutocorrection(true)
@@ -116,13 +116,13 @@ struct CurrencyList: View {
                     searchText = ""
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.textSecondary)
+                        .foregroundStyle(Color.textSecondary)
                 }
             }
         }
         .padding(10)
         .background(Color.tertiaryBackground)
-        .cornerRadius(12)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal)
         .padding(.top, 4)
     }
@@ -146,9 +146,8 @@ struct CurrencyList: View {
 
     private var leadingToolbarItems: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            if #available(iOS 26, *) {
-            }
-            else{
+            // iOS 26 renders the large title via the navigation bar; older versions need an explicit title.
+            if #unavailable(iOS 26) {
                 Text("History")
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
             }
@@ -210,7 +209,7 @@ struct CurrencyRow: View {
                 Text(currencyName)
                     .lineLimit(1)
                     .font(.system(.subheadline, design: .rounded))
-                    .foregroundColor(.textSecondary)
+                    .foregroundStyle(Color.textSecondary)
             }
 
             Spacer()

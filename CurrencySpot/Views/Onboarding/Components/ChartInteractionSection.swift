@@ -126,7 +126,7 @@ struct ChartInteractionSection: View {
 
             Image(systemName: "hand.point.up.left.fill")
                 .font(.system(size: 28))
-                .foregroundColor(.accentColor)
+                .foregroundStyle(Color.accentColor)
                 .position(position)
                 .opacity(fingerOpacity)
                 .scaleEffect(fingerScale)

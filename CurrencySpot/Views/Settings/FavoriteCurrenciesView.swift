@@ -24,7 +24,7 @@ struct FavoriteCurrenciesView: View {
 
                     Text(CurrencyUtilities.shared.name(for: currency))
                         .font(.system(.subheadline, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
             .onDelete { indexSet in
@@ -86,7 +86,7 @@ struct AddCurrencyView: View {
                 // Search bar
                 HStack {
                     Image(systemName: "magnifyingglass")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
 
                     TextField("Search currency code or name", text: $searchText)
                         .disableAutocorrection(true)
@@ -96,13 +96,13 @@ struct AddCurrencyView: View {
                             searchText = ""
                         }) {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
                 .padding(10)
                 .background(Color.tertiaryBackground)
-                .cornerRadius(12)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal)
 
                 List {
@@ -120,7 +120,7 @@ struct AddCurrencyView: View {
 
                                 Text(CurrencyUtilities.shared.name(for: currency.currencyCode))
                                     .font(.system(.subheadline, design: .rounded))
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                             }
                             .padding(.vertical, 4)
                         }

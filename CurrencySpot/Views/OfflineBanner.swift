@@ -22,12 +22,12 @@ struct OfflineBanner: View {
         HStack {
             // Icon changes based on retry state
             Image(systemName: iconName)
-                .foregroundColor(iconColor)
+                .foregroundStyle(iconColor)
                 .accessibilityHidden(true)
 
             Text(displayText)
                 .font(.system(.subheadline, design: .rounded))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
 
             Spacer()
 
@@ -43,7 +43,7 @@ struct OfflineBanner: View {
                     }
                 }) {
                     Image(systemName: "arrow.clockwise")
-                        .foregroundColor(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .accessibilityLabel("Refresh exchange rates")
                 .accessibilityHint("Attempts to fetch latest exchange rates from server")

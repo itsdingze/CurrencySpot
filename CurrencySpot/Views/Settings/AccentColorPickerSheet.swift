@@ -138,7 +138,7 @@ struct ColorCustomizationSheet: View {
                     if isSelected {
                         Image(systemName: "checkmark")
                             .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundStyle(.white)
                     }
                 }
                 .scaleEffect(isSelected ? 1.1 : 1.0)

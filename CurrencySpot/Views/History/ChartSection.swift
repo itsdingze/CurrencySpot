@@ -81,7 +81,7 @@ struct ChartSection: View {
         .padding()
         .frame(maxWidth: .infinity, maxHeight: 260)
         .background(Color(.systemGray6))
-        .cornerRadius(12)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .accessibilityLabel("Loading chart data")
         .accessibilityHint("Please wait while historical exchange rate data is being loaded")
         .accessibilityAddTraits(.updatesFrequently)
@@ -89,10 +89,10 @@ struct ChartSection: View {
 
     private var noDataView: some View {
         Text("No data available")
-            .foregroundColor(.secondary)
+            .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: 260)
             .background(Color(.systemGray6))
-            .cornerRadius(12)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
             .accessibilityLabel("Chart data not available")
             .accessibilityHint("Historical exchange rate data is not available for the selected currency pair")
     }

@@ -26,7 +26,7 @@ struct NavigationHeader: View {
         Button(action: onBack) {
             Image(systemName: "chevron.left")
                 .font(.system(.subheadline, weight: .medium))
-                .foregroundColor(.primary)
+                .foregroundStyle(.primary)
         }
         .opacity(currentPage > 0 ? 1 : 0)
         .disabled(currentPage == 0)
@@ -51,7 +51,7 @@ struct NavigationHeader: View {
     private var skipButton: some View {
         Button("Skip", action: onSkip)
             .font(.system(.subheadline, design: .rounded, weight: .medium))
-            .foregroundColor(.primary)
+            .foregroundStyle(.primary)
             .accessibilityLabel("Skip onboarding")
             .accessibilityHint("Skips chart feature tutorial and returns to main app")
     }
