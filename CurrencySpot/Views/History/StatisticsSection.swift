@@ -73,7 +73,7 @@ struct StatisticsSection: View {
             HStack(spacing: 4) {
                 Text(label)
                     .font(.system(.subheadline, design: .rounded))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .accessibilityAddTraits(.isHeader)
 
                 if let color = indicatorColor {
@@ -119,12 +119,12 @@ struct StatisticsSection: View {
                 HStack(spacing: 4) {
                     Text(label)
                         .font(.system(.subheadline, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .accessibilityAddTraits(.isHeader)
 
                     Image(systemName: "info.circle")
                         .font(.system(.caption, weight: .regular))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                 }
             }
@@ -136,7 +136,7 @@ struct StatisticsSection: View {
             Text(value)
                 .font(.system(.subheadline, design: .rounded))
                 .fontWeight(.medium)
-                .foregroundColor(getVolatilityColor(from: value))
+                .foregroundStyle(viewModel.volatilityLevel?.color ?? .primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(6)
@@ -149,21 +149,6 @@ struct StatisticsSection: View {
         }
     }
 
-    private func getVolatilityColor(from formattedValue: String) -> Color {
-        if formattedValue.contains("Very Low") {
-            .green
-        } else if formattedValue.contains("Low") {
-            .green3
-        } else if formattedValue.contains("Moderate") {
-            .yellow
-        } else if formattedValue.contains("High"), !formattedValue.contains("Very") {
-            .orange
-        } else if formattedValue.contains("Very High") {
-            .red
-        } else {
-            .primary
-        }
-    }
 }
 
 // MARK: - Volatility Info View
@@ -186,7 +171,7 @@ struct VolatilityInfoView: View {
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 22))
-                        .foregroundColor(.secondary.opacity(0.6))
+                        .foregroundStyle(.secondary.opacity(0.6))
                         .symbolRenderingMode(.hierarchical)
                 }
                 .accessibilityLabel("Close volatility information")
@@ -198,20 +183,18 @@ struct VolatilityInfoView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Volatility measures how much the exchange rate fluctuates over time.")
                     .font(.subheadline)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    volatilityLevel(label: "Very Low", color: .green, description: "< 5% variation")
-                    volatilityLevel(label: "Low", color: .green3, description: "5-10% variation")
-                    volatilityLevel(label: "Moderate", color: .yellow, description: "10-15% variation")
-                    volatilityLevel(label: "High", color: .orange, description: "15-25% variation")
-                    volatilityLevel(label: "Very High", color: .red, description: "> 25% variation")
+                    ForEach(VolatilityLevel.allCases, id: \.self) { level in
+                        volatilityLevelRow(level)
+                    }
                 }
 
                 Text("Lower volatility means more stable exchange rates, while higher volatility indicates larger price swings.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -222,24 +205,24 @@ struct VolatilityInfoView: View {
     }
 
     @ViewBuilder
-    private func volatilityLevel(label: String, color: Color, description: String) -> some View {
+    private func volatilityLevelRow(_ level: VolatilityLevel) -> some View {
         HStack(spacing: 8) {
             Circle()
-                .fill(color)
+                .fill(level.color)
                 .frame(width: 8, height: 8)
                 .accessibilityHidden(true)
 
-            Text(label)
+            Text(level.displayName)
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(.primary)
+                .foregroundStyle(.primary)
                 .frame(width: 70, alignment: .leading)
 
-            Text(description)
+            Text(level.rangeDescription)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label) volatility: \(description)")
+        .accessibilityLabel("\(level.displayName) volatility: \(level.rangeDescription)")
     }
 }

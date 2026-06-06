@@ -8,125 +8,6 @@
 import Foundation
 import SwiftUI
 
-// MARK: - Supporting Types
-
-/// Represents different time ranges for historical data
-enum TimeRange: String, CaseIterable, Identifiable {
-    case oneWeek = "1W"
-    case oneMonth = "1M"
-    case threeMonths = "3M"
-    case sixMonths = "6M"
-    case oneYear = "1Y"
-    case fiveYears = "5Y"
-
-    var id: String { rawValue }
-
-    /// Human-readable display name for the time range
-    var displayName: String {
-        switch self {
-        case .oneWeek: "1 Week"
-        case .oneMonth: "1 Month"
-        case .threeMonths: "3 Months"
-        case .sixMonths: "6 Months"
-        case .oneYear: "1 Year"
-        case .fiveYears: "5 Years"
-        }
-    }
-
-    /// Accessibility label for the time range
-    var accessibilityLabel: String {
-        displayName
-    }
-
-    /// Accessibility input labels for voice control
-    var accessibilityInputLabels: [String] {
-        switch self {
-        case .oneWeek:
-            ["1 week", "one week", "7 days"]
-        case .oneMonth:
-            ["1 month", "one month", "30 days"]
-        case .threeMonths:
-            ["3 months", "three months", "quarter"]
-        case .sixMonths:
-            ["6 months", "six months", "half year"]
-        case .oneYear:
-            ["1 year", "one year", "12 months"]
-        case .fiveYears:
-            ["5 years", "five years"]
-        }
-    }
-
-    /// Calculates the start date for this time range from the given end date
-    func startDate(from endDate: Date) -> Date {
-        let calendar = TimeZoneManager.cetCalendar
-
-        switch self {
-        case .oneWeek:
-            return calendar.date(byAdding: .day, value: -7, to: endDate) ?? endDate
-        case .oneMonth:
-            return calendar.date(byAdding: .month, value: -1, to: endDate) ?? endDate
-        case .threeMonths:
-            return calendar.date(byAdding: .month, value: -3, to: endDate) ?? endDate
-        case .sixMonths:
-            return calendar.date(byAdding: .month, value: -6, to: endDate) ?? endDate
-        case .oneYear:
-            return calendar.date(byAdding: .year, value: -1, to: endDate) ?? endDate
-        case .fiveYears:
-            return calendar.date(byAdding: .year, value: -5, to: endDate) ?? endDate
-        }
-    }
-
-    /// Date format style for chart X-axis labels
-    var chartAxisDateFormat: Date.FormatStyle {
-        switch self {
-        case .oneWeek, .oneMonth:
-            .dateTime.month(.abbreviated).day()
-        case .threeMonths, .sixMonths, .oneYear:
-            .dateTime.month(.abbreviated)
-        case .fiveYears:
-            .dateTime.year()
-        }
-    }
-}
-
-/// Optimized cache structure with precomputed metadata to avoid O(n log n) operations
-///
-/// Performance improvement: Currency switching from O(n log n) to O(1)
-/// - Before: Every currency change required sorting all cached data points
-/// - After: Use precomputed earliest/latest dates for instant gap detection
-/// - Example: 365 days of data = 365 operations → 1 operation (365x faster)
-class CurrencyCache: NSObject {
-    let data: [HistoricalRateDataValue]
-
-    // Computed properties - eliminate redundant storage
-    var earliestDate: Date? { data.first?.date }
-    var latestDate: Date? { data.last?.date }
-    var isEmpty: Bool { data.isEmpty }
-
-    init(data: [HistoricalRateDataValue]) {
-        self.data = data
-        super.init()
-        // Trust data is sorted from mergeHistoricalData - no validation needed
-    }
-}
-
-/// Represents a single data point for chart visualization
-struct ChartDataPoint: Identifiable, Equatable {
-    let id = UUID()
-    let date: Date
-    let rate: Double
-
-    static func == (lhs: ChartDataPoint, rhs: ChartDataPoint) -> Bool {
-        lhs.date == rhs.date && lhs.rate == rhs.rate
-    }
-}
-
-/// Date range helper structure
-struct DateRange {
-    let start: Date
-    let end: Date
-}
-
 // MARK: - HistoryViewModel
 
 @Observable
@@ -202,8 +83,15 @@ final class HistoryViewModel {
     private let chartDataPreparationUseCase: ChartDataPreparationUseCase
     private let trendDataUseCase: TrendDataUseCase
 
+    /// App-wide state (network reachability, error handling)
+    private let appState = AppState.shared
+
     /// Current async task for data fetching (for cancellation)
     private var fetchTask: Task<Void, Never>?
+
+    /// Suppresses the per-property didSet reloads while a navigation reconfiguration sets several
+    /// properties at once, so one configuration triggers a single load instead of one per property.
+    private var isApplyingConfiguration = false
 
     // MARK: - Initialization
 
@@ -245,19 +133,18 @@ final class HistoryViewModel {
         loadDataForCurrentConfiguration()
     }
 
-    /// Clears all data when cache is cleared from settings
-    func clearAllData() {
-        Task {
-            await dataOrchestrationUseCase.clearAllCache()
-        }
+    /// Clears all data when cache is cleared from settings.
+    /// Awaits the cache clear so callers know it has completed before any reload.
+    func clearAllData() async {
         displayedChartDataPoints = []
         trendData = []
         errorMessage = nil
+        await dataOrchestrationUseCase.clearAllCache()
     }
 
-    /// Clears cached data and initiates fresh fetch
-    func resetStoredData() {
-        clearAllData()
+    /// Clears cached data, then initiates a fresh load once the cache is actually cleared.
+    func resetStoredData() async {
+        await clearAllData()
         loadDataForCurrentConfiguration()
     }
 
@@ -281,6 +168,14 @@ final class HistoryViewModel {
         }
 
         startNewLoadTask()
+    }
+
+    /// Triggers a load for the current configuration and awaits its completion.
+    /// Awaitable counterpart to `loadDataForCurrentConfiguration()` for callers that must
+    /// sequence work after a load finishes (and for deterministic tests).
+    func loadCurrentConfigurationAndWait() async {
+        loadDataForCurrentConfiguration()
+        await fetchTask?.value
     }
 
     private func startNewLoadTask() {
@@ -311,7 +206,7 @@ final class HistoryViewModel {
                     self.displayedChartDataPoints = []
 
                     // Set a user-friendly message
-                    if !AppState.shared.networkMonitor.isConnected {
+                    if !appState.networkMonitor.isConnected {
                         self.errorMessage = "Offline - Historical data unavailable"
                     } else {
                         self.errorMessage = "No historical data available for this currency"
@@ -356,12 +251,12 @@ final class HistoryViewModel {
                     // Use centralized error handling for consistency
                     if let appError = AppError.from(error) {
                         self.errorMessage = appError.message
-                        AppState.shared.errorHandler.handle(appError)
+                        appState.errorHandler.handle(appError)
                     } else {
                         // Handle unexpected errors
                         let genericError = AppError.networkError("Failed to load historical data")
                         self.errorMessage = genericError.message
-                        AppState.shared.errorHandler.handle(genericError)
+                        appState.errorHandler.handle(genericError)
                     }
                 }
 
@@ -575,25 +470,14 @@ final class HistoryViewModel {
         averageRate.toStringMax4Decimals
     }
 
+    /// Volatility classified into a qualitative level (nil when volatility is unavailable).
+    var volatilityLevel: VolatilityLevel? {
+        volatility.map(VolatilityLevel.init(annualizedPercent:))
+    }
+
     /// Formatted string for volatility with interpretation
     var formattedVolatility: String {
-        guard let volatility else { return "N/A" }
-
-        let volatilityLevel = switch volatility {
-        case ..<5:
-            "Very Low"
-        case 5 ..< 10:
-            "Low"
-        case 10 ..< 15:
-            "Moderate"
-        case 15 ..< 25:
-            "High"
-        default:
-            "Very High"
-        }
-
-//        return "\(volatility.toStringMax2Decimals)% (\(volatilityLevel))"
-        return "\(volatilityLevel)"
+        volatilityLevel?.displayName ?? "N/A"
     }
 
     // MARK: - Computed Properties (Chart Configuration)

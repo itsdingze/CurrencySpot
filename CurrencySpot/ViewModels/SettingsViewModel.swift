@@ -203,7 +203,7 @@ final class SettingsViewModel {
 
             // Clear ViewModels data to prevent stale references
             calculatorViewModel?.clearAllData()
-            historyViewModel?.clearAllData()
+            await historyViewModel?.clearAllData()
 
             AppLogger.info("Cache cleared successfully", category: .viewModel)
         } catch {
