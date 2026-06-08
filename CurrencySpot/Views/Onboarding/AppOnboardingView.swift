@@ -219,7 +219,7 @@ struct CurrencySpotOnboarding: View {
                 subTitle: "Continue converting with cached rates when offline."
             )
         } footer: {
-            Text("Exchange rates are provided by the [European Central Bank.](https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html)")
+            Text("Exchange rates are aggregated from central banks worldwide.")
                 .font(.caption)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)

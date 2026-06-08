@@ -57,7 +57,7 @@ struct CurrencyHistoryView: View {
 
     private var footerSection: some View {
         HStack {
-            Text("Data provided by European Central Bank")
+            Text("Exchange rates aggregated from central banks worldwide")
                 .font(.system(.caption, design: .rounded))
                 .foregroundStyle(.secondary)
         }
