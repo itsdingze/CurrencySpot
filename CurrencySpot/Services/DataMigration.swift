@@ -33,6 +33,9 @@ enum DataMigration {
 
         // Force the next launch to refetch from v2 instead of trusting the cleared cache.
         defaults.removeObject(forKey: UserDefaultsKeys.lastFetchDate)
+        // Drop the historical coverage window too, or it would claim coverage over the now-empty
+        // store and leave charts permanently blank.
+        UserDefaultsHistoricalSyncStore(defaults: defaults).reset()
         defaults.set(true, forKey: migratedToV2Key)
     }
 }

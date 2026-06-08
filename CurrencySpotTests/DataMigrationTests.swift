@@ -53,6 +53,25 @@ struct DataMigrationTests {
         #expect(defaults.object(forKey: UserDefaultsKeys.lastFetchDate) == nil)
     }
 
+    @Test("first run resets the historical sync coverage window")
+    func resetsHistoricalSyncCoverage() throws {
+        let container = try Self.makeContainer()
+        let defaults = Self.makeDefaults()
+        let store = UserDefaultsHistoricalSyncStore(defaults: defaults)
+        store.record(
+            from: Date(timeIntervalSince1970: 1),
+            through: Date(timeIntervalSince1970: 2),
+            at: Date(timeIntervalSince1970: 3)
+        )
+
+        DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
+
+        // Otherwise the watermark would claim coverage over the just-purged store → blank charts.
+        #expect(store.from == nil)
+        #expect(store.through == nil)
+        #expect(store.checkedAt == nil)
+    }
+
     @Test("does nothing once migration has already run")
     func skipsWhenAlreadyMigrated() throws {
         let container = try Self.makeContainer()
