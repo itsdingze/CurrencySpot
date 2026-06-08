@@ -12,11 +12,6 @@ import Foundation
 /// Use case responsible for historical data analysis business logic
 /// Extracted from HistoryViewModel to separate concerns
 final class HistoricalDataAnalysisUseCase {
-    // MARK: - Constants
-
-    /// Minimum number of days required to consider a gap as significant
-    private static let minimumGapDays = 4
-
     // MARK: - Dependencies
 
     private let syncStore: HistoricalSyncStore
@@ -65,32 +60,23 @@ final class HistoricalDataAnalysisUseCase {
 
         var missingRanges: [DateRange] = []
 
+        // Emit every gap versus the in-memory cache. Whether a gap is actually fetched from the API
+        // is decided later by `shouldFetchGap` (coverage-based), not by ECB calendar guesses — v2 is
+        // multi-source and may publish on any day, so suppressing "weekend" gaps would lose real data.
         if requiredRange.start < cachedEarliest {
-            let daysBetween = calendar.dateComponents([.day], from: requiredRange.start, to: cachedEarliest).day ?? 0
-            if daysBetween > Self.minimumGapDays {
-                // The gap is more than minimumGapDays, so we assume it's a real gap
-                guard let endDate = calendar.date(byAdding: .day, value: -1, to: cachedEarliest) else {
-                    throw AppError.dateCalculationError("Could not calculate end date for gap detection. Failed to subtract 1 day from \(cachedEarliest)")
-                }
-                missingRanges.append(DateRange(start: requiredRange.start, end: endDate))
-                AppLogger.warning("Gap BEFORE cache: need \(TimeZoneManager.formatForAPI(requiredRange.start)) to \(TimeZoneManager.formatForAPI(endDate))", category: .useCase)
-            } else {
-                // The gap is less than minimumGapDays, so we ignore it, assuming it's a weekend.
-                AppLogger.debug("Phantom gap detected (\(daysBetween) days). Ignoring.", category: .useCase)
+            guard let endDate = calendar.date(byAdding: .day, value: -1, to: cachedEarliest) else {
+                throw AppError.dateCalculationError("Could not calculate end date for gap detection. Failed to subtract 1 day from \(cachedEarliest)")
             }
+            missingRanges.append(DateRange(start: requiredRange.start, end: endDate))
+            AppLogger.warning("Gap BEFORE cache: need \(TimeZoneManager.formatForAPI(requiredRange.start)) to \(TimeZoneManager.formatForAPI(endDate))", category: .useCase)
         }
 
         if requiredRange.end > cachedLatest {
-            // Use business day logic to determine if this is a real gap
-            if await hasActualDataGap(from: cachedLatest, to: requiredRange.end) {
-                guard let startDate = calendar.date(byAdding: .day, value: 1, to: cachedLatest) else {
-                    throw AppError.dateCalculationError("Could not calculate start date for gap detection. Failed to add 1 day to \(cachedLatest)")
-                }
-                missingRanges.append(DateRange(start: startDate, end: requiredRange.end))
-                AppLogger.warning("Gap AFTER cache: need \(TimeZoneManager.formatForAPI(startDate)) to \(TimeZoneManager.formatForAPI(requiredRange.end))", category: .useCase)
-            } else {
-                AppLogger.debug("No actual business days missing after cache. Ignoring gap.", category: .useCase)
+            guard let startDate = calendar.date(byAdding: .day, value: 1, to: cachedLatest) else {
+                throw AppError.dateCalculationError("Could not calculate start date for gap detection. Failed to add 1 day to \(cachedLatest)")
             }
+            missingRanges.append(DateRange(start: startDate, end: requiredRange.end))
+            AppLogger.warning("Gap AFTER cache: need \(TimeZoneManager.formatForAPI(startDate)) to \(TimeZoneManager.formatForAPI(requiredRange.end))", category: .useCase)
         }
         return missingRanges
     }
@@ -126,53 +112,6 @@ final class HistoricalDataAnalysisUseCase {
     /// fetch — including ones that return no rows — so empty days count as checked.
     func recordSync(from: Date, through: Date, now: Date) {
         syncStore.record(from: from, through: through, at: now)
-    }
-
-    /// Determines if there's an actual data gap by checking business days
-    func hasActualDataGap(from startDate: Date, to endDate: Date) async -> Bool {
-        let calendar = TimeZoneManager.cetCalendar
-        let now = Date()
-        guard var current = calendar.date(byAdding: .day, value: 1, to: startDate) else {
-            return false // Handle date calculation failure gracefully
-        }
-
-        // Update time constants (same as NetworkService)
-        let updateHourCET = 17
-        let updateMinuteCET = 0
-
-        while current <= endDate {
-            // Skip weekends entirely
-            if calendar.isDateInWeekend(current) {
-                guard let nextDate = calendar.date(byAdding: .day, value: 1, to: current) else {
-                    return false // Handle date calculation failure gracefully
-                }
-                current = nextDate
-                continue
-            }
-
-            // Check if this is today
-            if calendar.isDate(current, inSameDayAs: now) {
-                // For today, only count as business day if past update time
-                var todayComponents = calendar.dateComponents([.year, .month, .day], from: now)
-                todayComponents.hour = updateHourCET
-                todayComponents.minute = updateMinuteCET
-
-                if let todayUpdateTime = calendar.date(from: todayComponents), now >= todayUpdateTime {
-                    return true // Found a business day gap
-                }
-            } else {
-                // Not today - this is a business day gap
-                return true
-            }
-
-            // Move to next day
-            guard let nextDate = calendar.date(byAdding: .day, value: 1, to: current) else {
-                return false
-            }
-            current = nextDate
-        }
-
-        return false // No business days found in the range
     }
 
     // MARK: - Data Merging

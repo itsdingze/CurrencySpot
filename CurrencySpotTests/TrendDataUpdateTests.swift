@@ -37,7 +37,7 @@ struct TrendDataUpdateTests {
         let cacheService = InMemoryCacheService()
         let dataOrchestrationUseCase = DataOrchestrationUseCase(
             service: mockService,
-            historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase(),
+            historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore()),
             cacheService: cacheService
         )
 
@@ -61,7 +61,7 @@ struct TrendDataUpdateTests {
         let cacheService = InMemoryCacheService()
         let dataOrchestrationUseCase = DataOrchestrationUseCase(
             service: mockService,
-            historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase(),
+            historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore()),
             cacheService: cacheService
         )
 
@@ -183,7 +183,7 @@ struct TrendDataUpdateTests {
     private static func makeFixtureBackedViewModel() -> HistoryViewModel {
         let service = MockExchangeRateService()
         let cacheService = InMemoryCacheService()
-        let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
         return HistoryViewModel(
             service: service,
             calculatorVM: CalculatorViewModel(service: service),

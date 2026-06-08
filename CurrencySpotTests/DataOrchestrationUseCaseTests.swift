@@ -279,7 +279,7 @@ struct DataOrchestrationUseCaseTests {
         // GIVEN: Mocks configured for cache hit scenario
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         let cachedData = Self.createTestHistoricalData(dates: [Self.startDate, Self.endDate])
         await mockCacheService.setCachedHistoricalData(cachedData, for: Self.testCurrency)
@@ -309,7 +309,7 @@ struct DataOrchestrationUseCaseTests {
         // GIVEN: Mocks configured for partial cache miss
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         let existingCachedData = Self.createTestHistoricalData(dates: [Self.startDate])
         await mockCacheService.setCachedHistoricalData(existingCachedData, for: Self.testCurrency)
@@ -354,7 +354,7 @@ struct DataOrchestrationUseCaseTests {
         // GIVEN: Mocks configured for no cache scenario
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         // No cached data exists
         // Real analysis use case will determine missing ranges
@@ -388,7 +388,7 @@ struct DataOrchestrationUseCaseTests {
         // GIVEN: Mocks configured to simulate SwiftData having required data
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         // Real analysis use case will determine missing ranges based on cached data
 
@@ -422,10 +422,10 @@ struct DataOrchestrationUseCaseTests {
     @Test("loadHistoricalData fetches a separate range for each genuine gap before and after the cache")
     func loadHistoricalData_multipleMissingRanges_shouldFetchEachGap() async throws {
         // GIVEN: a wide required range with a small cached island in the middle, so the real
-        // analysis produces TWO genuine gaps — one before the cache (>4 days) and one after it.
+        // analysis produces TWO genuine gaps — one before the cache and one after it.
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         func day(_ offset: Int) -> Date {
             Self.calendar.startOfDay(for: Self.calendar.date(byAdding: .day, value: offset, to: Self.baseDate)!)
@@ -468,7 +468,7 @@ struct DataOrchestrationUseCaseTests {
         // yet recoverable cached data exists to fall back on.
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         func day(_ offset: Int) -> Date {
             Self.calendar.startOfDay(for: Self.calendar.date(byAdding: .day, value: offset, to: Self.baseDate)!)
@@ -497,6 +497,54 @@ struct DataOrchestrationUseCaseTests {
         #expect(result.dataPoints == cachedData)
     }
 
+    // MARK: - Sync-coverage watermark Tests
+
+    @Test("a cold-cache fetch records the synced coverage window")
+    func loadHistoricalData_coldFetch_recordsSyncCoverage() async throws {
+        let mockService = MockExchangeRateServiceForOrchestration()
+        let mockCacheService = MockCacheServiceForOrchestration()
+        let syncStore = MockHistoricalSyncStore()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: syncStore)
+
+        mockService.getEarliestStoredDateResult = nil // force an API fetch
+        mockService.historicalDataToReturn = Self.createTestHistoricalData(dates: [Self.endDate])
+
+        let useCase = DataOrchestrationUseCase(
+            service: mockService,
+            historicalDataAnalysisUseCase: realAnalysisUseCase,
+            cacheService: mockCacheService
+        )
+
+        _ = try await useCase.loadHistoricalData(for: Self.testCurrency, dateRange: Self.testDateRange)
+
+        #expect(syncStore.recordCallCount == 1)
+        #expect(syncStore.through == Self.testDateRange.end)
+    }
+
+    @Test("a SwiftData-covered load does not advance the sync watermark")
+    func loadHistoricalData_swiftDataCovered_doesNotRecordSync() async throws {
+        let mockService = MockExchangeRateServiceForOrchestration()
+        let mockCacheService = MockCacheServiceForOrchestration()
+        let syncStore = MockHistoricalSyncStore()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: syncStore)
+
+        // SwiftData already covers the required range → no API fetch.
+        mockService.getEarliestStoredDateResult = Self.calendar.date(byAdding: .day, value: -10, to: Self.startDate)
+        mockService.getLatestStoredDateResult = Self.calendar.date(byAdding: .day, value: 10, to: Self.endDate)
+        mockService.historicalDataToReturn = Self.createTestHistoricalData(dates: [Self.startDate, Self.endDate])
+
+        let useCase = DataOrchestrationUseCase(
+            service: mockService,
+            historicalDataAnalysisUseCase: realAnalysisUseCase,
+            cacheService: mockCacheService
+        )
+
+        _ = try await useCase.loadHistoricalData(for: Self.testCurrency, dateRange: Self.testDateRange)
+
+        #expect(mockService.fetchAndSaveHistoricalRatesCallCount == 0)
+        #expect(syncStore.recordCallCount == 0)
+    }
+
     // MARK: - getCachedData Tests
 
     @Test("getCachedData should return filtered cached data within date range")
@@ -504,7 +552,7 @@ struct DataOrchestrationUseCaseTests {
         // GIVEN: Cached data with dates both inside and outside the range
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         let dateBeforeRange = Self.calendar.date(byAdding: .day, value: -10, to: Self.startDate) ?? Self.startDate
         let dateInRange = Self.startDate
@@ -533,7 +581,7 @@ struct DataOrchestrationUseCaseTests {
         // GIVEN: No cached data
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         let useCase = DataOrchestrationUseCase(
             service: mockService,
@@ -554,7 +602,7 @@ struct DataOrchestrationUseCaseTests {
         // GIVEN: Cached data exactly on range boundaries
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         let boundaryData = Self.createTestHistoricalData(dates: [Self.startDate, Self.endDate])
         await mockCacheService.setCachedHistoricalData(boundaryData, for: Self.testCurrency)
@@ -581,7 +629,7 @@ struct DataOrchestrationUseCaseTests {
         // GIVEN: Use case with mock cache service
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         let useCase = DataOrchestrationUseCase(
             service: mockService,
@@ -603,7 +651,7 @@ struct DataOrchestrationUseCaseTests {
         // GIVEN: Service returns nil for earliest stored date
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         // Real analysis use case will determine missing ranges
         mockService.getEarliestStoredDateResult = nil // No stored data
@@ -629,7 +677,7 @@ struct DataOrchestrationUseCaseTests {
         // GIVEN: Service returns stored date that covers the required range
         let mockService = MockExchangeRateServiceForOrchestration()
         let mockCacheService = MockCacheServiceForOrchestration()
-        let realAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
         // Real analysis use case will determine missing ranges
 

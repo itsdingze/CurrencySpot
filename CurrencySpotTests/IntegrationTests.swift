@@ -38,7 +38,7 @@ struct IntegrationTests {
             cacheService: cacheService
         )
         let calculatorVM = CalculatorViewModel(service: service)
-        let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
         let dataOrchestrationUseCase = DataOrchestrationUseCase(
             service: service,
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,

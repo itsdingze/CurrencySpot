@@ -202,44 +202,6 @@ struct HistoricalDataAnalysisUseCaseTests {
         #expect(result[0].end == expectedEnd, "Missing range should end one day before cache start")
     }
 
-    @Test("calculateMissingDateRanges with small gap before cache should ignore phantom gap")
-    func calculateMissingDateRanges_smallGapBefore_shouldIgnorePhantomGap() async throws {
-        // GIVEN: Required range starts 3 days before cached data (≤4 days gap - phantom gap)
-        let cacheStart = Self.testBaseDate
-        let calendar = TimeZoneManager.cetCalendar
-        let requiredStart = calendar.date(byAdding: .day, value: -3, to: cacheStart)!
-        let requiredRange = DateRange(start: requiredStart, end: Self.testWeekdayAfter)
-        let cache = createMockCache(startDate: cacheStart, endDate: Self.testWeekdayAfter)
-
-        // WHEN: Calculating missing ranges
-        let result = try await Self.useCase.calculateMissingDateRanges(
-            requiredRange: requiredRange,
-            cache: cache
-        )
-
-        // THEN: Should ignore the phantom gap (assuming it's weekend)
-        #expect(result.isEmpty, "Should ignore phantom gap of 3 days")
-    }
-
-    @Test("calculateMissingDateRanges with exactly minimum gap days should ignore gap")
-    func calculateMissingDateRanges_exactlyMinimumGapDays_shouldIgnoreGap() async throws {
-        // GIVEN: Required range starts exactly 4 days before cached data (boundary case)
-        let cacheStart = Self.testBaseDate
-        let calendar = TimeZoneManager.cetCalendar
-        let requiredStart = calendar.date(byAdding: .day, value: -4, to: cacheStart)!
-        let requiredRange = DateRange(start: requiredStart, end: Self.testWeekdayAfter)
-        let cache = createMockCache(startDate: cacheStart, endDate: Self.testWeekdayAfter)
-
-        // WHEN: Calculating missing ranges
-        let result = try await Self.useCase.calculateMissingDateRanges(
-            requiredRange: requiredRange,
-            cache: cache
-        )
-
-        // THEN: Should ignore gap of exactly 4 days (not > 4)
-        #expect(result.isEmpty, "Should ignore gap of exactly 4 days")
-    }
-
     @Test("calculateMissingDateRanges with gap of 5 days should detect gap")
     func calculateMissingDateRanges_fiveDayGap_shouldDetectGap() async throws {
         // GIVEN: Required range starts exactly 5 days before cached data (>4 days)
@@ -286,24 +248,6 @@ struct HistoricalDataAnalysisUseCaseTests {
         let expectedStart = calendar.date(byAdding: .day, value: 1, to: cacheEnd)!
         #expect(result[0].start == expectedStart, "Missing range should start one day after cache end")
         #expect(result[0].end == requiredEnd, "Missing range should end at required end")
-    }
-
-    @Test("calculateMissingDateRanges with weekend-only gap after cache should ignore gap")
-    func calculateMissingDateRanges_weekendOnlyGapAfterCache_shouldIgnoreGap() async throws {
-        // GIVEN: Cache ends on Friday, required range extends only to Sunday (weekend only)
-        let cacheFridayEnd = TimeZoneManager.createCETDate(year: 2025, month: 1, day: 10)! // Friday
-        let requiredSundayEnd = TimeZoneManager.createCETDate(year: 2025, month: 1, day: 12)! // Sunday
-        let requiredRange = DateRange(start: Self.testWeekdayBefore, end: requiredSundayEnd)
-        let cache = createMockCache(startDate: Self.testWeekdayBefore, endDate: cacheFridayEnd)
-
-        // WHEN: Calculating missing ranges
-        let result = try await Self.useCase.calculateMissingDateRanges(
-            requiredRange: requiredRange,
-            cache: cache
-        )
-
-        // THEN: Should ignore weekend-only gap (no business days)
-        #expect(result.isEmpty, "Should ignore weekend-only gap")
     }
 
     @Test("calculateMissingDateRanges with few business days after cache should detect gap")

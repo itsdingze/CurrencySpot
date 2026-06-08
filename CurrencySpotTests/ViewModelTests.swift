@@ -18,7 +18,7 @@ struct ViewModelTests {
     private static func makeHistoryViewModel() -> HistoryViewModel {
         let service = MockExchangeRateService()
         let cacheService = InMemoryCacheService()
-        let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase()
+        let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
         return HistoryViewModel(
             service: service,
             calculatorVM: CalculatorViewModel(service: service),

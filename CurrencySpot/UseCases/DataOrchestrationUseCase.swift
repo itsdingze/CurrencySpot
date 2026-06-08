@@ -74,6 +74,13 @@ final class DataOrchestrationUseCase {
                         )
                         // Track that this range was actually fetched from API
                         actuallyFetchedRanges.append(missingRange)
+                        // Record coverage even if the response was empty, so known-empty days
+                        // aren't refetched on every chart open.
+                        historicalDataAnalysisUseCase.recordSync(
+                            from: missingRange.start,
+                            through: missingRange.end,
+                            now: Date()
+                        )
                         AppLogger.info("Fetched new data from API for range: \(TimeZoneManager.formatForAPI(missingRange.start)) to \(TimeZoneManager.formatForAPI(missingRange.end))", category: .network)
                     } catch {
                         AppLogger.warning("Failed to fetch from API: \(error.localizedDescription)", category: .network)
@@ -132,10 +139,11 @@ final class DataOrchestrationUseCase {
         guard let earliestStoredDate = try await service.getEarliestStoredDate(),
               let latestStoredDate = try await service.getLatestStoredDate()
         else {
-            // No stored data - check if missing range has business days
-            return await historicalDataAnalysisUseCase.hasActualDataGap(
-                from: missingRange.start,
-                to: missingRange.end
+            // No stored data - fetch unless the coverage watermark says we already checked it
+            return historicalDataAnalysisUseCase.shouldFetchGap(
+                gapStart: missingRange.start,
+                gapEnd: missingRange.end,
+                now: Date()
             )
         }
 
@@ -166,10 +174,11 @@ final class DataOrchestrationUseCase {
             return false
         }
 
-        // Single hasActualDataGap call for the consolidated gap range
-        return await historicalDataAnalysisUseCase.hasActualDataGap(
-            from: gapStart,
-            to: gapEnd
+        // Fetch the consolidated gap unless the coverage watermark already covers it.
+        return historicalDataAnalysisUseCase.shouldFetchGap(
+            gapStart: gapStart,
+            gapEnd: gapEnd,
+            now: Date()
         )
     }
 }
