@@ -42,6 +42,11 @@ struct CurrencySpotApp: App {
         // Initialize DependencyContainer with optional test container
         do {
             dependencyContainer = try DependencyContainer(modelContainer: inMemoryContainer)
+
+            // One-time data migrations, before any view's .task can fetch. This runs
+            // synchronously on the main actor, so it completes before the ViewModels'
+            // queued fetch tasks get a chance to execute.
+            DataMigration.runIfNeeded(modelContainer: dependencyContainer.modelContainer)
         } catch {
             // Log the error for debugging
             AppLogger.fault("Failed to initialize DependencyContainer: \(error)", category: .app)
