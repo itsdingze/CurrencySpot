@@ -26,7 +26,7 @@ class FrankfurterAPI {
     /// Singleton instance for app-wide access
     static let shared = FrankfurterAPI()
 
-    private let baseURL = "https://api.frankfurter.dev/v1"
+    private let baseURL = "https://api.frankfurter.dev/v2"
 
     /// Custom URLSession with appropriate timeout configuration
     private let urlSession: URLSession = {
@@ -44,15 +44,16 @@ class FrankfurterAPI {
     /// - Returns: A ExchangeRatesResponse object that contains the latest exchange rates
     /// - Throws: AppError if network request fails, API returns an error status, or response cannot be decoded
     func fetchExchangeRates(baseCurrency: String = "USD") async throws -> ExchangeRatesResponse {
-        let urlString = "\(baseURL)/latest?base=\(baseCurrency)"
+        let urlString = "\(baseURL)/rates?base=\(baseCurrency)"
         let url = try NetworkUtility.createURL(from: urlString)
 
-        return try await NetworkUtility.performRequestWithRetry(
+        let entries = try await NetworkUtility.performRequestWithRetry(
             url: url,
             urlSession: urlSession,
-            responseType: ExchangeRatesResponse.self,
+            responseType: [FrankfurterV2Rate].self,
             endpoint: "exchange-rates-latest"
         )
+        return FrankfurterV2Mapper.latest(from: entries, base: baseCurrency)
     }
 
     /// Fetches historical exchange rates for a specified number of days in the past
@@ -70,19 +71,7 @@ class FrankfurterAPI {
             throw AppError.dateCalculationError("Failed to calculate start date by subtracting \(days) days from \(today)")
         }
 
-        // Format dates and build URL
-        let startDateString = TimeZoneManager.formatForAPI(startDate)
-        let endDateString = TimeZoneManager.formatForAPI(today)
-
-        let urlString = "\(baseURL)/\(startDateString)..\(endDateString)?base=\(baseCurrency)"
-        let url = try NetworkUtility.createURL(from: urlString)
-
-        return try await NetworkUtility.performRequestWithRetry(
-            url: url,
-            urlSession: urlSession,
-            responseType: HistoricalRatesResponse.self,
-            endpoint: "historical-rates-days"
-        )
+        return try await fetchHistoricalRatesForRange(baseCurrency: baseCurrency, startDate: startDate, endDate: today)
     }
 
     /// Fetches historical exchange rates for a specified date range
@@ -98,14 +87,15 @@ class FrankfurterAPI {
         let startDateString = TimeZoneManager.formatForAPI(startDate)
         let endDateString = TimeZoneManager.formatForAPI(endDate)
 
-        let urlString = "\(baseURL)/\(startDateString)..\(endDateString)?base=\(baseCurrency)"
+        let urlString = "\(baseURL)/rates?base=\(baseCurrency)&from=\(startDateString)&to=\(endDateString)"
         let url = try NetworkUtility.createURL(from: urlString)
 
-        return try await NetworkUtility.performRequestWithRetry(
+        let entries = try await NetworkUtility.performRequestWithRetry(
             url: url,
             urlSession: urlSession,
-            responseType: HistoricalRatesResponse.self,
+            responseType: [FrankfurterV2Rate].self,
             endpoint: "historical-rates-range"
         )
+        return FrankfurterV2Mapper.historical(from: entries, base: baseCurrency)
     }
 }
