@@ -32,8 +32,6 @@ final class FrankfurterNetworkService: NetworkService {
     // MARK: - Constants
 
     private let lastFetchDateKey = UserDefaultsKeys.lastFetchDate
-    private let updateHourCET = 17
-    private let updateMinuteCET = 0
 
     // MARK: - Initialization
 
@@ -43,67 +41,9 @@ final class FrankfurterNetworkService: NetworkService {
 
     /// Determines whether new exchange rates should be fetched from the API.
     ///
-    /// This method implements complex logic to respect the Frankfurter API's update schedule:
-    /// - Rates update daily at 17:00 CET
-    /// - No updates occur on weekends
-    /// - Friday's rates (fetched after 17:00 CET) remain valid throughout the weekend
-    ///
-    /// - Returns: `true` if new rates should be fetched, `false` otherwise
+    /// - Returns: `true` if cached rates are older than the freshness window, `false` otherwise.
     func shouldFetchNewRates() async -> Bool {
-        guard let lastFetchDate = getLastFetchDate() else {
-            return true // If we never fetched, we should fetch
-        }
-
-        // Get current date in CET
-        let now = Date()
-        let calendar = TimeZoneManager.cetCalendar
-
-        // Determine if same day
-        let isSameDay = calendar.isDate(lastFetchDate, inSameDayAs: now)
-
-        // Calculate today's update time
-        var todayComponents = calendar.dateComponents([.year, .month, .day], from: now)
-        todayComponents.hour = updateHourCET
-        todayComponents.minute = updateMinuteCET
-        guard let todayUpdateTime = calendar.date(from: todayComponents) else {
-            return true
-        }
-
-        // If same day, only fetch if crossing the update time threshold
-        if isSameDay {
-            return lastFetchDate < todayUpdateTime && now >= todayUpdateTime
-        }
-
-        // Different day - check weekend/Friday scenarios
-        let lastFetchWeekday = calendar.component(.weekday, from: lastFetchDate)
-        let currentWeekday = calendar.component(.weekday, from: now)
-
-        // Create last fetch day's update time
-        var lastFetchComponents = calendar.dateComponents([.year, .month, .day], from: lastFetchDate)
-        lastFetchComponents.hour = updateHourCET
-        lastFetchComponents.minute = updateMinuteCET
-        guard let lastFetchDayUpdateTime = calendar.date(from: lastFetchComponents) else {
-            return true
-        }
-
-        // Check if Friday after update to weekend scenario
-        let wasLastFetchFriday = lastFetchWeekday == 6 // Friday
-        let wasLastFetchAfterUpdate = lastFetchDate >= lastFetchDayUpdateTime
-        let isTodayWeekend = currentWeekday == 1 || currentWeekday == 7 // Sunday or Saturday
-
-        // Check if it's the same week
-        let lastFetchWeekOfYear = calendar.component(.weekOfYear, from: lastFetchDate)
-        let currentWeekOfYear = calendar.component(.weekOfYear, from: now)
-        let isSameWeek = lastFetchWeekOfYear == currentWeekOfYear &&
-            calendar.component(.year, from: lastFetchDate) == calendar.component(.year, from: now)
-
-        // Friday after update → weekend in the same week: don't fetch
-        if wasLastFetchFriday, wasLastFetchAfterUpdate, isTodayWeekend, isSameWeek {
-            return false
-        }
-
-        // All other cases: fetch
-        return true
+        RateRefreshPolicy.shouldRefetch(now: Date(), lastFetch: getLastFetchDate())
     }
 
     // MARK: - Network Data Fetching Methods
