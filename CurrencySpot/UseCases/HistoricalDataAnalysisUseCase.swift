@@ -17,6 +17,18 @@ final class HistoricalDataAnalysisUseCase {
     /// Minimum number of days required to consider a gap as significant
     private static let minimumGapDays = 4
 
+    // MARK: - Dependencies
+
+    private let syncStore: HistoricalSyncStore
+
+    /// - Parameter syncStore: Records the date window already fetched from the API. The default
+    ///   `UserDefaultsHistoricalSyncStore` keeps both `DependencyContainer` call sites compiling
+    ///   unchanged; tests inject an isolated store. Do not pass a custom store from
+    ///   `DependencyContainer` without revisiting that contract.
+    init(syncStore: HistoricalSyncStore = UserDefaultsHistoricalSyncStore()) {
+        self.syncStore = syncStore
+    }
+
     // MARK: - Date Range Calculations
 
     /// Calculates the date range based on selected time range
@@ -81,6 +93,39 @@ final class HistoricalDataAnalysisUseCase {
             }
         }
         return missingRanges
+    }
+
+    /// Decides whether a gap is worth an API fetch, based on what we've already fetched/checked.
+    ///
+    /// Replaces the old ECB calendar prediction. A gap is worth fetching when it reaches outside the
+    /// covered `[from, through]` window. Inside the window, dates were already checked, so an absent
+    /// rate means v2 has no data — don't refetch — EXCEPT the live edge (today), which is rechecked
+    /// once the freshness window (`RateRefreshPolicy`) lapses so late-arriving data is still caught.
+    func shouldFetchGap(gapStart: Date, gapEnd: Date, now: Date) -> Bool {
+        let calendar = TimeZoneManager.cetCalendar
+
+        guard let from = syncStore.from, let through = syncStore.through else {
+            return true // never synced anything
+        }
+
+        let from0 = calendar.startOfDay(for: from)
+        let through0 = calendar.startOfDay(for: through)
+        let start0 = calendar.startOfDay(for: gapStart)
+        let end0 = calendar.startOfDay(for: gapEnd)
+
+        if start0 < from0 { return true } // older than anything fetched → back-fill
+        if end0 > through0 { return true } // newer than anything fetched
+
+        // Fully inside the checked window. Only today's still-moving edge may be rechecked.
+        let today0 = calendar.startOfDay(for: now)
+        guard end0 == through0, through0 == today0 else { return false }
+        return RateRefreshPolicy.shouldRefetch(now: now, lastFetch: syncStore.checkedAt)
+    }
+
+    /// Records that `[from, through]` has now been fetched/checked. Called after every successful
+    /// fetch — including ones that return no rows — so empty days count as checked.
+    func recordSync(from: Date, through: Date, now: Date) {
+        syncStore.record(from: from, through: through, at: now)
     }
 
     /// Determines if there's an actual data gap by checking business days
