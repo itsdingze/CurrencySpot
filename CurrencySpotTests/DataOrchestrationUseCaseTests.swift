@@ -521,6 +521,28 @@ struct DataOrchestrationUseCaseTests {
         #expect(syncStore.through == Self.testDateRange.end)
     }
 
+    @Test("an empty fetch response still records coverage so empty days aren't refetched")
+    func loadHistoricalData_emptyFetch_stillRecordsSyncCoverage() async throws {
+        let mockService = MockExchangeRateServiceForOrchestration()
+        let mockCacheService = MockCacheServiceForOrchestration()
+        let syncStore = MockHistoricalSyncStore()
+        let realAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: syncStore)
+
+        mockService.getEarliestStoredDateResult = nil // force a fetch
+        mockService.historicalDataToReturn = [] // v2 had no data for the range
+
+        let useCase = DataOrchestrationUseCase(
+            service: mockService,
+            historicalDataAnalysisUseCase: realAnalysisUseCase,
+            cacheService: mockCacheService
+        )
+
+        _ = try await useCase.loadHistoricalData(for: Self.testCurrency, dateRange: Self.testDateRange)
+
+        #expect(syncStore.recordCallCount == 1)
+        #expect(syncStore.through == Self.testDateRange.end)
+    }
+
     @Test("a SwiftData-covered load does not advance the sync watermark")
     func loadHistoricalData_swiftDataCovered_doesNotRecordSync() async throws {
         let mockService = MockExchangeRateServiceForOrchestration()

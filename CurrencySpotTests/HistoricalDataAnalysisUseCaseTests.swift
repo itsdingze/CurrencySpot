@@ -14,7 +14,7 @@ import Testing
 struct HistoricalDataAnalysisUseCaseTests {
     // MARK: - Test Data Constants
 
-    private static let useCase = HistoricalDataAnalysisUseCase()
+    private static let useCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
     // Helper dates for testing - using CET calendar for consistency
     private static let testBaseDate = TimeZoneManager.createCETDate(year: 2025, month: 1, day: 15)! // Wednesday

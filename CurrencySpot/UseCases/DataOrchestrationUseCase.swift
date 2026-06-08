@@ -170,7 +170,11 @@ final class DataOrchestrationUseCase {
             gapStart = storedEnd
             gapEnd = requiredEnd
         } else {
-            // Required range is within stored range, no fetch needed
+            // Required range is within stored range — every day we need is already persisted.
+            // This includes today once its data has landed: we deliberately don't re-poll it within
+            // the day (intraday revisions are cosmetic, and refetching the whole window would
+            // reintroduce over-fetching). The empty-today case takes the `requiredEnd > storedEnd`
+            // branch above, where shouldFetchGap's TTL governs the live-edge recheck.
             return false
         }
 

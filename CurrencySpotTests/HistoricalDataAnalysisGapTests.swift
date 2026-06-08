@@ -70,6 +70,14 @@ struct HistoricalDataAnalysisGapTests {
         #expect(uc.shouldFetchGap(gapStart: today, gapEnd: today, now: now) == false)
     }
 
+    @Test("today's edge, checked exactly 6h ago → refetch (>= boundary)")
+    func liveEdgeAtTTLBoundary() {
+        let today = Self.day(2026, 6, 7)
+        let now = today.addingTimeInterval(13 * 3600)
+        let uc = Self.useCase(from: Self.day(2026, 6, 1), through: today, checkedAt: now.addingTimeInterval(-6 * 3600))
+        #expect(uc.shouldFetchGap(gapStart: today, gapEnd: today, now: now) == true)
+    }
+
     @Test("recordSync forwards the fetched range to the store")
     func recordSyncForwards() {
         let mock = MockHistoricalSyncStore()

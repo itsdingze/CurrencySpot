@@ -19,17 +19,23 @@ final class DataCoordinator: ExchangeRateService {
     private let networkService: NetworkService
     private let persistenceService: PersistenceService
     private let cacheService: CacheService
+    private let syncStore: HistoricalSyncStore
 
     // MARK: - Initialization
 
+    /// - Parameter syncStore: Historical coverage window, reset alongside a full data clear so the
+    ///   watermark never outlives the data it describes. Default keeps the `DependencyContainer`
+    ///   call sites compiling unchanged; tests inject an isolated store.
     init(
         networkService: NetworkService,
         persistenceService: PersistenceService,
-        cacheService: CacheService
+        cacheService: CacheService,
+        syncStore: HistoricalSyncStore = UserDefaultsHistoricalSyncStore()
     ) {
         self.networkService = networkService
         self.persistenceService = persistenceService
         self.cacheService = cacheService
+        self.syncStore = syncStore
     }
 
     // MARK: - Rate Fetching Check Methods
@@ -287,5 +293,9 @@ final class DataCoordinator: ExchangeRateService {
 
         // Clear last fetch date
         networkService.updateLastFetchDate(Date.distantPast)
+
+        // Drop the historical coverage window, or it would claim coverage over the now-empty
+        // store and leave charts blank with no refetch (same hazard the v2 migration guards against).
+        syncStore.reset()
     }
 }

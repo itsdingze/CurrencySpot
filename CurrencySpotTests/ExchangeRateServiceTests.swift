@@ -47,6 +47,25 @@ struct ExchangeRateServiceTests {
         try await service.clearAllData()
     }
 
+    @Test("clearAllData resets the historical sync coverage window")
+    func clearAllDataResetsSyncCoverage() async throws {
+        let syncStore = MockHistoricalSyncStore()
+        syncStore.record(from: createCETDate(2025, 1, 1), through: createCETDate(2025, 1, 10), at: Date())
+        let coordinator = DataCoordinator(
+            networkService: FrankfurterNetworkService(),
+            persistenceService: SwiftDataPersistenceService(modelContainer: container),
+            cacheService: InMemoryCacheService(),
+            syncStore: syncStore
+        )
+
+        try await coordinator.clearAllData()
+
+        // Otherwise "Clear Cached Data" would leave a coverage claim over an empty store → blank charts.
+        #expect(syncStore.from == nil)
+        #expect(syncStore.through == nil)
+        #expect(syncStore.checkedAt == nil)
+    }
+
     @Test("loadHistoricalRatesForCurrency reads persistence, not a narrower stale in-memory cache")
     func loadHistoricalReadsPersistenceNotStaleCache() async throws {
         // Regression: a successful wide fetch was being shadowed by a narrower cached window,
