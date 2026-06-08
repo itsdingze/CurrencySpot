@@ -27,13 +27,9 @@ struct ContentView: View {
             errorAlert
         }
         .onAppear {
-            #if DEBUG
+            if !settingsViewModel.hasSeenOnboarding {
                 showOnBoarding = true
-            #else
-                if !settingsViewModel.hasSeenOnboarding {
-                    showOnBoarding = true
-                }
-            #endif
+            }
         }
         .sheet(isPresented: $showOnBoarding) {
             CurrencySpotOnboarding(showOnBoarding: $showOnBoarding)

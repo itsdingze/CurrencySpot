@@ -34,22 +34,13 @@ struct CurrencyHistoryView: View {
             ChartOnboardingView(showOnboarding: $showChartOnboarding)
         }
         .onAppear {
-            // Show chart onboarding the first time user enters chart view
-            #if DEBUG
-                // Always show onboarding in debug builds for testing
+            // Show chart onboarding the first time the user enters the chart view.
+            if !settingsViewModel.hasSeenChartOnboarding {
                 Task {
                     try? await Task.sleep(for: .seconds(0.5))
                     showChartOnboarding = true
                 }
-            #else
-                // Only show onboarding if user hasn't seen it in release builds
-                if !settingsViewModel.hasSeenChartOnboarding {
-                    Task {
-                        try? await Task.sleep(for: .seconds(0.5))
-                        showChartOnboarding = true
-                    }
-                }
-            #endif
+            }
         }
     }
 
