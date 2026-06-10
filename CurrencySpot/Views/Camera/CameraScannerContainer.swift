@@ -54,7 +54,11 @@ struct CameraScannerContainer: View {
         }
         .overlay(alignment: .bottom) {
             VStack(spacing: 16) {
-                NoPricesHint(detectedItems: viewModel.detectedItems, isLive: viewModel.frozenImage == nil)
+                ScanStatusCapsule(
+                    isLive: viewModel.frozenImage == nil,
+                    hasPrices: viewModel.hasPrices,
+                    isRecognizingStill: viewModel.isRecognizingStill
+                )
                 CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
             }
             .padding(.bottom, 24)

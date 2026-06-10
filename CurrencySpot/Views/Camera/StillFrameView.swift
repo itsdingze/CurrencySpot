@@ -28,14 +28,17 @@ struct StillFrameView: View {
         } action: { size in
             viewSize = size
         }
-        .onChange(of: recognition) { _, result in
-            pushItems(result, viewSize: viewSize)
-        }
         .onChange(of: viewSize) { _, size in
             pushItems(recognition, viewSize: size)
         }
         .task(id: image) {
-            recognition = await recognizer.recognize(image)
+            let result = await recognizer.recognize(image)
+            // A cancelled pass (user resumed live scanning) must not push
+            // stale still results over the live stream.
+            guard !Task.isCancelled else { return }
+            recognition = result
+            pushItems(result, viewSize: viewSize)
+            viewModel.stillRecognitionDidFinish()
         }
     }
 

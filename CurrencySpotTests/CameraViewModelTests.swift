@@ -265,6 +265,66 @@ struct CameraViewModelTests {
         #expect(viewModel.detectedItems.isEmpty)
     }
 
+    // MARK: - Still Recognition Status
+
+    @Test func freezingMarksStillRecognitionInFlight() async {
+        let viewModel = Self.makeScanningViewModel()
+        #expect(viewModel.isRecognizingStill == false)
+
+        await viewModel.freezeFrame(capturing: { UIImage() })
+
+        #expect(viewModel.isRecognizingStill == true)
+    }
+
+    @Test func stillRecognitionFinishClearsTheInFlightFlag() async {
+        let viewModel = Self.makeScanningViewModel()
+        await viewModel.freezeFrame(capturing: { UIImage() })
+
+        viewModel.stillRecognitionDidFinish()
+
+        #expect(viewModel.isRecognizingStill == false)
+    }
+
+    /// Resuming can interrupt a still pass mid-flight; the flag must not leak.
+    @Test func resumingLiveScanningClearsTheInFlightFlag() async {
+        let viewModel = Self.makeScanningViewModel()
+        await viewModel.freezeFrame(capturing: { UIImage() })
+
+        viewModel.resumeLiveScanning()
+
+        #expect(viewModel.isRecognizingStill == false)
+    }
+
+    @Test func hasPricesReflectsDetectedPrices() {
+        let viewModel = Self.makeScanningViewModel()
+        #expect(viewModel.hasPrices == false)
+
+        viewModel.updateRecognizedItems([
+            RecognizedTextItem(id: UUID(), transcript: "MENU", bounds: .zero),
+        ])
+        #expect(viewModel.hasPrices == false)
+
+        viewModel.updateRecognizedItems([
+            RecognizedTextItem(id: UUID(), transcript: "¥1,200", bounds: .zero),
+        ])
+        #expect(viewModel.hasPrices == true)
+    }
+
+    /// Dismissing the only badge must not flip the capsule to "No prices found" —
+    /// the classifier's raw verdict still counts.
+    @Test func suppressingTheOnlyPriceStillCountsAsFound() {
+        let viewModel = Self.makeScanningViewModel()
+        let id = UUID()
+        viewModel.updateRecognizedItems([
+            RecognizedTextItem(id: id, transcript: "¥1,200", bounds: .zero),
+        ])
+
+        viewModel.toggleConversion(for: id)
+
+        #expect(viewModel.detectedItems.first?.conversion.isPrice == false)
+        #expect(viewModel.hasPrices == true)
+    }
+
     // MARK: - Capture and Import Failures
 
     private struct StubError: Error {}

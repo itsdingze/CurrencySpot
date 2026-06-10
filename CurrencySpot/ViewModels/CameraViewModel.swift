@@ -25,6 +25,14 @@ final class CameraViewModel {
     private(set) var detectedItems: [DetectedItem] = []
     private(set) var frozenImage: UIImage?
     private(set) var isScanning = true
+    private(set) var isRecognizingStill = false
+
+    /// Whether the current frame yielded any price — drives the status capsule.
+    /// Counts the classifier's raw verdict as well as visible badges, so user
+    /// overrides in either direction never flip the capsule to "not found".
+    var hasPrices: Bool {
+        classifierFoundPrices || detectedItems.contains { $0.conversion.isPrice }
+    }
     private(set) var isTorchOn = false
     var destination: Destination?
 
@@ -43,6 +51,7 @@ final class CameraViewModel {
     // MARK: - Private State
 
     private var recognizedItems: [RecognizedTextItem] = []
+    private var classifierFoundPrices = false
     private var manualBaseCurrency: String?
 
     /// The user's tap-to-convert overrides for numbers the classifier judged non-prices.
@@ -130,9 +139,16 @@ final class CameraViewModel {
         }
     }
 
+    /// Called by the still-frame view once its recognition pass has pushed
+    /// results, whatever they were — gates the "No prices found" message.
+    func stillRecognitionDidFinish() {
+        isRecognizingStill = false
+    }
+
     func resumeLiveScanning() {
         frozenImage = nil
         isScanning = true
+        isRecognizingStill = false
         updateRecognizedItems([])
     }
 
@@ -147,6 +163,7 @@ final class CameraViewModel {
 
     func updateRecognizedItems(_ items: [RecognizedTextItem]) {
         recognizedItems = items
+        var foundRawPrice = false
         detectedItems = items.compactMap { item in
             scanConversionUseCase.evaluate(
                 transcript: item.transcript,
@@ -154,7 +171,8 @@ final class CameraViewModel {
                 targetCurrency: targetCurrency,
                 exchangeRates: calculatorViewModel.availableRates
             ).map { conversion in
-                DetectedItem(
+                foundRawPrice = foundRawPrice || conversion.isPrice
+                return DetectedItem(
                     id: item.id,
                     transcript: item.transcript,
                     bounds: item.bounds,
@@ -162,6 +180,7 @@ final class CameraViewModel {
                 )
             }
         }
+        classifierFoundPrices = foundRawPrice
     }
 
     /// Re-runs conversion for visible items, for when fresh rates arrive
@@ -231,6 +250,7 @@ final class CameraViewModel {
         turnTorchOff()
         frozenImage = image
         isScanning = false
+        isRecognizingStill = true
         updateRecognizedItems([])
     }
 
