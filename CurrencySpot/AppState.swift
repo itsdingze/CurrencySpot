@@ -16,5 +16,8 @@ final class AppState {
     private(set) var errorHandler = ErrorHandler()
     private(set) var networkMonitor = NetworkMonitor()
 
+    /// App-wide tab selection, so features can deep-link into other tabs.
+    var selectedTab = 0
+
     private init() {}
 }

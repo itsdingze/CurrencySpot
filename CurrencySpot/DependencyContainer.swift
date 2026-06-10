@@ -58,6 +58,9 @@ final class DependencyContainer {
     /// Settings ViewModel (single source of truth)
     let settingsViewModel: SettingsViewModel
 
+    /// Camera ViewModel (single source of truth)
+    let cameraViewModel: CameraViewModel
+
     // MARK: - Initialization
 
     /// Initialize dependency container with optional ModelContainer
@@ -122,6 +125,8 @@ final class DependencyContainer {
             calculatorViewModel: calculatorViewModel,
             historyViewModel: historyViewModel
         )
+
+        cameraViewModel = CameraViewModel(calculatorViewModel: calculatorViewModel)
     }
 
     /// Fallback initializer with mock service for critical errors
@@ -201,5 +206,7 @@ final class DependencyContainer {
             calculatorViewModel: calculatorViewModel,
             historyViewModel: historyViewModel
         )
+
+        cameraViewModel = CameraViewModel(calculatorViewModel: calculatorViewModel)
     }
 }

@@ -11,7 +11,6 @@ struct ContentView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel
     @Environment(SettingsViewModel.self) private var settingsViewModel
     @Environment(AppState.self) private var appState
-    @State private var selectedTab = 0
     @State private var showOnBoarding = false
 
     var body: some View {
@@ -43,7 +42,8 @@ struct ContentView: View {
 
     @ViewBuilder @available(iOS 18.0, *)
     private var modernTabView: some View {
-        TabView(selection: $selectedTab) {
+        @Bindable var appState = appState
+        TabView(selection: $appState.selectedTab) {
             Tab("Convert", systemImage: "arrow.left.arrow.right", value: 0) {
                 CalculatorView()
                     .toolbarBackground(.visible, for: .tabBar)
@@ -52,7 +52,17 @@ struct ContentView: View {
             .accessibilityHint("Convert between different currencies")
             .accessibilityInputLabels(["Convert", "Calculator", "Exchange"])
 
-            Tab("History", systemImage: "chart.line.uptrend.xyaxis", value: 1) {
+            if CameraScanAvailability.isSupported {
+                Tab("Camera", systemImage: "camera.viewfinder", value: 1) {
+                    CameraView()
+                        .toolbarBackground(.visible, for: .tabBar)
+                }
+                .accessibilityLabel("Camera Price Converter")
+                .accessibilityHint("Point the camera at prices to see them converted")
+                .accessibilityInputLabels(["Camera", "Scan", "Scanner"])
+            }
+
+            Tab("History", systemImage: "chart.line.uptrend.xyaxis", value: 2) {
                 CurrencyList()
                     .toolbarBackground(.visible, for: .tabBar)
             }
@@ -60,7 +70,7 @@ struct ContentView: View {
             .accessibilityHint("View historical exchange rate charts and trends")
             .accessibilityInputLabels(["History", "Charts", "Trends"])
 
-            Tab("Settings", systemImage: "gearshape", value: 2) {
+            Tab("Settings", systemImage: "gearshape", value: 3) {
                 NavigationStack {
                     SettingsView()
                 }
@@ -74,8 +84,9 @@ struct ContentView: View {
 
     @ViewBuilder
     private var legacyTabView: some View {
+        @Bindable var appState = appState
         VStack {
-            TabView(selection: $selectedTab) {
+            TabView(selection: $appState.selectedTab) {
                 CalculatorView()
                     .tabItem {
                         Label("Convert", systemImage: "arrow.left.arrow.right")
@@ -108,7 +119,7 @@ struct ContentView: View {
                     .accessibilityHint("Configure app settings and default currencies")
                     .accessibilityInputLabels(["Settings", "Preferences", "Configuration"])
             }
-            CustomTabBar(selectedTab: $selectedTab)
+            CustomTabBar(selectedTab: $appState.selectedTab)
         }
     }
 

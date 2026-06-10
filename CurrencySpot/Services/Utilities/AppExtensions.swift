@@ -108,6 +108,7 @@ extension View {
         environment(container.calculatorViewModel)
             .environment(container.historyViewModel)
             .environment(container.settingsViewModel)
+            .environment(container.cameraViewModel)
     }
 }
 

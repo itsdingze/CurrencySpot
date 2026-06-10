@@ -26,6 +26,9 @@ enum AppError: Error, Identifiable, Equatable {
     // Retry-specific errors
     case retryExhausted(String, attempts: Int)
     case retryInProgress(attempt: Int, maxAttempts: Int)
+    // Camera-specific errors
+    case cameraCaptureFailed
+    case photoImportFailed
 
     var id: String {
         let prefix = errorPrefix
@@ -50,6 +53,8 @@ enum AppError: Error, Identifiable, Equatable {
         case .initializationFailed: "initializationFailed"
         case .retryExhausted: "retryExhausted"
         case .retryInProgress: "retryInProgress"
+        case .cameraCaptureFailed: "cameraCapture"
+        case .photoImportFailed: "photoImport"
         }
     }
 
@@ -70,7 +75,7 @@ enum AppError: Error, Identifiable, Equatable {
             "\(message)-\(attempts)"
         case let .retryInProgress(attempt, maxAttempts):
             "\(attempt)-\(maxAttempts)"
-        case .noInternetConnection, .noCachedData, .noDataError:
+        case .noInternetConnection, .noCachedData, .noDataError, .cameraCaptureFailed, .photoImportFailed:
             "static"
         }
     }
@@ -92,6 +97,8 @@ enum AppError: Error, Identifiable, Equatable {
         case .initializationFailed: "Initialization Failed"
         case .retryExhausted: "Connection Failed"
         case .retryInProgress: "Connecting..."
+        case .cameraCaptureFailed: "Capture Failed"
+        case .photoImportFailed: "Photo Import Failed"
         }
     }
 
@@ -127,6 +134,10 @@ enum AppError: Error, Identifiable, Equatable {
             "Failed to connect after \(attempts) attempts. \(message). Tap refresh to try again."
         case let .retryInProgress(attempt, maxAttempts):
             "Attempting to connect... (\(attempt) of \(maxAttempts))"
+        case .cameraCaptureFailed:
+            "Couldn't capture the frame. Please try again."
+        case .photoImportFailed:
+            "Couldn't load that photo. Please try again."
         }
     }
 

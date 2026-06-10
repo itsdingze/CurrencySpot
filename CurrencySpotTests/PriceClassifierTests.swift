@@ -1,0 +1,65 @@
+//
+//  PriceClassifierTests.swift
+//  CurrencySpotTests
+//
+
+import Foundation
+import Testing
+@testable import CurrencySpot
+
+struct PriceClassifierTests {
+    private let classifier = PriceClassifier()
+
+    @Test func amountWithCurrencySymbolIsAPrice() {
+        let result = classifier.classify("¥1,200")
+        #expect(result == PriceClassification(amount: 1200, isPrice: true))
+    }
+
+    @Test func bareGroupedNumberIsAPrice() {
+        let result = classifier.classify("1,200")
+        #expect(result == PriceClassification(amount: 1200, isPrice: true))
+    }
+
+    @Test func decimalCommaParsesAsFraction() {
+        let result = classifier.classify("€12,50")
+        #expect(result == PriceClassification(amount: Decimal(string: "12.5")!, isPrice: true))
+    }
+
+    @Test func multiNumberTranscriptPicksThePriceShapedToken() {
+        let result = classifier.classify("2 for 5.00")
+        #expect(result == PriceClassification(amount: 5, isPrice: true))
+    }
+
+    @Test(arguments: ["12.06.2026", "12/06/2026", "June 10, 2026"])
+    func datesAreNotPrices(transcript: String) {
+        #expect(classifier.classify(transcript)?.isPrice == false)
+    }
+
+    @Test(arguments: ["1.5kg", "330ml", "2.4GHz", "98.6°F"])
+    func measurementsAreNotPrices(transcript: String) {
+        #expect(classifier.classify(transcript)?.isPrice == false)
+    }
+
+    @Test(arguments: [("USD 20", 20), ("20 EUR", 20), ("1200円", 1200)])
+    func currencyCodeOrCJKMarkerIsAPrice(transcript: String, amount: Int) {
+        let result = classifier.classify(transcript)
+        #expect(result == PriceClassification(amount: Decimal(amount), isPrice: true))
+    }
+
+    @Test(arguments: ["090-1234-5678", "(415) 555-2671", "10:30"])
+    func phoneNumbersAndTimesAreNotPrices(transcript: String) {
+        #expect(classifier.classify(transcript)?.isPrice == false)
+    }
+
+    /// Deliberately conservative: an unformatted bare integer keeps the outline only;
+    /// tap-to-convert is the user override.
+    @Test func bareUnformattedIntegerIsNotAPrice() {
+        let result = classifier.classify("1200")
+        #expect(result == PriceClassification(amount: 1200, isPrice: false))
+    }
+
+    @Test(arguments: ["Open daily", "MENU", ""])
+    func textWithoutNumbersIsNotANumber(transcript: String) {
+        #expect(classifier.classify(transcript) == nil)
+    }
+}
