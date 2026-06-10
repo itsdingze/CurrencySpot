@@ -31,13 +31,13 @@ struct PriceClassifierTests {
     }
 
     @Test(arguments: ["12.06.2026", "12/06/2026", "June 10, 2026"])
-    func datesAreNotPrices(transcript: String) {
-        #expect(classifier.classify(transcript)?.isPrice == false)
+    func datesAreFilteredOut(transcript: String) {
+        #expect(classifier.classify(transcript) == nil)
     }
 
     @Test(arguments: ["1.5kg", "330ml", "2.4GHz", "98.6°F"])
-    func measurementsAreNotPrices(transcript: String) {
-        #expect(classifier.classify(transcript)?.isPrice == false)
+    func measurementsAreFilteredOut(transcript: String) {
+        #expect(classifier.classify(transcript) == nil)
     }
 
     @Test(arguments: [("USD 20", 20), ("20 EUR", 20), ("1200円", 1200)])
@@ -46,9 +46,36 @@ struct PriceClassifierTests {
         #expect(result == PriceClassification(amount: Decimal(amount), isPrice: true))
     }
 
-    @Test(arguments: ["090-1234-5678", "(415) 555-2671", "10:30"])
-    func phoneNumbersAndTimesAreNotPrices(transcript: String) {
-        #expect(classifier.classify(transcript)?.isPrice == false)
+    @Test(arguments: ["090-1234-5678", "(415) 555-2671", "10:30", "16:9"])
+    func phoneNumbersTimesAndRatiosAreFilteredOut(transcript: String) {
+        #expect(classifier.classify(transcript) == nil)
+    }
+
+    @Test(arguments: ["4901234567894", "1234567"])
+    func longBareDigitRunsAreFilteredOut(transcript: String) {
+        #expect(classifier.classify(transcript) == nil)
+    }
+
+    /// Six bare digits is still a plausible price (e.g. 150000 IDR) — keep the outline.
+    @Test func sixDigitBareIntegerKeepsItsOutline() {
+        let result = classifier.classify("150000")
+        #expect(result == PriceClassification(amount: 150000, isPrice: false))
+    }
+
+    @Test(arguments: ["SN12345", "REF2024", "A1234"])
+    func letterGluedIdentifiersAreFilteredOut(transcript: String) {
+        #expect(classifier.classify(transcript) == nil)
+    }
+
+    @Test(arguments: ["12-34567", "4006-100-0000"])
+    func hyphenGluedDigitGroupsAreFilteredOut(transcript: String) {
+        #expect(classifier.classify(transcript) == nil)
+    }
+
+    /// A currency marker overrides every noise rule.
+    @Test func currencyMarkerBeatsNoiseRules() {
+        let result = classifier.classify("$1234567")
+        #expect(result == PriceClassification(amount: 1234567, isPrice: true))
     }
 
     /// Deliberately conservative: an unformatted bare integer keeps the outline only;

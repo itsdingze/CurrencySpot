@@ -15,10 +15,13 @@ struct PriceClassifier: Sendable {
 
     private static let numberToken = /[0-9]+(?:[.,][0-9]+)*/
 
-    private static let dateDetector = try? NSDataDetector(
+    private static let dateOrPhoneDetector = try? NSDataDetector(
         types: NSTextCheckingResult.CheckingType.date.rawValue
+            | NSTextCheckingResult.CheckingType.phoneNumber.rawValue
     )
 
+    /// nil means the number is noise (date, phone, unit, identifier) and gets
+    /// no outline at all; isPrice false keeps the outline for tap-to-convert.
     func classify(_ transcript: String) -> PriceClassification? {
         let matches = transcript.matches(of: Self.numberToken)
         guard !matches.isEmpty else { return nil }
@@ -27,12 +30,60 @@ struct PriceClassifier: Sendable {
         let token = match.output
         guard let amount = Self.parseAmount(String(token)) else { return nil }
 
-        let hasCurrencySymbol = Self.containsCurrencyMarker(transcript)
+        // A currency marker overrides every noise rule.
+        if Self.containsCurrencyMarker(transcript) {
+            return PriceClassification(amount: amount, isPrice: true)
+        }
+        guard !Self.isNoise(match.range, token: token, in: transcript) else { return nil }
         let isPriceShaped = token.contains(",") || token.contains(".")
-        let isRuledOut = Self.isPartOfDate(match.range, in: transcript)
-            || Self.hasUnitSuffix(after: match.range, in: transcript)
-        let isPrice = !isRuledOut && (hasCurrencySymbol || isPriceShaped)
-        return PriceClassification(amount: amount, isPrice: isPrice)
+        return PriceClassification(amount: amount, isPrice: isPriceShaped)
+    }
+
+    // MARK: - Noise Rules
+
+    /// Patterns that are essentially never prices: dates and phone numbers,
+    /// unit measurements, barcode-length digit runs, and tokens glued to
+    /// identifier characters (SN12345, 4006-100-0000, 16:9).
+    private static func isNoise(
+        _ range: Range<String.Index>,
+        token: Substring,
+        in transcript: String
+    ) -> Bool {
+        isDateOrPhoneNumber(range, in: transcript)
+            || hasUnitSuffix(after: range, in: transcript)
+            || isBareDigitRun(token)
+            || isGluedToIdentifier(range, in: transcript)
+    }
+
+    /// Real-world bare prices top out around 6 digits (150000 IDR);
+    /// anything longer without separators is a barcode or serial.
+    private static func isBareDigitRun(_ token: Substring) -> Bool {
+        token.count >= 7 && token.allSatisfy(\.isNumber)
+    }
+
+    private static func isGluedToIdentifier(_ range: Range<String.Index>, in transcript: String) -> Bool {
+        isGlued(before: range.lowerBound, in: transcript) || isGlued(after: range.upperBound, in: transcript)
+    }
+
+    /// Letter prefixes (SN12345), colons (16:9), and digit-hyphen joints
+    /// (4006-100) mark identifiers. A leading minus alone does not.
+    private static func isGlued(before index: String.Index, in transcript: String) -> Bool {
+        guard index > transcript.startIndex else { return false }
+        let previous = transcript.index(before: index)
+        let character = transcript[previous]
+        if character.isASCII, character.isLetter { return true }
+        if character == ":" { return true }
+        guard character == "-", previous > transcript.startIndex else { return false }
+        return transcript[transcript.index(before: previous)].isNumber
+    }
+
+    private static func isGlued(after index: String.Index, in transcript: String) -> Bool {
+        guard index < transcript.endIndex else { return false }
+        let character = transcript[index]
+        if character == ":" { return true }
+        guard character == "-" else { return false }
+        let next = transcript.index(after: index)
+        return next < transcript.endIndex && transcript[next].isNumber
     }
 
     private static let cjkCurrencyMarkers = Set("円元원")
@@ -60,10 +111,10 @@ struct PriceClassifier: Sendable {
         return unitSuffixes.contains(word.lowercased())
     }
 
-    private static func isPartOfDate(_ tokenRange: Range<String.Index>, in transcript: String) -> Bool {
-        guard let dateDetector else { return false }
+    private static func isDateOrPhoneNumber(_ tokenRange: Range<String.Index>, in transcript: String) -> Bool {
+        guard let dateOrPhoneDetector else { return false }
         let fullRange = NSRange(transcript.startIndex..., in: transcript)
-        return dateDetector.matches(in: transcript, options: [], range: fullRange).contains { match in
+        return dateOrPhoneDetector.matches(in: transcript, options: [], range: fullRange).contains { match in
             guard let matchRange = Range(match.range, in: transcript) else { return false }
             return matchRange.overlaps(tokenRange)
         }

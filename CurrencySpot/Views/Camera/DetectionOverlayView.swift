@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Outlines every detected number and pins a converted badge next to prices.
+/// Outlines every detected price candidate and pins a converted badge next to prices.
 /// Coordinates are in the camera view's space, provided by the scanner.
 struct DetectionOverlayView: View {
     let items: [DetectedItem]
@@ -105,9 +105,9 @@ private struct ConvertedBadge: View {
                 ),
                 DetectedItem(
                     id: UUID(),
-                    transcript: "090-1234-5678",
-                    bounds: CGRect(x: 80, y: 480, width: 180, height: 28),
-                    conversion: .init(amount: 90, converted: 0.61, isPrice: false)
+                    transcript: "1200",
+                    bounds: CGRect(x: 80, y: 480, width: 90, height: 28),
+                    conversion: .init(amount: 1200, converted: 8.08, isPrice: false)
                 ),
             ],
             targetCurrency: "USD",

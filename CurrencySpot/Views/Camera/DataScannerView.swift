@@ -7,7 +7,7 @@ import SwiftUI
 import VisionKit
 
 /// Wraps VisionKit's live scanner. Recognition stays on `.text()` so the app
-/// outlines every number and decides for itself which ones are prices.
+/// sees every number and decides for itself which ones are price candidates.
 @MainActor
 struct DataScannerView: UIViewControllerRepresentable {
     let isScanning: Bool
