@@ -9,6 +9,9 @@ import SwiftUI
 /// Base is the currency the price tags are in; target is what badges show.
 struct CurrencyPairControl: View {
     @Environment(CameraViewModel.self) private var viewModel
+    @State private var isFlipped = false
+
+    private let flipDuration: TimeInterval = 0.6
 
     var body: some View {
         HStack(spacing: 12) {
@@ -28,10 +31,9 @@ struct CurrencyPairControl: View {
                 accessibilityLabel: "Converted currency"
             )
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(.regularMaterial, in: .capsule)
-        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
     }
 
     private func currencyButton(
@@ -45,11 +47,12 @@ struct CurrencyPairControl: View {
         } label: {
             VStack(spacing: 0) {
                 Text(caption)
-                    .font(.system(.caption2, design: .rounded))
+                    .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Color.textSecondary)
                 Text(code)
                     .font(.system(.headline, design: .rounded))
                     .foregroundStyle(Color.textPrimary)
+                    .contentTransition(.numericText())
             }
             .frame(minWidth: 56)
         }
@@ -60,13 +63,19 @@ struct CurrencyPairControl: View {
 
     private var swapButton: some View {
         Button {
-            withAnimation(.snappy) {
+            withAnimation(.bouncy(duration: flipDuration)) {
+                isFlipped.toggle()
                 viewModel.swapCurrencies()
             }
         } label: {
             Image(systemName: "arrow.trianglehead.swap")
                 .font(.system(.headline, design: .rounded))
                 .foregroundStyle(Color.accentColor)
+                .rotationEffect(.degrees(90))
+                .rotation3DEffect(
+                    .degrees(isFlipped ? 180 : 0),
+                    axis: (x: 0, y: 1, z: 0)
+                )
         }
         .accessibilityLabel("Swap currencies")
         .accessibilityHint("Swaps the price tag and converted currencies")
