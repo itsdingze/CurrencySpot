@@ -24,12 +24,17 @@ final class AppState {
     static let shared = AppState()
 
     private(set) var errorHandler = ErrorHandler()
-    private(set) var networkMonitor = NetworkMonitor()
+    private(set) var networkMonitor: NetworkMonitor
 
     /// App-wide tab selection, so features can deep-link into other tabs.
     var selectedTab = AppTab.convert
 
     /// Production code uses `shared`; tests create isolated instances so
-    /// parallel runs can't clobber each other's state.
-    init() {}
+    /// parallel runs can't clobber each other's state. Tests inject a
+    /// non-monitoring `NetworkMonitor` to pin connectivity deterministically.
+    init(networkMonitor: NetworkMonitor? = nil) {
+        // Constructed here (not as a default argument) because the monitor's
+        // init is main-actor-isolated and default arguments are nonisolated.
+        self.networkMonitor = networkMonitor ?? NetworkMonitor()
+    }
 }

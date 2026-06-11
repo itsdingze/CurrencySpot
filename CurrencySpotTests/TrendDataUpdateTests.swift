@@ -13,10 +13,12 @@ import Testing
 struct TrendDataUpdateTests {
     // MARK: - Test Data Setup
 
-    /// Deterministic historical data (no randomness) covering `days` ending today.
-    private func makeHistoricalData(for currency: String, days: Int) -> [HistoricalRateDataValue] {
+    /// Fixed anchor (Wednesday, midnight CET) so fixtures never depend on the wall clock.
+    private static let fixedToday = createCETDate(year: 2025, month: 1, day: 15)!
+
+    /// Deterministic historical data (no randomness) covering `days` ending on the fixed anchor.
+    private func makeHistoricalData(for currency: String, days: Int, endingOn today: Date = fixedToday) -> [HistoricalRateDataValue] {
         let calendar = TimeZoneManager.cetCalendar
-        let today = Date()
         return (0 ..< days).reversed().compactMap { dayOffset in
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { return nil }
             let baseRate = currency == "EUR" ? 0.92 : (currency == "GBP" ? 0.79 : 1.5)
@@ -33,7 +35,7 @@ struct TrendDataUpdateTests {
 
     @Test("DataOrchestrationUseCase reports fetched ranges within the requested range on a cold cache")
     func dataOrchestrationReturnsFetchedRanges() async throws {
-        let mockService = MockExchangeRateService()
+        let mockService = MockExchangeRateService(today: Self.fixedToday)
         let cacheService = InMemoryCacheService()
         let dataOrchestrationUseCase = DataOrchestrationUseCase(
             service: mockService,
@@ -42,14 +44,14 @@ struct TrendDataUpdateTests {
         )
 
         let calendar = TimeZoneManager.cetCalendar
-        let endDate = Date()
-        let startDate = calendar.date(byAdding: .month, value: -3, to: endDate)!
+        let endDate = Self.fixedToday
+        let startDate = try #require(calendar.date(byAdding: .month, value: -3, to: endDate))
         let requestedRange = DateRange(start: startDate, end: endDate)
 
         let result = try await dataOrchestrationUseCase.loadHistoricalData(for: "EUR", dateRange: requestedRange)
 
         #expect(result.newDataFetched == true)
-        #expect(!result.fetchedRanges.isEmpty)
+        #expect(result.fetchedRanges.isEmpty == false)
         let fetched = try #require(result.fetchedRanges.first)
         #expect(fetched.start >= requestedRange.start)
         #expect(fetched.end <= requestedRange.end)
@@ -57,7 +59,7 @@ struct TrendDataUpdateTests {
 
     @Test("DataOrchestrationUseCase serves from cache without fetching when the range is covered")
     func dataOrchestrationReturnsEmptyFetchedRangesFromCache() async throws {
-        let mockService = MockExchangeRateService()
+        let mockService = MockExchangeRateService(today: Self.fixedToday)
         let cacheService = InMemoryCacheService()
         let dataOrchestrationUseCase = DataOrchestrationUseCase(
             service: mockService,
@@ -68,8 +70,8 @@ struct TrendDataUpdateTests {
         await cacheService.cacheHistoricalData(makeHistoricalData(for: "EUR", days: 90), for: "EUR")
 
         let calendar = TimeZoneManager.cetCalendar
-        let endDate = Date()
-        let startDate = calendar.date(byAdding: .day, value: -7, to: endDate)!
+        let endDate = Self.fixedToday
+        let startDate = try #require(calendar.date(byAdding: .day, value: -7, to: endDate))
         let requestedRange = DateRange(start: startDate, end: endDate)
 
         let result = try await dataOrchestrationUseCase.loadHistoricalData(for: "EUR", dateRange: requestedRange)
@@ -185,7 +187,7 @@ struct TrendDataUpdateTests {
         let cacheService = InMemoryCacheService()
         let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
         return HistoryViewModel(
-            calculatorVM: CalculatorViewModel(service: service),
+            calculatorVM: makeIsolatedCalculatorViewModel(service: service),
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: DataOrchestrationUseCase(
                 service: service,

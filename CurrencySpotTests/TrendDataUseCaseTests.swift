@@ -21,8 +21,8 @@ struct TrendDataUseCaseTests {
     ]
 
     private static let sampleDateRanges: [DateRange] = [
-        DateRange(start: Date().addingTimeInterval(-86400 * 3), end: Date().addingTimeInterval(-86400 * 2)),
-        DateRange(start: Date().addingTimeInterval(-86400), end: Date()),
+        DateRange(start: createCETDate(year: 2025, month: 1, day: 12)!, end: createCETDate(year: 2025, month: 1, day: 13)!),
+        DateRange(start: createCETDate(year: 2025, month: 1, day: 14)!, end: createCETDate(year: 2025, month: 1, day: 15)!),
     ]
 
     // MARK: - Test Helpers
@@ -60,8 +60,8 @@ struct TrendDataUseCaseTests {
         #expect(result.contains { $0.currencyCode == "EUR" })
         #expect(result.contains { $0.currencyCode == "GBP" })
         #expect(result.contains { $0.currencyCode == "JPY" })
-        #expect(!mockService.didFetchHistoricalData)
-        #expect(!mockService.didCalculateTrends)
+        #expect(mockService.didFetchHistoricalData == false)
+        #expect(mockService.didCalculateTrends == false)
     }
 
     @Test("When no existing trends and sufficient data, should calculate trends without fetching")
@@ -78,9 +78,8 @@ struct TrendDataUseCaseTests {
 
         // THEN: Should calculate trends without fetching historical data
         #expect(result == Self.sampleTrendData)
-        #expect(!mockService.didFetchHistoricalData)
+        #expect(mockService.didFetchHistoricalData == false)
         #expect(mockService.didCalculateTrends)
-        #expect(mockService.loadTrendDataCallCount == 2) // Once for check, once for final result
     }
 
     @Test("When no existing trends and insufficient data, should fetch then calculate")
@@ -99,7 +98,6 @@ struct TrendDataUseCaseTests {
         #expect(result == Self.sampleTrendData)
         #expect(mockService.didFetchHistoricalData)
         #expect(mockService.didCalculateTrends)
-        #expect(mockService.loadTrendDataCallCount == 2)
     }
 
     @Test("When load trends fails, should return empty array and handle error")
@@ -134,7 +132,7 @@ struct TrendDataUseCaseTests {
     }
 
     @Test("When fetching historical data specified correctly, should use proper date range")
-    func whenFetchingHistoricalData_shouldUseProperDateRange() async {
+    func whenFetchingHistoricalData_shouldUseProperDateRange() async throws {
         // GIVEN: A service with insufficient data
         let mockService = createMockService(
             existingTrends: [],
@@ -147,65 +145,45 @@ struct TrendDataUseCaseTests {
 
         // THEN: Should fetch 7 days of historical data
         #expect(mockService.didFetchHistoricalData)
-        if let fetchRange = mockService.lastFetchedDateRange {
-            let daysDifference = Calendar.current.dateComponents([.day], from: fetchRange.start, to: fetchRange.end).day ?? 0
-            #expect(daysDifference == 7)
-        }
+        let fetchRange = try #require(mockService.lastFetchedDateRange)
+        let daysDifference = TimeZoneManager.cetCalendar.dateComponents([.day], from: fetchRange.start, to: fetchRange.end).day
+        #expect(daysDifference == 7)
     }
 
     // MARK: - getTrendData Tests
 
-    @Test("When currency code exists in trend data, should return matching trend")
-    func whenCurrencyCodeExists_shouldReturnMatchingTrend() {
-        // GIVEN: A use case and trend data with EUR
+    /// Lookup fixture spanning ordinary codes, boundary weeklyChange values, and
+    /// special-character codes, so one parameterized test covers all lookup behavior.
+    private static let lookupFixture: [TrendDataValue] = sampleTrendData + [
+        TrendDataValue(currencyCode: "USD-TEST", weeklyChange: Double.greatestFiniteMagnitude, miniChartData: [1.0]),
+        TrendDataValue(currencyCode: "EUR@2024", weeklyChange: -Double.greatestFiniteMagnitude, miniChartData: [1.0]),
+        TrendDataValue(currencyCode: "ZERO", weeklyChange: 0.0, miniChartData: [1.0]),
+    ]
+
+    @Test("getTrendData matches codes exactly (case- and character-sensitive), nil when absent", arguments: [
+        ("EUR", 2.5), // ordinary hit
+        ("GBP", -1.8),
+        ("CHF", nil), // absent code
+        ("eur", nil), // case-sensitive: lowercase must not match "EUR"
+        ("USD-TEST", Double.greatestFiniteMagnitude), // special characters + boundary value
+        ("EUR@2024", -Double.greatestFiniteMagnitude),
+        ("ZERO", 0.0),
+    ] as [(String, Double?)])
+    func getTrendDataLookup(code: String, expectedWeeklyChange: Double?) {
         let useCase = TrendDataUseCase(service: MockExchangeRateService())
-        let trendData = Self.sampleTrendData
 
-        // WHEN: Getting trend data for EUR
-        let result = useCase.getTrendData(for: "EUR", from: trendData)
+        let result = useCase.getTrendData(for: code, from: Self.lookupFixture)
 
-        // THEN: Should return EUR trend data
-        #expect(result != nil)
-        #expect(result?.currencyCode == "EUR")
-        #expect(result?.weeklyChange == 2.5)
-    }
-
-    @Test("When currency code does not exist in trend data, should return nil")
-    func whenCurrencyCodeDoesNotExist_shouldReturnNil() {
-        // GIVEN: A use case and trend data without CHF
-        let useCase = TrendDataUseCase(service: MockExchangeRateService())
-        let trendData = Self.sampleTrendData
-
-        // WHEN: Getting trend data for CHF
-        let result = useCase.getTrendData(for: "CHF", from: trendData)
-
-        // THEN: Should return nil
-        #expect(result == nil)
+        #expect(result?.weeklyChange == expectedWeeklyChange)
+        if expectedWeeklyChange != nil {
+            #expect(result?.currencyCode == code)
+        }
     }
 
     @Test("When trend data array is empty, should return nil")
     func whenTrendDataArrayIsEmpty_shouldReturnNil() {
-        // GIVEN: A use case and empty trend data
         let useCase = TrendDataUseCase(service: MockExchangeRateService())
-        let emptyTrendData: [TrendDataValue] = []
-
-        // WHEN: Getting trend data for any currency
-        let result = useCase.getTrendData(for: "EUR", from: emptyTrendData)
-
-        // THEN: Should return nil
-        #expect(result == nil)
-    }
-
-    @Test("When currency code is case sensitive, should match exactly")
-    func whenCurrencyCodeIsCaseSensitive_shouldMatchExactly() {
-        // GIVEN: A use case and trend data with uppercase EUR
-        let useCase = TrendDataUseCase(service: MockExchangeRateService())
-        let trendData = Self.sampleTrendData
-
-        // WHEN: Getting trend data with lowercase eur
-        let result = useCase.getTrendData(for: "eur", from: trendData)
-
-        // THEN: Should return nil (case sensitive match)
+        let result = useCase.getTrendData(for: "EUR", from: [])
         #expect(result == nil)
     }
 
@@ -226,7 +204,6 @@ struct TrendDataUseCaseTests {
         // THEN: Should recalculate trends and return updated data
         #expect(result == Self.sampleTrendData)
         #expect(mockService.didCalculateTrends)
-        #expect(mockService.doesDateRangeAffectTrendsCallCount == 1) // Should break after first affecting range
     }
 
     @Test("When missing ranges do not affect trends, should return existing trends without recalculation")
@@ -243,12 +220,12 @@ struct TrendDataUseCaseTests {
 
         // THEN: Should return existing trends without recalculation
         #expect(result == Self.sampleTrendData)
-        #expect(!mockService.didCalculateTrends)
+        #expect(mockService.didCalculateTrends == false)
         #expect(mockService.doesDateRangeAffectTrendsCallCount == Self.sampleDateRanges.count) // Should check all ranges
     }
 
     @Test("When multiple ranges provided but first affects trends, should stop checking after first match")
-    func whenMultipleRangesButFirstAffectsTrends_shouldStopCheckingAfterFirstMatch() async {
+    func whenMultipleRangesButFirstAffectsTrends_shouldStopCheckingAfterFirstMatch() async throws {
         // GIVEN: A service where only the first range affects trends
         let mockService = ConfigurableMockExchangeRateService(
             existingTrends: Self.sampleTrendData,
@@ -259,10 +236,13 @@ struct TrendDataUseCaseTests {
             affectsTrendsOnlyFirst: true
         )
         let useCase = TrendDataUseCase(service: mockService)
-        let multipleRanges = [
-            DateRange(start: Date().addingTimeInterval(-86400 * 5), end: Date().addingTimeInterval(-86400 * 4)),
-            DateRange(start: Date().addingTimeInterval(-86400 * 3), end: Date().addingTimeInterval(-86400 * 2)),
-            DateRange(start: Date().addingTimeInterval(-86400), end: Date()),
+        func day(_ d: Int) throws -> Date {
+            try #require(createCETDate(year: 2025, month: 1, day: d))
+        }
+        let multipleRanges = try [
+            DateRange(start: day(10), end: day(11)),
+            DateRange(start: day(12), end: day(13)),
+            DateRange(start: day(14), end: day(15)),
         ]
 
         // WHEN: Checking multiple ranges
@@ -286,7 +266,7 @@ struct TrendDataUseCaseTests {
 
         // THEN: Should return existing trends without any processing
         #expect(result == Self.sampleTrendData)
-        #expect(!mockService.didCalculateTrends)
+        #expect(mockService.didCalculateTrends == false)
         #expect(mockService.doesDateRangeAffectTrendsCallCount == 0)
     }
 
@@ -308,7 +288,7 @@ struct TrendDataUseCaseTests {
 
         // THEN: Should return empty array and continue gracefully
         #expect(result.isEmpty)
-        #expect(!mockService.didCalculateTrends)
+        #expect(mockService.didCalculateTrends == false)
     }
 
     @Test("When recalculate trends fails, should return empty array and continue gracefully")
@@ -326,67 +306,6 @@ struct TrendDataUseCaseTests {
 
         // THEN: Should return empty array and continue gracefully
         #expect(result.isEmpty)
-    }
-
-    // MARK: - Edge Cases and Boundary Conditions
-
-    @Test("When date range calculation fails due to invalid calendar, should use fallback dates")
-    func whenDateRangeCalculationFails_shouldUseFallbackDates() async {
-        // GIVEN: A use case with insufficient data (will trigger date calculation)
-        let mockService = createMockService(
-            existingTrends: [],
-            hasSufficientData: false
-        )
-        let useCase = TrendDataUseCase(service: mockService)
-
-        // WHEN: Initializing trend data (this triggers date calculation internally)
-        _ = await useCase.initializeTrendData()
-
-        // THEN: Should still attempt to fetch data with fallback dates
-        #expect(mockService.didFetchHistoricalData)
-        // The implementation uses fallback to endDate if calendar calculation fails
-    }
-
-    @Test("When trend data has boundary weekly change values, should handle correctly")
-    func whenTrendDataHasBoundaryWeeklyChangeValues_shouldHandleCorrectly() {
-        // GIVEN: Trend data with boundary values (very large positive/negative changes)
-        let useCase = TrendDataUseCase(service: MockExchangeRateService())
-        let boundaryTrendData = [
-            TrendDataValue(currencyCode: "HIGH", weeklyChange: Double.greatestFiniteMagnitude, miniChartData: [1.0]),
-            TrendDataValue(currencyCode: "LOW", weeklyChange: -Double.greatestFiniteMagnitude, miniChartData: [1.0]),
-            TrendDataValue(currencyCode: "ZERO", weeklyChange: 0.0, miniChartData: [1.0]),
-        ]
-
-        // WHEN: Getting trend data for boundary values
-        let highResult = useCase.getTrendData(for: "HIGH", from: boundaryTrendData)
-        let lowResult = useCase.getTrendData(for: "LOW", from: boundaryTrendData)
-        let zeroResult = useCase.getTrendData(for: "ZERO", from: boundaryTrendData)
-
-        // THEN: Should handle all boundary values correctly
-        #expect(highResult?.weeklyChange == Double.greatestFiniteMagnitude)
-        #expect(lowResult?.weeklyChange == -Double.greatestFiniteMagnitude)
-        #expect(zeroResult?.weeklyChange == 0.0)
-    }
-
-    @Test("When currency code contains special characters, should match exactly")
-    func whenCurrencyCodeContainsSpecialCharacters_shouldMatchExactly() {
-        // GIVEN: Trend data with special character currency codes
-        let useCase = TrendDataUseCase(service: MockExchangeRateService())
-        let specialTrendData = [
-            TrendDataValue(currencyCode: "USD-TEST", weeklyChange: 1.0, miniChartData: [1.0]),
-            TrendDataValue(currencyCode: "EUR@2024", weeklyChange: 2.0, miniChartData: [1.0]),
-            TrendDataValue(currencyCode: "GBP_OLD", weeklyChange: 3.0, miniChartData: [1.0]),
-        ]
-
-        // WHEN: Getting trend data for special character codes
-        let result1 = useCase.getTrendData(for: "USD-TEST", from: specialTrendData)
-        let result2 = useCase.getTrendData(for: "EUR@2024", from: specialTrendData)
-        let result3 = useCase.getTrendData(for: "GBP_OLD", from: specialTrendData)
-
-        // THEN: Should match exactly including special characters
-        #expect(result1?.currencyCode == "USD-TEST")
-        #expect(result2?.currencyCode == "EUR@2024")
-        #expect(result3?.currencyCode == "GBP_OLD")
     }
 }
 

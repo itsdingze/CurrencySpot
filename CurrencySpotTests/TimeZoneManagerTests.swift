@@ -31,24 +31,22 @@ struct TimeZoneManagerTests {
     @Test("Format dates for API consistently")
     func formatDatesForAPI() async throws {
         // Create a known date in CET
-        let testDate = createCETDate(year: 2025, month: 3, day: 15)!
+        let testDate = try #require(createCETDate(year: 2025, month: 3, day: 15))
         let formatted = TimeZoneManager.formatForAPI(testDate)
 
         #expect(formatted == "2025-03-15")
 
         // Test round-trip conversion
-        let parsed = TimeZoneManager.parseAPIDate(formatted)
-        #expect(parsed != nil)
-
-        let reformatted = TimeZoneManager.formatForAPI(parsed!)
+        let parsed = try #require(TimeZoneManager.parseAPIDate(formatted))
+        let reformatted = TimeZoneManager.formatForAPI(parsed)
         #expect(reformatted == formatted)
     }
 
     @Test("Handle timezone transitions correctly")
     func handleTimezoneTransitions() async throws {
         // Test around DST transition (spring forward)
-        let beforeDST = createCETDate(year: 2025, month: 3, day: 29)! // CET
-        let afterDST = createCETDate(year: 2025, month: 3, day: 31)! // CEST
+        let beforeDST = try #require(createCETDate(year: 2025, month: 3, day: 29)) // CET
+        let afterDST = try #require(createCETDate(year: 2025, month: 3, day: 31)) // CEST
 
         // Format should be consistent across DST
         let beforeFormatted = TimeZoneManager.formatForAPI(beforeDST)

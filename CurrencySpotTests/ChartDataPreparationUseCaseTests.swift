@@ -19,10 +19,13 @@ private let testOutsideDate = createCETDate(year: 2020, month: 9, day: 16)!
 
 // MARK: - Test Helpers
 
-/// Creates a mock RateCalculationUseCase that returns a predictable conversion
+/// Builds a fresh use case over an isolated in-memory cache, shared by every test.
 @MainActor
-private func createMockRateCalculationUseCase() -> RateCalculationUseCase {
-    RateCalculationUseCase()
+private func makeUseCase() -> ChartDataPreparationUseCase {
+    ChartDataPreparationUseCase(
+        rateCalculationUseCase: RateCalculationUseCase(),
+        cacheService: InMemoryCacheService()
+    )
 }
 
 /// Creates predictable exchange rates for testing
@@ -111,9 +114,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should filter data by date range inclusively")
         func shouldFilterDataByDateRangeInclusively() async {
             // GIVEN: Use case with historical data spanning multiple dates
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let historicalData = createTestHistoricalData()
             let dateRange = DateRange(start: testStartDate, end: testEndDate)
@@ -136,9 +137,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should exclude data outside date range")
         func shouldExcludeDataOutsideDateRange() async {
             // GIVEN: Historical data with dates outside the range
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let historicalData = createTestHistoricalData(dates: [testStartDate, testOutsideDate])
             let dateRange = DateRange(start: testStartDate, end: testEndDate)
@@ -160,9 +159,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should filter out entries missing target currency")
         func shouldFilterOutEntriesMissingTargetCurrency() async {
             // GIVEN: Historical data with missing target currency for some entries
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let historicalData = createTestHistoricalData(includeMissingCurrency: true)
             let dateRange = DateRange(start: testStartDate, end: testEndDate)
@@ -178,15 +175,13 @@ struct ChartDataPreparationUseCaseTests {
 
             // THEN: Should exclude entry missing target currency
             #expect(result.count == 2, "Should exclude entry without target currency")
-            #expect(!result.contains { $0.date == testMiddleDate }, "Should not include middle date with missing currency")
+            #expect(result.contains { $0.date == testMiddleDate } == false, "Should not include middle date with missing currency")
         }
 
         @Test("Should use USD base currency without conversion")
         func shouldUseUSDBaseCurrencyWithoutConversion() async {
             // GIVEN: Use case with USD base currency
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let historicalData = createTestHistoricalData(targetRate: 1.2)
             let dateRange = DateRange(start: testStartDate, end: testEndDate)
@@ -210,9 +205,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should handle empty historical data")
         func shouldHandleEmptyHistoricalData() async {
             // GIVEN: Use case with empty historical data
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let historicalData: [HistoricalRateDataValue] = []
             let dateRange = DateRange(start: testStartDate, end: testEndDate)
@@ -239,9 +232,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should return original data when count is less than or equal to maxPoints")
         func shouldReturnOriginalDataWhenCountIsLessOrEqual() async {
             // GIVEN: Use case and small dataset
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let data = createTestChartDataPoints(count: 5)
 
@@ -256,27 +247,27 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should always include first and last points")
         func shouldAlwaysIncludeFirstAndLastPoints() async {
             // GIVEN: Use case and large dataset
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let data = createTestChartDataPoints(count: 1000)
 
             // WHEN: Sampling data
-            let result = await useCase.sampleDataPoints(from: data, maxPoints: 50)
+            let maxPoints = 50
+            let result = await useCase.sampleDataPoints(from: data, maxPoints: maxPoints)
 
             // THEN: Should always include first and last points
             #expect(result.first?.date == data.first?.date, "Should include first point")
             #expect(result.last?.date == data.last?.date, "Should include last point")
-            #expect(result.count <= 54, "Should respect capacity limits") // maxPoints + extremes + first/last
+            // Sampler contract: up to maxPoints sampled points, plus the highest/lowest
+            // extreme points (2) and the first/last endpoints (2) are always retained.
+            let maxSampledCapacity = maxPoints + 2 + 2
+            #expect(result.count <= maxSampledCapacity, "Should respect capacity limits")
         }
 
         @Test("Should preserve temporal ordering in sampling")
         func shouldPreserveTemporalOrderingInSampling() async {
             // GIVEN: Use case and chronologically ordered data
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let data = createTestChartDataPoints(count: 200)
 
@@ -292,9 +283,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should handle empty data")
         func shouldHandleEmptyData() async {
             // GIVEN: Use case and empty dataset
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let data: [ChartDataPoint] = []
 
@@ -308,9 +297,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should handle single data point")
         func shouldHandleSingleDataPoint() async {
             // GIVEN: Use case and single data point
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let data = createTestChartDataPoints(count: 1)
 
@@ -331,9 +318,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should calculate basic statistics correctly")
         func shouldCalculateBasicStatisticsCorrectly() async {
             // GIVEN: Use case and test data with known values
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             // Data: rates [1.0, 1.1, 1.2, 1.3, 1.4]
             let data = createTestChartDataPoints(count: 5, startRate: 1.0)
@@ -351,9 +336,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should calculate price change correctly")
         func shouldCalculatePriceChangeCorrectly() async {
             // GIVEN: Use case and test data
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             // Data: rates [1.0, 1.1, 1.2, 1.3, 1.4] (change: 1.4 - 1.0 = +0.4)
             let data = createTestChartDataPoints(count: 5, startRate: 1.0)
@@ -369,9 +352,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should calculate percentage change correctly")
         func shouldCalculatePercentageChangeCorrectly() async {
             // GIVEN: Use case and test data
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             // Data: rates [1.0, 1.1, 1.2, 1.3, 1.4] (change: (1.4-1.0)/1.0 * 100 = +40%)
             let data = createTestChartDataPoints(count: 5, startRate: 1.0)
@@ -387,9 +368,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should determine trend direction correctly for upward trend")
         func shouldDetermineTrendDirectionCorrectlyForUpwardTrend() async {
             // GIVEN: Use case and upward trending data
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             // Create data with significant upward trend (>0.1% change)
             let data = [
@@ -407,9 +386,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should determine trend direction correctly for downward trend")
         func shouldDetermineTrendDirectionCorrectlyForDownwardTrend() async {
             // GIVEN: Use case and downward trending data
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             // Create data with significant downward trend (>0.1% change)
             let data = [
@@ -427,9 +404,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should determine trend direction correctly for stable trend")
         func shouldDetermineTrendDirectionCorrectlyForStableTrend() async {
             // GIVEN: Use case and stable data
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             // Create data with minimal change (within 0.1% threshold)
             let data = [
@@ -447,9 +422,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should calculate Y-domain padding correctly")
         func shouldCalculateYDomainPaddingCorrectly() async {
             // GIVEN: Use case and test data
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             // Data with known min (1.0) and max (1.4)
             let data = createTestChartDataPoints(count: 5, startRate: 1.0)
@@ -468,9 +441,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should handle empty data")
         func shouldHandleEmptyData() async {
             // GIVEN: Use case and empty data
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let data: [ChartDataPoint] = []
 
@@ -491,9 +462,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should handle single data point")
         func shouldHandleSingleDataPoint() async {
             // GIVEN: Use case and single data point
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let data = [ChartDataPoint(date: testStartDate, rate: 1.5)]
 
@@ -513,9 +482,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should handle zero first rate for percentage calculation")
         func shouldHandleZeroFirstRateForPercentageCalculation() async {
             // GIVEN: Use case and data starting with zero rate
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let data = [
                 ChartDataPoint(date: testStartDate, rate: 0.0),
@@ -540,9 +507,7 @@ struct ChartDataPreparationUseCaseTests {
         @Test("Should handle complete workflow from historical data to statistics")
         func shouldHandleCompleteWorkflowFromHistoricalDataToStatistics() async {
             // GIVEN: Use case and historical data
-            let rateCalculationUseCase = await createMockRateCalculationUseCase()
-            let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: rateCalculationUseCase, cacheService: cacheService)
+            let useCase = makeUseCase()
 
             let historicalData = createTestHistoricalData(targetRate: 1.2)
             let dateRange = DateRange(start: testStartDate, end: testEndDate)
@@ -560,8 +525,8 @@ struct ChartDataPreparationUseCaseTests {
             let statistics = await useCase.calculateStatistics(from: sampledData)
 
             // THEN: Should complete workflow successfully
-            #expect(!chartData.isEmpty, "Chart data should be processed")
-            #expect(!sampledData.isEmpty, "Data should be sampled")
+            #expect(chartData.isEmpty == false, "Chart data should be processed")
+            #expect(sampledData.isEmpty == false, "Data should be sampled")
             #expect(statistics.currentRate > 0, "Statistics should be calculated")
             #expect(statistics.chartYDomain.lowerBound > 0, "Y-domain should be valid")
         }

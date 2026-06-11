@@ -14,7 +14,8 @@ import Testing
 struct HistoricalDataAnalysisUseCaseTests {
     // MARK: - Test Data Constants
 
-    private static let useCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
+    /// Fresh per test (the struct is re-initialized for every @Test), so no state leaks between tests.
+    private let useCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
     // Helper dates for testing - using CET calendar for consistency
     private static let testBaseDate = createCETDate(year: 2025, month: 1, day: 15)! // Wednesday
@@ -76,15 +77,18 @@ struct HistoricalDataAnalysisUseCaseTests {
 
     // MARK: - calculateDateRange Tests
 
+    // calculateDateRange(for:) reads Date() internally and offers no clock injection,
+    // so these tests are necessarily relative to the real clock. They assert invariants
+    // (start-of-day, ordering) plus a 60s tolerance instead of exact fixed dates.
+
     @Test("calculateDateRange should return correct range for one week")
     func calculateDateRange_oneWeek_shouldReturnCorrectRange() {
         // WHEN: Calculating date range for one week
-        let result = Self.useCase.calculateDateRange(for: .oneWeek)
+        let result = useCase.calculateDateRange(for: .oneWeek)
 
         // THEN: Should return range from 7 days ago to today (start of day)
         let calendar = TimeZoneManager.cetCalendar
         let expectedEnd = calendar.startOfDay(for: Date())
-        _ = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -7, to: Date()) ?? Date())
 
         // Allow small time differences due to test execution timing
         let timeDifference = abs(result.end.timeIntervalSince(expectedEnd))
@@ -100,13 +104,12 @@ struct HistoricalDataAnalysisUseCaseTests {
     ])
     func calculateDateRange_variousTimeRanges_shouldReturnCorrectRange(timeRange: TimeRange) {
         // WHEN: Calculating date range for specified time range
-        let result = Self.useCase.calculateDateRange(for: timeRange)
+        let result = useCase.calculateDateRange(for: timeRange)
 
         // THEN: Should return proper date range
         let calendar = TimeZoneManager.cetCalendar
         let now = Date()
         let expectedEnd = calendar.startOfDay(for: now)
-        _ = timeRange.startDate(from: now)
 
         // Verify start and end dates are start of day
         let startComponents = calendar.dateComponents([.hour, .minute, .second], from: result.start)
@@ -128,7 +131,7 @@ struct HistoricalDataAnalysisUseCaseTests {
     @Test("calculateDateRange should handle start of day calculations correctly")
     func calculateDateRange_shouldHandleStartOfDayCorrectly() {
         // WHEN: Calculating any date range
-        let result = Self.useCase.calculateDateRange(for: .oneWeek)
+        let result = useCase.calculateDateRange(for: .oneWeek)
 
         // THEN: Both start and end should be start of day
         let calendar = TimeZoneManager.cetCalendar
@@ -148,7 +151,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         let requiredRange = DateRange(start: Self.testWeekdayBefore, end: Self.testBaseDate)
 
         // WHEN: Calculating missing ranges with nil cache
-        let result = try await Self.useCase.calculateMissingDateRanges(
+        let result = try await useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
             cache: nil
         )
@@ -166,7 +169,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         let emptyCache = CurrencyCache(data: [])
 
         // WHEN: Calculating missing ranges with empty cache
-        let result = try await Self.useCase.calculateMissingDateRanges(
+        let result = try await useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
             cache: emptyCache
         )
@@ -184,12 +187,12 @@ struct HistoricalDataAnalysisUseCaseTests {
         // GIVEN: Required range starts 10 days before cached data (>4 days gap)
         let cacheStart = Self.testBaseDate
         let calendar = TimeZoneManager.cetCalendar
-        let requiredStart = calendar.date(byAdding: .day, value: -10, to: cacheStart)!
+        let requiredStart = try #require(calendar.date(byAdding: .day, value: -10, to: cacheStart))
         let requiredRange = DateRange(start: requiredStart, end: Self.testWeekdayAfter)
         let cache = createMockCache(startDate: cacheStart, endDate: Self.testWeekdayAfter)
 
         // WHEN: Calculating missing ranges
-        let result = try await Self.useCase.calculateMissingDateRanges(
+        let result = try await useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
             cache: cache
         )
@@ -198,7 +201,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         #expect(result.count == 1, "Should detect one missing range before cache")
         #expect(result[0].start == requiredStart, "Missing range should start at required start")
 
-        let expectedEnd = calendar.date(byAdding: .day, value: -1, to: cacheStart)!
+        let expectedEnd = try #require(calendar.date(byAdding: .day, value: -1, to: cacheStart))
         #expect(result[0].end == expectedEnd, "Missing range should end one day before cache start")
     }
 
@@ -207,12 +210,12 @@ struct HistoricalDataAnalysisUseCaseTests {
         // GIVEN: Required range starts exactly 5 days before cached data (>4 days)
         let cacheStart = Self.testBaseDate
         let calendar = TimeZoneManager.cetCalendar
-        let requiredStart = calendar.date(byAdding: .day, value: -5, to: cacheStart)!
+        let requiredStart = try #require(calendar.date(byAdding: .day, value: -5, to: cacheStart))
         let requiredRange = DateRange(start: requiredStart, end: Self.testWeekdayAfter)
         let cache = createMockCache(startDate: cacheStart, endDate: Self.testWeekdayAfter)
 
         // WHEN: Calculating missing ranges
-        let result = try await Self.useCase.calculateMissingDateRanges(
+        let result = try await useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
             cache: cache
         )
@@ -221,7 +224,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         #expect(result.count == 1, "Should detect gap of 5 days")
         #expect(result[0].start == requiredStart, "Missing range should start at required start")
 
-        let expectedEnd = calendar.date(byAdding: .day, value: -1, to: cacheStart)!
+        let expectedEnd = try #require(calendar.date(byAdding: .day, value: -1, to: cacheStart))
         #expect(result[0].end == expectedEnd, "Missing range should end one day before cache start")
     }
 
@@ -232,12 +235,12 @@ struct HistoricalDataAnalysisUseCaseTests {
         // GIVEN: Required range extends well beyond cached data with many business days
         let cacheEnd = Self.testBaseDate
         let calendar = TimeZoneManager.cetCalendar
-        let requiredEnd = calendar.date(byAdding: .day, value: 10, to: cacheEnd)! // 10 days later
+        let requiredEnd = try #require(calendar.date(byAdding: .day, value: 10, to: cacheEnd)) // 10 days later
         let requiredRange = DateRange(start: Self.testWeekdayBefore, end: requiredEnd)
         let cache = createMockCache(startDate: Self.testWeekdayBefore, endDate: cacheEnd)
 
         // WHEN: Calculating missing ranges
-        let result = try await Self.useCase.calculateMissingDateRanges(
+        let result = try await useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
             cache: cache
         )
@@ -245,7 +248,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         // THEN: Should detect gap after cache (has ≥5 business days)
         #expect(result.count == 1, "Should detect one missing range after cache")
 
-        let expectedStart = calendar.date(byAdding: .day, value: 1, to: cacheEnd)!
+        let expectedStart = try #require(calendar.date(byAdding: .day, value: 1, to: cacheEnd))
         #expect(result[0].start == expectedStart, "Missing range should start one day after cache end")
         #expect(result[0].end == requiredEnd, "Missing range should end at required end")
     }
@@ -259,14 +262,15 @@ struct HistoricalDataAnalysisUseCaseTests {
         let cache = createMockCache(startDate: Self.testWeekdayBefore, endDate: cacheWednesdayEnd)
 
         // WHEN: Calculating missing ranges
-        let result = try await Self.useCase.calculateMissingDateRanges(
+        let result = try await useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
             cache: cache
         )
 
         // THEN: Should detect gap with business days (Thu, Fri, Mon need data)
+        let expectedGapStart = try #require(TimeZoneManager.cetCalendar.date(byAdding: .day, value: 1, to: cacheWednesdayEnd))
         #expect(result.count == 1, "Should detect gap with business days")
-        #expect(result[0].start == TimeZoneManager.cetCalendar.date(byAdding: .day, value: 1, to: cacheWednesdayEnd)!, "Missing range should start day after cache end")
+        #expect(result[0].start == expectedGapStart, "Missing range should start day after cache end")
         #expect(result[0].end == requiredMondayEnd, "Missing range should end at required end")
     }
 
@@ -277,15 +281,15 @@ struct HistoricalDataAnalysisUseCaseTests {
         // GIVEN: Required range has significant gaps both before and after cache
         let cacheStart = Self.testBaseDate
         let calendar = TimeZoneManager.cetCalendar
-        let cacheEnd = calendar.date(byAdding: .day, value: 2, to: cacheStart)!
-        let requiredStart = calendar.date(byAdding: .day, value: -10, to: cacheStart)! // 10 days before
-        let requiredEnd = calendar.date(byAdding: .day, value: 15, to: cacheEnd)! // 15 days after
+        let cacheEnd = try #require(calendar.date(byAdding: .day, value: 2, to: cacheStart))
+        let requiredStart = try #require(calendar.date(byAdding: .day, value: -10, to: cacheStart)) // 10 days before
+        let requiredEnd = try #require(calendar.date(byAdding: .day, value: 15, to: cacheEnd)) // 15 days after
 
         let requiredRange = DateRange(start: requiredStart, end: requiredEnd)
         let cache = createMockCache(startDate: cacheStart, endDate: cacheEnd)
 
         // WHEN: Calculating missing ranges
-        let result = try await Self.useCase.calculateMissingDateRanges(
+        let result = try await useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
             cache: cache
         )
@@ -298,7 +302,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         #expect(firstGap != nil, "Should have gap before cache")
         #expect(firstGap?.start == requiredStart, "First gap should start at required start")
 
-        let expectedFirstEnd = calendar.date(byAdding: .day, value: -1, to: cacheStart)!
+        let expectedFirstEnd = try #require(calendar.date(byAdding: .day, value: -1, to: cacheStart))
         #expect(firstGap?.end == expectedFirstEnd, "First gap should end one day before cache")
 
         // Verify second gap (after cache)
@@ -306,7 +310,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         #expect(secondGap != nil, "Should have gap after cache")
         #expect(secondGap?.end == requiredEnd, "Second gap should end at required end")
 
-        let expectedSecondStart = calendar.date(byAdding: .day, value: 1, to: cacheEnd)!
+        let expectedSecondStart = try #require(calendar.date(byAdding: .day, value: 1, to: cacheEnd))
         #expect(secondGap?.start == expectedSecondStart, "Second gap should start one day after cache")
     }
 
@@ -321,7 +325,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         let cache = createMockCache(startDate: cacheStart, endDate: cacheEnd)
 
         // WHEN: Calculating missing ranges
-        let result = try await Self.useCase.calculateMissingDateRanges(
+        let result = try await useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
             cache: cache
         )
@@ -330,57 +334,22 @@ struct HistoricalDataAnalysisUseCaseTests {
         #expect(result.isEmpty, "Should return no missing ranges when cache covers required range")
     }
 
-    // MARK: - calculateMissingDateRanges Tests - Error Cases
-
-    @Test("calculateMissingDateRanges should throw error when date calculation fails")
-    func calculateMissingDateRanges_dateCalculationFailure_shouldThrowError() async throws {
-        // This test is challenging because TimeZoneManager.cetCalendar is robust
-        // We'll test the conceptual error case by checking the thrown error type
-        // In practice, this would require mocking the calendar or using extreme dates
-
-        // GIVEN: A scenario that could cause date calculation to fail
-        // Using very extreme dates that might cause calendar operations to fail
-        let extremeDate = Date(timeIntervalSince1970: Double.greatestFiniteMagnitude / 1000)
-        let normalDate = Self.testBaseDate
-        let requiredRange = DateRange(start: normalDate, end: extremeDate)
-        let cache = createMockCache(startDate: normalDate, endDate: normalDate)
-
-        // WHEN & THEN: Attempting calculation with extreme dates
-        // In normal circumstances, this might not fail, but we verify error handling structure
-        do {
-            let result = try await Self.useCase.calculateMissingDateRanges(
-                requiredRange: requiredRange,
-                cache: cache
-            )
-            // If no error thrown, test passes (robust implementation)
-            #expect(result.count >= 0, "Should handle extreme dates gracefully")
-        } catch let error as AppError {
-            // If error is thrown, it should be dateCalculationError
-            switch error {
-            case let .dateCalculationError(message):
-                #expect(message.contains("Could not calculate"), "Error message should be descriptive")
-            default:
-                #expect(Bool(false), "Should throw dateCalculationError, got \(error)")
-            }
-        }
-    }
-
     // MARK: - mergeHistoricalData Tests
 
     @Test("mergeHistoricalData with empty existing data should return new data sorted")
-    func mergeHistoricalData_emptyExisting_shouldReturnNewDataSorted() {
+    func mergeHistoricalData_emptyExisting_shouldReturnNewDataSorted() throws {
         // GIVEN: Empty existing data and new data
         let existingData: [HistoricalRateDataValue] = []
         let date1 = Self.testBaseDate
         let calendar = TimeZoneManager.cetCalendar
-        let date2 = calendar.date(byAdding: .day, value: -1, to: date1)!
+        let date2 = try #require(calendar.date(byAdding: .day, value: -1, to: date1))
         let newData = [
             HistoricalRateDataValue(date: date1, rates: [HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.08)]),
             HistoricalRateDataValue(date: date2, rates: [HistoricalRateDataPointValue(currencyCode: "GBP", rate: 0.85)]),
         ]
 
         // WHEN: Merging data
-        let result = Self.useCase.mergeHistoricalData(existing: existingData, new: newData)
+        let result = useCase.mergeHistoricalData(existing: existingData, new: newData)
 
         // THEN: Should return new data sorted by date
         #expect(result.count == 2, "Should return 2 items")
@@ -389,11 +358,11 @@ struct HistoricalDataAnalysisUseCaseTests {
     }
 
     @Test("mergeHistoricalData with empty new data should return existing data sorted")
-    func mergeHistoricalData_emptyNew_shouldReturnExistingDataSorted() {
+    func mergeHistoricalData_emptyNew_shouldReturnExistingDataSorted() throws {
         // GIVEN: Existing data and empty new data
         let date1 = Self.testBaseDate
         let calendar = TimeZoneManager.cetCalendar
-        let date2 = calendar.date(byAdding: .day, value: -1, to: date1)!
+        let date2 = try #require(calendar.date(byAdding: .day, value: -1, to: date1))
         let existingData = [
             HistoricalRateDataValue(date: date1, rates: [HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.08)]),
             HistoricalRateDataValue(date: date2, rates: [HistoricalRateDataPointValue(currencyCode: "GBP", rate: 0.85)]),
@@ -401,7 +370,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         let newData: [HistoricalRateDataValue] = []
 
         // WHEN: Merging data
-        let result = Self.useCase.mergeHistoricalData(existing: existingData, new: newData)
+        let result = useCase.mergeHistoricalData(existing: existingData, new: newData)
 
         // THEN: Should return existing data sorted by date
         #expect(result.count == 2, "Should return 2 items")
@@ -410,12 +379,12 @@ struct HistoricalDataAnalysisUseCaseTests {
     }
 
     @Test("mergeHistoricalData with both existing and new data should merge without duplicates")
-    func mergeHistoricalData_bothDataSets_shouldMergeWithoutDuplicates() {
+    func mergeHistoricalData_bothDataSets_shouldMergeWithoutDuplicates() throws {
         // GIVEN: Existing data and new data with some overlapping dates
         let date1 = Self.testBaseDate
         let calendar = TimeZoneManager.cetCalendar
-        let date2 = calendar.date(byAdding: .day, value: -1, to: date1)!
-        let date3 = calendar.date(byAdding: .day, value: -2, to: date1)!
+        let date2 = try #require(calendar.date(byAdding: .day, value: -1, to: date1))
+        let date3 = try #require(calendar.date(byAdding: .day, value: -2, to: date1))
 
         let existingData = [
             HistoricalRateDataValue(date: date1, rates: [HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.08)]),
@@ -428,7 +397,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         ]
 
         // WHEN: Merging data
-        let result = Self.useCase.mergeHistoricalData(existing: existingData, new: newData)
+        let result = useCase.mergeHistoricalData(existing: existingData, new: newData)
 
         // THEN: Should merge without duplicates and sort by date
         #expect(result.count == 3, "Should return 3 unique dates")
@@ -442,13 +411,13 @@ struct HistoricalDataAnalysisUseCaseTests {
     }
 
     @Test("mergeHistoricalData should maintain chronological order")
-    func mergeHistoricalData_shouldMaintainChronologicalOrder() {
+    func mergeHistoricalData_shouldMaintainChronologicalOrder() throws {
         // GIVEN: Data in random order
         let dates = [
             Self.testBaseDate,
-            TimeZoneManager.cetCalendar.date(byAdding: .day, value: -5, to: Self.testBaseDate)!,
-            TimeZoneManager.cetCalendar.date(byAdding: .day, value: -2, to: Self.testBaseDate)!,
-            TimeZoneManager.cetCalendar.date(byAdding: .day, value: -8, to: Self.testBaseDate)!,
+            try #require(TimeZoneManager.cetCalendar.date(byAdding: .day, value: -5, to: Self.testBaseDate)),
+            try #require(TimeZoneManager.cetCalendar.date(byAdding: .day, value: -2, to: Self.testBaseDate)),
+            try #require(TimeZoneManager.cetCalendar.date(byAdding: .day, value: -8, to: Self.testBaseDate)),
         ]
 
         let existingData = [
@@ -462,7 +431,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         ]
 
         // WHEN: Merging data
-        let result = Self.useCase.mergeHistoricalData(existing: existingData, new: newData)
+        let result = useCase.mergeHistoricalData(existing: existingData, new: newData)
 
         // THEN: Should be sorted chronologically (earliest to latest)
         #expect(result.count == 4, "Should return 4 items")
@@ -486,7 +455,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         ]
 
         // WHEN: Merging data
-        let result = Self.useCase.mergeHistoricalData(existing: existingData, new: newData)
+        let result = useCase.mergeHistoricalData(existing: existingData, new: newData)
 
         // THEN: Should have only one entry for the shared date (latest new data wins)
         #expect(result.count == 1, "Should return only one entry for duplicate dates")
@@ -495,10 +464,10 @@ struct HistoricalDataAnalysisUseCaseTests {
     }
 
     @Test("mergeHistoricalData with complex rates should preserve all rate data")
-    func mergeHistoricalData_withComplexRates_shouldPreserveAllRateData() {
+    func mergeHistoricalData_withComplexRates_shouldPreserveAllRateData() throws {
         // GIVEN: Data with multiple currency rates per date
         let date1 = Self.testBaseDate
-        let date2 = TimeZoneManager.cetCalendar.date(byAdding: .day, value: -1, to: date1)!
+        let date2 = try #require(TimeZoneManager.cetCalendar.date(byAdding: .day, value: -1, to: date1))
 
         let existingData = [
             HistoricalRateDataValue(date: date1, rates: [
@@ -516,7 +485,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         ]
 
         // WHEN: Merging data
-        let result = Self.useCase.mergeHistoricalData(existing: existingData, new: newData)
+        let result = useCase.mergeHistoricalData(existing: existingData, new: newData)
 
         // THEN: Should preserve all complex rate structures
         #expect(result.count == 2, "Should return 2 date entries")
@@ -537,17 +506,17 @@ struct HistoricalDataAnalysisUseCaseTests {
         let baseDate = Self.testBaseDate
 
         // Required range: 20 days ago to 10 days from now
-        let requiredStart = calendar.date(byAdding: .day, value: -20, to: baseDate)!
-        let requiredEnd = calendar.date(byAdding: .day, value: 10, to: baseDate)!
+        let requiredStart = try #require(calendar.date(byAdding: .day, value: -20, to: baseDate))
+        let requiredEnd = try #require(calendar.date(byAdding: .day, value: 10, to: baseDate))
         let requiredRange = DateRange(start: requiredStart, end: requiredEnd)
 
         // Cache covers: 5 days ago to 5 days from now (partial coverage)
-        let cacheStart = calendar.date(byAdding: .day, value: -5, to: baseDate)!
-        let cacheEnd = calendar.date(byAdding: .day, value: 5, to: baseDate)!
+        let cacheStart = try #require(calendar.date(byAdding: .day, value: -5, to: baseDate))
+        let cacheEnd = try #require(calendar.date(byAdding: .day, value: 5, to: baseDate))
         let cache = createMockCache(startDate: cacheStart, endDate: cacheEnd)
 
         // WHEN: Calculating missing ranges
-        let result = try await Self.useCase.calculateMissingDateRanges(
+        let result = try await useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
             cache: cache
         )
@@ -573,15 +542,15 @@ struct HistoricalDataAnalysisUseCaseTests {
         let today = Date()
 
         // Calculate date range for 3 months
-        let dateRange = Self.useCase.calculateDateRange(for: .threeMonths)
+        let dateRange = useCase.calculateDateRange(for: .threeMonths)
 
         // Create cache with data for last month only
-        let cacheStart = calendar.date(byAdding: .month, value: -1, to: today)!
+        let cacheStart = try #require(calendar.date(byAdding: .month, value: -1, to: today))
         let cacheEnd = today
         let cache = createMockCache(startDate: cacheStart, endDate: cacheEnd)
 
         // WHEN: Calculating missing ranges
-        let missingRanges = try await Self.useCase.calculateMissingDateRanges(
+        let missingRanges = try await useCase.calculateMissingDateRanges(
             requiredRange: dateRange,
             cache: cache
         )
@@ -592,7 +561,7 @@ struct HistoricalDataAnalysisUseCaseTests {
             let missingData = createTestHistoricalData(
                 dates: [missingRange.start, missingRange.end]
             )
-            allData = Self.useCase.mergeHistoricalData(existing: allData, new: missingData)
+            allData = useCase.mergeHistoricalData(existing: allData, new: missingData)
         }
 
         // THEN: Should have complete integrated workflow

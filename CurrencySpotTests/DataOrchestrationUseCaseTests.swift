@@ -144,25 +144,6 @@ final class MockExchangeRateServiceForOrchestration: ExchangeRateService {
     func clearAllData() async throws {
         // No-op for testing
     }
-
-    // MARK: - Test Helper Methods
-
-    func reset() {
-        shouldFetchNewRatesResult = false
-        fetchAndSaveHistoricalRatesCallCount = 0
-        loadHistoricalRatesCallCount = 0
-        getEarliestStoredDateResult = nil
-        getLatestStoredDateResult = nil
-        lastFetchDate = nil
-        historicalDataToReturn = []
-        exchangeRatesToReturn = []
-        trendDataToReturn = []
-        fetchAndSaveHistoricalRatesCalls = []
-        loadHistoricalRatesForCurrencyCalls = []
-        shouldThrowErrorOnFetch = false
-        shouldThrowErrorOnLoad = false
-        errorToThrow = AppError.networkError("Mock error")
-    }
 }
 
 /// Mock implementation of CacheService for testing DataOrchestrationUseCase
@@ -223,15 +204,6 @@ actor MockCacheServiceForOrchestration: CacheService {
 
     // MARK: - Test Helper Methods
 
-    func reset() async {
-        cachedExchangeRates = nil
-        cachedHistoricalData.removeAll()
-        cachedTrendData = nil
-        cacheHistoricalDataCallCount = 0
-        getCachedHistoricalDataCallCount = 0
-        clearCacheCallCount = 0
-    }
-
     func setCachedHistoricalData(_ data: [HistoricalRateDataValue], for currency: String) async {
         cachedHistoricalData[currency] = data
     }
@@ -244,7 +216,8 @@ struct DataOrchestrationUseCaseTests {
     // MARK: - Test Data
 
     static let testCurrency = "EUR"
-    static let baseDate = Date()
+    /// Fixed anchor (Wednesday, midnight CET) so fixtures never depend on the wall clock.
+    static let baseDate = createCETDate(year: 2025, month: 1, day: 15)!
     static let calendar = TimeZoneManager.cetCalendar
 
     // Create consistent test dates
@@ -334,7 +307,7 @@ struct DataOrchestrationUseCaseTests {
 
         // THEN: Should fetch missing data and merge
         #expect(result.newDataFetched == true)
-        #expect(!result.dataPoints.isEmpty) // Real use case will merge appropriately
+        #expect(result.dataPoints.isEmpty == false) // Real use case will merge appropriately
         #expect(mockService.fetchAndSaveHistoricalRatesCallCount == 1)
         #expect(mockService.loadHistoricalRatesCallCount == 1)
         // Real analysis use case used - can't verify call counts
@@ -376,7 +349,7 @@ struct DataOrchestrationUseCaseTests {
 
         // THEN: Should fetch all data
         #expect(result.newDataFetched == true)
-        #expect(!result.dataPoints.isEmpty) // Real use case will provide merged data
+        #expect(result.dataPoints.isEmpty == false) // Real use case will provide merged data
         #expect(mockService.fetchAndSaveHistoricalRatesCallCount == 1)
         #expect(mockService.loadHistoricalRatesCallCount == 1)
 
@@ -414,7 +387,7 @@ struct DataOrchestrationUseCaseTests {
 
         // THEN: Should load from SwiftData without API fetch
         #expect(result.newDataFetched == false)
-        #expect(!result.dataPoints.isEmpty) // Real use case will provide data
+        #expect(result.dataPoints.isEmpty == false) // Real use case will provide data
         #expect(mockService.fetchAndSaveHistoricalRatesCallCount == 0) // No API fetch
         #expect(mockService.loadHistoricalRatesCallCount == 1) // Load from SwiftData
     }

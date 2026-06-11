@@ -13,8 +13,14 @@ import Network
 final class NetworkMonitor {
     var isConnected = true
     private let monitor = NWPathMonitor()
+    private let isMonitoring: Bool
 
-    init() {
+    /// Pass `monitorsPathUpdates: false` in tests to pin `isConnected` manually,
+    /// so an asynchronous path update can never flip it mid-test.
+    init(monitorsPathUpdates: Bool = true) {
+        isMonitoring = monitorsPathUpdates
+        guard monitorsPathUpdates else { return }
+
         monitor.pathUpdateHandler = { [weak self] path in
             Task { @MainActor in
                 self?.isConnected = path.status == .satisfied
@@ -27,6 +33,8 @@ final class NetworkMonitor {
     }
 
     deinit {
-        monitor.cancel()
+        if isMonitoring {
+            monitor.cancel()
+        }
     }
 }

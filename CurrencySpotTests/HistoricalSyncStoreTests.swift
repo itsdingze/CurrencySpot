@@ -7,33 +7,6 @@ import Foundation
 import Testing
 @testable import CurrencySpot
 
-/// In-memory test double for HistoricalSyncStore.
-final class MockHistoricalSyncStore: HistoricalSyncStore {
-    var from: Date?
-    var through: Date?
-    var checkedAt: Date?
-    private(set) var recordCallCount = 0
-
-    init(from: Date? = nil, through: Date? = nil, checkedAt: Date? = nil) {
-        self.from = from
-        self.through = through
-        self.checkedAt = checkedAt
-    }
-
-    func record(from newFrom: Date, through newThrough: Date, at now: Date) {
-        recordCallCount += 1
-        from = Swift.min(from ?? newFrom, newFrom)
-        through = Swift.max(through ?? newThrough, newThrough)
-        checkedAt = now
-    }
-
-    func reset() {
-        from = nil
-        through = nil
-        checkedAt = nil
-    }
-}
-
 @Suite("HistoricalSyncStore")
 struct HistoricalSyncStoreTests {
     private static func makeDefaults() -> UserDefaults {

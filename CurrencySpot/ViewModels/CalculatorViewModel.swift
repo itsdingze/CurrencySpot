@@ -43,7 +43,7 @@ final class CalculatorViewModel {
     // MARK: - Private Properties
 
     private let service: ExchangeRateService
-    private let appState = AppState.shared
+    private let appState: AppState
     private var fetchTask: Task<Void, Never>?
     private var fetchGeneration = 0
     private let retryManager = RetryManager.shared
@@ -54,14 +54,16 @@ final class CalculatorViewModel {
 
     // MARK: - Initialization
 
-    /// Initializes the CalculatorViewModel with optional service injection
-    /// - Parameter service: Optional exchange rate service for dependency injection
-    init(service: ExchangeRateService) {
+    /// Initializes the CalculatorViewModel with injected dependencies.
+    /// Defaults preserve production behavior; tests inject an isolated `AppState`
+    /// (for connectivity control) and `UserDefaults` (for preference isolation).
+    init(service: ExchangeRateService, appState: AppState = .shared, userDefaults: UserDefaults = .standard) {
         self.service = service
+        self.appState = appState
 
         // Load user preferences for default currencies
-        baseCurrency = UserDefaults.standard.string(forKey: UserDefaultsKeys.defaultBaseCurrency) ?? "USD"
-        targetCurrency = UserDefaults.standard.string(forKey: UserDefaultsKeys.defaultTargetCurrency) ?? "EUR"
+        baseCurrency = userDefaults.string(forKey: UserDefaultsKeys.defaultBaseCurrency) ?? "USD"
+        targetCurrency = userDefaults.string(forKey: UserDefaultsKeys.defaultTargetCurrency) ?? "EUR"
         // CalculatorView's `.task` calls checkIfShouldFetch() on appear; that is the single kickoff.
     }
 

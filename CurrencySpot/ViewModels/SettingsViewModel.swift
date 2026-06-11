@@ -114,7 +114,7 @@ final class SettingsViewModel {
 
     // MARK: - Private Properties
 
-    private let userDefaults = UserDefaults.standard
+    private let userDefaults: UserDefaults
     private let service: ExchangeRateService
     private let appState = AppState.shared
 
@@ -137,10 +137,17 @@ final class SettingsViewModel {
 
     // MARK: - Initialization
 
-    init(service: ExchangeRateService, calculatorViewModel: CalculatorViewModel? = nil, historyViewModel: HistoryViewModel? = nil) {
+    /// `userDefaults` defaults to `.standard`; tests inject an isolated suite.
+    init(
+        service: ExchangeRateService,
+        calculatorViewModel: CalculatorViewModel? = nil,
+        historyViewModel: HistoryViewModel? = nil,
+        userDefaults: UserDefaults = .standard
+    ) {
         self.service = service
         self.calculatorViewModel = calculatorViewModel
         self.historyViewModel = historyViewModel
+        self.userDefaults = userDefaults
 
         accentColor = userDefaults.string(forKey: UserDefaultsKeys.accentColor)
             .flatMap { AccentColorOption(rawValue: $0) } ?? DefaultValues.accentColor

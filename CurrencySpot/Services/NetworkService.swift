@@ -33,9 +33,19 @@ final class FrankfurterNetworkService: NetworkService {
 
     private let lastFetchDateKey = UserDefaultsKeys.lastFetchDate
 
+    // MARK: - Dependencies
+
+    private let api: FrankfurterAPI
+    private let userDefaults: UserDefaults
+
     // MARK: - Initialization
 
-    init() {}
+    /// Defaults preserve production behavior; tests inject a stubbed API client
+    /// and an isolated `UserDefaults` so they never touch the live network or `.standard`.
+    init(api: FrankfurterAPI = .shared, userDefaults: UserDefaults = .standard) {
+        self.api = api
+        self.userDefaults = userDefaults
+    }
 
     // MARK: - Rate Fetching Check Methods
 
@@ -53,7 +63,7 @@ final class FrankfurterNetworkService: NetworkService {
     /// - Returns: A FrankfurterResponse containing the latest exchange rates
     /// - Throws: Any error that might occur during the API request
     func fetchExchangeRates() async throws -> ExchangeRatesResponse {
-        let response = try await FrankfurterAPI.shared.fetchExchangeRates()
+        let response = try await api.fetchExchangeRates()
 
         // Update the last fetch date after successful fetch
         updateLastFetchDate(Date())
@@ -69,7 +79,7 @@ final class FrankfurterNetworkService: NetworkService {
     /// - Returns: A HistoricalRatesResponse containing the historical exchange rates
     /// - Throws: Any error that might occur during the API request
     func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> HistoricalRatesResponse {
-        try await FrankfurterAPI.shared.fetchHistoricalRatesForRange(
+        try await api.fetchHistoricalRatesForRange(
             startDate: startDate,
             endDate: endDate
         )
@@ -78,10 +88,10 @@ final class FrankfurterNetworkService: NetworkService {
     // MARK: - Date Management Methods
 
     func updateLastFetchDate(_ date: Date) {
-        UserDefaults.standard.set(date, forKey: lastFetchDateKey)
+        userDefaults.set(date, forKey: lastFetchDateKey)
     }
 
     func getLastFetchDate() -> Date? {
-        UserDefaults.standard.object(forKey: lastFetchDateKey) as? Date
+        userDefaults.object(forKey: lastFetchDateKey) as? Date
     }
 }

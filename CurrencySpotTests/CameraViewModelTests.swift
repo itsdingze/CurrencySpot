@@ -46,7 +46,7 @@ struct CameraViewModelTests {
         torchAvailable: Bool = true
     ) -> CameraViewModel {
         let appState = appState ?? AppState()
-        let calculatorViewModel = CalculatorViewModel(service: MockExchangeRateService())
+        let calculatorViewModel = makeIsolatedCalculatorViewModel()
         calculatorViewModel.availableRates = [
             ExchangeRateDataValue(currencyCode: "JPY", rate: 150),
             ExchangeRateDataValue(currencyCode: "EUR", rate: 0.9),
@@ -72,8 +72,10 @@ struct CameraViewModelTests {
     @Test(arguments: [CameraAuthorizationStatus.notDetermined, .authorized, .denied])
     func initialAuthorizationReflectsSystemStatus(status: CameraAuthorizationStatus) {
         let viewModel = CameraViewModel(
-            calculatorViewModel: CalculatorViewModel(service: MockExchangeRateService()),
-            permissionService: MockCameraPermissionService(status: status)
+            calculatorViewModel: makeIsolatedCalculatorViewModel(),
+            permissionService: MockCameraPermissionService(status: status),
+            fallbackBaseCurrency: "USD",
+            defaultTargetCurrency: "EUR"
         )
         #expect(viewModel.authorization == status)
     }
@@ -82,8 +84,10 @@ struct CameraViewModelTests {
     func requestAccessTransitionsToUsersAnswer(granted: Bool, expected: CameraAuthorizationStatus) async {
         let service = MockCameraPermissionService(status: .notDetermined, grantsAccess: granted)
         let viewModel = CameraViewModel(
-            calculatorViewModel: CalculatorViewModel(service: MockExchangeRateService()),
-            permissionService: service
+            calculatorViewModel: makeIsolatedCalculatorViewModel(),
+            permissionService: service,
+            fallbackBaseCurrency: "USD",
+            defaultTargetCurrency: "EUR"
         )
 
         await viewModel.requestCameraAccess()
@@ -222,7 +226,7 @@ struct CameraViewModelTests {
 
     @Test func openInConverterPrefillsCalculatorAndSwitchesToConvertTab() {
         let appState = AppState()
-        let calculator = CalculatorViewModel(service: MockExchangeRateService())
+        let calculator = makeIsolatedCalculatorViewModel()
         let viewModel = CameraViewModel(
             calculatorViewModel: calculator,
             appState: appState,

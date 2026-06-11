@@ -9,7 +9,18 @@ import Foundation
 
 /// Mock implementation of ExchangeRateService for previews and testing
 /// Returns Value Types only - no SwiftData dependencies
+///
+/// Fully deterministic: all generated series derive from fixed fixture values and the
+/// injected `today` anchor, so the same inputs always produce the same outputs.
 struct MockExchangeRateService: ExchangeRateService {
+    /// Anchor for all relative-date fixtures. Defaults to the live clock so
+    /// previews stay current; tests inject a fixed date for reproducible series.
+    private let today: Date
+
+    init(today: Date = Date()) {
+        self.today = today
+    }
+
     // MARK: - Network Methods (Return Mock API Responses)
 
     func shouldFetchNewRates() async -> Bool {
@@ -43,15 +54,16 @@ struct MockExchangeRateService: ExchangeRateService {
     }
 
     func loadHistoricalRates() async throws -> [HistoricalRateDataValue] {
-        // Generate mock historical data
-        let calendar = Calendar.current
-        let today = Date()
+        // Generate deterministic mock historical data anchored to `today`
+        let calendar = TimeZoneManager.cetCalendar
         var historicalData: [HistoricalRateDataValue] = []
 
         for i in 0 ..< 30 { // 30 days of mock data
             if let date = calendar.date(byAdding: .day, value: -i, to: today) {
                 let dateString = TimeZoneManager.formatForAPI(date)
-                let variation = Double.random(in: 0.95 ... 1.05)
+                // Fixed per-day drift (±5% over the window) instead of randomness,
+                // so repeated loads return identical series.
+                let variation = 0.95 + Double(i) / 290.0
 
                 let ratePoints = MockExchangeRates.rates.map { currency, rate in
                     HistoricalRateDataPointValue(
@@ -93,15 +105,15 @@ struct MockExchangeRateService: ExchangeRateService {
     }
 
     func getEarliestStoredDate() async throws -> Date? {
-        Date()
+        today
     }
 
     func getLatestStoredDate() async throws -> Date? {
-        Date()
+        today
     }
 
     func getLastFetchDate() -> Date? {
-        Date()
+        today
     }
 
     // MARK: - Trend Data Methods
@@ -121,10 +133,9 @@ struct MockExchangeRateService: ExchangeRateService {
 
     func doesDateRangeAffectTrends(startDate: Date, endDate: Date) async throws -> Bool {
         // For mock service, assume any date range in the last 7 days affects trends
-        let calendar = Calendar.current
-        let now = Date()
-        let trendWindowStart = calendar.date(byAdding: .day, value: -7, to: now) ?? now
-        return startDate <= now && endDate >= trendWindowStart
+        let calendar = TimeZoneManager.cetCalendar
+        let trendWindowStart = calendar.date(byAdding: .day, value: -7, to: today) ?? today
+        return startDate <= today && endDate >= trendWindowStart
     }
 
     func clearAllData() async throws {

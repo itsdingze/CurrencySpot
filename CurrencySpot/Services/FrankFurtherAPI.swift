@@ -28,15 +28,23 @@ final class FrankfurterAPI {
 
     private let baseURL = "https://api.frankfurter.dev/v2"
 
-    /// Custom URLSession with appropriate timeout configuration
-    private let urlSession: URLSession = {
+    private let urlSession: URLSession
+
+    /// Default keeps the production session configuration; tests inject a
+    /// URLProtocol-stubbed session so requests never reach the live API.
+    init(session: URLSession = FrankfurterAPI.makeDefaultSession()) {
+        urlSession = session
+    }
+
+    /// Production URLSession with appropriate timeout configuration.
+    static func makeDefaultSession() -> URLSession {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 10.0 // 10 seconds
         configuration.timeoutIntervalForResource = 30.0 // 30 seconds
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.allowsCellularAccess = true
         return URLSession(configuration: configuration)
-    }()
+    }
 
     /// Fetches the latest exchange rates from the Frankfurter API
     ///
