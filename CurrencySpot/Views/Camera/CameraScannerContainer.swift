@@ -39,7 +39,7 @@ struct CameraScannerContainer: View {
                 items: viewModel.detectedItems,
                 targetCurrency: viewModel.targetCurrency,
                 onOutlineTap: { viewModel.toggleConversion(for: $0) },
-                onBadgeTap: { viewModel.showBadgeDetail(for: $0) }
+                onPlateTap: { viewModel.showBadgeDetail(for: $0) }
             )
         }
         .ignoresSafeArea()
@@ -112,7 +112,8 @@ struct CameraScannerContainer: View {
                 targetCurrency: viewModel.targetCurrency,
                 rateUsed: viewModel.rateUsed,
                 rateFreshness: viewModel.rateFreshness,
-                openInConverter: { viewModel.openInConverter(item) }
+                openInConverter: { viewModel.openInConverter(item) },
+                hideConversion: { viewModel.hideConversion(for: item.id) }
             )
         }
     }

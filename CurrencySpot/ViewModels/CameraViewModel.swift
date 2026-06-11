@@ -217,6 +217,19 @@ final class CameraViewModel {
         reconvert()
     }
 
+    /// The detail sheet's escape hatch for misread or misclassified plates:
+    /// uncovers the original text and dismisses the sheet.
+    func hideConversion(for id: UUID) {
+        guard let item = detectedItems.first(where: { $0.id == id }), item.conversion.isPrice else { return }
+        if manualPriceOverrides.contains(id) {
+            manualPriceOverrides.remove(id)
+        } else {
+            suppressedPrices.insert(id)
+        }
+        destination = nil
+        reconvert()
+    }
+
     func showBadgeDetail(for id: UUID) {
         guard let item = detectedItems.first(where: { $0.id == id }), item.conversion.isPrice else { return }
         destination = .badgeDetail(item)

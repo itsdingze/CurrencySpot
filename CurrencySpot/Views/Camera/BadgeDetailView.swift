@@ -5,8 +5,9 @@
 
 import SwiftUI
 
-/// Detail shown when tapping a converted badge: full precision, the rate used,
-/// rate freshness, and a shortcut to the Convert tab.
+/// Detail shown when tapping a converted plate: the original and converted
+/// amounts, the rate used, rate freshness, a shortcut to the Convert tab,
+/// and an escape hatch that uncovers a misread price.
 struct BadgeDetailView: View {
     let item: DetectedItem
     let baseCurrency: String
@@ -14,6 +15,7 @@ struct BadgeDetailView: View {
     let rateUsed: Decimal
     let rateFreshness: String
     let openInConverter: () -> Void
+    let hideConversion: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
@@ -21,7 +23,7 @@ struct BadgeDetailView: View {
                 Text(item.conversion.amount, format: .currency(code: baseCurrency))
                     .font(.system(.headline, design: .rounded))
                     .foregroundStyle(Color.textSecondary)
-                Text(item.conversion.converted, format: .currency(code: targetCurrency).precision(.fractionLength(2...4)))
+                Text(item.conversion.converted, format: .currency(code: targetCurrency).precision(.fractionLength(2)))
                     .font(.system(.largeTitle, design: .rounded).weight(.bold))
                     .foregroundStyle(Color.textPrimary)
             }
@@ -42,9 +44,15 @@ struct BadgeDetailView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+
+            Button(action: hideConversion) {
+                Label("Hide this conversion", systemImage: "eye.slash")
+                    .font(.system(.subheadline, design: .rounded))
+            }
+            .foregroundStyle(Color.textSecondary)
         }
         .padding(20)
-        .presentationDetents([.height(280)])
+        .presentationDetents([.height(320)])
         .presentationDragIndicator(.visible)
     }
 
@@ -73,7 +81,8 @@ struct BadgeDetailView: View {
             targetCurrency: "USD",
             rateUsed: 0.00673,
             rateFreshness: "Last updated: Today, 9:41 AM",
-            openInConverter: {}
+            openInConverter: {},
+            hideConversion: {}
         )
     }
 }

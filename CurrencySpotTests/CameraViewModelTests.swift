@@ -173,6 +173,34 @@ struct CameraViewModelTests {
         #expect(item.id == id)
     }
 
+    @Test func hidingFromDetailSuppressesTheBadgeAndClosesTheSheet() {
+        let viewModel = Self.makeScanningViewModel()
+        let id = UUID()
+        viewModel.updateRecognizedItems([
+            RecognizedTextItem(id: id, transcript: "¥1,200", bounds: .zero),
+        ])
+        viewModel.showBadgeDetail(for: id)
+
+        viewModel.hideConversion(for: id)
+
+        #expect(viewModel.detectedItems.first?.conversion.isPrice == false)
+        #expect(viewModel.destination == nil)
+    }
+
+    @Test func hidingAPinnedNonPriceUnpinsIt() {
+        let viewModel = Self.makeScanningViewModel()
+        let id = UUID()
+        viewModel.updateRecognizedItems([
+            RecognizedTextItem(id: id, transcript: "1200", bounds: .zero),
+        ])
+        viewModel.toggleConversion(for: id)
+        #expect(viewModel.detectedItems.first?.conversion.isPrice == true)
+
+        viewModel.hideConversion(for: id)
+
+        #expect(viewModel.detectedItems.first?.conversion.isPrice == false)
+    }
+
     @Test func openInConverterPrefillsCalculatorAndSwitchesToConvertTab() {
         let calculator = CalculatorViewModel(service: MockExchangeRateService())
         let viewModel = CameraViewModel(
