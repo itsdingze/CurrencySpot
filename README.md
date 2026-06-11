@@ -18,7 +18,7 @@
 
 ## Features
 
-**Real-time conversion** between 30 currencies using European Central Bank rates.
+**Real-time conversion** between 201 currencies using rates from the [Frankfurter API](https://frankfurter.dev/).
 
 **Historical charts** showing exchange rate trends over the past week, month, or year.
 
@@ -47,7 +47,7 @@ Now open the project in Xcode and build.
 
 ## Credits
 
-Exchange rates provided by the [European Central Bank](https://www.ecb.europa.eu/) via [Frankfurter API](https://www.frankfurter.app/).
+Exchange rates provided by the [Frankfurter API](https://frankfurter.dev/).
 
 ## License
 
