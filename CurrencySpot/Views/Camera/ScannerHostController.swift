@@ -16,6 +16,7 @@ final class ScannerHostController: UIViewController {
     var wantsScanning = true
 
     private var startTask: Task<Void, Never>?
+    private var hasAppliedInitialZoom = false
 
     init(scanner: DataScannerViewController) {
         self.scanner = scanner
@@ -60,6 +61,7 @@ final class ScannerHostController: UIViewController {
                     guard self.viewIfLoaded?.window != nil else { return }
                     do {
                         try self.scanner.startScanning()
+                        self.applyInitialZoomIfNeeded()
                         return
                     } catch {
                         lastError = error
@@ -74,5 +76,15 @@ final class ScannerHostController: UIViewController {
         } else if scanner.isScanning {
             scanner.stopScanning()
         }
+    }
+
+    /// The scanner defaults to a zoomed-in preview; pull it back to the
+    /// Camera app's 1x. Setting zoom before scanning starts doesn't stick,
+    /// so apply it after the first successful start — and only once, so
+    /// session restarts don't wipe out the user's pinch zoom.
+    private func applyInitialZoomIfNeeded() {
+        guard !hasAppliedInitialZoom else { return }
+        hasAppliedInitialZoom = true
+        scanner.zoomFactor = max(1, scanner.minZoomFactor)
     }
 }

@@ -56,6 +56,7 @@ struct ContentView: View {
                 Tab("Camera", systemImage: "camera.viewfinder", value: 1) {
                     CameraView()
                         .toolbarBackground(.visible, for: .tabBar)
+                        .toolbarColorScheme(.dark, for: .tabBar)
                 }
                 .accessibilityLabel("Camera Price Converter")
                 .accessibilityHint("Point the camera at prices to see them converted")

@@ -17,32 +17,51 @@ struct CameraScannerContainer: View {
     var body: some View {
         @Bindable var viewModel = viewModel
 
-        // The scanner reports item bounds in its own full-screen view space,
-        // so the overlay must live in that same full-bleed coordinate space.
         ZStack {
-            #if !targetEnvironment(simulator)
-            DataScannerView(
-                isScanning: viewModel.isScanning,
-                proxy: scannerProxy,
-                onItemsChanged: { viewModel.updateLiveRecognizedItems($0) },
-                onItemTapped: { viewModel.toggleConversion(for: $0) }
-            )
-            #else
             Color.black
-            #endif
+                .ignoresSafeArea()
 
-            if let frozenImage = viewModel.frozenImage {
-                StillFrameView(image: frozenImage)
+            // The scanner reports item bounds in its own view space, so the
+            // overlay must share the preview's exact frame. The 3:4 portrait
+            // frame matches the sensor, so the live feed shows the full field
+            // of view and the frozen capture lands at the identical size.
+            ZStack {
+                #if !targetEnvironment(simulator)
+                DataScannerView(
+                    isScanning: viewModel.isScanning,
+                    proxy: scannerProxy,
+                    onItemsChanged: { viewModel.updateLiveRecognizedItems($0) },
+                    onItemTapped: { viewModel.toggleConversion(for: $0) }
+                )
+                #else
+                Color.black
+                #endif
+
+                if let frozenImage = viewModel.frozenImage {
+                    StillFrameView(image: frozenImage)
+                }
+
+                DetectionOverlayView(
+                    items: viewModel.detectedItems,
+                    targetCurrency: viewModel.targetCurrency,
+                    onOutlineTap: { viewModel.toggleConversion(for: $0) },
+                    onPlateTap: { viewModel.showBadgeDetail(for: $0) }
+                )
             }
-
-            DetectionOverlayView(
-                items: viewModel.detectedItems,
-                targetCurrency: viewModel.targetCurrency,
-                onOutlineTap: { viewModel.toggleConversion(for: $0) },
-                onPlateTap: { viewModel.showBadgeDetail(for: $0) }
-            )
+            .aspectRatio(3.0 / 4.0, contentMode: .fit)
+            .overlay(alignment: .bottom) {
+                ScanStatusCapsule(
+                    isLive: viewModel.frozenImage == nil,
+                    hasPrices: viewModel.hasPrices,
+                    isRecognizingStill: viewModel.isRecognizingStill
+                )
+                .padding(.bottom, 16)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Center the preview between the physical top of the screen and
+            // the bottom safe-area edge, Camera-app style.
+            .ignoresSafeArea(edges: .top)
         }
-        .ignoresSafeArea()
         .overlay(alignment: .top) {
             VStack(spacing: 8) {
                 CurrencyPairControl()
@@ -53,15 +72,8 @@ struct CameraScannerContainer: View {
             .padding(.top, 8)
         }
         .overlay(alignment: .bottom) {
-            VStack(spacing: 16) {
-                ScanStatusCapsule(
-                    isLive: viewModel.frozenImage == nil,
-                    hasPrices: viewModel.hasPrices,
-                    isRecognizingStill: viewModel.isRecognizingStill
-                )
-                CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
-            }
-            .padding(.bottom, 24)
+            CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
+                .padding(.bottom, 24)
         }
         .onChange(of: viewModel.availableRates) {
             viewModel.refreshConversions()
@@ -83,7 +95,10 @@ struct CameraScannerContainer: View {
             viewModel.turnTorchOff()
         }
         .sheet(item: $viewModel.destination) { destination in
+            // Sheets are new presentation roots, so the tab's dark
+            // environment doesn't reach them — re-apply it.
             currencyPicker(for: destination)
+                .environment(\.colorScheme, .dark)
         }
     }
 
