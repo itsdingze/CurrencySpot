@@ -22,7 +22,7 @@ struct HistoricalRatesResponse: Codable, Sendable {
 
 /// Client for interacting with the Frankfurter exchange rate API
 /// Provides methods to fetch current and historical exchange rates
-class FrankfurterAPI {
+final class FrankfurterAPI {
     /// Singleton instance for app-wide access
     static let shared = FrankfurterAPI()
 

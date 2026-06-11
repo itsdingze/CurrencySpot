@@ -113,25 +113,21 @@ enum NetworkUtility {
         urlSession: URLSession,
         responseType _: T.Type
     ) async throws -> T {
-        do {
-            let (data, response) = try await urlSession.data(from: url)
+        // URLError and CancellationError must propagate unchanged so retry
+        // classification and the cancellation branches upstream keep working.
+        let (data, response) = try await urlSession.data(from: url)
 
-            // Check for HTTP errors
-            if let httpResponse = response as? HTTPURLResponse {
-                guard (200 ... 299).contains(httpResponse.statusCode) else {
-                    throw AppError.apiError("HTTP Error: \(httpResponse.statusCode)")
-                }
+        // Check for HTTP errors
+        if let httpResponse = response as? HTTPURLResponse {
+            guard (200 ... 299).contains(httpResponse.statusCode) else {
+                throw AppError.apiError("HTTP Error: \(httpResponse.statusCode)")
             }
+        }
 
-            // Decode the JSON response
-            let decodedData = try JSONDecoder().decode(T.self, from: data)
-            return decodedData
-
-        } catch let error as AppError {
-            // Re-throw AppError as-is
-            throw error
-        } catch {
-            // Convert other errors to AppError
+        // Decode the JSON response, wrapping only genuine decoding failures
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch let error as DecodingError {
             throw AppError.decodingError(error.localizedDescription)
         }
     }

@@ -97,17 +97,21 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
                 animateIcon = true
             }
 
+            guard !Task.isCancelled else { return }
+
             await delayedAnimation(0.2) {
                 animateTitle = true
             }
+            guard !Task.isCancelled else { return }
 
-            try? await Task.sleep(for: .seconds(0.2))
+            do { try await Task.sleep(for: .seconds(0.2)) } catch { return }
 
             for index in animateCards.indices {
                 let delay = Double(index) * 0.1
                 await delayedAnimation(delay) {
                     animateCards[index] = true
                 }
+                guard !Task.isCancelled else { return }
             }
 
             await delayedAnimation(0.2) {
@@ -159,7 +163,11 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
             return
         }
 
-        try? await Task.sleep(for: .seconds(delay))
+        do {
+            try await Task.sleep(for: .seconds(delay))
+        } catch {
+            return
+        }
         withAnimation(.smooth) {
             action()
         }

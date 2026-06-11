@@ -332,14 +332,12 @@ struct CurrencyChart: View {
         .onChange(of: rawSelectedDate) { _, newValue in
             isChartSelectionActive = newValue != nil
         }
-        .onAppear {
-            Task {
-                try? await Task.sleep(for: .seconds(animationDelay))
-                withAnimation(.smooth(duration: animationDuration)) {
-                    animationPhase = .animating
-                } completion: {
-                    animationPhase = .complete
-                }
+        .task {
+            do { try await Task.sleep(for: .seconds(animationDelay)) } catch { return }
+            withAnimation(.smooth(duration: animationDuration)) {
+                animationPhase = .animating
+            } completion: {
+                animationPhase = .complete
             }
         }
         .padding(8)

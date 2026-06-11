@@ -91,6 +91,10 @@ final class HistoryViewModel {
     /// Current async task for data fetching (for cancellation)
     private var fetchTask: Task<Void, Never>?
 
+    /// Monotonically increasing load generation. Only the task carrying the latest
+    /// generation may publish state, clear `fetchTask`, or end the loading indicator.
+    private var loadGeneration = 0
+
     /// Suppresses the per-property didSet reloads while a navigation reconfiguration sets several
     /// properties at once, so one configuration triggers a single load instead of one per property.
     private var isApplyingConfiguration = false
@@ -165,24 +169,17 @@ final class HistoryViewModel {
 
     // MARK: - Data Loading
 
-    /// Main data loading method - simplified to use DataOrchestrationUseCase
+    /// Main data loading method - simplified to use DataOrchestrationUseCase.
+    /// Cancel-and-replace: a new request supersedes any in-flight load, and only
+    /// the latest generation may publish state.
     func loadDataForCurrentConfiguration() {
-        // Prevent multiple simultaneous loads
-        guard !isLoading else {
-            AppLogger.warning("Load already in progress, skipping duplicate request", category: .viewModel)
-            return
-        }
+        fetchTask?.cancel()
+        loadGeneration += 1
+        let generation = loadGeneration
 
-        // Wait for existing task to complete instead of cancelling
-        if let existingTask = fetchTask {
-            Task {
-                _ = await existingTask.result
-                startNewLoadTask()
-            }
-            return
+        fetchTask = Task {
+            await runLoad(generation: generation)
         }
-
-        startNewLoadTask()
     }
 
     /// Triggers a load for the current configuration and awaits its completion.
@@ -190,94 +187,105 @@ final class HistoryViewModel {
     /// sequence work after a load finishes (and for deterministic tests).
     func loadCurrentConfigurationAndWait() async {
         loadDataForCurrentConfiguration()
+        // `loadDataForCurrentConfiguration()` assigns `fetchTask` synchronously,
+        // so this awaits exactly the task created above.
         await fetchTask?.value
     }
 
-    private func startNewLoadTask() {
-        fetchTask = Task {
-            self.isLoading = true
-            self.errorMessage = nil
+    private func runLoad(generation: Int) async {
+        guard generation == loadGeneration, !Task.isCancelled else { return }
 
-            let dateRange = calculateDateRange()
-            let currency = self.targetCurrency
+        isLoading = true
+        errorMessage = nil
 
-            do {
-                // Use DataOrchestrationUseCase to handle all the complex logic
-                let result = try await dataOrchestrationUseCase.loadHistoricalData(
-                    for: currency,
-                    dateRange: dateRange
-                )
+        let dateRange = calculateDateRange()
+        let currency = targetCurrency
 
-                // Always try to update chart even with partial data
-                if !result.dataPoints.isEmpty {
-                    // Update UI with new data (pass the same dateRange used for fetching)
-                    await self.updateChartDataPoints(dateRange: dateRange)
+        do {
+            // Use DataOrchestrationUseCase to handle all the complex logic
+            let result = try await dataOrchestrationUseCase.loadHistoricalData(
+                for: currency,
+                dateRange: dateRange
+            )
+            guard generation == loadGeneration, !Task.isCancelled else { return }
 
-                    // Clear error if we successfully got data
-                    self.errorMessage = nil
+            // Always try to update chart even with partial data
+            if !result.dataPoints.isEmpty {
+                // Update UI with new data (pass the same dateRange used for fetching)
+                let dataPoints = await preparedChartDataPoints(dateRange: dateRange)
+                guard generation == loadGeneration, !Task.isCancelled else { return }
+                displayedChartDataPoints = dataPoints
+
+                // Clear error if we successfully got data
+                errorMessage = nil
+            } else {
+                // No data available, but don't treat as error
+                AppLogger.infoPrivate("No historical data available for \(currency)", category: .viewModel)
+                displayedChartDataPoints = []
+
+                // Set a user-friendly message
+                if !appState.networkMonitor.isConnected {
+                    errorMessage = "Offline - Historical data unavailable"
                 } else {
-                    // No data available, but don't treat as error
-                    AppLogger.infoPrivate("No historical data available for \(currency)", category: .viewModel)
-                    self.displayedChartDataPoints = []
-
-                    // Set a user-friendly message
-                    if !appState.networkMonitor.isConnected {
-                        self.errorMessage = "Offline - Historical data unavailable"
-                    } else {
-                        self.errorMessage = "No historical data available for this currency"
-                    }
+                    errorMessage = "No historical data available for this currency"
                 }
-
-                // Update trends if new data was fetched
-                if result.newDataFetched {
-                    AppLogger.info("New data fetched, updating trends...", category: .viewModel)
-                    // Use the actually fetched ranges, not the requested range
-                    self.trendData = await trendDataUseCase.checkAndRecalculateTrendsIfNeeded(
-                        for: result.fetchedRanges
-                    )
-                }
-
-                // Clear task reference before setting loading to false to prevent race conditions
-                self.fetchTask = nil
-                self.isLoading = false
-
-            } catch is CancellationError {
-                AppLogger.debug("Fetch cancelled", category: .viewModel)
-                self.fetchTask = nil
-                self.isLoading = false
-            } catch {
-                AppLogger.error("Load failed: \(error.localizedDescription)", category: .viewModel)
-
-                // Try to use cached data even if the load failed
-                let cachedData = await dataOrchestrationUseCase.getCachedData(
-                    for: currency,
-                    dateRange: dateRange
-                )
-
-                if !cachedData.isEmpty {
-                    // We have some cached data, use it
-                    AppLogger.info("Using cached data as fallback", category: .viewModel)
-                    await self.updateChartDataPoints(dateRange: dateRange)
-                    self.errorMessage = "Using cached data (offline)"
-                } else {
-                    // No cached data available
-                    self.displayedChartDataPoints = []
-
-                    // Use centralized error handling for consistency
-                    if let appError = AppError.from(error) {
-                        self.errorMessage = appError.message
-                        appState.errorHandler.handle(appError)
-                    } else {
-                        // Handle unexpected errors
-                        let genericError = AppError.networkError("Failed to load historical data")
-                        self.errorMessage = genericError.message
-                        appState.errorHandler.handle(genericError)
-                    }
-                }
-
-                self.fetchTask = nil
-                self.isLoading = false
             }
+
+            // Update trends if new data was fetched
+            if result.newDataFetched {
+                AppLogger.info("New data fetched, updating trends...", category: .viewModel)
+                // Use the actually fetched ranges, not the requested range
+                let trends = await trendDataUseCase.checkAndRecalculateTrendsIfNeeded(
+                    for: result.fetchedRanges
+                )
+                guard generation == loadGeneration, !Task.isCancelled else { return }
+                trendData = trends
+            }
+
+            // Clear task reference before setting loading to false to prevent race conditions
+            fetchTask = nil
+            isLoading = false
+
+        } catch is CancellationError {
+            AppLogger.debug("Fetch cancelled", category: .viewModel)
+            guard generation == loadGeneration else { return }
+            fetchTask = nil
+            isLoading = false
+        } catch {
+            AppLogger.error("Load failed: \(error.localizedDescription)", category: .viewModel)
+
+            // Try to use cached data even if the load failed
+            let cachedData = await dataOrchestrationUseCase.getCachedData(
+                for: currency,
+                dateRange: dateRange
+            )
+            guard generation == loadGeneration, !Task.isCancelled else { return }
+
+            if !cachedData.isEmpty {
+                // We have some cached data, use it
+                AppLogger.info("Using cached data as fallback", category: .viewModel)
+                let dataPoints = await preparedChartDataPoints(dateRange: dateRange)
+                guard generation == loadGeneration, !Task.isCancelled else { return }
+                displayedChartDataPoints = dataPoints
+                errorMessage = "Using cached data (offline)"
+            } else {
+                // No cached data available
+                displayedChartDataPoints = []
+
+                // Use centralized error handling for consistency
+                if let appError = AppError.from(error) {
+                    errorMessage = appError.message
+                    appState.errorHandler.handle(appError)
+                } else {
+                    // Handle unexpected errors
+                    let genericError = AppError.networkError("Failed to load historical data")
+                    errorMessage = genericError.message
+                    appState.errorHandler.handle(genericError)
+                }
+            }
+
+            fetchTask = nil
+            isLoading = false
         }
     }
 
@@ -387,16 +395,17 @@ final class HistoryViewModel {
 
     // MARK: - Chart Data Processing
 
-    /// Updates chart data points based on current currency pair and time range
+    /// Prepares chart data points based on current currency pair and time range.
+    /// Returns the points instead of publishing them so the caller can apply its
+    /// generation/cancellation guard before any state write.
     /// - Parameter dateRange: The date range to use for filtering data (must match the range used for fetching)
-    private func updateChartDataPoints(dateRange: DateRange) async {
+    private func preparedChartDataPoints(dateRange: DateRange) async -> [ChartDataPoint] {
         let historicalData = await dataOrchestrationUseCase.getCachedData(for: targetCurrency, dateRange: dateRange)
 
         // Guard against empty data
         guard !historicalData.isEmpty else {
             AppLogger.info("No historical data to display", category: .viewModel)
-            displayedChartDataPoints = []
-            return
+            return []
         }
 
         let fullDataPoints = await chartDataPreparationUseCase.processHistoricalRateData(
@@ -407,13 +416,13 @@ final class HistoryViewModel {
             exchangeRates: calculatorVM.availableRates
         )
 
-        // Only update if we have valid data points
-        if !fullDataPoints.isEmpty {
-            displayedChartDataPoints = chartDataPreparationUseCase.sampleDataPoints(from: fullDataPoints)
-        } else {
+        // Only return if we have valid data points
+        guard !fullDataPoints.isEmpty else {
             AppLogger.warning("No valid chart data points after processing", category: .viewModel)
-            displayedChartDataPoints = []
+            return []
         }
+
+        return chartDataPreparationUseCase.sampleDataPoints(from: fullDataPoints)
     }
 
     // MARK: - Computed Properties (Statistics)

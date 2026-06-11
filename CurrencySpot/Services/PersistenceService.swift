@@ -155,13 +155,13 @@ actor SwiftDataPersistenceService: PersistenceService {
         let daysDifference = Calendar.current.dateComponents([.day], from: startDateObj, to: endDateObj).day ?? 0
 
         if daysDifference > 365 {
-            return try await loadHistoricalRatesInChunks(
+            return try loadHistoricalRatesInChunks(
                 currency: currency,
                 startDate: startDateObj,
                 endDate: endDateObj
             )
         } else {
-            return try await loadHistoricalRatesDirectly(
+            return try loadHistoricalRatesDirectly(
                 currency: currency,
                 startDate: startDateObj,
                 endDate: endDateObj
@@ -169,12 +169,14 @@ actor SwiftDataPersistenceService: PersistenceService {
         }
     }
 
-    /// Direct loading for small date ranges (< 1 year)
+    /// Direct loading for small date ranges (< 1 year).
+    /// Synchronous on the model actor: no suspension may occur while live @Model
+    /// objects are held, or a concurrent clearAllData/save could delete them mid-iteration.
     private func loadHistoricalRatesDirectly(
         currency: String,
         startDate: Date,
         endDate: Date
-    ) async throws -> [HistoricalRateDataValue] {
+    ) throws -> [HistoricalRateDataValue] {
         // Special handling for USD - load all data in the date range since USD is the base currency
         let predicate: Predicate<HistoricalRateData>
         if currency == "USD" {
@@ -196,15 +198,17 @@ actor SwiftDataPersistenceService: PersistenceService {
         descriptor.relationshipKeyPathsForPrefetching = [\.rates]
 
         let swiftDataObjects = try modelContext.fetch(descriptor)
-        return await convertHistoricalRateDataToValueTypesFiltered(swiftDataObjects, targetCurrency: currency)
+        return convertHistoricalRateDataToValueTypesFiltered(swiftDataObjects, targetCurrency: currency)
     }
 
-    /// Chunked loading for large date ranges (> 1 year)
+    /// Chunked loading for large date ranges (> 1 year).
+    /// Each chunk is fetched and snapshotted into value types synchronously, so no
+    /// managed objects are held across a suspension point.
     private func loadHistoricalRatesInChunks(
         currency: String,
         startDate: Date,
         endDate: Date
-    ) async throws -> [HistoricalRateDataValue] {
+    ) throws -> [HistoricalRateDataValue] {
         var allResults: [HistoricalRateDataValue] = []
         let chunkSize = 365 // Process 1 year at a time
 
@@ -217,7 +221,7 @@ actor SwiftDataPersistenceService: PersistenceService {
                 endDate
             )
 
-            let chunkResults = try await loadHistoricalRatesDirectly(
+            let chunkResults = try loadHistoricalRatesDirectly(
                 currency: currency,
                 startDate: currentStart,
                 endDate: currentEnd
@@ -226,9 +230,6 @@ actor SwiftDataPersistenceService: PersistenceService {
             allResults.append(contentsOf: chunkResults)
 
             currentStart = Calendar.current.date(byAdding: .day, value: 1, to: currentEnd) ?? endDate
-
-            // Yield control between chunks
-            await Task.yield()
         }
 
         return allResults.sorted { $0.date < $1.date }
@@ -412,16 +413,11 @@ actor SwiftDataPersistenceService: PersistenceService {
     private func convertHistoricalRateDataToValueTypesFiltered(
         _ swiftDataObjects: [HistoricalRateData],
         targetCurrency _: String
-    ) async -> [HistoricalRateDataValue] {
+    ) -> [HistoricalRateDataValue] {
         var result: [HistoricalRateDataValue] = []
         result.reserveCapacity(swiftDataObjects.count)
 
-        for (index, historicalData) in swiftDataObjects.enumerated() {
-            // Yield control every 100 records to prevent UI freezing
-            if index % 100 == 0 {
-                await Task.yield()
-            }
-
+        for historicalData in swiftDataObjects {
             // Convert ALL rates for this date to support any base-target currency conversion
             let valuePoints = historicalData.rates.map { rate in
                 HistoricalRateDataPointValue(

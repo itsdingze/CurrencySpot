@@ -148,7 +148,8 @@ final class DataCoordinator: ExchangeRateService {
 
     // MARK: - Data Loading Methods
 
-    /// Loads exchange rates with cache-first strategy and multiple fallback layers.
+    /// Loads exchange rates with cache-first strategy and a network last resort.
+    /// Throws when no real data can be obtained; presentation decides any mock fallback.
     func loadExchangeRates() async throws -> [ExchangeRateDataValue] {
         // Check cache first for fast response
         if let cachedRates = await cacheService.getCachedExchangeRates(), !cachedRates.isEmpty {
@@ -166,22 +167,16 @@ final class DataCoordinator: ExchangeRateService {
             AppLogger.warning("Failed to load from persistence: \(error.localizedDescription)", category: .persistence)
         }
 
-        // If no data available, try to fetch from network as last resort
-        if await networkService.shouldFetchNewRates() {
-            do {
-                let response = try await fetchExchangeRates()
-                var rates = response.rates
-                rates[response.base] = 1.0
-                return rates.map { ExchangeRateDataValue(currencyCode: $0.key, rate: $0.value) }
-            } catch {
-                AppLogger.warning("Network fetch also failed: \(error.localizedDescription)", category: .network)
-            }
-        }
-
-        // If all else fails, return mock data as ultimate fallback
-        AppLogger.warning("All data sources failed, returning mock data", category: .data)
-        return MockExchangeRates.rates.map {
-            ExchangeRateDataValue(currencyCode: $0.key, rate: $0.value)
+        // No local data: try the network as a last resort. This is gated on actually
+        // being unable to load locally, not on the freshness TTL.
+        do {
+            let response = try await fetchExchangeRates()
+            var rates = response.rates
+            rates[response.base] = 1.0
+            return rates.map { ExchangeRateDataValue(currencyCode: $0.key, rate: $0.value) }
+        } catch {
+            AppLogger.warning("Network fetch also failed: \(error.localizedDescription)", category: .network)
+            throw error
         }
     }
 

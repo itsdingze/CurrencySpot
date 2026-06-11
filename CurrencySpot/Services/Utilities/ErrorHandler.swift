@@ -13,7 +13,13 @@ final class ErrorHandler {
     var currentError: AppError?
     var showingError: Bool = false
 
-    private var dismissTask: Task<Void, Never>?
+    // nonisolated(unsafe): only ever mutated on the main actor; deinit (nonisolated)
+    // reads it once when no other reference can exist.
+    private nonisolated(unsafe) var dismissTask: Task<Void, Never>?
+
+    deinit {
+        dismissTask?.cancel()
+    }
 
     func handle(_ error: Error) {
         guard let appError = AppError.from(error) else {

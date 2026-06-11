@@ -58,6 +58,9 @@ struct SettingsView: View {
         }
         .alert(item: $alertType) { $0.alert(onConfirm: handleAlertConfirmation) }
         .overlay(toastOverlay)
+        .onDisappear {
+            toastDismissTask?.cancel()
+        }
     }
 
     // MARK: - UI Sections

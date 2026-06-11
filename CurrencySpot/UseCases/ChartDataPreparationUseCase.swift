@@ -47,16 +47,40 @@ final class ChartDataPreparationUseCase {
             AppLogger.debug("Using cached processed chart data for \(baseCurrency) to \(targetCurrency)", category: .cache)
             return cachedData
         }
-        // Process data in batches to allow UI updates
+
+        // Run the pure CPU transform off the main actor. This await is a suspension
+        // between the cache check and the cache write, so reentrant callers may
+        // duplicate the transform — never corrupt state, because the write below is
+        // an unconditional, idempotent set of the same computed value.
+        let chartPoints = await Self.transformHistoricalData(
+            historicalData,
+            baseCurrency: baseCurrency,
+            targetCurrency: targetCurrency,
+            dateRange: dateRange,
+            exchangeRates: exchangeRates,
+            rateCalculationUseCase: rateCalculationUseCase
+        )
+
+        // Cache the processed data for future use
+        await cacheService.cacheProcessedChartData(chartPoints, for: cacheKey)
+
+        return chartPoints
+    }
+
+    /// Pure transform from historical rows to chart points. Nonisolated so the work
+    /// runs on the cooperative pool instead of blocking the main actor.
+    private nonisolated static func transformHistoricalData(
+        _ historicalData: [HistoricalRateDataValue],
+        baseCurrency: String,
+        targetCurrency: String,
+        dateRange: DateRange,
+        exchangeRates: [ExchangeRateDataValue],
+        rateCalculationUseCase: RateCalculationUseCase
+    ) async -> [ChartDataPoint] {
         var chartPoints: [ChartDataPoint] = []
         chartPoints.reserveCapacity(historicalData.count)
 
-        for (index, historicalEntry) in historicalData.enumerated() {
-            // Yield control every 50 items to prevent UI blocking
-            if index % 50 == 0 {
-                await Task.yield()
-            }
-
+        for historicalEntry in historicalData {
             let date = historicalEntry.date
 
             guard date >= dateRange.start, date <= dateRange.end else {
@@ -100,9 +124,6 @@ final class ChartDataPreparationUseCase {
 
             chartPoints.append(ChartDataPoint(date: date, rate: convertedRate))
         }
-
-        // Cache the processed data for future use
-        await cacheService.cacheProcessedChartData(chartPoints, for: cacheKey)
 
         return chartPoints
     }

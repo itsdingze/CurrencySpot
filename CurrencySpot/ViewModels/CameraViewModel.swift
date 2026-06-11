@@ -85,9 +85,7 @@ final class CameraViewModel {
 
     init(
         calculatorViewModel: CalculatorViewModel,
-        // Defaulting to `.shared` directly isn't allowed: default arguments
-        // evaluate in a nonisolated context, but `shared` is MainActor-bound.
-        appState: AppState? = nil,
+        appState: AppState = .shared,
         permissionService: CameraPermissionService = AVCameraPermissionService(),
         scanConversionUseCase: ScanConversionUseCase = ScanConversionUseCase(),
         stillTextRecognizer: StillTextRecognitionService = StillImageTextRecognizer(),
@@ -97,7 +95,7 @@ final class CameraViewModel {
         defaultTargetCurrency: String = UserDefaults.standard.string(forKey: UserDefaultsKeys.defaultTargetCurrency) ?? "EUR"
     ) {
         self.calculatorViewModel = calculatorViewModel
-        self.appState = appState ?? .shared
+        self.appState = appState
         self.permissionService = permissionService
         self.scanConversionUseCase = scanConversionUseCase
         self.stillTextRecognizer = stillTextRecognizer

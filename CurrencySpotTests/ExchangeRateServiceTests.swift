@@ -10,6 +10,21 @@ import Foundation
 import SwiftData
 import Testing
 
+/// Network stub that always fails, so tests never touch the live API.
+private final class FailingNetworkService: NetworkService {
+    func shouldFetchNewRates() async -> Bool { true }
+    func fetchExchangeRates() async throws -> ExchangeRatesResponse {
+        throw AppError.networkError("Stubbed network failure")
+    }
+
+    func fetchHistoricalRates(from _: Date, to _: Date) async throws -> HistoricalRatesResponse {
+        throw AppError.networkError("Stubbed network failure")
+    }
+
+    func updateLastFetchDate(_: Date) {}
+    func getLastFetchDate() -> Date? { nil }
+}
+
 @Suite("Exchange Rate Service Tests")
 @MainActor
 struct ExchangeRateServiceTests {
@@ -226,29 +241,37 @@ struct ExchangeRateServiceTests {
 
     @Test("Clear all data works correctly")
     func clearAllDataWorksCorrectly() async throws {
+        // Stubbed network so the post-clear load cannot hit the live API.
+        let coordinator = DataCoordinator(
+            networkService: FailingNetworkService(),
+            persistenceService: SwiftDataPersistenceService(modelContainer: container),
+            cacheService: InMemoryCacheService(),
+            syncStore: MockHistoricalSyncStore()
+        )
+
         // GIVEN: Some data in the database
         let testRates = ["EUR": 1.21, "GBP": 0.85]
         let historicalRates = ["2025-03-15": ["EUR": 1.21, "GBP": 0.85]]
 
-        try await service.saveExchangeRates(testRates)
-        try await service.saveHistoricalExchangeRates(historicalRates)
+        try await coordinator.saveExchangeRates(testRates)
+        try await coordinator.saveHistoricalExchangeRates(historicalRates)
 
         // Verify data exists
-        let beforeClearCurrent = try await service.loadExchangeRates()
-        let beforeClearEarliest = try await service.getEarliestStoredDate()
+        let beforeClearCurrent = try await coordinator.loadExchangeRates()
+        let beforeClearEarliest = try await coordinator.getEarliestStoredDate()
         #expect(beforeClearCurrent.count > 0)
         #expect(beforeClearEarliest != nil)
 
         // WHEN: We clear all data
-        try await service.clearAllData()
+        try await coordinator.clearAllData()
 
-        // THEN: Stored data should be gone, but loadExchangeRates returns mock data as fallback
-        let afterClearCurrent = try await service.loadExchangeRates()
-        let afterClearEarliest = try await service.getEarliestStoredDate()
-
-        // After clearing, loadExchangeRates should return mock data (graceful degradation)
-        #expect(afterClearCurrent.count > 0) // Mock data is returned as fallback
-        #expect(afterClearEarliest == nil) // But stored data is actually cleared
+        // THEN: Stored data is gone, and with no local data and no network,
+        // loadExchangeRates throws instead of silently substituting mock data.
+        await #expect(throws: Error.self) {
+            _ = try await coordinator.loadExchangeRates()
+        }
+        let afterClearEarliest = try await coordinator.getEarliestStoredDate()
+        #expect(afterClearEarliest == nil)
     }
 
     @Test("Date range affects trends detection works correctly")

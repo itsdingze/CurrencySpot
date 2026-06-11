@@ -33,14 +33,11 @@ struct CurrencyHistoryView: View {
         .sheet(isPresented: $showChartOnboarding) {
             ChartOnboardingView(showOnboarding: $showChartOnboarding)
         }
-        .onAppear {
+        .task {
             // Show chart onboarding the first time the user enters the chart view.
-            if !settingsViewModel.hasSeenChartOnboarding {
-                Task {
-                    try? await Task.sleep(for: .seconds(0.5))
-                    showChartOnboarding = true
-                }
-            }
+            guard !settingsViewModel.hasSeenChartOnboarding else { return }
+            do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
+            showChartOnboarding = true
         }
     }
 

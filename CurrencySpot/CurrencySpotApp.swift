@@ -69,7 +69,7 @@ struct CurrencySpotApp: App {
                 dependencyContainer = try DependencyContainer(modelContainer: fallbackContainer)
 
                 // Notify user about fallback mode
-                Task { @MainActor in
+                Task {
                     let fallbackError = AppError.initializationFailed("Persistent storage failed")
                     AppState.shared.errorHandler.handle(fallbackError)
                 }
@@ -84,7 +84,7 @@ struct CurrencySpotApp: App {
                 dependencyContainer = DependencyContainer(mockService: mockService)
 
                 // Notify user about critical error
-                Task { @MainActor in
+                Task {
                     let criticalError = AppError.initializationFailed("App initialization failed. Running in limited mode.")
                     AppState.shared.errorHandler.handle(criticalError)
                 }

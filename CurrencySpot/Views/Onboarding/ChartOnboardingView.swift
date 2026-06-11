@@ -28,8 +28,10 @@ struct ChartOnboardingView: View {
         .allowsHitTesting(shouldAnimateFooter)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Chart features onboarding")
-        .task {
-            startAnimations()
+        .task(id: currentOnboardingPage) {
+            // Page changes restart this task automatically, cancelling the
+            // previous staged run so animations cannot stack or outlive dismissal.
+            await runStagedAnimations()
         }
     }
 
@@ -44,7 +46,6 @@ struct ChartOnboardingView: View {
                     resetAnimations()
                     currentOnboardingPage = max(0, currentOnboardingPage - 1)
                 }
-                startAnimations()
             },
             onSkip: {
                 withAnimation {
@@ -191,7 +192,6 @@ struct ChartOnboardingView: View {
                 resetAnimations()
                 currentOnboardingPage += 1
             }
-            startAnimations()
         } else {
             withAnimation {
                 settingsViewModel.hasSeenChartOnboarding = true
@@ -206,19 +206,19 @@ struct ChartOnboardingView: View {
         shouldAnimateFooter = false
     }
 
-    private func startAnimations() {
-        Task {
-            await executeAnimationAfterDelay(0.55) {
-                shouldAnimateTitle = true
-            }
+    private func runStagedAnimations() async {
+        await executeAnimationAfterDelay(0.55) {
+            shouldAnimateTitle = true
+        }
+        guard !Task.isCancelled else { return }
 
-            await executeAnimationAfterDelay(0.2) {
-                shouldAnimateContent = true
-            }
+        await executeAnimationAfterDelay(0.2) {
+            shouldAnimateContent = true
+        }
+        guard !Task.isCancelled else { return }
 
-            await executeAnimationAfterDelay(0.2) {
-                shouldAnimateFooter = true
-            }
+        await executeAnimationAfterDelay(0.2) {
+            shouldAnimateFooter = true
         }
     }
 
@@ -228,7 +228,11 @@ struct ChartOnboardingView: View {
             return
         }
 
-        try? await Task.sleep(for: .seconds(delay))
+        do {
+            try await Task.sleep(for: .seconds(delay))
+        } catch {
+            return
+        }
         withAnimation(.smooth) {
             action()
         }

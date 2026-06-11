@@ -145,43 +145,39 @@ struct ChartPreviewSection: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Interactive chart statistics demonstration")
         .accessibilityHint("Watch the chart indicators toggle as statistics are selected")
-        .onAppear {
-            beginInteractiveChartDemo()
+        .task {
+            await runInteractiveChartDemo()
         }
     }
 
-    private func beginInteractiveChartDemo() {
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            await performDemoAnimationSequence()
-        }
-    }
+    private func runInteractiveChartDemo() async {
+        do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
 
-    private func performDemoAnimationSequence() async {
-        try? await Task.sleep(for: .seconds(0.5))
-        withAnimation(.smooth(duration: 0.3)) {
-            showAverage = true
-        }
+        while !Task.isCancelled {
+            do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
+            withAnimation(.smooth(duration: 0.3)) {
+                showAverage = true
+            }
 
-        try? await Task.sleep(for: .seconds(0.7))
-        withAnimation(.smooth(duration: 0.3)) {
-            showHighest = true
-        }
+            do { try await Task.sleep(for: .seconds(0.7)) } catch { return }
+            withAnimation(.smooth(duration: 0.3)) {
+                showHighest = true
+            }
 
-        try? await Task.sleep(for: .seconds(0.7))
-        withAnimation(.smooth(duration: 0.3)) {
-            showLowest = true
-        }
+            do { try await Task.sleep(for: .seconds(0.7)) } catch { return }
+            withAnimation(.smooth(duration: 0.3)) {
+                showLowest = true
+            }
 
-        try? await Task.sleep(for: .seconds(1.6))
-        withAnimation(.smooth(duration: 0.3)) {
-            showAverage = false
-            showHighest = false
-            showLowest = false
-        }
+            do { try await Task.sleep(for: .seconds(1.6)) } catch { return }
+            withAnimation(.smooth(duration: 0.3)) {
+                showAverage = false
+                showHighest = false
+                showLowest = false
+            }
 
-        try? await Task.sleep(for: .seconds(1.0))
-        await performDemoAnimationSequence()
+            do { try await Task.sleep(for: .seconds(1.0)) } catch { return }
+        }
     }
 }
 

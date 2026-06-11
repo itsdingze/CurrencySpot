@@ -45,6 +45,7 @@ final class CalculatorViewModel {
     private let service: ExchangeRateService
     private let appState = AppState.shared
     private var fetchTask: Task<Void, Never>?
+    private var fetchGeneration = 0
     private let retryManager = RetryManager.shared
     private let exchangeRatesEndpoint = "exchange-rates-latest"
 
@@ -61,10 +62,7 @@ final class CalculatorViewModel {
         // Load user preferences for default currencies
         baseCurrency = UserDefaults.standard.string(forKey: UserDefaultsKeys.defaultBaseCurrency) ?? "USD"
         targetCurrency = UserDefaults.standard.string(forKey: UserDefaultsKeys.defaultTargetCurrency) ?? "EUR"
-
-        Task {
-            await checkIfShouldFetch()
-        }
+        // CalculatorView's `.task` calls checkIfShouldFetch() on appear; that is the single kickoff.
     }
 
     // MARK: - Computed Properties (Calculation Results)
@@ -99,17 +97,16 @@ final class CalculatorViewModel {
 
     /// Checks if new data should be fetched and initiates fetch or loads cached data
     func checkIfShouldFetch() async {
+        // Wait for any in-flight fetch first, then re-evaluate freshness: the
+        // completed fetch may have made a second fetch unnecessary.
+        if let existingTask = fetchTask {
+            _ = await existingTask.result
+        }
+
         let shouldFetch = await service.shouldFetchNewRates()
 
         if shouldFetch, appState.networkMonitor.isConnected {
-            // Wait for existing task to complete instead of cancelling
-            if let existingTask = fetchTask {
-                _ = await existingTask.result
-            }
-            fetchTask = Task {
-                defer { fetchTask = nil }
-                await fetchExchangeRates()
-            }
+            startFetchTask()
         } else {
             await loadExchangeRates()
         }
@@ -133,9 +130,19 @@ final class CalculatorViewModel {
         if let existingTask = fetchTask {
             _ = await existingTask.result
         }
+        startFetchTask()
+    }
+
+    /// Single place that assigns `fetchTask`, so a finishing task can only clear
+    /// the handle if it is still the current one (generation check).
+    private func startFetchTask() {
+        fetchGeneration += 1
+        let generation = fetchGeneration
         fetchTask = Task {
-            defer { fetchTask = nil }
             await fetchExchangeRates()
+            if generation == fetchGeneration {
+                fetchTask = nil
+            }
         }
     }
 
@@ -204,7 +211,10 @@ final class CalculatorViewModel {
             }
 
             if appState.networkMonitor.isConnected {
-                await resetStoredData()
+                // Online but no usable data: keep the error state. Calling back into
+                // a fetch here would re-enter the pipeline that just failed (and
+                // previously self-deadlocked awaiting its own fetchTask).
+                isLoading = false
             } else {
                 // Offline with no SwiftData - use mock data as fallback
                 useMockData()

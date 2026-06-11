@@ -38,7 +38,7 @@ struct ChartInteractionSection: View {
         .accessibilityLabel("Chart touch interaction demonstration")
         .accessibilityHint("Watch the animated finger showing how to touch and drag on charts to explore data")
         .task {
-            try? await Task.sleep(for: .seconds(1.0))
+            do { try await Task.sleep(for: .seconds(1.0)) } catch { return }
             await simulateFingerInteraction()
         }
     }
@@ -159,63 +159,63 @@ struct ChartInteractionSection: View {
     }
 
     private func simulateFingerInteraction() async {
-        currentDataPointIndex = 1
+        while !Task.isCancelled {
+            currentDataPointIndex = 1
 
-        withAnimation(.snappy) {
-            fingerAnimationState = .appearing
-        }
-
-        try? await Task.sleep(for: .seconds(0.5))
-
-        withAnimation(.snappy) {
-            fingerAnimationState = .touchDown
-            selectedDate = SampleChartData.points[currentDataPointIndex].date
-        }
-
-        try? await Task.sleep(for: .seconds(0.5))
-
-        withAnimation(.snappy) {
-            fingerAnimationState = .dragging
-        }
-
-        let targetIndex = 5
-        let steps = 8
-        let stepDuration: TimeInterval = 2.0 / Double(steps)
-
-        for step in 1 ... steps {
-            let progress = Double(step) / Double(steps)
-            let interpolatedIndex = interpolateIndex(from: 1, to: targetIndex, progress: progress)
-
-            withAnimation(.linear(duration: stepDuration)) {
-                currentDataPointIndex = interpolatedIndex
-                if interpolatedIndex < SampleChartData.points.count {
-                    selectedDate = SampleChartData.points[interpolatedIndex].date
-                }
+            withAnimation(.snappy) {
+                fingerAnimationState = .appearing
             }
 
-            try? await Task.sleep(for: .seconds(stepDuration))
+            do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
+
+            withAnimation(.snappy) {
+                fingerAnimationState = .touchDown
+                selectedDate = SampleChartData.points[currentDataPointIndex].date
+            }
+
+            do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
+
+            withAnimation(.snappy) {
+                fingerAnimationState = .dragging
+            }
+
+            let targetIndex = 5
+            let steps = 8
+            let stepDuration: TimeInterval = 2.0 / Double(steps)
+
+            for step in 1 ... steps {
+                let progress = Double(step) / Double(steps)
+                let interpolatedIndex = interpolateIndex(from: 1, to: targetIndex, progress: progress)
+
+                withAnimation(.linear(duration: stepDuration)) {
+                    currentDataPointIndex = interpolatedIndex
+                    if interpolatedIndex < SampleChartData.points.count {
+                        selectedDate = SampleChartData.points[interpolatedIndex].date
+                    }
+                }
+
+                do { try await Task.sleep(for: .seconds(stepDuration)) } catch { return }
+            }
+
+            do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
+
+            withAnimation(.snappy) {
+                fingerAnimationState = .touchUp
+                selectedDate = nil
+            }
+
+            do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
+
+            withAnimation(.snappy) {
+                fingerAnimationState = .disappearing
+            }
+
+            do { try await Task.sleep(for: .seconds(0.3)) } catch { return }
+
+            fingerAnimationState = .idle
+
+            do { try await Task.sleep(for: .seconds(1.0)) } catch { return }
         }
-
-        try? await Task.sleep(for: .seconds(0.5))
-
-        withAnimation(.snappy) {
-            fingerAnimationState = .touchUp
-            selectedDate = nil
-        }
-
-        try? await Task.sleep(for: .seconds(0.5))
-
-        withAnimation(.snappy) {
-            fingerAnimationState = .disappearing
-        }
-
-        try? await Task.sleep(for: .seconds(0.3))
-
-        fingerAnimationState = .idle
-
-        try? await Task.sleep(for: .seconds(1.0))
-
-        await simulateFingerInteraction()
     }
 
     private func interpolateIndex(from start: Int, to end: Int, progress: Double) -> Int {
