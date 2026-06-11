@@ -29,6 +29,7 @@ enum AppError: Error, Identifiable, Equatable {
     // Camera-specific errors
     case cameraCaptureFailed
     case photoImportFailed
+    case textRecognitionFailed
 
     var id: String {
         let prefix = errorPrefix
@@ -55,6 +56,7 @@ enum AppError: Error, Identifiable, Equatable {
         case .retryInProgress: "retryInProgress"
         case .cameraCaptureFailed: "cameraCapture"
         case .photoImportFailed: "photoImport"
+        case .textRecognitionFailed: "textRecognition"
         }
     }
 
@@ -75,7 +77,8 @@ enum AppError: Error, Identifiable, Equatable {
             "\(message)-\(attempts)"
         case let .retryInProgress(attempt, maxAttempts):
             "\(attempt)-\(maxAttempts)"
-        case .noInternetConnection, .noCachedData, .noDataError, .cameraCaptureFailed, .photoImportFailed:
+        case .noInternetConnection, .noCachedData, .noDataError, .cameraCaptureFailed, .photoImportFailed,
+             .textRecognitionFailed:
             "static"
         }
     }
@@ -99,6 +102,7 @@ enum AppError: Error, Identifiable, Equatable {
         case .retryInProgress: "Connecting..."
         case .cameraCaptureFailed: "Capture Failed"
         case .photoImportFailed: "Photo Import Failed"
+        case .textRecognitionFailed: "Scan Failed"
         }
     }
 
@@ -138,6 +142,8 @@ enum AppError: Error, Identifiable, Equatable {
             "Couldn't capture the frame. Please try again."
         case .photoImportFailed:
             "Couldn't load that photo. Please try again."
+        case .textRecognitionFailed:
+            "Couldn't read text in this image. Please try again."
         }
     }
 

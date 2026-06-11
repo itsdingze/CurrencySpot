@@ -19,7 +19,14 @@ final class DataScannerProxy {
     func capturePhoto() async throws -> UIImage? {
         guard let host else { return nil }
         let photo = try await host.scanner.capturePhoto()
-        return photo.croppedToPreview(aspectRatio: host.view.bounds.aspectRatio)
+        let aspectRatio = host.view.bounds.aspectRatio
+        return await Self.crop(photo, toAspectRatio: aspectRatio)
+    }
+
+    /// Redrawing a full-resolution photo takes tens of milliseconds —
+    /// keep it off the main actor.
+    private nonisolated static func crop(_ photo: UIImage, toAspectRatio aspectRatio: CGFloat?) async -> UIImage {
+        photo.croppedToPreview(aspectRatio: aspectRatio)
     }
 
     /// Restarts scanning if the system tore the session down behind our back

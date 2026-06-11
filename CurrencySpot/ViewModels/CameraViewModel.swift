@@ -14,6 +14,9 @@ final class CameraViewModel {
     enum Destination: Identifiable, Hashable {
         case basePicker
         case targetPicker
+        /// The item at presentation time. The sheet re-resolves the live item
+        /// by ID so fresh rates update an open detail; this snapshot is the
+        /// sheet's identity and the fallback if the item leaves the frame.
         case badgeDetail(DetectedItem)
 
         var id: Self { self }
@@ -54,6 +57,15 @@ final class CameraViewModel {
     private var classifierFoundPrices = false
     private var manualBaseCurrency: String?
 
+    /// Identifies the latest freeze request (shutter or import), so a slow
+    /// capture that finishes after a newer freeze or a resume can't clobber it.
+    private var freezeRequestID = 0
+
+    /// The frozen frame's recognition results in image-pixel coordinates,
+    /// kept so viewport size changes can re-map them into view space.
+    private var stillRecognition = StillRecognitionResult.empty
+    private var stillViewportSize = CGSize.zero
+
     /// The user's tap-to-convert overrides for numbers the classifier judged non-prices.
     private var manualPriceOverrides: Set<UUID> = []
 
@@ -62,26 +74,33 @@ final class CameraViewModel {
 
     // MARK: - Dependencies
 
-    private let appState = AppState.shared
+    private let appState: AppState
     private let calculatorViewModel: CalculatorViewModel
     private let permissionService: CameraPermissionService
     private let scanConversionUseCase: ScanConversionUseCase
+    private let stillTextRecognizer: StillTextRecognitionService
     private let torchService: TorchService
     private let localeCurrencyCode: String?
     private let fallbackBaseCurrency: String
 
     init(
         calculatorViewModel: CalculatorViewModel,
+        // Defaulting to `.shared` directly isn't allowed: default arguments
+        // evaluate in a nonisolated context, but `shared` is MainActor-bound.
+        appState: AppState? = nil,
         permissionService: CameraPermissionService = AVCameraPermissionService(),
         scanConversionUseCase: ScanConversionUseCase = ScanConversionUseCase(),
+        stillTextRecognizer: StillTextRecognitionService = StillImageTextRecognizer(),
         torchService: TorchService = AVTorchService(),
         localeCurrencyCode: String? = Locale.current.currency?.identifier,
         fallbackBaseCurrency: String = UserDefaults.standard.string(forKey: UserDefaultsKeys.defaultBaseCurrency) ?? "USD",
         defaultTargetCurrency: String = UserDefaults.standard.string(forKey: UserDefaultsKeys.defaultTargetCurrency) ?? "EUR"
     ) {
         self.calculatorViewModel = calculatorViewModel
+        self.appState = appState ?? .shared
         self.permissionService = permissionService
         self.scanConversionUseCase = scanConversionUseCase
+        self.stillTextRecognizer = stillTextRecognizer
         self.torchService = torchService
         self.localeCurrencyCode = localeCurrencyCode
         self.fallbackBaseCurrency = fallbackBaseCurrency
@@ -113,12 +132,15 @@ final class CameraViewModel {
     /// Shutter tap: captures a still from the live feed and freezes on it.
     /// A nil capture means no scanner is attached (e.g. simulator) — not a failure.
     func freezeFrame(capturing capture: () async throws -> UIImage?) async {
+        let request = beginFreezeRequest()
         do {
             guard let image = try await capture() else { return }
+            guard request == freezeRequestID else { return }
             freeze(with: image)
         } catch is CancellationError {
             // Normal lifecycle (tab switch, backgrounding) — nothing to report.
         } catch {
+            guard request == freezeRequestID else { return }
             AppLogger.error("Frame capture failed: \(error)", category: .viewModel)
             appState.errorHandler.handle(AppError.cameraCaptureFailed)
         }
@@ -126,29 +148,28 @@ final class CameraViewModel {
 
     /// Photo import: loads the picked photo's data and freezes on it.
     func importPhoto(loading load: () async throws -> Data?) async {
+        let request = beginFreezeRequest()
         do {
             guard let data = try await load(), let image = UIImage(data: data) else {
                 throw AppError.photoImportFailed
             }
+            guard request == freezeRequestID else { return }
             freeze(with: image)
         } catch is CancellationError {
             // Normal lifecycle — nothing to report.
         } catch {
+            guard request == freezeRequestID else { return }
             AppLogger.error("Photo import failed: \(error)", category: .viewModel)
             appState.errorHandler.handle(AppError.photoImportFailed)
         }
     }
 
-    /// Called by the still-frame view once its recognition pass has pushed
-    /// results, whatever they were — gates the "No prices found" message.
-    func stillRecognitionDidFinish() {
-        isRecognizingStill = false
-    }
-
     func resumeLiveScanning() {
+        freezeRequestID += 1
         frozenImage = nil
         isScanning = true
         isRecognizingStill = false
+        stillRecognition = .empty
         updateRecognizedItems([])
     }
 
@@ -159,6 +180,34 @@ final class CameraViewModel {
     func updateLiveRecognizedItems(_ items: [RecognizedTextItem]) {
         guard frozenImage == nil else { return }
         updateRecognizedItems(items)
+    }
+
+    /// Runs text recognition on the frozen frame and maps the results into
+    /// the still view's coordinate space.
+    func recognizeStill(in image: UIImage) async {
+        do {
+            let result = try await stillTextRecognizer.recognize(image)
+            // A cancelled or superseded pass (user resumed live scanning or
+            // froze a newer image) must not push stale results.
+            guard !Task.isCancelled, frozenImage === image else { return }
+            stillRecognition = result
+            pushStillItems()
+            isRecognizingStill = false
+        } catch is CancellationError {
+            // Normal lifecycle — nothing to report.
+        } catch {
+            guard frozenImage === image else { return }
+            AppLogger.error("Still-image text recognition failed: \(error)", category: .viewModel)
+            appState.errorHandler.handle(AppError.textRecognitionFailed)
+            isRecognizingStill = false
+        }
+    }
+
+    /// The still view reports its size here so recognized bounds can be
+    /// re-mapped whenever layout changes.
+    func stillViewportChanged(_ size: CGSize) {
+        stillViewportSize = size
+        pushStillItems()
     }
 
     func updateRecognizedItems(_ items: [RecognizedTextItem]) {
@@ -235,6 +284,11 @@ final class CameraViewModel {
         destination = .badgeDetail(item)
     }
 
+    /// Resolves the live item for an open badge-detail sheet.
+    func detectedItem(for id: UUID) -> DetectedItem? {
+        detectedItems.first { $0.id == id }
+    }
+
     // MARK: - Calculator Passthroughs for the Overlay UI
 
     var availableRates: [ExchangeRateDataValue] { calculatorViewModel.availableRates }
@@ -252,10 +306,17 @@ final class CameraViewModel {
         calculatorViewModel.targetCurrency = targetCurrency
         calculatorViewModel.inputAmountString = Self.calculatorInput(for: item.conversion.amount)
         destination = nil
-        appState.selectedTab = 0
+        appState.selectedTab = .convert
     }
 
     // MARK: - Private Helpers
+
+    /// Marks the start of a freeze request and returns its identity, so the
+    /// completion can detect being superseded by a newer request or a resume.
+    private func beginFreezeRequest() -> Int {
+        freezeRequestID += 1
+        return freezeRequestID
+    }
 
     /// Holds a still frame (shutter or photo import). Items are cleared until
     /// the still-image recognition pass repopulates them.
@@ -264,7 +325,17 @@ final class CameraViewModel {
         frozenImage = image
         isScanning = false
         isRecognizingStill = true
+        stillRecognition = .empty
         updateRecognizedItems([])
+    }
+
+    /// Maps the frozen frame's recognition results into the current viewport.
+    private func pushStillItems() {
+        guard frozenImage != nil else { return }
+        let mapping = AspectFitMapping(imageSize: stillRecognition.imagePixelSize, viewSize: stillViewportSize)
+        updateRecognizedItems(stillRecognition.items.map { item in
+            RecognizedTextItem(id: item.id, transcript: item.transcript, bounds: mapping.viewRect(for: item.bounds))
+        })
     }
 
     private func reconvert() {

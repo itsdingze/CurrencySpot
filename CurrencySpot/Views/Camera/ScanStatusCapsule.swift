@@ -5,25 +5,6 @@
 
 import SwiftUI
 
-/// Which status message the camera capsule shows, if any.
-enum ScanStatusPhase: Equatable {
-    case hidden
-    case scanning
-    case pointHint
-    case notFound
-
-    static func resolve(
-        isLive: Bool,
-        hasPrices: Bool,
-        isRecognizingStill: Bool,
-        hintElapsed: Bool
-    ) -> ScanStatusPhase {
-        if hasPrices { return .hidden }
-        if isLive { return hintElapsed ? .pointHint : .scanning }
-        return isRecognizingStill ? .hidden : .notFound
-    }
-}
-
 /// Status capsule above the shutter: shows that live scanning is active,
 /// nudges the user after a few seconds without results, and reports when a
 /// frozen frame or imported photo contained no prices.
@@ -88,11 +69,15 @@ private struct Shimmer: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var travel = false
 
+    private var shimmering: Bool { active && !reduceMotion }
+
     func body(content: Content) -> some View {
-        if active && !reduceMotion {
-            content
-                .opacity(0.7)
-                .overlay {
+        // Only the overlay is conditional, so phase flips never tear down and
+        // recreate the content itself.
+        content
+            .opacity(shimmering ? 0.7 : 1)
+            .overlay {
+                if shimmering {
                     GeometryReader { proxy in
                         let band = proxy.size.width * 0.6
                         LinearGradient(
@@ -104,15 +89,14 @@ private struct Shimmer: ViewModifier {
                         .offset(x: travel ? proxy.size.width : -band)
                     }
                     .mask(content)
-                }
-                .onAppear {
-                    withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
-                        travel = true
+                    .onAppear {
+                        travel = false
+                        withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
+                            travel = true
+                        }
                     }
                 }
-        } else {
-            content
-        }
+            }
     }
 }
 

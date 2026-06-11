@@ -29,7 +29,8 @@ struct CameraControlsBar: View {
             guard let item else { return }
             Task {
                 await viewModel.importPhoto(loading: { try await item.loadTransferable(type: Data.self) })
-                pickedPhoto = nil
+                // A newer selection may have arrived while this one loaded.
+                if pickedPhoto == item { pickedPhoto = nil }
             }
         }
     }

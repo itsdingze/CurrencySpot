@@ -17,10 +17,10 @@ struct BadgeDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 0) {
             HStack {
                 Spacer()
-                
+
                 Button {
                     dismiss()
                 } label: {
@@ -28,8 +28,8 @@ struct BadgeDetailView: View {
                         .font(.title)
                         .foregroundStyle(Color.gray, Color.primary.opacity(0.1))
                 }
+                .accessibilityLabel("Close")
             }
-            .accessibilityLabel("Close")
 
             VStack(spacing: 8) {
                 amountLine(item.conversion.amount, code: baseCurrency)
@@ -38,13 +38,14 @@ struct BadgeDetailView: View {
                 Image(systemName: "arrow.down")
                     .font(.system(.headline, design: .rounded).weight(.semibold))
                     .foregroundStyle(Color.textSecondary)
+                    .accessibilityHidden(true)
 
                 amountLine(item.conversion.converted, code: targetCurrency, fractionDigits: 2)
                     .foregroundStyle(Color.textPrimary)
             }
-            .padding(.top, -24)
-            
-            VStack(spacing: 16){
+            .padding(.top, 8)
+
+            VStack(spacing: 16) {
                 Button(action: openInConverter) {
                     Label("Open in Convert", systemImage: "arrow.left.arrow.right")
                         .font(.system(.headline, design: .rounded))
@@ -52,13 +53,14 @@ struct BadgeDetailView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                
+
                 Button(action: hideConversion) {
                     Label("Hide this conversion", systemImage: "eye.slash")
                         .font(.system(.subheadline, design: .rounded))
                 }
                 .foregroundStyle(Color.textSecondary)
             }
+            .padding(.top, 32)
         }
         .safeAreaPadding(.horizontal)
         .safeAreaPadding(.top)

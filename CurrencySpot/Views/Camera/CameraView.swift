@@ -28,3 +28,10 @@ struct CameraView: View {
         .environment(\.colorScheme, .dark)
     }
 }
+
+@available(iOS 18.0, *)
+#Preview {
+    CameraView()
+        .withDependencyContainer(.preview())
+        .environment(AppState.shared)
+}

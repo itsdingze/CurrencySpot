@@ -104,21 +104,24 @@ struct CameraScannerContainer: View {
             CurrencyPickerView(selectedCurrency: $viewModel.baseCurrency, exchangeRates: viewModel.availableRates)
         case .targetPicker:
             CurrencyPickerView(selectedCurrency: $viewModel.targetCurrency, exchangeRates: viewModel.availableRates)
-        case let .badgeDetail(item):
+        case let .badgeDetail(snapshot):
             // Same height-fitting sheet as the accent color picker.
             if #available(iOS 26, *) {
                 DynamicSheet(animation: .snappy) {
-                    badgeDetail(for: item)
+                    badgeDetail(for: snapshot)
                 }
             } else {
-                badgeDetail(for: item)
+                badgeDetail(for: snapshot)
                     .presentationDetents([.height(320)])
             }
         }
     }
 
-    private func badgeDetail(for item: DetectedItem) -> some View {
-        BadgeDetailView(
+    private func badgeDetail(for snapshot: DetectedItem) -> some View {
+        // Prefer the live item so fresh rates update an open sheet; fall back
+        // to the presentation-time snapshot if the item left the frame.
+        let item = viewModel.detectedItem(for: snapshot.id) ?? snapshot
+        return BadgeDetailView(
             item: item,
             baseCurrency: viewModel.baseCurrency,
             targetCurrency: viewModel.targetCurrency,
@@ -126,4 +129,12 @@ struct CameraScannerContainer: View {
             hideConversion: { viewModel.hideConversion(for: item.id) }
         )
     }
+}
+
+@available(iOS 18.0, *)
+#Preview {
+    CameraScannerContainer()
+        .withDependencyContainer(.preview())
+        .environment(AppState.shared)
+        .environment(\.colorScheme, .dark)
 }

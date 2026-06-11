@@ -15,6 +15,11 @@ final class ScannerHostController: UIViewController {
     let scanner: DataScannerViewController
     var wantsScanning = true
 
+    /// Fires after every successful `startScanning()` — the moment a fresh
+    /// `recognizedItems` subscription is needed, since the previous stream
+    /// finished when scanning last stopped.
+    var onScanningStarted: (() -> Void)?
+
     private var startTask: Task<Void, Never>?
     private var hasAppliedInitialZoom = false
 
@@ -62,6 +67,7 @@ final class ScannerHostController: UIViewController {
                     do {
                         try self.scanner.startScanning()
                         self.applyInitialZoomIfNeeded()
+                        self.onScanningStarted?()
                         return
                     } catch {
                         lastError = error

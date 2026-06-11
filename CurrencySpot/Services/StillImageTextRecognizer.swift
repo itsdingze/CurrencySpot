@@ -16,19 +16,17 @@ struct StillRecognitionResult: Equatable, Sendable {
     static let empty = StillRecognitionResult(items: [], imagePixelSize: .zero)
 }
 
-@available(iOS 18.0, *)
-struct StillImageTextRecognizer {
-    func recognize(_ image: UIImage) async -> StillRecognitionResult {
+protocol StillTextRecognitionService: Sendable {
+    func recognize(_ image: UIImage) async throws -> StillRecognitionResult
+}
+
+struct StillImageTextRecognizer: StillTextRecognitionService {
+    func recognize(_ image: UIImage) async throws -> StillRecognitionResult {
+        guard #available(iOS 18.0, *) else { return .empty }
         guard let cgImage = image.orientationNormalized.cgImage else { return .empty }
 
         let request = RecognizeTextRequest()
-        let observations: [RecognizedTextObservation]
-        do {
-            observations = try await request.perform(on: cgImage)
-        } catch {
-            AppLogger.error("Still-image text recognition failed: \(error)", category: .useCase)
-            return .empty
-        }
+        let observations = try await request.perform(on: cgImage)
 
         let imageSize = CGSize(width: cgImage.width, height: cgImage.height)
         let items = observations.compactMap { observation -> RecognizedTextItem? in

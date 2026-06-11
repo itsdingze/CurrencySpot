@@ -8,6 +8,16 @@
 import Foundation
 import SwiftUI
 
+/// App-wide tab identity. Deep links target a tab by name, so the mapping
+/// survives tabs being added, removed (camera on unsupported devices), or
+/// ordered differently between the modern and legacy hierarchies.
+enum AppTab: Hashable {
+    case convert
+    case camera
+    case history
+    case settings
+}
+
 @Observable
 @MainActor
 final class AppState {
@@ -17,7 +27,9 @@ final class AppState {
     private(set) var networkMonitor = NetworkMonitor()
 
     /// App-wide tab selection, so features can deep-link into other tabs.
-    var selectedTab = 0
+    var selectedTab = AppTab.convert
 
-    private init() {}
+    /// Production code uses `shared`; tests create isolated instances so
+    /// parallel runs can't clobber each other's state.
+    init() {}
 }

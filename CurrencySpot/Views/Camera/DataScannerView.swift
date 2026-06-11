@@ -31,6 +31,10 @@ struct DataScannerView: UIViewControllerRepresentable {
         scanner.delegate = context.coordinator
         context.coordinator.observeRecognizedItems(of: scanner)
         let host = ScannerHostController(scanner: scanner)
+        host.onScanningStarted = { [weak coordinator = context.coordinator, weak scanner] in
+            guard let coordinator, let scanner else { return }
+            coordinator.observeRecognizedItems(of: scanner)
+        }
         proxy.host = host
         return host
     }
@@ -63,20 +67,18 @@ struct DataScannerView: UIViewControllerRepresentable {
         }
 
         func observeRecognizedItems(of scanner: DataScannerViewController) {
+            observationTask?.cancel()
             observationTask = Task { [weak self, weak scanner] in
+                guard let scanner else { return }
                 // The stream finishes whenever scanning stops (freeze, tab
-                // switch, backgrounding), so re-subscribe for the next session
-                // instead of silently going deaf after the first stop.
-                while !Task.isCancelled {
-                    guard let scanner else { return }
-                    for await items in scanner.recognizedItems {
-                        guard let self, !Task.isCancelled else { return }
-                        self.onItemsChanged(items.compactMap(RecognizedTextItem.init))
-                    }
+                // switch, backgrounding); the host re-subscribes on the next
+                // successful start, so one pass per scan session is enough.
+                for await items in scanner.recognizedItems {
                     guard let self, !Task.isCancelled else { return }
-                    self.onItemsChanged([])
-                    try? await Task.sleep(for: .milliseconds(200))
+                    self.onItemsChanged(items.compactMap(RecognizedTextItem.init))
                 }
+                guard let self, !Task.isCancelled else { return }
+                self.onItemsChanged([])
             }
         }
 

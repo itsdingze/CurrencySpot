@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CustomTabBar: View {
-    @Binding var selectedTab: Int
+    @Binding var selectedTab: AppTab
     @Namespace private var animation
 
     private let tabBarHeight: CGFloat = 30
@@ -18,8 +18,8 @@ struct CustomTabBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(Array(TabItem.allCases.enumerated()), id: \.element) { index, tab in
-                tabButton(for: tab, at: index)
+            ForEach(TabItem.allCases) { tab in
+                tabButton(for: tab)
             }
         }
         .frame(height: tabBarHeight)
@@ -32,10 +32,10 @@ struct CustomTabBar: View {
     // MARK: - Private Views
 
     @ViewBuilder
-    private func tabButton(for tab: TabItem, at index: Int) -> some View {
-        let isSelected = selectedTab == index
+    private func tabButton(for tab: TabItem) -> some View {
+        let isSelected = selectedTab == tab.appTab
 
-        Button(action: { selectTab(at: index) }) {
+        Button(action: { selectTab(tab.appTab) }) {
             VStack(spacing: buttonSpacing) {
                 tabLabel(for: tab, isSelected: isSelected)
                 tabIndicator(isSelected: isSelected)
@@ -71,9 +71,9 @@ struct CustomTabBar: View {
 
     // MARK: - Private Methods
 
-    private func selectTab(at index: Int) {
+    private func selectTab(_ tab: AppTab) {
         withAnimation(.smooth) {
-            selectedTab = index
+            selectedTab = tab
         }
     }
 }
@@ -84,6 +84,14 @@ private enum TabItem: String, CaseIterable, Identifiable {
     case settings
 
     var id: String { rawValue }
+
+    var appTab: AppTab {
+        switch self {
+        case .convert: .convert
+        case .history: .history
+        case .settings: .settings
+        }
+    }
 
     var icon: String {
         switch self {

@@ -44,7 +44,7 @@ struct ContentView: View {
     private var modernTabView: some View {
         @Bindable var appState = appState
         TabView(selection: $appState.selectedTab) {
-            Tab("Convert", systemImage: "arrow.left.arrow.right", value: 0) {
+            Tab("Convert", systemImage: "arrow.left.arrow.right", value: AppTab.convert) {
                 CalculatorView()
                     .toolbarBackground(.visible, for: .tabBar)
             }
@@ -53,7 +53,7 @@ struct ContentView: View {
             .accessibilityInputLabels(["Convert", "Calculator", "Exchange"])
 
             if CameraScanAvailability.isSupported {
-                Tab("Camera", systemImage: "camera.viewfinder", value: 1) {
+                Tab("Camera", systemImage: "camera.viewfinder", value: AppTab.camera) {
                     CameraView()
                         .toolbarBackground(.visible, for: .tabBar)
                         .toolbarColorScheme(.dark, for: .tabBar)
@@ -63,7 +63,7 @@ struct ContentView: View {
                 .accessibilityInputLabels(["Camera", "Scan", "Scanner"])
             }
 
-            Tab("History", systemImage: "chart.line.uptrend.xyaxis", value: 2) {
+            Tab("History", systemImage: "chart.line.uptrend.xyaxis", value: AppTab.history) {
                 CurrencyList()
                     .toolbarBackground(.visible, for: .tabBar)
             }
@@ -71,7 +71,7 @@ struct ContentView: View {
             .accessibilityHint("View historical exchange rate charts and trends")
             .accessibilityInputLabels(["History", "Charts", "Trends"])
 
-            Tab("Settings", systemImage: "gearshape", value: 3) {
+            Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
                 NavigationStack {
                     SettingsView()
                 }
@@ -92,7 +92,7 @@ struct ContentView: View {
                     .tabItem {
                         Label("Convert", systemImage: "arrow.left.arrow.right")
                     }
-                    .tag(0)
+                    .tag(AppTab.convert)
                     .toolbar(.hidden, for: .tabBar)
                     .accessibilityLabel("Currency Converter")
                     .accessibilityHint("Convert between different currencies")
@@ -104,7 +104,7 @@ struct ContentView: View {
                 .tabItem {
                     Label("History", systemImage: "chart.line.uptrend.xyaxis")
                 }
-                .tag(1)
+                .tag(AppTab.history)
                 .toolbar(.hidden, for: .tabBar)
                 .accessibilityLabel("Exchange Rate History")
                 .accessibilityHint("View historical exchange rate charts and trends")
@@ -114,7 +114,7 @@ struct ContentView: View {
                     .tabItem {
                         Label("Settings", systemImage: "gearshape")
                     }
-                    .tag(2)
+                    .tag(AppTab.settings)
                     .toolbar(.hidden, for: .tabBar)
                     .accessibilityLabel("Settings and Preferences")
                     .accessibilityHint("Configure app settings and default currencies")

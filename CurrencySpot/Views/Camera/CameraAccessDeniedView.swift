@@ -10,47 +10,19 @@ struct CameraAccessDeniedView: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        CameraStateScreen(
+            icon: "video.slash",
+            title: "Camera Access Is Off",
+            message: "Turn on camera access in Settings to convert prices with your camera.",
+            buttonTitle: "Open Settings",
+            buttonHint: "Opens the Settings app to enable camera access",
+            action: openSettings
+        )
+    }
 
-            VStack(spacing: 24) {
-                VStack(spacing: 12) {
-                    Image(systemName: "video.slash")
-                        .font(.system(size: 56, weight: .medium))
-                        .foregroundStyle(Color.accentColor)
-                        .accessibilityHidden(true)
-
-                    Text("Camera Access Is Off")
-                        .font(.system(.title2, design: .rounded, weight: .bold))
-                        .multilineTextAlignment(.center)
-                        .accessibilityAddTraits(.isHeader)
-
-                    Text("Turn on camera access in Settings to convert prices with your camera.")
-                        .font(.system(.subheadline, design: .rounded))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-
-                Button {
-                    if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
-                        openURL(settingsURL)
-                    }
-                } label: {
-                    Text("Open Settings")
-                        .font(.system(.headline, design: .rounded, weight: .semibold))
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
-                }
-                .tint(Color.accentColor)
-                .buttonStyle(.borderedProminent)
-                .accessibilityHint("Opens the Settings app to enable camera access")
-            }
-
-            Spacer()
-        }
-        .safeAreaPadding(.horizontal, 36)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.background.ignoresSafeArea())
+    private func openSettings() {
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(settingsURL)
     }
 }
 

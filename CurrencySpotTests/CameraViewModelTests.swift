@@ -27,13 +27,25 @@ private struct MockTorchService: TorchService {
     func setTorch(enabled: Bool) -> Bool { available && enabled }
 }
 
+private struct MockStillTextRecognitionService: StillTextRecognitionService {
+    let handler: @Sendable (UIImage) async throws -> StillRecognitionResult
+
+    func recognize(_ image: UIImage) async throws -> StillRecognitionResult {
+        try await handler(image)
+    }
+}
+
 @MainActor
 struct CameraViewModelTests {
     /// VM wired with USD-normalized mock rates and a JPY → USD pair.
+    /// Each test gets its own `AppState` so parallel runs can't interfere.
     private static func makeScanningViewModel(
+        appState: AppState? = nil,
+        stillRecognizer: StillTextRecognitionService = MockStillTextRecognitionService(handler: { _ in .empty }),
         localeCurrencyCode: String? = "JPY",
         torchAvailable: Bool = true
     ) -> CameraViewModel {
+        let appState = appState ?? AppState()
         let calculatorViewModel = CalculatorViewModel(service: MockExchangeRateService())
         calculatorViewModel.availableRates = [
             ExchangeRateDataValue(currencyCode: "JPY", rate: 150),
@@ -42,12 +54,19 @@ struct CameraViewModelTests {
         ]
         return CameraViewModel(
             calculatorViewModel: calculatorViewModel,
+            appState: appState,
             permissionService: MockCameraPermissionService(status: .authorized),
+            stillTextRecognizer: stillRecognizer,
             torchService: MockTorchService(available: torchAvailable),
             localeCurrencyCode: localeCurrencyCode,
             fallbackBaseCurrency: "USD",
             defaultTargetCurrency: "USD"
         )
+    }
+
+    /// 1×1 PNG for exercising the photo-import path.
+    private static func pngData() throws -> Data {
+        try #require(UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }.pngData())
     }
 
     @Test(arguments: [CameraAuthorizationStatus.notDetermined, .authorized, .denied])
@@ -202,15 +221,17 @@ struct CameraViewModelTests {
     }
 
     @Test func openInConverterPrefillsCalculatorAndSwitchesToConvertTab() {
+        let appState = AppState()
         let calculator = CalculatorViewModel(service: MockExchangeRateService())
         let viewModel = CameraViewModel(
             calculatorViewModel: calculator,
+            appState: appState,
             permissionService: MockCameraPermissionService(status: .authorized),
             localeCurrencyCode: "JPY",
             fallbackBaseCurrency: "JPY",
             defaultTargetCurrency: "USD"
         )
-        AppState.shared.selectedTab = 1
+        appState.selectedTab = .camera
         let item = DetectedItem(
             id: UUID(),
             transcript: "¥1,200",
@@ -223,7 +244,7 @@ struct CameraViewModelTests {
         #expect(calculator.baseCurrency == "JPY")
         #expect(calculator.targetCurrency == "USD")
         #expect(calculator.inputAmountString == "120000")
-        #expect(AppState.shared.selectedTab == 0)
+        #expect(appState.selectedTab == .convert)
         #expect(viewModel.destination == nil)
     }
 
@@ -304,13 +325,80 @@ struct CameraViewModelTests {
         #expect(viewModel.isRecognizingStill == true)
     }
 
-    @Test func stillRecognitionFinishClearsTheInFlightFlag() async {
-        let viewModel = Self.makeScanningViewModel()
+    @Test func recognizingTheStillPopulatesItemsAndClearsTheInFlightFlag() async {
+        let result = StillRecognitionResult(
+            items: [
+                RecognizedTextItem(
+                    id: UUID(),
+                    transcript: "¥1,200",
+                    bounds: CGRect(x: 10, y: 10, width: 80, height: 20)
+                ),
+            ],
+            imagePixelSize: CGSize(width: 100, height: 100)
+        )
+        let viewModel = Self.makeScanningViewModel(
+            stillRecognizer: MockStillTextRecognitionService(handler: { _ in result })
+        )
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+
+        await viewModel.recognizeStill(in: image)
+
+        #expect(viewModel.detectedItems.count == 1)
+        #expect(viewModel.detectedItems.first?.conversion.isPrice == true)
+        #expect(viewModel.isRecognizingStill == false)
+    }
+
+    @Test func stillRecognitionFailureSurfacesScanError() async {
+        struct RecognitionError: Error {}
+        let appState = AppState()
+        let viewModel = Self.makeScanningViewModel(
+            appState: appState,
+            stillRecognizer: MockStillTextRecognitionService(handler: { _ in throw RecognitionError() })
+        )
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+
+        await viewModel.recognizeStill(in: image)
+
+        #expect(appState.errorHandler.currentError == .textRecognitionFailed)
+        #expect(viewModel.isRecognizingStill == false)
+    }
+
+    /// Results for a frame that's no longer the frozen one must not land.
+    @Test func stillResultsForAReplacedFrameAreIgnored() async {
+        let result = StillRecognitionResult(
+            items: [RecognizedTextItem(id: UUID(), transcript: "¥1,200", bounds: .zero)],
+            imagePixelSize: CGSize(width: 100, height: 100)
+        )
+        let viewModel = Self.makeScanningViewModel(
+            stillRecognizer: MockStillTextRecognitionService(handler: { _ in result })
+        )
         await viewModel.freezeFrame(capturing: { UIImage() })
 
-        viewModel.stillRecognitionDidFinish()
+        await viewModel.recognizeStill(in: UIImage())
 
-        #expect(viewModel.isRecognizingStill == false)
+        #expect(viewModel.detectedItems.isEmpty)
+        #expect(viewModel.isRecognizingStill == true)
+    }
+
+    @Test func stillResultsAfterResumeAreIgnored() async {
+        let result = StillRecognitionResult(
+            items: [RecognizedTextItem(id: UUID(), transcript: "¥1,200", bounds: .zero)],
+            imagePixelSize: CGSize(width: 100, height: 100)
+        )
+        let viewModel = Self.makeScanningViewModel(
+            stillRecognizer: MockStillTextRecognitionService(handler: { _ in result })
+        )
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+        viewModel.resumeLiveScanning()
+
+        await viewModel.recognizeStill(in: image)
+
+        #expect(viewModel.detectedItems.isEmpty)
+        #expect(viewModel.frozenImage == nil)
     }
 
     /// Resuming can interrupt a still pass mid-flight; the flag must not leak.
@@ -359,41 +447,39 @@ struct CameraViewModelTests {
 
     /// A nil capture means no scanner is attached (e.g. simulator) — not a failure.
     @Test func freezeFrameWithoutAScannerStaysLiveAndSilent() async {
-        let viewModel = Self.makeScanningViewModel()
-        AppState.shared.errorHandler.currentError = nil
+        let appState = AppState()
+        let viewModel = Self.makeScanningViewModel(appState: appState)
 
         await viewModel.freezeFrame(capturing: { nil })
 
         #expect(viewModel.isScanning == true)
         #expect(viewModel.frozenImage == nil)
-        #expect(AppState.shared.errorHandler.currentError == nil)
+        #expect(appState.errorHandler.currentError == nil)
     }
 
     @Test func freezeFrameFailureSurfacesCaptureError() async {
-        let viewModel = Self.makeScanningViewModel()
-        AppState.shared.errorHandler.currentError = nil
+        let appState = AppState()
+        let viewModel = Self.makeScanningViewModel(appState: appState)
 
         await viewModel.freezeFrame(capturing: { throw StubError() })
 
         #expect(viewModel.isScanning == true)
         #expect(viewModel.frozenImage == nil)
-        #expect(AppState.shared.errorHandler.currentError == .cameraCaptureFailed)
+        #expect(appState.errorHandler.currentError == .cameraCaptureFailed)
     }
 
     @Test func freezeFrameCancellationStaysSilent() async {
-        let viewModel = Self.makeScanningViewModel()
-        AppState.shared.errorHandler.currentError = nil
+        let appState = AppState()
+        let viewModel = Self.makeScanningViewModel(appState: appState)
 
         await viewModel.freezeFrame(capturing: { throw CancellationError() })
 
-        #expect(AppState.shared.errorHandler.currentError == nil)
+        #expect(appState.errorHandler.currentError == nil)
     }
 
     @Test func importPhotoFreezesOnDecodableImageData() async throws {
         let viewModel = Self.makeScanningViewModel()
-        let imageData = try #require(
-            UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }.pngData()
-        )
+        let imageData = try Self.pngData()
 
         await viewModel.importPhoto(loading: { imageData })
 
@@ -402,32 +488,82 @@ struct CameraViewModelTests {
     }
 
     @Test func importPhotoWithNoDataSurfacesImportError() async {
-        let viewModel = Self.makeScanningViewModel()
-        AppState.shared.errorHandler.currentError = nil
+        let appState = AppState()
+        let viewModel = Self.makeScanningViewModel(appState: appState)
 
         await viewModel.importPhoto(loading: { nil })
 
         #expect(viewModel.frozenImage == nil)
-        #expect(AppState.shared.errorHandler.currentError == .photoImportFailed)
+        #expect(appState.errorHandler.currentError == .photoImportFailed)
     }
 
     @Test func importPhotoWithUndecodableDataSurfacesImportError() async {
-        let viewModel = Self.makeScanningViewModel()
-        AppState.shared.errorHandler.currentError = nil
+        let appState = AppState()
+        let viewModel = Self.makeScanningViewModel(appState: appState)
 
         await viewModel.importPhoto(loading: { Data("not an image".utf8) })
 
         #expect(viewModel.frozenImage == nil)
-        #expect(AppState.shared.errorHandler.currentError == .photoImportFailed)
+        #expect(appState.errorHandler.currentError == .photoImportFailed)
     }
 
     @Test func importPhotoLoadFailureSurfacesImportError() async {
-        let viewModel = Self.makeScanningViewModel()
-        AppState.shared.errorHandler.currentError = nil
+        let appState = AppState()
+        let viewModel = Self.makeScanningViewModel(appState: appState)
 
         await viewModel.importPhoto(loading: { throw StubError() })
 
         #expect(viewModel.frozenImage == nil)
-        #expect(AppState.shared.errorHandler.currentError == .photoImportFailed)
+        #expect(appState.errorHandler.currentError == .photoImportFailed)
+    }
+
+    // MARK: - Stale Freeze Requests
+
+    /// A slow capture that completes after a newer freeze (e.g. a photo
+    /// import) must not clobber it.
+    @Test func staleCaptureCannotReplaceANewerFreeze() async throws {
+        let viewModel = Self.makeScanningViewModel()
+        let imported = try Self.pngData()
+        let staleCapture = UIImage()
+
+        await viewModel.freezeFrame(capturing: {
+            await viewModel.importPhoto(loading: { imported })
+            return staleCapture
+        })
+
+        #expect(viewModel.frozenImage != nil)
+        #expect(viewModel.frozenImage !== staleCapture)
+    }
+
+    /// A slow capture that completes after the user resumed live scanning
+    /// must not re-freeze the view.
+    @Test func staleCaptureCannotRefreezeAfterResume() async throws {
+        let viewModel = Self.makeScanningViewModel()
+        let imported = try Self.pngData()
+
+        await viewModel.freezeFrame(capturing: {
+            await viewModel.importPhoto(loading: { imported })
+            viewModel.resumeLiveScanning()
+            return UIImage()
+        })
+
+        #expect(viewModel.frozenImage == nil)
+        #expect(viewModel.isScanning == true)
+    }
+
+    /// A failure from a superseded request stays silent — the newer freeze
+    /// already replaced it.
+    @Test func staleCaptureFailureStaysSilent() async throws {
+        let appState = AppState()
+        let viewModel = Self.makeScanningViewModel(appState: appState)
+        let imported = try Self.pngData()
+
+        await viewModel.freezeFrame(capturing: {
+            await viewModel.importPhoto(loading: { imported })
+            throw StubError()
+        })
+
+        #expect(appState.errorHandler.currentError == nil)
+        #expect(viewModel.frozenImage != nil)
     }
 }
