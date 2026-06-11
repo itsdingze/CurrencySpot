@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// Live camera feed (or a frozen still) with detection overlay,
-/// currency pair control, capture controls, and rate-age chip.
+/// currency pair control, and capture controls.
 @available(iOS 18.0, *)
 struct CameraScannerContainer: View {
     @Environment(CameraViewModel.self) private var viewModel
@@ -22,9 +22,9 @@ struct CameraScannerContainer: View {
                 .ignoresSafeArea()
 
             // The scanner reports item bounds in its own view space, so the
-            // overlay must share the preview's exact frame. The 3:4 portrait
-            // frame matches the sensor, so the live feed shows the full field
-            // of view and the frozen capture lands at the identical size.
+            // overlay must share the preview's exact frame. The frame spans
+            // the safe area; captures are center-cropped to its aspect so the
+            // frozen frame lands at the identical size.
             ZStack {
                 #if !targetEnvironment(simulator)
                 DataScannerView(
@@ -48,32 +48,25 @@ struct CameraScannerContainer: View {
                     onPlateTap: { viewModel.showBadgeDetail(for: $0) }
                 )
             }
-            .aspectRatio(3.0 / 4.0, contentMode: .fit)
-            .overlay(alignment: .bottom) {
-                ScanStatusCapsule(
-                    isLive: viewModel.frozenImage == nil,
-                    hasPrices: viewModel.hasPrices,
-                    isRecognizingStill: viewModel.isRecognizingStill
-                )
-                .padding(.bottom, 16)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // Center the preview between the physical top of the screen and
-            // the bottom safe-area edge, Camera-app style.
-            .ignoresSafeArea(edges: .top)
-        }
-        .overlay(alignment: .top) {
-            VStack(spacing: 8) {
+            .clipShape(.rect(cornerRadius: 32))
+            // Controls anchor to the feed's own edges, not the safe area,
+            // so their padding tracks the rounded frame.
+            .overlay(alignment: .top) {
                 CurrencyPairControl()
-                if !appState.networkMonitor.isConnected {
-                    rateAgeChip
-                }
+                    .padding(.top, 24)
             }
-            .padding(.top, 8)
-        }
-        .overlay(alignment: .bottom) {
-            CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
+            .overlay(alignment: .bottom) {
+                VStack(spacing: 16) {
+                    ScanStatusCapsule(
+                        isLive: viewModel.frozenImage == nil,
+                        hasPrices: viewModel.hasPrices,
+                        isRecognizingStill: viewModel.isRecognizingStill
+                    )
+                    CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
+                }
                 .padding(.bottom, 24)
+            }
+            .padding(.bottom, 24)
         }
         .onChange(of: viewModel.availableRates) {
             viewModel.refreshConversions()
@@ -95,21 +88,12 @@ struct CameraScannerContainer: View {
             viewModel.turnTorchOff()
         }
         .sheet(item: $viewModel.destination) { destination in
-            // Sheets are new presentation roots, so the tab's dark
-            // environment doesn't reach them — re-apply it.
+            // preferredColorScheme darkens the whole enclosing presentation,
+            // UIKit chrome included (sheet background, search bar, toolbar) —
+            // an environment override only reaches the SwiftUI views.
             currencyPicker(for: destination)
-                .environment(\.colorScheme, .dark)
+                .preferredColorScheme(.dark)
         }
-    }
-
-    /// Offline rate-age indicator, wording consistent with the app's offline banner.
-    private var rateAgeChip: some View {
-        Label("Using cached data · \(viewModel.rateFreshness)", systemImage: "wifi.slash")
-            .font(.system(.caption, design: .rounded))
-            .foregroundStyle(Color.textSecondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(.regularMaterial, in: .capsule)
     }
 
     @ViewBuilder
@@ -121,15 +105,25 @@ struct CameraScannerContainer: View {
         case .targetPicker:
             CurrencyPickerView(selectedCurrency: $viewModel.targetCurrency, exchangeRates: viewModel.availableRates)
         case let .badgeDetail(item):
-            BadgeDetailView(
-                item: item,
-                baseCurrency: viewModel.baseCurrency,
-                targetCurrency: viewModel.targetCurrency,
-                rateUsed: viewModel.rateUsed,
-                rateFreshness: viewModel.rateFreshness,
-                openInConverter: { viewModel.openInConverter(item) },
-                hideConversion: { viewModel.hideConversion(for: item.id) }
-            )
+            // Same height-fitting sheet as the accent color picker.
+            if #available(iOS 26, *) {
+                DynamicSheet(animation: .snappy) {
+                    badgeDetail(for: item)
+                }
+            } else {
+                badgeDetail(for: item)
+                    .presentationDetents([.height(320)])
+            }
         }
+    }
+
+    private func badgeDetail(for item: DetectedItem) -> some View {
+        BadgeDetailView(
+            item: item,
+            baseCurrency: viewModel.baseCurrency,
+            targetCurrency: viewModel.targetCurrency,
+            openInConverter: { viewModel.openInConverter(item) },
+            hideConversion: { viewModel.hideConversion(for: item.id) }
+        )
     }
 }

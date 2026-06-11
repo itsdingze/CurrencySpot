@@ -14,7 +14,7 @@ struct CurrencyPairControl: View {
     private let flipDuration: TimeInterval = 0.6
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 16) {
             currencyButton(
                 code: viewModel.baseCurrency,
                 caption: "From",
@@ -33,7 +33,7 @@ struct CurrencyPairControl: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(.regularMaterial, in: .capsule)
+        .adaptiveGlassBackground(in: .capsule, isInteractive: true)
     }
 
     private func currencyButton(
@@ -49,13 +49,21 @@ struct CurrencyPairControl: View {
                 Text(caption)
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Color.textSecondary)
-                Text(code)
-                    .font(.system(.headline, design: .rounded))
-                    .foregroundStyle(Color.textPrimary)
-                    .contentTransition(.numericText())
+                
+                // This applies the same width to all buttons because font is not monospaced.
+                ZStack(alignment: .center) {
+                    Text("WWI")
+                        .font(.system(.headline, design: .rounded, weight: .bold))
+                        .foregroundStyle(.clear)
+                    
+                    Text(code)
+                        .font(.system(.headline, design: .rounded, weight: .bold))
+                        .foregroundStyle(Color.textPrimary)
+                        .contentTransition(.numericText())
+                }
             }
-            .frame(minWidth: 56)
         }
+        .padding(.horizontal, 8)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityValue(code)
         .accessibilityHint("Opens the currency picker")

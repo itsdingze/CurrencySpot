@@ -44,18 +44,16 @@ struct CameraControlsBar: View {
 
     private var shutterButton: some View {
         Button(action: shutterTapped) {
-            ZStack {
-                Circle()
-                    .stroke(.white, lineWidth: 4)
+            if #available(iOS 26, *) {
+                shutterContent
                     .frame(width: 64, height: 64)
-                if viewModel.frozenImage == nil {
+                    .glassEffect(.regular, in: .circle)
+            } else {
+                ZStack {
                     Circle()
-                        .fill(.white)
-                        .frame(width: 52, height: 52)
-                } else {
-                    Image(systemName: "xmark")
-                        .font(.system(.title2, design: .rounded).weight(.semibold))
-                        .foregroundStyle(.white)
+                        .stroke(.white, lineWidth: 3)
+                        .frame(width: 64, height: 64)
+                    shutterContent
                 }
             }
         }
@@ -63,6 +61,19 @@ struct CameraControlsBar: View {
         .accessibilityHint(viewModel.frozenImage == nil
             ? "Pauses the camera so you can read badges without holding the phone steady"
             : "Returns to the live camera feed")
+    }
+
+    @ViewBuilder
+    private var shutterContent: some View {
+        if viewModel.frozenImage == nil {
+            Circle()
+                .fill(.white)
+                .frame(width: 56, height: 56)
+        } else {
+            Image(systemName: "xmark")
+                .font(.system(.title2, design: .rounded).weight(.semibold))
+                .foregroundStyle(.white)
+        }
     }
 
     private var torchButton: some View {
@@ -73,7 +84,7 @@ struct CameraControlsBar: View {
                 .font(.system(.headline, design: .rounded))
                 .foregroundStyle(viewModel.isTorchOn ? Color.accentColor : .primary)
                 .frame(width: 48, height: 48)
-                .background(.regularMaterial, in: .circle)
+                .adaptiveGlassBackground(in: .circle, isInteractive: true)
         }
         .accessibilityLabel(viewModel.isTorchOn ? "Turn flashlight off" : "Turn flashlight on")
     }
@@ -84,7 +95,7 @@ struct CameraControlsBar: View {
                 .font(.system(.headline, design: .rounded))
                 .foregroundStyle(.primary)
                 .frame(width: 44, height: 44)
-                .background(.regularMaterial, in: .circle)
+                .adaptiveGlassBackground(in: .circle, isInteractive: true)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Import photo")
