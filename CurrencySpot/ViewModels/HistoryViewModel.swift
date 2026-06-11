@@ -99,7 +99,6 @@ final class HistoryViewModel {
 
     /// Initializes the HistoryViewModel with dependency injection
     init(
-        service _: ExchangeRateService,
         calculatorVM: CalculatorViewModel,
         historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase,
         dataOrchestrationUseCase: DataOrchestrationUseCase,

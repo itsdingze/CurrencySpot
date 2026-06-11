@@ -92,7 +92,6 @@ final class ChartDataPreparationUseCase {
                     convertedRate = rateCalculationUseCase.convertRate(
                         usdToTargetRate: targetRate,
                         fromBaseCurrency: baseCurrency,
-                        toTargetCurrency: targetCurrency,
                         historicalRates: historicalEntry.rates,
                         exchangeRates: exchangeRates
                     )

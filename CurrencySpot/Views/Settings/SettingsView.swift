@@ -55,14 +55,6 @@ struct SettingsView: View {
             currencyPreferencesSection
             dataManagementSection
             aboutSection
-
-//            #if DEBUG
-//                Section(header: Text("Developer Options")) {
-//                    NavigationLink("Debug Error Handling") {
-//                        DebugErrorView(appState: _appState, calculatorViewModel: _calculatorViewModel)
-//                    }
-//                }
-//            #endif
         }
         .alert(item: $alertType) { $0.alert(onConfirm: handleAlertConfirmation) }
         .overlay(toastOverlay)

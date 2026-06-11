@@ -30,11 +30,6 @@ enum TimeRange: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Accessibility label for the time range
-    var accessibilityLabel: String {
-        displayName
-    }
-
     /// Accessibility input labels for voice control
     var accessibilityInputLabels: [String] {
         switch self {

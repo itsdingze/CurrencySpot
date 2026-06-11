@@ -467,7 +467,7 @@ private class ConfigurableMockExchangeRateService: ExchangeRateService {
         loadTrendDataCallCount += 1
 
         if shouldThrowOnLoad {
-            throw AppError.storageError("Mock load error")
+            throw AppError.unknownError("Mock load error")
         }
 
         // After trends are calculated, return sample data instead of empty trends
@@ -482,7 +482,7 @@ private class ConfigurableMockExchangeRateService: ExchangeRateService {
         didCalculateTrends = true
 
         if shouldThrowOnCalculate {
-            throw AppError.storageError("Mock calculation error")
+            throw AppError.unknownError("Mock calculation error")
         }
     }
 

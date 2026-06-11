@@ -22,14 +22,12 @@ final class RateCalculationUseCase {
     /// - Parameters:
     ///   - usdToTargetRate: The USD to target currency rate
     ///   - fromBaseCurrency: The desired base currency
-    ///   - toTargetCurrency: The target currency
     ///   - historicalRates: Optional historical rates from the same date (preferred)
     ///   - exchangeRates: Current exchange rates data (fallback)
     /// - Returns: The converted rate from base to target currency
     func convertRate(
         usdToTargetRate: Double,
         fromBaseCurrency: String,
-        toTargetCurrency _: String,
         historicalRates: [HistoricalRateDataPointValue]? = nil,
         exchangeRates: [ExchangeRateDataValue]
     ) -> Double {

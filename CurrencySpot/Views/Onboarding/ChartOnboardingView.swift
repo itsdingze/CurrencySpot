@@ -11,7 +11,6 @@ struct ChartOnboardingView: View {
     @Binding var showOnboarding: Bool
     @Environment(SettingsViewModel.self) private var settingsViewModel
     @State private var currentOnboardingPage = 0
-    @State private var shouldAnimateChartIcon = false
     @State private var shouldAnimateTitle = false
     @State private var shouldAnimateContent = false
     @State private var shouldAnimateFooter = false
@@ -202,7 +201,6 @@ struct ChartOnboardingView: View {
     }
 
     private func resetAnimations() {
-        shouldAnimateChartIcon = false
         shouldAnimateTitle = false
         shouldAnimateContent = false
         shouldAnimateFooter = false
@@ -210,11 +208,7 @@ struct ChartOnboardingView: View {
 
     private func startAnimations() {
         Task {
-            await executeAnimationAfterDelay(0.35) {
-                shouldAnimateChartIcon = true
-            }
-
-            await executeAnimationAfterDelay(0.2) {
+            await executeAnimationAfterDelay(0.55) {
                 shouldAnimateTitle = true
             }
 

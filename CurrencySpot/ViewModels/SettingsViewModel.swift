@@ -115,7 +115,6 @@ final class SettingsViewModel {
     // MARK: - Private Properties
 
     private let userDefaults = UserDefaults.standard
-    private var isInitializing = true
     private let service: ExchangeRateService
     private let appState = AppState.shared
 
@@ -143,9 +142,7 @@ final class SettingsViewModel {
         self.calculatorViewModel = calculatorViewModel
         self.historyViewModel = historyViewModel
 
-        // Initialize properties from UserDefaults with optimized access
-        // Note: Using "SelectedAccentColor" key for backward compatibility
-        accentColor = userDefaults.string(forKey: "SelectedAccentColor")
+        accentColor = userDefaults.string(forKey: UserDefaultsKeys.accentColor)
             .flatMap { AccentColorOption(rawValue: $0) } ?? DefaultValues.accentColor
 
         appearanceMode = userDefaults.string(forKey: UserDefaultsKeys.appearanceMode)
@@ -156,29 +153,19 @@ final class SettingsViewModel {
         favoriteCurrencies = userDefaults.stringArray(forKey: UserDefaultsKeys.favoriteCurrencies) ?? DefaultValues.favoriteCurrencies
         hasSeenOnboarding = userDefaults.bool(forKey: UserDefaultsKeys.hasSeenOnboarding)
         hasSeenChartOnboarding = userDefaults.bool(forKey: UserDefaultsKeys.hasSeenChartOnboarding)
-
-        // Setup property observers after initialization
-        defer {
-            isInitializing = false
-        }
     }
 
     // MARK: - Public Settings Methods
 
     /// Save all settings to UserDefaults
-    /// - Returns: Success or failure
-    @discardableResult
-    func saveSettings() -> Bool {
-        // Note: Using "SelectedAccentColor" key for backward compatibility
-        userDefaults.set(accentColor.rawValue, forKey: "SelectedAccentColor")
+    func saveSettings() {
+        userDefaults.set(accentColor.rawValue, forKey: UserDefaultsKeys.accentColor)
         userDefaults.set(appearanceMode.rawValue, forKey: UserDefaultsKeys.appearanceMode)
         userDefaults.set(defaultBaseCurrency, forKey: UserDefaultsKeys.defaultBaseCurrency)
         userDefaults.set(defaultTargetCurrency, forKey: UserDefaultsKeys.defaultTargetCurrency)
         userDefaults.set(favoriteCurrencies, forKey: UserDefaultsKeys.favoriteCurrencies)
         userDefaults.set(hasSeenOnboarding, forKey: UserDefaultsKeys.hasSeenOnboarding)
         userDefaults.set(hasSeenChartOnboarding, forKey: UserDefaultsKeys.hasSeenChartOnboarding)
-
-        return true
     }
 
     /// Reset all settings to their default values

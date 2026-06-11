@@ -22,7 +22,6 @@ protocol StillTextRecognitionService: Sendable {
 
 struct StillImageTextRecognizer: StillTextRecognitionService {
     func recognize(_ image: UIImage) async throws -> StillRecognitionResult {
-        guard #available(iOS 18.0, *) else { return .empty }
         guard let cgImage = image.orientationNormalized.cgImage else { return .empty }
 
         let request = RecognizeTextRequest()

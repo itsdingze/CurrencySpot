@@ -9,8 +9,6 @@ import VisionKit
 enum CameraScanAvailability {
     @MainActor
     static var isSupported: Bool {
-        // The still-image pipeline uses the Swift Vision API, iOS 18+.
-        guard #available(iOS 18.0, *) else { return false }
         #if DEBUG && targetEnvironment(simulator)
         // DataScanner needs a Neural Engine and a camera, so the simulator reports
         // unsupported. Show the tab anyway in debug builds so the photo-import path

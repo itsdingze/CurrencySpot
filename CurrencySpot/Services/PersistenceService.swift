@@ -47,13 +47,6 @@ protocol PersistenceService {
 
     /// Clears all data from persistent storage
     func clearAllData() async throws
-
-    /// Loads historical rates as an async stream for memory-efficient processing
-    func loadHistoricalRatesStream(
-        currency: String,
-        startDate: String,
-        endDate: String
-    ) -> AsyncStream<HistoricalRateDataValue>
 }
 
 // MARK: - SwiftDataPersistenceService
@@ -71,7 +64,6 @@ actor SwiftDataPersistenceService: PersistenceService {
         try modelContext.transaction {
             try modelContext.delete(model: ExchangeRateData.self)
 
-            // Save new rates
             for (currencyCode, rate) in rates {
                 let exchangeRate = ExchangeRateData(
                     currencyCode: currencyCode,
@@ -239,7 +231,6 @@ actor SwiftDataPersistenceService: PersistenceService {
             await Task.yield()
         }
 
-        // Sort final results by date
         return allResults.sorted { $0.date < $1.date }
     }
 
@@ -396,88 +387,6 @@ actor SwiftDataPersistenceService: PersistenceService {
             try modelContext.delete(model: TrendData.self)
             try modelContext.save()
         }
-    }
-
-    /// Loads historical rates as an async stream for memory-efficient processing
-    /// This implementation processes data one record at a time to minimize memory usage
-    nonisolated func loadHistoricalRatesStream(
-        currency: String,
-        startDate: String,
-        endDate: String
-    ) -> AsyncStream<HistoricalRateDataValue> {
-        let actorRef = self
-
-        return AsyncStream { continuation in
-            let producer = Task {
-                do {
-                    guard let startDateObj = TimeZoneManager.parseAPIDate(startDate),
-                          let endDateObj = TimeZoneManager.parseAPIDate(endDate)
-                    else {
-                        continuation.finish()
-                        return
-                    }
-
-                    // Fetch data within the actor's isolated context
-                    let dataValues = try await actorRef.fetchHistoricalDataForStream(
-                        currency: currency,
-                        startDate: startDateObj,
-                        endDate: endDateObj
-                    )
-
-                    // Process and yield one record at a time; stop early if the consumer dropped the stream
-                    for value in dataValues {
-                        try Task.checkCancellation()
-                        continuation.yield(value)
-                        await Task.yield()
-                    }
-
-                    continuation.finish()
-                } catch {
-                    // Cancellation or fetch error: end the stream
-                    continuation.finish()
-                }
-            }
-
-            continuation.onTermination = { _ in producer.cancel() }
-        }
-    }
-
-    /// Helper method to fetch data within actor isolation
-    private func fetchHistoricalDataForStream(
-        currency: String,
-        startDate: Date,
-        endDate: Date
-    ) async throws -> [HistoricalRateDataValue] {
-        let predicate = #Predicate<HistoricalRateData> { data in
-            data.date >= startDate &&
-                data.date <= endDate &&
-                data.rates.contains { rate in rate.currencyCode == currency }
-        }
-
-        var descriptor = FetchDescriptor<HistoricalRateData>(
-            predicate: predicate,
-            sortBy: [SortDescriptor(\.date)]
-        )
-        descriptor.relationshipKeyPathsForPrefetching = [\.rates]
-
-        let swiftDataObjects = try modelContext.fetch(descriptor)
-
-        var results: [HistoricalRateDataValue] = []
-        for historicalData in swiftDataObjects {
-            if let targetRatePoint = historicalData.rates.first(where: { $0.currencyCode == currency }) {
-                let ratePoint = HistoricalRateDataPointValue(
-                    currencyCode: targetRatePoint.currencyCode,
-                    rate: targetRatePoint.rate
-                )
-                let value = HistoricalRateDataValue(
-                    date: historicalData.date,
-                    rates: [ratePoint]
-                )
-                results.append(value)
-            }
-        }
-
-        return results
     }
 
     // MARK: - Data Conversion Helper Methods

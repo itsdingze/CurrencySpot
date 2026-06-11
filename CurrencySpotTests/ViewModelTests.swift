@@ -20,7 +20,6 @@ struct ViewModelTests {
         let cacheService = InMemoryCacheService()
         let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
         return HistoryViewModel(
-            service: service,
             calculatorVM: CalculatorViewModel(service: service),
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: DataOrchestrationUseCase(

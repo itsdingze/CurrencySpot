@@ -62,9 +62,8 @@ struct AddCurrencyView: View {
     @Binding var isPresented: Bool
     @Environment(CalculatorViewModel.self) var calculatorViewModel: CalculatorViewModel
     @State private var searchText = ""
-    @State private var searchResults: [ExchangeRateDataValue] = [] // ← Updated to use value type
 
-    var filteredCurrencies: [ExchangeRateDataValue] { // ← Updated to use value type
+    var filteredCurrencies: [ExchangeRateDataValue] {
         let favorites = viewModel.favoriteCurrencies
 
         let available = calculatorViewModel.availableRates.filter { !favorites.contains($0.currencyCode) }
@@ -72,11 +71,10 @@ struct AddCurrencyView: View {
         if searchText.isEmpty {
             return available.sorted { $0.currencyCode < $1.currencyCode }
         } else {
-            return searchResults.isEmpty ?
-                available.filter { currency in
-                    currency.currencyCode.localizedCaseInsensitiveContains(searchText) ||
-                        CurrencyUtilities.shared.name(for: currency.currencyCode).localizedCaseInsensitiveContains(searchText)
-                } : searchResults
+            return available.filter { currency in
+                currency.currencyCode.localizedCaseInsensitiveContains(searchText) ||
+                    CurrencyUtilities.shared.name(for: currency.currencyCode).localizedCaseInsensitiveContains(searchText)
+            }
         }
     }
 

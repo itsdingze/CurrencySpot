@@ -52,7 +52,6 @@ struct IntegrationTests {
         let trendDataUseCase = TrendDataUseCase(service: service)
 
         let viewModel = HistoryViewModel(
-            service: service,
             calculatorVM: calculatorVM,
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: dataOrchestrationUseCase,

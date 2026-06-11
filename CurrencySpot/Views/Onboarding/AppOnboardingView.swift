@@ -14,13 +14,6 @@ struct OnBoardingCard: Identifiable {
     var subTitle: String
 }
 
-@resultBuilder
-struct OnBoardingCardResultBuilder {
-    static func buildBlock(_ components: OnBoardingCard...) -> [OnBoardingCard] {
-        components.compactMap(\.self)
-    }
-}
-
 struct AppOnboardingView<Icon: View, Footer: View>: View {
     var title: String
     var icon: Icon
@@ -33,14 +26,14 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
         title: String,
         buttonTitle: String = "Continue",
         @ViewBuilder icon: @escaping () -> Icon,
-        @OnBoardingCardResultBuilder cards: @escaping () -> [OnBoardingCard],
+        cards: [OnBoardingCard],
         @ViewBuilder footer: @escaping () -> Footer,
         onContinue: @escaping () -> Void
     ) {
         self.title = title
         self.buttonTitle = buttonTitle
         self.icon = icon()
-        self.cards = cards()
+        self.cards = cards
         self.footer = footer()
         self.onContinue = onContinue
 
@@ -189,44 +182,46 @@ struct CurrencySpotOnboarding: View {
 
     var body: some View {
         AppOnboardingView(
-            title: "Welcome to CurrencySpot"
-        ) {
-            Image("Icon")
-                .resizable()
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: 22))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 22)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1.5)
-                )
-                .padding(.top, 40)
-        } cards: {
-            OnBoardingCard(
-                symbol: "dollarsign.arrow.circlepath",
-                title: "Real-time Exchange Rates",
-                subTitle: "Convert between currencies using the latest exchange rates."
-            )
-
-            OnBoardingCard(
-                symbol: "chart.line.uptrend.xyaxis",
-                title: "Historical Tracking",
-                subTitle: "Visualize currency performance with interactive charts."
-            )
-
-            OnBoardingCard(
-                symbol: "wifi.slash",
-                title: "Offline Support",
-                subTitle: "Continue converting with cached rates when offline."
-            )
-        } footer: {
-            Text("Exchange rates are aggregated from central banks worldwide.")
-                .font(.caption)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(.vertical, 24)
-        } onContinue: {
-            showOnBoarding = false
-        }
+            title: "Welcome to CurrencySpot",
+            icon: {
+                Image("Icon")
+                    .resizable()
+                    .frame(width: 80, height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: 22))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1.5)
+                    )
+                    .padding(.top, 40)
+            },
+            cards: [
+                OnBoardingCard(
+                    symbol: "dollarsign.arrow.circlepath",
+                    title: "Real-time Exchange Rates",
+                    subTitle: "Convert between currencies using the latest exchange rates."
+                ),
+                OnBoardingCard(
+                    symbol: "chart.line.uptrend.xyaxis",
+                    title: "Historical Tracking",
+                    subTitle: "Visualize currency performance with interactive charts."
+                ),
+                OnBoardingCard(
+                    symbol: "wifi.slash",
+                    title: "Offline Support",
+                    subTitle: "Continue converting with cached rates when offline."
+                ),
+            ],
+            footer: {
+                Text("Exchange rates are aggregated from central banks worldwide.")
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 24)
+            },
+            onContinue: {
+                showOnBoarding = false
+            }
+        )
     }
 }
 

@@ -12,20 +12,15 @@ enum AppError: Error, Identifiable, Equatable {
     case networkError(String)
     case noInternetConnection
     case noCachedData
-    case encodingError(String)
     case decodingError(String)
     case apiError(String)
     case dateCalculationError(String)
-    case noDataError
     case unknownError(String)
     // SwiftData-specific errors
     case dataValidationError(String)
-    case storageError(String)
-    case dataCorrupted(String)
     case initializationFailed(String)
     // Retry-specific errors
     case retryExhausted(String, attempts: Int)
-    case retryInProgress(attempt: Int, maxAttempts: Int)
     // Camera-specific errors
     case cameraCaptureFailed
     case photoImportFailed
@@ -42,18 +37,13 @@ enum AppError: Error, Identifiable, Equatable {
         case .networkError: "network"
         case .noInternetConnection: "noInternet"
         case .noCachedData: "noCache"
-        case .encodingError: "encoding"
         case .decodingError: "decoding"
         case .apiError: "api"
         case .dateCalculationError: "dateCalculation"
-        case .noDataError: "noData"
         case .unknownError: "unknown"
         case .dataValidationError: "dataValidation"
-        case .storageError: "storage"
-        case .dataCorrupted: "dataCorrupted"
         case .initializationFailed: "initializationFailed"
         case .retryExhausted: "retryExhausted"
-        case .retryInProgress: "retryInProgress"
         case .cameraCaptureFailed: "cameraCapture"
         case .photoImportFailed: "photoImport"
         case .textRecognitionFailed: "textRecognition"
@@ -63,21 +53,16 @@ enum AppError: Error, Identifiable, Equatable {
     private var errorSuffix: String {
         switch self {
         case let .networkError(message),
-             let .encodingError(message),
              let .decodingError(message),
              let .apiError(message),
              let .dateCalculationError(message),
              let .unknownError(message),
              let .dataValidationError(message),
-             let .storageError(message),
-             let .dataCorrupted(message),
              let .initializationFailed(message):
             message
         case let .retryExhausted(message, attempts):
             "\(message)-\(attempts)"
-        case let .retryInProgress(attempt, maxAttempts):
-            "\(attempt)-\(maxAttempts)"
-        case .noInternetConnection, .noCachedData, .noDataError, .cameraCaptureFailed, .photoImportFailed,
+        case .noInternetConnection, .noCachedData, .cameraCaptureFailed, .photoImportFailed,
              .textRecognitionFailed:
             "static"
         }
@@ -88,18 +73,13 @@ enum AppError: Error, Identifiable, Equatable {
         case .networkError: "Network Error"
         case .noInternetConnection: "No Internet Connection"
         case .noCachedData: "No Cached Data"
-        case .encodingError: "Data Error"
         case .decodingError: "Data Error"
         case .apiError: "API Error"
         case .dateCalculationError: "Date Processing Error"
-        case .noDataError: "No Data"
         case .unknownError: "Error"
         case .dataValidationError: "Data Validation Error"
-        case .storageError: "Storage Error"
-        case .dataCorrupted: "Data Corrupted"
         case .initializationFailed: "Initialization Failed"
         case .retryExhausted: "Connection Failed"
-        case .retryInProgress: "Connecting..."
         case .cameraCaptureFailed: "Capture Failed"
         case .photoImportFailed: "Photo Import Failed"
         case .textRecognitionFailed: "Scan Failed"
@@ -114,30 +94,20 @@ enum AppError: Error, Identifiable, Equatable {
             "Unable to connect to the internet. Please check your connection."
         case .noCachedData:
             "No exchange rate data available. Connect to the internet to get the latest rates."
-        case let .encodingError(message):
-            "Error encoding data: \(message)"
         case let .decodingError(message):
             "Error decoding data: \(message)"
         case let .apiError(message):
             "\(message)"
         case let .dateCalculationError(message):
             "Error calculating date range for historical data: \(message)"
-        case .noDataError:
-            "No data received from the server."
         case let .unknownError(message):
             "An unexpected error occurred: \(message)"
         case let .dataValidationError(message):
             "Data validation failed: \(message). Please try again."
-        case let .storageError(message):
-            "Storage error: \(message). Please check available storage space."
-        case let .dataCorrupted(message):
-            "Data corruption detected: \(message). The app will attempt to recover."
         case let .initializationFailed(message):
             "Storage unavailable: \(message). The app works normally but data will not be saved after closing."
         case let .retryExhausted(message, attempts):
             "Failed to connect after \(attempts) attempts. \(message). Tap refresh to try again."
-        case let .retryInProgress(attempt, maxAttempts):
-            "Attempting to connect... (\(attempt) of \(maxAttempts))"
         case .cameraCaptureFailed:
             "Couldn't capture the frame. Please try again."
         case .photoImportFailed:
@@ -194,25 +164,7 @@ enum AppError: Error, Identifiable, Equatable {
                 }
             }
         default:
-            // Legacy error handling for compatibility
-            let nsError = error as NSError
-
-            // Check for specific error domains
-            if nsError.domain == "com.example.CurrencySpot" {
-                if nsError.localizedDescription.contains("No cached rates") {
-                    return .noCachedData
-                }
-            }
-
-            if nsError.domain == "No Data" {
-                return .noDataError
-            }
-
-            if nsError.domain == "Date calculation error" {
-                return .dateCalculationError(nsError.localizedDescription)
-            }
-
-            return .unknownError(nsError.localizedDescription)
+            return .unknownError((error as NSError).localizedDescription)
         }
     }
 }

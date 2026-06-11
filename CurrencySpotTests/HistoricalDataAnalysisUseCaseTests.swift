@@ -17,10 +17,10 @@ struct HistoricalDataAnalysisUseCaseTests {
     private static let useCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
 
     // Helper dates for testing - using CET calendar for consistency
-    private static let testBaseDate = TimeZoneManager.createCETDate(year: 2025, month: 1, day: 15)! // Wednesday
-    private static let testWeekdayBefore = TimeZoneManager.createCETDate(year: 2025, month: 1, day: 10)! // Friday
-    private static let testWeekendBefore = TimeZoneManager.createCETDate(year: 2025, month: 1, day: 12)! // Sunday
-    private static let testWeekdayAfter = TimeZoneManager.createCETDate(year: 2025, month: 1, day: 20)! // Monday
+    private static let testBaseDate = createCETDate(year: 2025, month: 1, day: 15)! // Wednesday
+    private static let testWeekdayBefore = createCETDate(year: 2025, month: 1, day: 10)! // Friday
+    private static let testWeekendBefore = createCETDate(year: 2025, month: 1, day: 12)! // Sunday
+    private static let testWeekdayAfter = createCETDate(year: 2025, month: 1, day: 20)! // Monday
 
     // MARK: - Test Helpers
 
@@ -253,8 +253,8 @@ struct HistoricalDataAnalysisUseCaseTests {
     @Test("calculateMissingDateRanges with few business days after cache should detect gap")
     func calculateMissingDateRanges_fewBusinessDaysAfterCache_shouldDetectGap() async throws {
         // GIVEN: Cache ends on Wednesday, required range extends to next Monday (3 business days: Thu, Fri, Mon)
-        let cacheWednesdayEnd = TimeZoneManager.createCETDate(year: 2025, month: 1, day: 15)! // Wednesday
-        let requiredMondayEnd = TimeZoneManager.createCETDate(year: 2025, month: 1, day: 20)! // Monday
+        let cacheWednesdayEnd = createCETDate(year: 2025, month: 1, day: 15)! // Wednesday
+        let requiredMondayEnd = createCETDate(year: 2025, month: 1, day: 20)! // Monday
         let requiredRange = DateRange(start: Self.testWeekdayBefore, end: requiredMondayEnd)
         let cache = createMockCache(startDate: Self.testWeekdayBefore, endDate: cacheWednesdayEnd)
 

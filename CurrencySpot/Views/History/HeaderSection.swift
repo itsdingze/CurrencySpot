@@ -136,8 +136,8 @@ struct TimeRangePicker: View {
                     }
                     .animation(.snappy, value: selectedTimeRange)
                 )
-                .accessibilityLabel("\(timeRange.accessibilityLabel)")
-                .accessibilityHint("Show exchange rate history for \(timeRange.accessibilityLabel)")
+                .accessibilityLabel(timeRange.displayName)
+                .accessibilityHint("Show exchange rate history for \(timeRange.displayName)")
                 .accessibilityValue(selectedTimeRange == timeRange ? "Selected" : "Not selected")
                 .accessibilityInputLabels(timeRange.accessibilityInputLabels)
                 .accessibilityAddTraits(selectedTimeRange == timeRange ? [.isButton, .isSelected] : .isButton)

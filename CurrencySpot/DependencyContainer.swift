@@ -112,7 +112,6 @@ final class DependencyContainer {
         trendDataUseCase = TrendDataUseCase(service: dataCoordinator)
 
         historyViewModel = HistoryViewModel(
-            service: dataCoordinator,
             calculatorVM: calculatorViewModel,
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: dataOrchestrationUseCase,
@@ -193,7 +192,6 @@ final class DependencyContainer {
         calculatorViewModel = CalculatorViewModel(service: mockService)
 
         historyViewModel = HistoryViewModel(
-            service: mockService,
             calculatorVM: calculatorViewModel,
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: dataOrchestrationUseCase,

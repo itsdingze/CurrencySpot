@@ -5,7 +5,6 @@
 //  Created by Dingze Yu on 3/26/25.
 //
 
-import Accessibility
 import Charts
 import SwiftUI
 
@@ -104,10 +103,6 @@ struct CurrencyChart: View {
     @Environment(HistoryViewModel.self) var viewModel: HistoryViewModel
     @State private var rawSelectedDate: Date?
     @Binding var isChartSelectionActive: Bool
-
-    // Cached index to avoid recalculation
-    @State private var cachedDate: Date?
-    @State private var cachedIndex: Int?
 
     @State private var animationPhase: AnimationPhase = .pending
     private var isChartReady: Bool {
@@ -334,19 +329,8 @@ struct CurrencyChart: View {
         .accessibilityHint(chartAccessibilityHint)
         .accessibilityInputLabels(["Chart", "Graph", "Exchange rate chart", "Historical data"])
         .accessibilityAddTraits(.allowsDirectInteraction)
-        // .accessibilityChartDescriptor(chartDescriptor) // Temporarily disabled due to compiler performance
         .onChange(of: rawSelectedDate) { _, newValue in
-            // Update the selection active state whenever rawSelectedDate changes
             isChartSelectionActive = newValue != nil
-
-            if let newDate = newValue,
-               let closestPoint = viewModel.displayedChartDataPoints.min(by: {
-                   abs($0.date.timeIntervalSince(newDate)) < abs($1.date.timeIntervalSince(newDate))
-               })
-            {
-                cachedDate = newDate
-                cachedIndex = viewModel.displayedChartDataPoints.firstIndex(where: { $0.date == closestPoint.date })
-            }
         }
         .onAppear {
             Task {
@@ -385,66 +369,5 @@ struct CurrencyChart: View {
         } else {
             "Double tap to select a data point. Use audio graphs for detailed exploration"
         }
-    }
-
-    private var chartDescriptor: AXChartDescriptor {
-        let dataPoints = viewModel.displayedChartDataPoints
-        guard !dataPoints.isEmpty else {
-            return AXChartDescriptor(
-                title: "Exchange Rate Chart",
-                summary: "No data available for exchange rate chart",
-                xAxis: AXCategoricalDataAxisDescriptor(title: "Date", categoryOrder: []),
-                yAxis: AXNumericDataAxisDescriptor(title: "Rate", range: 0 ... 1, gridlinePositions: []) { _ in "0" },
-                series: []
-            )
-        }
-
-        // Create X-axis descriptor for dates
-        let xAxis = AXCategoricalDataAxisDescriptor(
-            title: "Date",
-            categoryOrder: dataPoints.map(\.date.chartDisplay)
-        )
-
-        // Create Y-axis descriptor for rates
-        let rates = dataPoints.map(\.rate)
-        let minRate = rates.min() ?? 0
-        let maxRate = rates.max() ?? 1
-
-        let yAxis = AXNumericDataAxisDescriptor(
-            title: "Exchange Rate",
-            range: minRate ... maxRate,
-            gridlinePositions: []
-        ) { value in
-            "\(value.toStringMax4Decimals)"
-        }
-
-        // Create data series
-        let series = AXDataSeriesDescriptor(
-            name: "Exchange Rate",
-            isContinuous: true,
-            dataPoints: dataPoints.map { point in
-                AXDataPoint(
-                    x: point.date.chartDisplay,
-                    y: point.rate,
-                    label: "\(point.date.chartDisplay): \(point.rate.toStringMax4Decimals)"
-                )
-            }
-        )
-
-        let summary = """
-        Exchange rate chart for \(viewModel.baseCurrency) to \(viewModel.targetCurrency) 
-        showing \(dataPoints.count) data points. 
-        Current rate: \(dataPoints.last?.rate.toStringMax4Decimals ?? "Unknown"). 
-        Trend: \(viewModel.trendDirection.description).
-        """
-
-        return AXChartDescriptor(
-            title: "Exchange Rate Chart",
-            summary: summary,
-            xAxis: xAxis,
-            yAxis: yAxis,
-            additionalAxes: [],
-            series: [series]
-        )
     }
 }

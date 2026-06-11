@@ -5,7 +5,6 @@
 
 import SwiftUI
 
-@available(iOS 18.0, *)
 struct CameraView: View {
     @Environment(CameraViewModel.self) private var viewModel
 
@@ -29,7 +28,6 @@ struct CameraView: View {
     }
 }
 
-@available(iOS 18.0, *)
 #Preview {
     CameraView()
         .withDependencyContainer(.preview())

@@ -10,7 +10,7 @@ import Testing
 @Suite("HistoricalDataAnalysisUseCase — sync-coverage fetch gate")
 struct HistoricalDataAnalysisGapTests {
     private static func day(_ y: Int, _ m: Int, _ d: Int) -> Date {
-        TimeZoneManager.createCETDate(year: y, month: m, day: d)!
+        createCETDate(year: y, month: m, day: d)!
     }
 
     private static func useCase(from: Date?, through: Date?, checkedAt: Date?) -> HistoricalDataAnalysisUseCase {

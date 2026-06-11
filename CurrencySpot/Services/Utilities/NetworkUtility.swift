@@ -7,9 +7,9 @@
 
 import Foundation
 
-/// Utility class for common networking operations
+/// Utility for common networking operations
 /// Provides unified HTTP error handling and JSON decoding across the app
-class NetworkUtility {
+enum NetworkUtility {
     // MARK: - Retry-Enabled Network Requests
 
     /// Performs a network request with automatic retry logic, unified error handling and JSON decoding

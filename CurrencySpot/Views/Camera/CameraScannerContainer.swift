@@ -7,7 +7,6 @@ import SwiftUI
 
 /// Live camera feed (or a frozen still) with detection overlay,
 /// currency pair control, and capture controls.
-@available(iOS 18.0, *)
 struct CameraScannerContainer: View {
     @Environment(CameraViewModel.self) private var viewModel
     @Environment(AppState.self) private var appState
@@ -131,7 +130,6 @@ struct CameraScannerContainer: View {
     }
 }
 
-@available(iOS 18.0, *)
 #Preview {
     CameraScannerContainer()
         .withDependencyContainer(.preview())

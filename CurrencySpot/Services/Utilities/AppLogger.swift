@@ -36,11 +36,6 @@ enum AppLogger {
         logger(for: category).debug("\(message, privacy: .public)")
     }
 
-    /// Log debug information with private data
-    static func debugPrivate(_ message: String, category: LogCategory) {
-        logger(for: category).debug("\(message, privacy: .private)")
-    }
-
     /// Log general information (normal app flow)
     static func info(_ message: String, category: LogCategory) {
         logger(for: category).info("\(message, privacy: .public)")
@@ -66,18 +61,8 @@ enum AppLogger {
         logger(for: category).error("\(message, privacy: .public)")
     }
 
-    /// Log errors with private data
-    static func errorPrivate(_ message: String, category: LogCategory) {
-        logger(for: category).error("\(message, privacy: .private)")
-    }
-
     /// Log faults (critical failures)
     static func fault(_ message: String, category: LogCategory) {
         logger(for: category).fault("\(message, privacy: .public)")
-    }
-
-    /// Log faults with private data
-    static func faultPrivate(_ message: String, category: LogCategory) {
-        logger(for: category).fault("\(message, privacy: .private)")
     }
 }

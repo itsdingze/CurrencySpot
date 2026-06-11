@@ -12,25 +12,22 @@ struct CurrencyPickerView: View {
     var exchangeRates: [ExchangeRateDataValue] // ← Updated to use value type
     @Environment(\.dismiss) var dismiss
     @State private var searchText = ""
-    @State private var searchResults: [ExchangeRateDataValue] = [] // ← Updated to use value type
-    var showCommonCurrencies: Bool = true
 
     var favoriteCurrencies: [String] {
-        if let favorites = UserDefaults.standard.stringArray(forKey: "FavoriteCurrencies") {
+        if let favorites = UserDefaults.standard.stringArray(forKey: UserDefaultsKeys.favoriteCurrencies) {
             return favorites
         }
         return ["USD", "EUR", "GBP", "JPY", "CNY", "CAD", "AUD"]
     }
 
-    var filteredCurrencies: [ExchangeRateDataValue] { // ← Updated to use value type
+    var filteredCurrencies: [ExchangeRateDataValue] {
         if searchText.isEmpty {
             exchangeRates.sorted { $0.currencyCode < $1.currencyCode }
         } else {
-            searchResults.isEmpty ?
-                exchangeRates.filter { currency in
-                    currency.currencyCode.localizedCaseInsensitiveContains(searchText) ||
-                        CurrencyUtilities.shared.name(for: currency.currencyCode).localizedCaseInsensitiveContains(searchText)
-                } : searchResults
+            exchangeRates.filter { currency in
+                currency.currencyCode.localizedCaseInsensitiveContains(searchText) ||
+                    CurrencyUtilities.shared.name(for: currency.currencyCode).localizedCaseInsensitiveContains(searchText)
+            }
         }
     }
 
@@ -67,7 +64,7 @@ struct CurrencyPickerView: View {
                 .padding(.top, 8)
 
                 // Quick access to common currencies
-                if searchText.isEmpty, showCommonCurrencies {
+                if searchText.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 0) {
                             ForEach(favoriteCurrencies, id: \.self) { currency in

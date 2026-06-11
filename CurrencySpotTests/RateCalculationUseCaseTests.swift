@@ -33,7 +33,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: rate,
             fromBaseCurrency: "USD",
-            toTargetCurrency: "EUR",
             exchangeRates: standardExchangeRates()
         )
         #expect(result == rate)
@@ -46,7 +45,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: Self.usdToGBP, // USD -> GBP
             fromBaseCurrency: "EUR",
-            toTargetCurrency: "GBP",
             exchangeRates: standardExchangeRates()
         )
         // 0.85 / 1.21 = 0.70247933...
@@ -58,7 +56,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: Self.usdToJPY, // USD -> JPY
             fromBaseCurrency: "GBP",
-            toTargetCurrency: "JPY",
             exchangeRates: standardExchangeRates()
         )
         // 110.0 / 0.85 = 129.41176...
@@ -70,7 +67,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: Self.usdToEUR, // USD -> EUR
             fromBaseCurrency: "JPY",
-            toTargetCurrency: "EUR",
             exchangeRates: standardExchangeRates()
         )
         // 1.21 / 110.0 = 0.011
@@ -86,7 +82,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: 0.79,
             fromBaseCurrency: "EUR",
-            toTargetCurrency: "GBP",
             exchangeRates: rates
         )
         // 0.79 / 1.08 = 0.731481...
@@ -103,7 +98,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: 3.0,
             fromBaseCurrency: "EUR",
-            toTargetCurrency: "GBP",
             historicalRates: historical,
             exchangeRates: standardExchangeRates() // EUR = 1.21 here, must be ignored
         )
@@ -117,7 +111,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: Self.usdToEUR,
             fromBaseCurrency: "EUR",
-            toTargetCurrency: "GBP",
             historicalRates: historical,
             exchangeRates: standardExchangeRates() // EUR = 1.21
         )
@@ -131,7 +124,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: 2.5,
             fromBaseCurrency: "EUR",
-            toTargetCurrency: "GBP",
             historicalRates: historical,
             exchangeRates: standardExchangeRates()
         )
@@ -146,7 +138,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: 1.85,
             fromBaseCurrency: "EUR",
-            toTargetCurrency: "GBP",
             exchangeRates: []
         )
         #expect(result == 1.85)
@@ -157,7 +148,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: 2.34,
             fromBaseCurrency: "CAD", // not present
-            toTargetCurrency: "EUR",
             exchangeRates: standardExchangeRates()
         )
         #expect(result == 2.34)
@@ -168,7 +158,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: 0.0,
             fromBaseCurrency: "EUR",
-            toTargetCurrency: "GBP",
             exchangeRates: standardExchangeRates()
         )
         #expect(result == 0.0) // 0.0 / 1.21
@@ -183,7 +172,6 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: 0.85,
             fromBaseCurrency: "EUR",
-            toTargetCurrency: "GBP",
             exchangeRates: rates
         )
         #expect(result == 0.85)
@@ -198,25 +186,11 @@ struct RateCalculationUseCaseTests {
         let result = useCase.convertRate(
             usdToTargetRate: 0.000_000_001,
             fromBaseCurrency: "HUGE",
-            toTargetCurrency: "TARGET",
             exchangeRates: rates
         )
         // 1e-9 / 1e9 = 1e-18 exactly representable region; must not flush to zero.
         #expect(abs(result - 1e-18) < 1e-24)
         #expect(result > 0.0)
         #expect(result.isFinite)
-    }
-
-    @Test("Target currency argument does not affect the computed cross rate")
-    func targetCurrencyArgumentIsIgnored() {
-        let gbp = useCase.convertRate(
-            usdToTargetRate: 0.85, fromBaseCurrency: "EUR", toTargetCurrency: "GBP",
-            exchangeRates: standardExchangeRates()
-        )
-        let irrelevant = useCase.convertRate(
-            usdToTargetRate: 0.85, fromBaseCurrency: "EUR", toTargetCurrency: "IRRELEVANT",
-            exchangeRates: standardExchangeRates()
-        )
-        #expect(gbp == irrelevant)
     }
 }

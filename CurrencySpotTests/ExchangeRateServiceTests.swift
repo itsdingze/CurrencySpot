@@ -32,8 +32,8 @@ struct ExchangeRateServiceTests {
         )
     }
 
-    private func createCETDate(_ y: Int, _ m: Int, _ d: Int) -> Date {
-        TimeZoneManager.createCETDate(year: y, month: m, day: d)!
+    private func cetDate(_ y: Int, _ m: Int, _ d: Int) -> Date {
+        createCETDate(year: y, month: m, day: d)!
     }
 
     private func setupHistoricalData(_ dateStrings: [String]) async throws {
@@ -50,7 +50,7 @@ struct ExchangeRateServiceTests {
     @Test("clearAllData resets the historical sync coverage window")
     func clearAllDataResetsSyncCoverage() async throws {
         let syncStore = MockHistoricalSyncStore()
-        syncStore.record(from: createCETDate(2025, 1, 1), through: createCETDate(2025, 1, 10), at: Date())
+        syncStore.record(from: cetDate(2025, 1, 1), through: cetDate(2025, 1, 10), at: Date())
         let coordinator = DataCoordinator(
             networkService: FrankfurterNetworkService(),
             persistenceService: SwiftDataPersistenceService(modelContainer: container),

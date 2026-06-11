@@ -12,10 +12,10 @@ import Testing
 
 // MARK: - Test Data Constants
 
-private let testStartDate = TimeZoneManager.createCETDate(year: 2020, month: 9, day: 13)!
-private let testMiddleDate = TimeZoneManager.createCETDate(year: 2020, month: 9, day: 14)!
-private let testEndDate = TimeZoneManager.createCETDate(year: 2020, month: 9, day: 15)!
-private let testOutsideDate = TimeZoneManager.createCETDate(year: 2020, month: 9, day: 16)!
+private let testStartDate = createCETDate(year: 2020, month: 9, day: 13)!
+private let testMiddleDate = createCETDate(year: 2020, month: 9, day: 14)!
+private let testEndDate = createCETDate(year: 2020, month: 9, day: 15)!
+private let testOutsideDate = createCETDate(year: 2020, month: 9, day: 16)!
 
 // MARK: - Test Helpers
 
@@ -60,7 +60,7 @@ private func createTestHistoricalData(
 /// Creates test chart data points
 private func createTestChartDataPoints(count: Int = 5, startRate: Double = 1.0) -> [ChartDataPoint] {
     let calendar = TimeZoneManager.cetCalendar
-    let baseDate = TimeZoneManager.createCETDate(year: 2020, month: 9, day: 13)!
+    let baseDate = createCETDate(year: 2020, month: 9, day: 13)!
 
     return (0 ..< count).map { index in
         let date = calendar.date(byAdding: .day, value: index, to: baseDate)!
@@ -84,7 +84,7 @@ struct ChartDataPreparationUseCaseTests {
             let cacheService = InMemoryCacheService()
             let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: RateCalculationUseCase(), cacheService: cacheService)
             let calendar = TimeZoneManager.cetCalendar
-            let end = TimeZoneManager.createCETDate(year: 2025, month: 6, day: 6)!
+            let end = createCETDate(year: 2025, month: 6, day: 6)!
             let range = DateRange(start: calendar.date(byAdding: .day, value: -90, to: end)!, end: end)
 
             func rows(_ days: Int) -> [HistoricalRateDataValue] {

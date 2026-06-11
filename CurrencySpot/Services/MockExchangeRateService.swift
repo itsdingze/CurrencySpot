@@ -24,35 +24,6 @@ struct MockExchangeRateService: ExchangeRateService {
         )
     }
 
-    func fetchHistoricalRates(days: Int) async throws -> HistoricalRatesResponse {
-        // Generate mock historical data
-        let calendar = Calendar.current
-        let today = Date()
-        var mockRates: [String: [String: Double]] = [:]
-
-        for i in 0 ..< days {
-            if let date = calendar.date(byAdding: .day, value: -i, to: today) {
-                let dateString = TimeZoneManager.formatForAPI(date)
-                // Add some random variation to make it realistic
-                let variation = Double.random(in: 0.95 ... 1.05)
-                mockRates[dateString] = MockExchangeRates.rates.mapValues { $0 * variation }
-            }
-        }
-
-        return HistoricalRatesResponse(
-            base: "USD",
-            start_date: TimeZoneManager.formatForAPI(calendar.date(byAdding: .day, value: -days, to: today) ?? today),
-            end_date: TimeZoneManager.formatForAPI(today),
-            rates: mockRates
-        )
-    }
-
-    func fetchHistoricalRatesForRange(startDate: Date, endDate: Date) async throws -> HistoricalRatesResponse {
-        let calendar = Calendar.current
-        let days = calendar.dateComponents([.day], from: startDate, to: endDate).day ?? 7
-        return try await fetchHistoricalRates(days: days)
-    }
-
     func fetchAndSaveHistoricalRates(from _: Date, to _: Date) async throws {}
 
     // MARK: - Save Methods (No-op for Mock)
@@ -68,12 +39,11 @@ struct MockExchangeRateService: ExchangeRateService {
     // MARK: - Load Methods (Return Value Types Directly)
 
     func loadExchangeRates() async throws -> [ExchangeRateDataValue] {
-        // ✅ Returns Value Types directly - no SwiftData conversion needed
         MockExchangeRates.getCurrencyRates()
     }
 
     func loadHistoricalRates() async throws -> [HistoricalRateDataValue] {
-        // Generate mock historical data as Value Types
+        // Generate mock historical data
         let calendar = Calendar.current
         let today = Date()
         var historicalData: [HistoricalRateDataValue] = []
@@ -103,7 +73,6 @@ struct MockExchangeRateService: ExchangeRateService {
     }
 
     func loadHistoricalRatesForCurrency(currency _: String, startDate: String, endDate: String) async throws -> [HistoricalRateDataValue] {
-        // For mock, just return filtered data
         let allData = try await loadHistoricalRates()
 
         guard let startDateObj = TimeZoneManager.parseAPIDate(startDate),
@@ -124,7 +93,6 @@ struct MockExchangeRateService: ExchangeRateService {
     }
 
     func getEarliestStoredDate() async throws -> Date? {
-        // Always return current date for mock
         Date()
     }
 
@@ -133,13 +101,12 @@ struct MockExchangeRateService: ExchangeRateService {
     }
 
     func getLastFetchDate() -> Date? {
-        Date() // Always return current date for mock
+        Date()
     }
 
     // MARK: - Trend Data Methods
 
     func loadTrendData() async throws -> [TrendDataValue] {
-        // Return mock trend data as TrendDataValue instances for testing
         Array(MockExchangeRates.trendData.values)
     }
 
@@ -193,7 +160,6 @@ extension HistoryViewModel {
         let trendDataUseCase = TrendDataUseCase(service: mockService)
 
         return HistoryViewModel(
-            service: mockService,
             calculatorVM: calculatorVM,
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: dataOrchestrationUseCase,

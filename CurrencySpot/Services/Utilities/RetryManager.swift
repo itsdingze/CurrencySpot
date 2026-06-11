@@ -30,30 +30,15 @@ private enum InternalRetryState {
     case succeeded
 }
 
-/// NSCache-compatible wrapper for retry state
-private final class RetryStateWrapper {
-    let state: InternalRetryState
-
-    init(_ state: InternalRetryState) {
-        self.state = state
-    }
-}
-
 /// Manages retry logic and state tracking for network operations
 actor RetryManager {
     static let shared = RetryManager()
 
     private let configuration = RetryConfiguration.default
 
-    // Track retry state per endpoint using NSCache for automatic memory management
-    private let retryStates = NSCache<NSString, RetryStateWrapper>()
+    private var retryStates: [String: InternalRetryState] = [:]
 
-    private init() {
-        // Configure NSCache with count-based limit for predictable memory usage
-        retryStates.countLimit = 100 // Limit to 100 concurrent endpoints
-
-        AppLogger.info("RetryManager initialized - manual network state management available", category: .network)
-    }
+    private init() {}
 
     // MARK: - Public Interface
 
@@ -94,9 +79,9 @@ actor RetryManager {
     /// - Parameter endpoint: The endpoint identifier
     /// - Returns: True if more attempts are available
     func canRetry(for endpoint: String) -> Bool {
-        guard let wrapper = retryStates.object(forKey: endpoint as NSString) else { return true }
+        guard let state = retryStates[endpoint] else { return true }
 
-        switch wrapper.state {
+        switch state {
         case .initial, .succeeded:
             return true
         case let .retrying(attempt, _):
@@ -110,23 +95,23 @@ actor RetryManager {
     /// - Parameter endpoint: The endpoint identifier
     /// - Returns: The current attempt number and next delay, or nil if exhausted
     func recordAttempt(for endpoint: String) -> (attempt: Int, delay: TimeInterval)? {
-        let currentState = retryStates.object(forKey: endpoint as NSString)?.state ?? .initial
+        let currentState = retryStates[endpoint] ?? .initial
 
         switch currentState {
         case .initial:
             let delay = calculateDelay(for: 0)
-            retryStates.setObject(RetryStateWrapper(.retrying(attempt: 1, nextDelay: delay)), forKey: endpoint as NSString)
+            retryStates[endpoint] = .retrying(attempt: 1, nextDelay: delay)
             return (attempt: 1, delay: delay)
 
         case let .retrying(attempt, _):
             if attempt >= configuration.maxAttempts {
-                retryStates.setObject(RetryStateWrapper(.exhausted), forKey: endpoint as NSString)
+                retryStates[endpoint] = .exhausted
                 return nil
             }
 
             let nextAttempt = attempt + 1
             let delay = calculateDelay(for: nextAttempt - 1)
-            retryStates.setObject(RetryStateWrapper(.retrying(attempt: nextAttempt, nextDelay: delay)), forKey: endpoint as NSString)
+            retryStates[endpoint] = .retrying(attempt: nextAttempt, nextDelay: delay)
             return (attempt: nextAttempt, delay: delay)
 
         case .exhausted, .succeeded:
@@ -137,16 +122,16 @@ actor RetryManager {
     /// Records a successful operation, resetting retry state
     /// - Parameter endpoint: The endpoint identifier
     func recordSuccess(for endpoint: String) {
-        retryStates.setObject(RetryStateWrapper(.succeeded), forKey: endpoint as NSString)
+        retryStates[endpoint] = .succeeded
     }
 
     /// Gets the current retry attempt for an endpoint
     /// - Parameter endpoint: The endpoint identifier
     /// - Returns: The current attempt number, or 0 if no attempts recorded
     func getCurrentAttempt(for endpoint: String) -> Int {
-        guard let wrapper = retryStates.object(forKey: endpoint as NSString) else { return 0 }
+        guard let state = retryStates[endpoint] else { return 0 }
 
-        switch wrapper.state {
+        switch state {
         case .initial, .succeeded:
             return 0
         case let .retrying(attempt, _):
@@ -159,19 +144,7 @@ actor RetryManager {
     /// Resets retry state for an endpoint (useful when network reconnects)
     /// - Parameter endpoint: The endpoint identifier
     func reset(for endpoint: String) {
-        retryStates.setObject(RetryStateWrapper(.initial), forKey: endpoint as NSString)
-    }
-
-    /// Resets all retry states (useful when network reconnects)
-    func resetAll() {
-        retryStates.removeAllObjects()
-    }
-
-    /// Call this when network connectivity is restored to reset all retry states
-    /// This allows clients to manually trigger retry state cleanup
-    func networkDidBecomeAvailable() {
-        AppLogger.info("Network reconnected - resetting retry states", category: .network)
-        resetAll()
+        retryStates[endpoint] = .initial
     }
 
     // MARK: - Private Methods

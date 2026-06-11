@@ -14,34 +14,6 @@ struct ContentView: View {
     @State private var showOnBoarding = false
 
     var body: some View {
-        Group {
-            if #available(iOS 18.0, *) {
-                modernTabView
-            } else {
-                legacyTabView
-            }
-        }
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-        .alert(isPresented: Bindable(appState.errorHandler).showingError) {
-            errorAlert
-        }
-        .onAppear {
-            if !settingsViewModel.hasSeenOnboarding {
-                showOnBoarding = true
-            }
-        }
-        .sheet(isPresented: $showOnBoarding) {
-            CurrencySpotOnboarding(showOnBoarding: $showOnBoarding)
-                .onDisappear {
-                    settingsViewModel.hasSeenOnboarding = true
-                }
-        }
-    }
-
-    // MARK: - Private Views
-
-    @ViewBuilder @available(iOS 18.0, *)
-    private var modernTabView: some View {
         @Bindable var appState = appState
         TabView(selection: $appState.selectedTab) {
             Tab("Convert", systemImage: "arrow.left.arrow.right", value: AppTab.convert) {
@@ -81,48 +53,24 @@ struct ContentView: View {
             .accessibilityHint("Configure app settings and default currencies")
             .accessibilityInputLabels(["Settings", "Preferences", "Configuration"])
         }
-    }
-
-    @ViewBuilder
-    private var legacyTabView: some View {
-        @Bindable var appState = appState
-        VStack {
-            TabView(selection: $appState.selectedTab) {
-                CalculatorView()
-                    .tabItem {
-                        Label("Convert", systemImage: "arrow.left.arrow.right")
-                    }
-                    .tag(AppTab.convert)
-                    .toolbar(.hidden, for: .tabBar)
-                    .accessibilityLabel("Currency Converter")
-                    .accessibilityHint("Convert between different currencies")
-                    .accessibilityInputLabels(["Convert", "Calculator", "Exchange"])
-
-                NavigationStack {
-                    CurrencyList()
-                }
-                .tabItem {
-                    Label("History", systemImage: "chart.line.uptrend.xyaxis")
-                }
-                .tag(AppTab.history)
-                .toolbar(.hidden, for: .tabBar)
-                .accessibilityLabel("Exchange Rate History")
-                .accessibilityHint("View historical exchange rate charts and trends")
-                .accessibilityInputLabels(["History", "Charts", "Trends"])
-
-                SettingsView()
-                    .tabItem {
-                        Label("Settings", systemImage: "gearshape")
-                    }
-                    .tag(AppTab.settings)
-                    .toolbar(.hidden, for: .tabBar)
-                    .accessibilityLabel("Settings and Preferences")
-                    .accessibilityHint("Configure app settings and default currencies")
-                    .accessibilityInputLabels(["Settings", "Preferences", "Configuration"])
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+        .alert(isPresented: Bindable(appState.errorHandler).showingError) {
+            errorAlert
+        }
+        .onAppear {
+            if !settingsViewModel.hasSeenOnboarding {
+                showOnBoarding = true
             }
-            CustomTabBar(selectedTab: $appState.selectedTab)
+        }
+        .sheet(isPresented: $showOnBoarding) {
+            CurrencySpotOnboarding(showOnBoarding: $showOnBoarding)
+                .onDisappear {
+                    settingsViewModel.hasSeenOnboarding = true
+                }
         }
     }
+
+    // MARK: - Private Views
 
     private var errorAlert: Alert {
         if let error = appState.errorHandler.currentError {

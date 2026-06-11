@@ -12,7 +12,6 @@ struct ChartPreviewSection: View {
     @State private var showAverage = false
     @State private var showHighest = false
     @State private var showLowest = false
-    @State private var animateDemo = false
 
     var body: some View {
         VStack(spacing: 20) {
@@ -159,10 +158,6 @@ struct ChartPreviewSection: View {
     }
 
     private func performDemoAnimationSequence() async {
-        withAnimation(.smooth(duration: 0.5)) {
-            animateDemo = true
-        }
-
         try? await Task.sleep(for: .seconds(0.5))
         withAnimation(.smooth(duration: 0.3)) {
             showAverage = true
@@ -183,7 +178,6 @@ struct ChartPreviewSection: View {
             showAverage = false
             showHighest = false
             showLowest = false
-            animateDemo = false
         }
 
         try? await Task.sleep(for: .seconds(1.0))

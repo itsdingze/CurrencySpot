@@ -175,8 +175,8 @@ struct TrendDataUpdateTests {
     // MARK: - Fixtures
 
     private static let anyRange = DateRange(
-        start: TimeZoneManager.createCETDate(year: 2025, month: 3, day: 1)!,
-        end: TimeZoneManager.createCETDate(year: 2025, month: 3, day: 7)!
+        start: createCETDate(year: 2025, month: 3, day: 1)!,
+        end: createCETDate(year: 2025, month: 3, day: 7)!
     )
 
     @MainActor
@@ -185,7 +185,6 @@ struct TrendDataUpdateTests {
         let cacheService = InMemoryCacheService()
         let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
         return HistoryViewModel(
-            service: service,
             calculatorVM: CalculatorViewModel(service: service),
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: DataOrchestrationUseCase(

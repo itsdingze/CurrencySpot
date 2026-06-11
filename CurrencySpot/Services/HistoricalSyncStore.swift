@@ -32,33 +32,25 @@ protocol HistoricalSyncStore: AnyObject {
 
 /// `UserDefaults`-backed coverage record.
 final class UserDefaultsHistoricalSyncStore: HistoricalSyncStore {
-    private enum Keys {
-        // Intentionally not in UserDefaultsKeys.swift: implementation-private to historical sync,
-        // and that file is owned by an in-flight feature branch.
-        static let from = "HistoricalSyncFromDate"
-        static let through = "HistoricalSyncThroughDate"
-        static let checkedAt = "HistoricalSyncCheckedAt"
-    }
-
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
     }
 
-    var from: Date? { defaults.object(forKey: Keys.from) as? Date }
-    var through: Date? { defaults.object(forKey: Keys.through) as? Date }
-    var checkedAt: Date? { defaults.object(forKey: Keys.checkedAt) as? Date }
+    var from: Date? { defaults.object(forKey: UserDefaultsKeys.historicalSyncFrom) as? Date }
+    var through: Date? { defaults.object(forKey: UserDefaultsKeys.historicalSyncThrough) as? Date }
+    var checkedAt: Date? { defaults.object(forKey: UserDefaultsKeys.historicalSyncCheckedAt) as? Date }
 
     func record(from newFrom: Date, through newThrough: Date, at now: Date) {
-        defaults.set(min(from ?? newFrom, newFrom), forKey: Keys.from)
-        defaults.set(max(through ?? newThrough, newThrough), forKey: Keys.through)
-        defaults.set(now, forKey: Keys.checkedAt)
+        defaults.set(min(from ?? newFrom, newFrom), forKey: UserDefaultsKeys.historicalSyncFrom)
+        defaults.set(max(through ?? newThrough, newThrough), forKey: UserDefaultsKeys.historicalSyncThrough)
+        defaults.set(now, forKey: UserDefaultsKeys.historicalSyncCheckedAt)
     }
 
     func reset() {
-        defaults.removeObject(forKey: Keys.from)
-        defaults.removeObject(forKey: Keys.through)
-        defaults.removeObject(forKey: Keys.checkedAt)
+        defaults.removeObject(forKey: UserDefaultsKeys.historicalSyncFrom)
+        defaults.removeObject(forKey: UserDefaultsKeys.historicalSyncThrough)
+        defaults.removeObject(forKey: UserDefaultsKeys.historicalSyncCheckedAt)
     }
 }
