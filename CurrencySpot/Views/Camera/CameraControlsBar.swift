@@ -70,9 +70,9 @@ struct CameraControlsBar: View {
             viewModel.toggleTorch()
         } label: {
             Image(systemName: viewModel.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                .font(.system(.title2, design: .rounded))
-                .foregroundStyle(viewModel.isTorchOn ? Color.accentColor : .white)
-                .frame(width: 44, height: 44)
+                .font(.system(.headline, design: .rounded))
+                .foregroundStyle(viewModel.isTorchOn ? Color.accentColor : .primary)
+                .frame(width: 48, height: 48)
                 .background(.regularMaterial, in: .circle)
         }
         .accessibilityLabel(viewModel.isTorchOn ? "Turn flashlight off" : "Turn flashlight on")
@@ -81,11 +81,12 @@ struct CameraControlsBar: View {
     private var photoImportButton: some View {
         PhotosPicker(selection: $pickedPhoto, matching: .images) {
             Image(systemName: "photo.on.rectangle")
-                .font(.system(.title2, design: .rounded))
-                .foregroundStyle(.white)
+                .font(.system(.headline, design: .rounded))
+                .foregroundStyle(.primary)
                 .frame(width: 44, height: 44)
                 .background(.regularMaterial, in: .circle)
         }
+        .buttonStyle(.plain)
         .accessibilityLabel("Import photo")
         .accessibilityHint("Pick an image from your library to convert its prices")
     }

@@ -52,7 +52,7 @@ struct ScanStatusCapsule: View {
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(Color.textPrimary)
                     .modifier(Shimmer(active: phase == .scanning))
-                    .padding(.horizontal, 14)
+                    .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(.regularMaterial, in: .capsule)
                     .transition(.opacity)
