@@ -15,23 +15,23 @@ import Testing
 struct ViewModelTests {
     // Builds a HistoryViewModel backed entirely by MockExchangeRateService so trend
     // data is the deterministic MockExchangeRates.trendData fixture and no network runs.
-    private static func makeHistoryViewModel() -> HistoryViewModel {
+    private static func makeHistoryViewModel(ratesStore: ExchangeRatesStore? = nil) -> HistoryViewModel {
+        let ratesStore = ratesStore ?? ExchangeRatesStore()
         let service = MockExchangeRateService()
-        let cacheService = InMemoryCacheService()
         let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
         return HistoryViewModel(
-            calculatorVM: makeIsolatedCalculatorViewModel(service: service),
+            ratesStore: ratesStore,
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: DataOrchestrationUseCase(
-                service: service,
-                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-                cacheService: cacheService
+                repository: service,
+                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase
             ),
-            chartDataPreparationUseCase: ChartDataPreparationUseCase(
-                rateCalculationUseCase: RateCalculationUseCase(),
-                cacheService: cacheService
+            chartDataPreparationUseCase: ChartDataPreparationUseCase(cacheService: InMemoryCacheService()),
+            trendDataUseCase: TrendDataUseCase(
+                trendRepository: service,
+                historicalRateRepository: service
             ),
-            trendDataUseCase: TrendDataUseCase(service: service)
+            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))
         )
     }
 
@@ -73,6 +73,20 @@ struct ViewModelTests {
             #expect(viewModel.displayedChartDataPoints.isEmpty)
             await viewModel.loadCurrentConfigurationAndWait()
             #expect(viewModel.displayedChartDataPoints.isEmpty == false)
+        }
+
+        @Test("Follows the calculator's base currency through the shared rates store")
+        func followsSharedBaseCurrency() async {
+            let store = ExchangeRatesStore()
+            let viewModel = ViewModelTests.makeHistoryViewModel(ratesStore: store)
+            #expect(viewModel.baseCurrency == "USD")
+
+            store.updateBaseCurrency("EUR")
+            // Observation delivery hops through the main actor's queue.
+            while viewModel.baseCurrency != "EUR" {
+                await Task.yield()
+            }
+            #expect(viewModel.baseCurrency == "EUR")
         }
     }
 }

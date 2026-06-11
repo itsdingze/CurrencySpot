@@ -108,8 +108,8 @@ struct FrankfurterAPITests {
         let response = try await api.fetchHistoricalRatesForRange(startDate: startDate, endDate: endDate)
 
         #expect(response.base == "USD")
-        #expect(response.start_date == "2025-03-10")
-        #expect(response.end_date == "2025-03-12")
+        #expect(response.startDate == "2025-03-10")
+        #expect(response.endDate == "2025-03-12")
         #expect(response.rates["2025-03-11"] == ["EUR": 0.91])
         #expect(response.rates.count == 3)
     }

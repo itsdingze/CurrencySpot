@@ -27,7 +27,7 @@ enum DataMigration {
             try context.delete(model: TrendData.self)
             try context.save()
         } catch {
-            AppLogger.error("Frankfurter v2 migration purge failed: \(error.localizedDescription)", category: .data)
+            OSLogLoggerService().error("Frankfurter v2 migration purge failed: \(error.localizedDescription)", category: .data)
             return
         }
 

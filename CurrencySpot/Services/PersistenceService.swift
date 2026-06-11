@@ -20,12 +20,11 @@ protocol PersistenceService {
     /// Loads exchange rates from persistent storage
     func loadExchangeRates() async throws -> [ExchangeRateDataValue]
 
-    /// Loads historical rates for specific date range and currency
-    func loadHistoricalRatesForCurrency(
-        currency: String,
-        startDate: String,
-        endDate: String
-    ) async throws -> [HistoricalRateDataValue]
+    /// Loads historical rates containing the given currency within a date range
+    func loadHistoricalRates(currency: String, from startDate: Date, to endDate: Date) async throws -> [HistoricalRateDataValue]
+
+    /// Loads all historical rates (every currency) within a date range
+    func loadHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateDataValue]
 
     /// Gets the earliest stored date in historical data
     func getEarliestStoredDate() async throws -> Date?
@@ -36,14 +35,8 @@ protocol PersistenceService {
     /// Loads trend data from persistent storage
     func loadTrendData() async throws -> [TrendDataValue]
 
-    /// Calculates and saves trend data based on historical rates
-    func calculateAndSaveTrendData() async throws
-
-    /// Checks if sufficient historical data exists for trend calculation
-    func hasSufficientHistoricalDataForTrends() async throws -> Bool
-
-    /// Checks if the provided date range affects trend calculation
-    func doesDateRangeAffectTrends(startDate: Date, endDate: Date) async throws -> Bool
+    /// Replaces all stored trend data with the given values
+    func saveTrendData(_ trends: [TrendDataValue]) async throws
 
     /// Clears all data from persistent storage
     func clearAllData() async throws
@@ -53,6 +46,10 @@ protocol PersistenceService {
 
 @ModelActor
 actor SwiftDataPersistenceService: PersistenceService {
+    // @ModelActor owns the generated initializer, so the logger cannot be injected;
+    // a default live instance is the accepted seam here.
+    private let logger: LoggerService = OSLogLoggerService()
+
     // MARK: - Data Persistence Methods
 
     /// Saves the current exchange rates to SwiftData.
@@ -94,8 +91,8 @@ actor SwiftDataPersistenceService: PersistenceService {
 
             var newRateData: [HistoricalRateData] = []
             for (date, currencyRates) in newRates {
-                let rateDataPoints = currencyRates.compactMap { currency, rate -> HistoricalRateDataPoint? in
-                    return HistoricalRateDataPoint(
+                let rateDataPoints = currencyRates.map { currency, rate in
+                    HistoricalRateDataPoint(
                         currencyCode: currency,
                         rate: rate
                     )
@@ -112,7 +109,7 @@ actor SwiftDataPersistenceService: PersistenceService {
                     newRateData.append(historicalRateData)
                 } catch {
                     // Skip invalid dates - log but don't fail the entire operation
-                    AppLogger.warning("Skipping invalid date: \(date) - \(error)", category: .persistence)
+                    logger.warning("Skipping invalid date: \(date) - \(error)", category: .persistence)
                     continue
                 }
             }
@@ -136,37 +133,33 @@ actor SwiftDataPersistenceService: PersistenceService {
         )
 
         let swiftDataObjects = try modelContext.fetch(descriptor)
-        return convertExchangeRateDataToValueTypes(swiftDataObjects)
+        return try swiftDataObjects.map { try $0.toDomain() }
     }
 
-    /// Loads historical rates for specific date range and currency.
-    func loadHistoricalRatesForCurrency(
-        currency: String,
-        startDate: String,
-        endDate: String
-    ) async throws -> [HistoricalRateDataValue] {
-        guard let startDateObj = TimeZoneManager.parseAPIDate(startDate),
-              let endDateObj = TimeZoneManager.parseAPIDate(endDate)
-        else {
-            throw AppError.dateCalculationError("Failed to parse date strings: start=\(startDate), end=\(endDate)")
-        }
-
+    /// Loads historical rates containing the given currency within a date range.
+    func loadHistoricalRates(currency: String, from startDate: Date, to endDate: Date) async throws -> [HistoricalRateDataValue] {
         // For large date ranges (> 1 year), process in chunks to prevent UI freezing
-        let daysDifference = Calendar.current.dateComponents([.day], from: startDateObj, to: endDateObj).day ?? 0
+        let daysDifference = Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
 
         if daysDifference > 365 {
             return try loadHistoricalRatesInChunks(
                 currency: currency,
-                startDate: startDateObj,
-                endDate: endDateObj
+                startDate: startDate,
+                endDate: endDate
             )
         } else {
             return try loadHistoricalRatesDirectly(
                 currency: currency,
-                startDate: startDateObj,
-                endDate: endDateObj
+                startDate: startDate,
+                endDate: endDate
             )
         }
+    }
+
+    /// Loads all historical rates (every currency) within a date range.
+    func loadHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateDataValue] {
+        // USD rows carry every currency's rate, so the USD path is the all-currency load.
+        try await loadHistoricalRates(currency: CurrencyCode.usd.rawValue, from: startDate, to: endDate)
     }
 
     /// Direct loading for small date ranges (< 1 year).
@@ -179,7 +172,7 @@ actor SwiftDataPersistenceService: PersistenceService {
     ) throws -> [HistoricalRateDataValue] {
         // Special handling for USD - load all data in the date range since USD is the base currency
         let predicate: Predicate<HistoricalRateData>
-        if currency == "USD" {
+        if currency == CurrencyCode.usd.rawValue {
             predicate = #Predicate<HistoricalRateData> { data in
                 data.date >= startDate && data.date <= endDate
             }
@@ -198,7 +191,7 @@ actor SwiftDataPersistenceService: PersistenceService {
         descriptor.relationshipKeyPathsForPrefetching = [\.rates]
 
         let swiftDataObjects = try modelContext.fetch(descriptor)
-        return convertHistoricalRateDataToValueTypesFiltered(swiftDataObjects, targetCurrency: currency)
+        return try swiftDataObjects.map { try $0.toDomain() }
     }
 
     /// Chunked loading for large date ranges (> 1 year).
@@ -270,113 +263,19 @@ actor SwiftDataPersistenceService: PersistenceService {
     func loadTrendData() async throws -> [TrendDataValue] {
         let descriptor = FetchDescriptor<TrendData>()
         let swiftDataObjects = try modelContext.fetch(descriptor)
-        return convertTrendDataToValueTypes(swiftDataObjects)
+        return try swiftDataObjects.map { try $0.toDomain() }
     }
 
-    func calculateAndSaveTrendData() async throws {
-        // Get the last 7 days of historical data for all currencies
-        let calendar = TimeZoneManager.cetCalendar
-        let now = Date()
-        let endDate = calendar.startOfDay(for: now)
-        let startDate = calendar.date(byAdding: .day, value: -7, to: endDate) ?? endDate
-
-        // Get all historical data within the 7-day range
-        let predicate = #Predicate<HistoricalRateData> { data in
-            data.date >= startDate && data.date <= endDate
-        }
-        let descriptor = FetchDescriptor<HistoricalRateData>(predicate: predicate)
-        let historicalData: [HistoricalRateData] = try modelContext.fetch(descriptor)
-
-        // Flatten historical data to get individual currency rates by date
-        var currencyDateRates: [String: [(Date, Double)]] = [:]
-
-        for historicalDay in historicalData {
-            // Add all currencies from the rates array
-            for ratePoint in historicalDay.rates {
-                if currencyDateRates[ratePoint.currencyCode] == nil {
-                    currencyDateRates[ratePoint.currencyCode] = []
-                }
-                currencyDateRates[ratePoint.currencyCode]?.append((historicalDay.date, ratePoint.rate))
-            }
-
-            // Don't add USD with fixed rate 1.0 - it will be calculated dynamically when needed
-            // USD trends are the inverse of other currencies' trends
-        }
-
-        // Clear existing trend data and create new data in a transaction
+    func saveTrendData(_ trends: [TrendDataValue]) async throws {
         try modelContext.transaction {
             try modelContext.delete(model: TrendData.self)
 
-            for (currencyCode, dateRates) in currencyDateRates {
-                let sortedRates = dateRates.sorted { $0.0 < $1.0 } // Sort by date
-
-                // Need at least 2 data points to calculate trend
-                guard sortedRates.count >= 2,
-                      let firstRate = sortedRates.first?.1,
-                      let lastRate = sortedRates.last?.1
-                else {
-                    continue
-                }
-
-                // Calculate weekly percentage change
-                let weeklyChange = ((lastRate - firstRate) / firstRate) * 100
-
-                // Extract mini chart data (up to 7 days)
-                let miniChartData = sortedRates.map(\.1)
-
-                // Create and save TrendData
-                let trendData = TrendData(
-                    currencyCode: currencyCode,
-                    weeklyChange: weeklyChange,
-                    miniChartData: miniChartData
-                )
-
-                modelContext.insert(trendData)
+            for trend in trends {
+                modelContext.insert(TrendData(from: trend))
             }
 
             try modelContext.save()
         }
-    }
-
-    func hasSufficientHistoricalDataForTrends() async throws -> Bool {
-        let calendar = TimeZoneManager.cetCalendar
-        let endDate = Date()
-        let startDate = calendar.date(byAdding: .day, value: -7, to: endDate) ?? endDate
-
-        // Check if we have historical data within the last 7 days
-        let predicate = #Predicate<HistoricalRateData> { data in
-            data.date >= startDate && data.date <= endDate
-        }
-        let descriptor = FetchDescriptor<HistoricalRateData>(predicate: predicate)
-        let historicalData: [HistoricalRateData] = try modelContext.fetch(descriptor)
-
-        // We need at least 2 days of data to calculate meaningful trends
-        return historicalData.count >= 2
-    }
-
-    func doesDateRangeAffectTrends(startDate: Date, endDate: Date) async throws -> Bool {
-        let calendar = TimeZoneManager.cetCalendar
-        let today = Date()
-        let now = calendar.startOfDay(for: today)
-        let trendWindowStart = calendar.date(byAdding: .day, value: -7, to: now) ?? now
-
-        // Normalize input dates to start of day for consistent comparison
-        let normalizedStartDate = calendar.startOfDay(for: startDate)
-        let normalizedEndDate = calendar.startOfDay(for: endDate)
-
-        // Check if the date range overlaps with the last 7 days (trend calculation window)
-        // Overlap occurs if: startDate <= trendWindowEnd AND endDate >= trendWindowStart
-        let trendWindowEnd = now
-
-        let rangeOverlapsWithTrendWindow = normalizedStartDate <= trendWindowEnd && normalizedEndDate >= trendWindowStart
-
-        if rangeOverlapsWithTrendWindow {
-            AppLogger.info("Date range \(TimeZoneManager.formatForAPI(startDate)) to \(TimeZoneManager.formatForAPI(endDate)) affects trends", category: .persistence)
-        } else {
-            AppLogger.debug("Date range \(TimeZoneManager.formatForAPI(startDate)) to \(TimeZoneManager.formatForAPI(endDate)) does not affect trends", category: .persistence)
-        }
-
-        return rangeOverlapsWithTrendWindow
     }
 
     // MARK: - Data Management Methods
@@ -388,47 +287,5 @@ actor SwiftDataPersistenceService: PersistenceService {
             try modelContext.delete(model: TrendData.self)
             try modelContext.save()
         }
-    }
-
-    // MARK: - Data Conversion Helper Methods
-
-    private func convertExchangeRateDataToValueTypes(_ swiftDataObjects: [ExchangeRateData]) -> [ExchangeRateDataValue] {
-        swiftDataObjects.compactMap { exchangeRateData in
-            let currencyCode = exchangeRateData.currencyCode
-            let rate = exchangeRateData.rate
-            return ExchangeRateDataValue(currencyCode: currencyCode, rate: rate)
-        }
-    }
-
-    private func convertTrendDataToValueTypes(_ swiftDataObjects: [TrendData]) -> [TrendDataValue] {
-        swiftDataObjects.compactMap { trendData in
-            TrendDataValue(
-                currencyCode: trendData.currencyCode,
-                weeklyChange: trendData.weeklyChange,
-                miniChartData: trendData.miniChartData
-            )
-        }
-    }
-
-    private func convertHistoricalRateDataToValueTypesFiltered(
-        _ swiftDataObjects: [HistoricalRateData],
-        targetCurrency _: String
-    ) -> [HistoricalRateDataValue] {
-        var result: [HistoricalRateDataValue] = []
-        result.reserveCapacity(swiftDataObjects.count)
-
-        for historicalData in swiftDataObjects {
-            // Convert ALL rates for this date to support any base-target currency conversion
-            let valuePoints = historicalData.rates.map { rate in
-                HistoricalRateDataPointValue(
-                    currencyCode: rate.currencyCode,
-                    rate: rate.rate
-                )
-            }
-
-            result.append(HistoricalRateDataValue(date: historicalData.date, rates: valuePoints))
-        }
-
-        return result
     }
 }

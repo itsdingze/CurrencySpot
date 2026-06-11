@@ -50,6 +50,14 @@ struct CalculatorView: View {
         .task {
             await calculatorViewModel.checkIfShouldFetch()
         }
+        .onAppear {
+            calculatorViewModel.consumePendingConversion()
+        }
+        .onChange(of: appState.pendingConversion) { _, newValue in
+            if newValue != nil {
+                calculatorViewModel.consumePendingConversion()
+            }
+        }
         .sheet(isPresented: bindableViewModel.showCurrencyPicker) {
             CurrencyPickerView(
                 selectedCurrency: calculatorViewModel.isSelectingFromCurrency ? bindableViewModel.baseCurrency : bindableViewModel.targetCurrency,
@@ -73,10 +81,6 @@ struct CalculatorView: View {
 }
 
 #Preview {
-    @Previewable @State var appState = AppState.shared
-    let container = DependencyContainer.preview()
-
     CalculatorView()
-        .withDependencyContainer(container)
-        .environment(appState)
+        .withDependencyContainer(DependencyContainer.preview())
 }

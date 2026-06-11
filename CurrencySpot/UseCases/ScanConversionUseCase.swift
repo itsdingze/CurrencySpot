@@ -45,19 +45,18 @@ final class ScanConversionUseCase {
         convert(1, from: base, to: target, in: rates)
     }
 
-    /// Mirrors the calculator's rate math: rates are USD-normalized, so
-    /// base → target is targetRate / baseRate, with 1.0 for unknown codes.
-    /// Division happens last, in Decimal, to keep exact results exact.
+    /// Delegates to RateTable's Decimal cross-rate math. Currency selections arrive
+    /// as Strings from the UI edge; an unrepresentable code behaves like an unknown
+    /// one (rate 1.0), matching the previous lookup-miss fallback.
     private func convert(
         _ amount: Decimal,
         from base: String,
         to target: String,
         in rates: [ExchangeRateDataValue]
     ) -> Decimal {
-        guard base != target else { return amount }
-        let baseRate = rates.first { $0.currencyCode == base }?.rate ?? 1.0
-        let targetRate = rates.first { $0.currencyCode == target }?.rate ?? 1.0
-        guard abs(baseRate) > Double.ulpOfOne else { return amount }
-        return amount * Decimal(targetRate) / Decimal(baseRate)
+        guard base != target, let baseCode = CurrencyCode(base), let targetCode = CurrencyCode(target) else {
+            return amount
+        }
+        return RateTable(rates).convert(amount, from: baseCode, to: targetCode)
     }
 }

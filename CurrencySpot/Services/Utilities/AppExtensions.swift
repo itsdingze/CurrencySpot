@@ -68,44 +68,14 @@ extension Double {
 // MARK: - View Extensions
 
 extension View {
-    /// Injects all ViewModels from DependencyContainer into the environment
-    /// - Parameter container: The dependency container with all ViewModels
-    /// - Returns: View with all ViewModels injected into environment
+    /// Injects the DependencyContainer, AppState, and all ViewModels into the
+    /// environment — one modifier covers app root and previews alike.
     func withDependencyContainer(_ container: DependencyContainer) -> some View {
-        environment(container.calculatorViewModel)
+        environment(container)
+            .environment(container.appState)
+            .environment(container.calculatorViewModel)
             .environment(container.historyViewModel)
             .environment(container.settingsViewModel)
             .environment(container.cameraViewModel)
-    }
-}
-
-// MARK: - DependencyContainer Extensions
-
-extension DependencyContainer {
-    /// Creates a preview-ready dependency container with in-memory storage
-    /// - Returns: DependencyContainer configured for SwiftUI previews
-    @MainActor
-    static func preview() -> DependencyContainer {
-        do {
-            // Create in-memory model container for previews
-            let configuration = ModelConfiguration(
-                for: ExchangeRateData.self,
-                HistoricalRateData.self,
-                TrendData.self,
-                isStoredInMemoryOnly: true
-            )
-            let previewContainer = try ModelContainer(
-                for: ExchangeRateData.self,
-                HistoricalRateData.self,
-                TrendData.self,
-                configurations: configuration
-            )
-
-            return try DependencyContainer(modelContainer: previewContainer)
-        } catch {
-            AppLogger.warning("Failed to create preview DependencyContainer: \(error)", category: .app)
-            // Return a minimal container with mock service for previews
-            return DependencyContainer(mockService: MockExchangeRateService())
-        }
     }
 }

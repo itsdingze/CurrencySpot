@@ -37,14 +37,16 @@ final class FrankfurterNetworkService: NetworkService {
 
     private let api: FrankfurterAPI
     private let userDefaults: UserDefaults
+    private let dateProvider: DateProvider
 
     // MARK: - Initialization
 
-    /// Defaults preserve production behavior; tests inject a stubbed API client
-    /// and an isolated `UserDefaults` so they never touch the live network or `.standard`.
-    init(api: FrankfurterAPI = .shared, userDefaults: UserDefaults = .standard) {
+    /// Defaults preserve production behavior; tests inject a stubbed API client,
+    /// an isolated `UserDefaults`, and a fixed `DateProvider` for determinism.
+    init(api: FrankfurterAPI = .shared, userDefaults: UserDefaults = .standard, dateProvider: DateProvider = SystemDateProvider()) {
         self.api = api
         self.userDefaults = userDefaults
+        self.dateProvider = dateProvider
     }
 
     // MARK: - Rate Fetching Check Methods
@@ -53,22 +55,18 @@ final class FrankfurterNetworkService: NetworkService {
     ///
     /// - Returns: `true` if cached rates are older than the freshness window, `false` otherwise.
     func shouldFetchNewRates() async -> Bool {
-        RateRefreshPolicy.shouldRefetch(now: Date(), lastFetch: getLastFetchDate())
+        RateRefreshPolicy.shouldRefetch(now: dateProvider.now(), lastFetch: getLastFetchDate())
     }
 
     // MARK: - Network Data Fetching Methods
 
-    /// Fetches the latest exchange rates from the Frankfurter API
+    /// Fetches the latest exchange rates from the Frankfurter API.
+    /// The last-fetch date is NOT stamped here — DataCoordinator owns that bookkeeping.
     ///
     /// - Returns: A FrankfurterResponse containing the latest exchange rates
     /// - Throws: Any error that might occur during the API request
     func fetchExchangeRates() async throws -> ExchangeRatesResponse {
-        let response = try await api.fetchExchangeRates()
-
-        // Update the last fetch date after successful fetch
-        updateLastFetchDate(Date())
-
-        return response
+        try await api.fetchExchangeRates()
     }
 
     /// Fetches historical rates for a specific date range

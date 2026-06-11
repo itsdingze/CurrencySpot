@@ -15,20 +15,26 @@ final class HistoricalDataAnalysisUseCase {
     // MARK: - Dependencies
 
     private let syncStore: HistoricalSyncStore
+    private let dateProvider: DateProvider
+    private let logger: LoggerService
 
-    /// - Parameter syncStore: Records the date window already fetched from the API. The default
-    ///   `UserDefaultsHistoricalSyncStore` keeps both `DependencyContainer` call sites compiling
-    ///   unchanged; tests inject an isolated store. Do not pass a custom store from
-    ///   `DependencyContainer` without revisiting that contract.
-    init(syncStore: HistoricalSyncStore = UserDefaultsHistoricalSyncStore()) {
+    /// - Parameter syncStore: Records the date window already fetched from the API.
+    ///   Wired explicitly by `DependencyContainer`; tests inject an isolated store.
+    init(
+        syncStore: HistoricalSyncStore,
+        dateProvider: DateProvider = SystemDateProvider(),
+        logger: LoggerService = OSLogLoggerService()
+    ) {
         self.syncStore = syncStore
+        self.dateProvider = dateProvider
+        self.logger = logger
     }
 
     // MARK: - Date Range Calculations
 
     /// Calculates the date range based on selected time range
     func calculateDateRange(for timeRange: TimeRange) -> DateRange {
-        let now = Date()
+        let now = dateProvider.now()
         let calendar = TimeZoneManager.cetCalendar
 
         // Safe date calculations with fallback
@@ -68,7 +74,7 @@ final class HistoricalDataAnalysisUseCase {
                 throw AppError.dateCalculationError("Could not calculate end date for gap detection. Failed to subtract 1 day from \(cachedEarliest)")
             }
             missingRanges.append(DateRange(start: requiredRange.start, end: endDate))
-            AppLogger.warning("Gap BEFORE cache: need \(TimeZoneManager.formatForAPI(requiredRange.start)) to \(TimeZoneManager.formatForAPI(endDate))", category: .useCase)
+            logger.warning("Gap BEFORE cache: need \(TimeZoneManager.formatForAPI(requiredRange.start)) to \(TimeZoneManager.formatForAPI(endDate))", category: .useCase)
         }
 
         if requiredRange.end > cachedLatest {
@@ -76,7 +82,7 @@ final class HistoricalDataAnalysisUseCase {
                 throw AppError.dateCalculationError("Could not calculate start date for gap detection. Failed to add 1 day to \(cachedLatest)")
             }
             missingRanges.append(DateRange(start: startDate, end: requiredRange.end))
-            AppLogger.warning("Gap AFTER cache: need \(TimeZoneManager.formatForAPI(startDate)) to \(TimeZoneManager.formatForAPI(requiredRange.end))", category: .useCase)
+            logger.warning("Gap AFTER cache: need \(TimeZoneManager.formatForAPI(startDate)) to \(TimeZoneManager.formatForAPI(requiredRange.end))", category: .useCase)
         }
         return missingRanges
     }

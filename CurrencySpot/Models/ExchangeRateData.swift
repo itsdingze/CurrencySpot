@@ -18,3 +18,12 @@ final class ExchangeRateData {
         self.rate = rate
     }
 }
+
+// MARK: - Entity -> Domain Mapping
+
+extension ExchangeRateData {
+    /// Validates the stored code at the persistence → domain boundary.
+    func toDomain() throws -> ExchangeRateDataValue {
+        ExchangeRateDataValue(currencyCode: try CurrencyCode(validating: currencyCode), rate: rate)
+    }
+}

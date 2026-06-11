@@ -46,14 +46,18 @@ struct CameraViewModelTests {
         torchAvailable: Bool = true
     ) -> CameraViewModel {
         let appState = appState ?? AppState()
-        let calculatorViewModel = makeIsolatedCalculatorViewModel()
-        calculatorViewModel.availableRates = [
-            ExchangeRateDataValue(currencyCode: "JPY", rate: 150),
-            ExchangeRateDataValue(currencyCode: "EUR", rate: 0.9),
-            ExchangeRateDataValue(currencyCode: "USD", rate: 1),
-        ]
+        let ratesStore = ExchangeRatesStore()
+        ratesStore.update(
+            rates: [
+                ExchangeRateDataValue(currencyCode: "JPY", rate: 150),
+                ExchangeRateDataValue(currencyCode: "EUR", rate: 0.9),
+                ExchangeRateDataValue(currencyCode: "USD", rate: 1),
+            ],
+            lastUpdated: nil,
+            isUsingMockData: false
+        )
         return CameraViewModel(
-            calculatorViewModel: calculatorViewModel,
+            ratesStore: ratesStore,
             appState: appState,
             permissionService: MockCameraPermissionService(status: .authorized),
             stillTextRecognizer: stillRecognizer,
@@ -72,7 +76,8 @@ struct CameraViewModelTests {
     @Test(arguments: [CameraAuthorizationStatus.notDetermined, .authorized, .denied])
     func initialAuthorizationReflectsSystemStatus(status: CameraAuthorizationStatus) {
         let viewModel = CameraViewModel(
-            calculatorViewModel: makeIsolatedCalculatorViewModel(),
+            ratesStore: ExchangeRatesStore(),
+            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
             permissionService: MockCameraPermissionService(status: status),
             fallbackBaseCurrency: "USD",
             defaultTargetCurrency: "EUR"
@@ -84,7 +89,8 @@ struct CameraViewModelTests {
     func requestAccessTransitionsToUsersAnswer(granted: Bool, expected: CameraAuthorizationStatus) async {
         let service = MockCameraPermissionService(status: .notDetermined, grantsAccess: granted)
         let viewModel = CameraViewModel(
-            calculatorViewModel: makeIsolatedCalculatorViewModel(),
+            ratesStore: ExchangeRatesStore(),
+            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
             permissionService: service,
             fallbackBaseCurrency: "USD",
             defaultTargetCurrency: "EUR"
@@ -226,9 +232,9 @@ struct CameraViewModelTests {
 
     @Test func openInConverterPrefillsCalculatorAndSwitchesToConvertTab() {
         let appState = AppState()
-        let calculator = makeIsolatedCalculatorViewModel()
+        let calculator = makeIsolatedCalculatorViewModel(appState: appState)
         let viewModel = CameraViewModel(
-            calculatorViewModel: calculator,
+            ratesStore: ExchangeRatesStore(),
             appState: appState,
             permissionService: MockCameraPermissionService(status: .authorized),
             localeCurrencyCode: "JPY",
@@ -245,11 +251,20 @@ struct CameraViewModelTests {
 
         viewModel.openInConverter(item)
 
+        #expect(appState.pendingConversion == PendingConversion(
+            baseCurrency: "JPY",
+            targetCurrency: "USD",
+            amountInput: "120000"
+        ))
+        #expect(appState.selectedTab == .convert)
+        #expect(viewModel.destination == nil)
+
+        calculator.consumePendingConversion()
+
         #expect(calculator.baseCurrency == "JPY")
         #expect(calculator.targetCurrency == "USD")
         #expect(calculator.inputAmountString == "120000")
-        #expect(appState.selectedTab == .convert)
-        #expect(viewModel.destination == nil)
+        #expect(appState.pendingConversion == nil)
     }
 
     @Test func togglingTorchTracksTheDevicesActualState() {

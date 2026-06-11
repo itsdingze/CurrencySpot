@@ -7,61 +7,23 @@
 import Foundation
 import Testing
 
-// MARK: - Test Double
-
-/// Configurable ExchangeRateService double for CalculatorViewModel tests.
-private final class StubExchangeRateService: ExchangeRateService {
-    var shouldFetchNewRatesResult = false
-    var fetchExchangeRatesResult: Result<ExchangeRatesResponse, AppError> =
-        .success(ExchangeRatesResponse(base: "USD", date: "2025-01-15", rates: ["EUR": 0.9]))
-    var loadExchangeRatesResult: Result<[ExchangeRateDataValue], AppError> = .success([])
-
-    private(set) var fetchExchangeRatesCallCount = 0
-    private(set) var loadExchangeRatesCallCount = 0
-    private(set) var savedRates: [String: Double]?
-    private(set) var lastFetchDate: Date?
-
-    func shouldFetchNewRates() async -> Bool { shouldFetchNewRatesResult }
-
-    func fetchExchangeRates() async throws -> ExchangeRatesResponse {
-        fetchExchangeRatesCallCount += 1
-        return try fetchExchangeRatesResult.get()
-    }
-
-    func fetchAndSaveHistoricalRates(from _: Date, to _: Date) async throws {}
-    func saveExchangeRates(_ rates: [String: Double]) async throws { savedRates = rates }
-    func saveHistoricalExchangeRates(_: [String: [String: Double]]) async throws {}
-
-    func loadExchangeRates() async throws -> [ExchangeRateDataValue] {
-        loadExchangeRatesCallCount += 1
-        return try loadExchangeRatesResult.get()
-    }
-
-    func loadHistoricalRatesForCurrency(currency _: String, startDate _: String, endDate _: String) async throws -> [HistoricalRateDataValue] { [] }
-    func updateLastFetchDate(_ date: Date) { lastFetchDate = date }
-    func getLastFetchDate() -> Date? { lastFetchDate }
-    func getEarliestStoredDate() async throws -> Date? { nil }
-    func getLatestStoredDate() async throws -> Date? { nil }
-    func loadTrendData() async throws -> [TrendDataValue] { [] }
-    func calculateAndSaveTrendData() async throws {}
-    func hasSufficientHistoricalDataForTrends() async throws -> Bool { true }
-    func doesDateRangeAffectTrends(startDate _: Date, endDate _: Date) async throws -> Bool { false }
-    func clearAllData() async throws {}
-}
-
-// MARK: - Tests
-
 @Suite("CalculatorViewModel Tests")
 @MainActor
 struct CalculatorViewModelTests {
-    private let service = StubExchangeRateService()
+    private let repository = MockExchangeRateRepository()
+    private let ratesStore = ExchangeRatesStore()
     private let appState = AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))
 
     private func makeViewModel() throws -> CalculatorViewModel {
         let suiteName = "CalculatorViewModelTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defaults.removePersistentDomain(forName: suiteName)
-        return CalculatorViewModel(service: service, appState: appState, userDefaults: defaults)
+        return CalculatorViewModel(
+            repository: repository,
+            ratesStore: ratesStore,
+            appState: appState,
+            userDefaults: defaults
+        )
     }
 
     /// Yields the main actor until `condition` holds, letting the view model's
@@ -92,10 +54,16 @@ struct CalculatorViewModelTests {
         defaults.set("CHF", forKey: UserDefaultsKeys.defaultBaseCurrency)
         defaults.set("CAD", forKey: UserDefaultsKeys.defaultTargetCurrency)
 
-        let viewModel = CalculatorViewModel(service: service, appState: appState, userDefaults: defaults)
+        let viewModel = CalculatorViewModel(
+            repository: repository,
+            ratesStore: ratesStore,
+            appState: appState,
+            userDefaults: defaults
+        )
 
         #expect(viewModel.baseCurrency == "CHF")
         #expect(viewModel.targetCurrency == "CAD")
+        #expect(ratesStore.baseCurrency == "CHF")
     }
 
     // MARK: inputAmount semantics
@@ -168,33 +136,33 @@ struct CalculatorViewModelTests {
     @Test("checkIfShouldFetch fetches when rates are stale and the device is connected", .timeLimit(.minutes(1)))
     func staleAndConnectedFetches() async throws {
         let viewModel = try makeViewModel()
-        service.shouldFetchNewRatesResult = true
+        repository.shouldRefreshRatesResult = true
         appState.networkMonitor.isConnected = true
-        service.fetchExchangeRatesResult = .success(
-            ExchangeRatesResponse(base: "USD", date: "2025-01-15", rates: ["EUR": 0.9])
-        )
+        repository.fetchExchangeRatesResult = .success([
+            ExchangeRateDataValue(currencyCode: "USD", rate: 1.0),
+            ExchangeRateDataValue(currencyCode: "EUR", rate: 0.9),
+        ])
 
         await viewModel.checkIfShouldFetch()
         await waitUntil { viewModel.isLoading == false }
 
-        #expect(service.fetchExchangeRatesCallCount == 1)
+        #expect(repository.fetchExchangeRatesCallCount == 1)
         #expect(viewModel.availableRates.contains { $0.currencyCode == "EUR" && $0.rate == 0.9 })
         #expect(viewModel.availableRates.contains { $0.currencyCode == "USD" && $0.rate == 1.0 })
         #expect(viewModel.lastUpdated != nil)
         #expect(viewModel.errorMessage == nil)
-        #expect(service.savedRates?["EUR"] == 0.9)
     }
 
     @Test("checkIfShouldFetch loads from cache when rates are fresh")
     func freshLoadsFromCache() async throws {
         let viewModel = try makeViewModel()
-        service.shouldFetchNewRatesResult = false
+        repository.shouldRefreshRatesResult = false
         appState.networkMonitor.isConnected = true
-        service.loadExchangeRatesResult = .success([ExchangeRateDataValue(currencyCode: "EUR", rate: 0.88)])
+        repository.loadExchangeRatesResult = .success([ExchangeRateDataValue(currencyCode: "EUR", rate: 0.88)])
 
         await viewModel.checkIfShouldFetch()
 
-        #expect(service.fetchExchangeRatesCallCount == 0)
+        #expect(repository.fetchExchangeRatesCallCount == 0)
         #expect(viewModel.availableRates.count == 1)
         #expect(viewModel.availableRates.first?.rate == 0.88)
         #expect(viewModel.isLoading == false)
@@ -204,15 +172,15 @@ struct CalculatorViewModelTests {
     @Test("a failing fetch falls back to cached data", .timeLimit(.minutes(1)))
     func failedFetchFallsBackToCache() async throws {
         let viewModel = try makeViewModel()
-        service.shouldFetchNewRatesResult = true
+        repository.shouldRefreshRatesResult = true
         appState.networkMonitor.isConnected = true
-        service.fetchExchangeRatesResult = .failure(.networkError("stubbed failure"))
-        service.loadExchangeRatesResult = .success([ExchangeRateDataValue(currencyCode: "GBP", rate: 0.75)])
+        repository.fetchExchangeRatesResult = .failure(.networkError("stubbed failure"))
+        repository.loadExchangeRatesResult = .success([ExchangeRateDataValue(currencyCode: "GBP", rate: 0.75)])
 
         await viewModel.checkIfShouldFetch()
         await waitUntil { viewModel.isLoading == false }
 
-        #expect(service.fetchExchangeRatesCallCount == 1)
+        #expect(repository.fetchExchangeRatesCallCount == 1)
         #expect(viewModel.availableRates.count == 1)
         #expect(viewModel.availableRates.first?.currencyCode == "GBP")
         #expect(viewModel.isUsingMockData == false)
@@ -221,13 +189,13 @@ struct CalculatorViewModelTests {
     @Test("offline with no cached data falls back to mock data")
     func offlineWithoutCacheUsesMockData() async throws {
         let viewModel = try makeViewModel()
-        service.shouldFetchNewRatesResult = true
+        repository.shouldRefreshRatesResult = true
         appState.networkMonitor.isConnected = false
-        service.loadExchangeRatesResult = .failure(.noCachedData)
+        repository.loadExchangeRatesResult = .failure(.noCachedData)
 
         await viewModel.checkIfShouldFetch()
 
-        #expect(service.fetchExchangeRatesCallCount == 0)
+        #expect(repository.fetchExchangeRatesCallCount == 0)
         #expect(viewModel.isUsingMockData == true)
         #expect(viewModel.availableRates.count == MockExchangeRates.rates.count)
         #expect(viewModel.isLoading == false)
@@ -242,10 +210,10 @@ struct CalculatorViewModelTests {
         // Phase-B regression: this path previously re-entered the fetch pipeline and
         // self-deadlocked awaiting its own fetchTask.
         let viewModel = try makeViewModel()
-        service.shouldFetchNewRatesResult = true
+        repository.shouldRefreshRatesResult = true
         appState.networkMonitor.isConnected = true
-        service.fetchExchangeRatesResult = .failure(.networkError("stubbed fetch failure"))
-        service.loadExchangeRatesResult = .failure(.noCachedData)
+        repository.fetchExchangeRatesResult = .failure(.networkError("stubbed fetch failure"))
+        repository.loadExchangeRatesResult = .failure(.noCachedData)
 
         await viewModel.checkIfShouldFetch()
         await waitUntil { viewModel.isLoading == false }
@@ -256,12 +224,41 @@ struct CalculatorViewModelTests {
         #expect(viewModel.isUsingMockData == false)
     }
 
+    // MARK: Pending conversion
+
+    @Test("consumePendingConversion applies and clears the AppState request")
+    func consumePendingConversionAppliesRequest() throws {
+        let viewModel = try makeViewModel()
+        appState.pendingConversion = PendingConversion(
+            baseCurrency: "JPY", targetCurrency: "USD", amountInput: "120000"
+        )
+
+        viewModel.consumePendingConversion()
+
+        #expect(viewModel.baseCurrency == "JPY")
+        #expect(viewModel.targetCurrency == "USD")
+        #expect(viewModel.inputAmountString == "120000")
+        #expect(appState.pendingConversion == nil)
+    }
+
+    @Test("consumePendingConversion is a no-op without a pending request")
+    func consumePendingConversionNoRequest() throws {
+        let viewModel = try makeViewModel()
+        let base = viewModel.baseCurrency
+        let input = viewModel.inputAmountString
+
+        viewModel.consumePendingConversion()
+
+        #expect(viewModel.baseCurrency == base)
+        #expect(viewModel.inputAmountString == input)
+    }
+
     // MARK: clearAllData
 
     @Test("clearAllData resets rates, dates, errors, and loading state")
     func clearAllDataResetsState() async throws {
         let viewModel = try makeViewModel()
-        service.loadExchangeRatesResult = .success([ExchangeRateDataValue(currencyCode: "EUR", rate: 0.9)])
+        repository.loadExchangeRatesResult = .success([ExchangeRateDataValue(currencyCode: "EUR", rate: 0.9)])
         await viewModel.checkIfShouldFetch()
         try #require(viewModel.availableRates.isEmpty == false)
 

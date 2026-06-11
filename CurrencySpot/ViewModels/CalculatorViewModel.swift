@@ -16,15 +16,21 @@ final class CalculatorViewModel {
 
     var inputAmountString = "0"
 
-    var availableRates: [ExchangeRateDataValue] = [] {
-        didSet {
-            updateRatesCache()
-        }
+    /// Currently displayed rates. Published through the shared store (single writer);
+    /// the setter exists for state resets and tests.
+    var availableRates: [ExchangeRateDataValue] {
+        get { ratesStore.rates }
+        set { publishRates(newValue) }
     }
 
     // MARK: - Currency Selection Properties
 
-    var baseCurrency: String
+    /// User-facing selections stay String at the UI edge (documented boundary);
+    /// they cross into domain math via CurrencyCode where needed.
+    var baseCurrency: String {
+        didSet { ratesStore.updateBaseCurrency(baseCurrency) }
+    }
+
     var targetCurrency: String
 
     // MARK: - UI State Properties
@@ -36,34 +42,46 @@ final class CalculatorViewModel {
 
     var isLoading = true
     var errorMessage: String?
-    var lastUpdated: Date?
-    var isUsingMockData: Bool = false
     var retryState: RetryState = .none
+
+    var lastUpdated: Date? { ratesStore.lastUpdated }
+    var isUsingMockData: Bool { ratesStore.isUsingMockData }
 
     // MARK: - Private Properties
 
-    private let service: ExchangeRateService
+    private let repository: ExchangeRateRepository
+    private let ratesStore: ExchangeRatesStore
     private let appState: AppState
+    private let logger: LoggerService
     private var fetchTask: Task<Void, Never>?
     private var fetchGeneration = 0
     private let retryManager = RetryManager.shared
     private let exchangeRatesEndpoint = "exchange-rates-latest"
 
-    // Performance cache for O(1) currency lookups
-    private var ratesCache: [String: Double] = [:]
+    // Cross-rate table for O(1) currency lookups
+    private var rateTable: RateTable = .empty
 
     // MARK: - Initialization
 
     /// Initializes the CalculatorViewModel with injected dependencies.
     /// Defaults preserve production behavior; tests inject an isolated `AppState`
     /// (for connectivity control) and `UserDefaults` (for preference isolation).
-    init(service: ExchangeRateService, appState: AppState = .shared, userDefaults: UserDefaults = .standard) {
-        self.service = service
+    init(
+        repository: ExchangeRateRepository,
+        ratesStore: ExchangeRatesStore,
+        appState: AppState = .shared,
+        userDefaults: UserDefaults = .standard,
+        logger: LoggerService = OSLogLoggerService()
+    ) {
+        self.repository = repository
+        self.ratesStore = ratesStore
         self.appState = appState
+        self.logger = logger
 
         // Load user preferences for default currencies
         baseCurrency = userDefaults.string(forKey: UserDefaultsKeys.defaultBaseCurrency) ?? "USD"
         targetCurrency = userDefaults.string(forKey: UserDefaultsKeys.defaultTargetCurrency) ?? "EUR"
+        ratesStore.updateBaseCurrency(baseCurrency)
         // CalculatorView's `.task` calls checkIfShouldFetch() on appear; that is the single kickoff.
     }
 
@@ -74,13 +92,10 @@ final class CalculatorViewModel {
     }
 
     var conversionRate: Double {
-        guard baseCurrency != targetCurrency else { return 1.0 }
-
-        // O(1) lookups instead of array searches
-        let baseRate = ratesCache[baseCurrency] ?? 1.0
-        let targetRate = ratesCache[targetCurrency] ?? 1.0
-
-        return targetRate / baseRate
+        guard let base = CurrencyCode(baseCurrency), let target = CurrencyCode(targetCurrency) else {
+            return 1.0
+        }
+        return rateTable.crossRate(from: base, to: target)
     }
 
     var convertedAmount: String {
@@ -91,8 +106,7 @@ final class CalculatorViewModel {
     // MARK: - Computed Properties (Formatted Display Values)
 
     var formattedLastUpdated: String {
-        guard let date = lastUpdated else { return "Not updated yet" }
-        return "Last updated: \(TimeZoneManager.formatLastUpdated(date))"
+        ratesStore.formattedLastUpdated
     }
 
     // MARK: - Public Interface Methods
@@ -105,7 +119,7 @@ final class CalculatorViewModel {
             _ = await existingTask.result
         }
 
-        let shouldFetch = await service.shouldFetchNewRates()
+        let shouldFetch = await repository.shouldRefreshRates()
 
         if shouldFetch, appState.networkMonitor.isConnected {
             startFetchTask()
@@ -114,13 +128,21 @@ final class CalculatorViewModel {
         }
     }
 
+    /// Applies a pending conversion request (e.g. from the camera's "open in
+    /// converter") and consumes it so it cannot re-apply.
+    func consumePendingConversion() {
+        guard let pending = appState.pendingConversion else { return }
+        appState.pendingConversion = nil
+        baseCurrency = pending.baseCurrency
+        targetCurrency = pending.targetCurrency
+        inputAmountString = pending.amountInput
+    }
+
     /// Clears all data when cache is cleared from settings
     func clearAllData() {
-        availableRates = []
-        lastUpdated = nil
+        publish(rates: [], lastUpdated: nil, isUsingMockData: false)
         errorMessage = nil
         isLoading = false
-        isUsingMockData = false
         retryState = .none
     }
 
@@ -150,28 +172,17 @@ final class CalculatorViewModel {
 
     // MARK: - Data Fetching Methods
 
-    /// Fetches fresh exchange rate data from the remote service
+    /// Fetches fresh exchange rate data through the repository, which owns all
+    /// post-fetch bookkeeping (persist, cache, last-fetch stamp).
     func fetchExchangeRates() async {
         isLoading = true
         errorMessage = nil
-        isUsingMockData = false
+        publish(rates: availableRates, lastUpdated: lastUpdated, isUsingMockData: false)
         await updateRetryState()
 
         do {
-            let response = try await service.fetchExchangeRates()
-
-            // Success handling - process and update rates
-            var updatedRates = response.rates
-            updatedRates[response.base] = 1.0
-
-            // Convert to value types immediately
-            availableRates = updatedRates.map {
-                ExchangeRateDataValue(currencyCode: $0.key, rate: $0.value)
-            }
-            let updateDate = Date()
-            lastUpdated = updateDate
-            service.updateLastFetchDate(updateDate)
-            try await service.saveExchangeRates(updatedRates)
+            let rates = try await repository.fetchExchangeRates()
+            publish(rates: rates, lastUpdated: repository.lastFetchDate(), isUsingMockData: false)
 
             // Reset retry state on success
             retryState = .none
@@ -198,13 +209,10 @@ final class CalculatorViewModel {
     /// - Parameter showErrorOnFailure: Whether to display error messages if loading fails
     private func loadExchangeRates(showErrorOnFailure: Bool = true) async {
         do {
-            let valueTypeData = try await service.loadExchangeRates()
-
-            availableRates = valueTypeData
-            lastUpdated = service.getLastFetchDate()
+            let rates = try await repository.loadExchangeRates()
+            publish(rates: rates, lastUpdated: repository.lastFetchDate(), isUsingMockData: false)
             isLoading = false
             errorMessage = nil
-            isUsingMockData = false
 
         } catch {
             if showErrorOnFailure, let appError = AppError.from(error) {
@@ -228,24 +236,22 @@ final class CalculatorViewModel {
 
     /// Loads mock data for testing or offline use
     func useMockData() {
-        // Convert mock data to value types
-        availableRates = MockExchangeRates.rates.map {
-            ExchangeRateDataValue(currencyCode: $0.key, rate: $0.value)
-        }
-        lastUpdated = nil
+        publish(rates: MockExchangeRates.getCurrencyRates(), lastUpdated: nil, isUsingMockData: true)
         isLoading = false
         errorMessage = nil
-        isUsingMockData = true
     }
 
-    // MARK: - Cache Management Methods
+    // MARK: - Rates Publishing
 
-    /// Updates the rates cache for O(1) currency lookups
-    private func updateRatesCache() {
-        // Build dictionary for O(1) lookups using value types
-        ratesCache = availableRates.reduce(into: [:]) { dict, rate in
-            dict[rate.currencyCode] = rate.rate
-        }
+    /// Single funnel for rate state changes: updates the shared store and the cross-rate table.
+    private func publish(rates: [ExchangeRateDataValue], lastUpdated: Date?, isUsingMockData: Bool) {
+        ratesStore.update(rates: rates, lastUpdated: lastUpdated, isUsingMockData: isUsingMockData)
+        rateTable = RateTable(rates)
+    }
+
+    /// Rates-only update preserving the store's other fields (setter/tests path).
+    private func publishRates(_ rates: [ExchangeRateDataValue]) {
+        publish(rates: rates, lastUpdated: ratesStore.lastUpdated, isUsingMockData: ratesStore.isUsingMockData)
     }
 
     // MARK: - Retry State Management

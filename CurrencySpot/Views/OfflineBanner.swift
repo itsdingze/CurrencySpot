@@ -7,12 +7,6 @@
 
 import SwiftUI
 
-enum RetryState {
-    case none
-    case retrying(attempt: Int, maxAttempts: Int)
-    case exhausted
-}
-
 struct OfflineBanner: View {
     var refreshAction: () -> Void
     var isUsingMockData: Bool

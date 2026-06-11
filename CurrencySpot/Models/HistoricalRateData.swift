@@ -39,3 +39,17 @@ final class HistoricalRateData {
         self.init(date: date, rates: rates)
     }
 }
+
+// MARK: - Entity -> Domain Mapping
+
+extension HistoricalRateData {
+    /// Validates stored codes at the persistence → domain boundary.
+    func toDomain() throws -> HistoricalRateDataValue {
+        HistoricalRateDataValue(
+            date: date,
+            rates: try rates.map {
+                HistoricalRateDataPointValue(currencyCode: try CurrencyCode(validating: $0.currencyCode), rate: $0.rate)
+            }
+        )
+    }
+}

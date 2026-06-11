@@ -15,14 +15,14 @@ import Foundation
 final class ChartDataPreparationUseCase {
     // MARK: - Dependencies
 
-    private let rateCalculationUseCase: RateCalculationUseCase
     private let cacheService: CacheService
+    private let logger: LoggerService
 
     // MARK: - Initialization
 
-    init(rateCalculationUseCase: RateCalculationUseCase, cacheService: CacheService) {
-        self.rateCalculationUseCase = rateCalculationUseCase
+    init(cacheService: CacheService, logger: LoggerService = OSLogLoggerService()) {
         self.cacheService = cacheService
+        self.logger = logger
     }
 
     // MARK: - Chart Data Processing
@@ -30,8 +30,8 @@ final class ChartDataPreparationUseCase {
     /// Processes historical rate data for the specified currency pair within the given time range
     func processHistoricalRateData(
         historicalData: [HistoricalRateDataValue],
-        baseCurrency: String,
-        targetCurrency: String,
+        baseCurrency: CurrencyCode,
+        targetCurrency: CurrencyCode,
         dateRange: DateRange,
         exchangeRates: [ExchangeRateDataValue]
     ) async -> [ChartDataPoint] {
@@ -44,7 +44,7 @@ final class ChartDataPreparationUseCase {
 
         // Check cache first
         if let cachedData = await cacheService.getCachedProcessedChartData(for: cacheKey) {
-            AppLogger.debug("Using cached processed chart data for \(baseCurrency) to \(targetCurrency)", category: .cache)
+            logger.debug("Using cached processed chart data for \(baseCurrency) to \(targetCurrency)", category: .cache)
             return cachedData
         }
 
@@ -57,8 +57,7 @@ final class ChartDataPreparationUseCase {
             baseCurrency: baseCurrency,
             targetCurrency: targetCurrency,
             dateRange: dateRange,
-            exchangeRates: exchangeRates,
-            rateCalculationUseCase: rateCalculationUseCase
+            exchangeRates: exchangeRates
         )
 
         // Cache the processed data for future use
@@ -71,12 +70,12 @@ final class ChartDataPreparationUseCase {
     /// runs on the cooperative pool instead of blocking the main actor.
     private nonisolated static func transformHistoricalData(
         _ historicalData: [HistoricalRateDataValue],
-        baseCurrency: String,
-        targetCurrency: String,
+        baseCurrency: CurrencyCode,
+        targetCurrency: CurrencyCode,
         dateRange: DateRange,
-        exchangeRates: [ExchangeRateDataValue],
-        rateCalculationUseCase: RateCalculationUseCase
+        exchangeRates: [ExchangeRateDataValue]
     ) async -> [ChartDataPoint] {
+        let currentRates = RateTable(exchangeRates)
         var chartPoints: [ChartDataPoint] = []
         chartPoints.reserveCapacity(historicalData.count)
 
@@ -87,40 +86,19 @@ final class ChartDataPreparationUseCase {
                 continue
             }
 
-            // Get target rate
-            let targetRate: Double
-            if targetCurrency == "USD" {
-                targetRate = 1.0
-            } else {
-                guard let rate = historicalEntry.rates.first(where: { $0.currencyCode == targetCurrency }) else {
-                    continue
-                }
-                targetRate = rate.rate
+            let historicalRates = RateTable(points: historicalEntry.rates)
+
+            // Skip dates that never recorded the target currency (USD is implicit).
+            guard let targetRate = historicalRates.usdRate(for: targetCurrency) else {
+                continue
             }
 
-            // IMPORTANT: Use historical rates for base currency conversion, not current rates
-            let convertedRate: Double
-            if baseCurrency == "USD" {
-                // Direct USD to target conversion
-                convertedRate = targetRate
-            } else {
-                // Get the historical base rate for this specific date
-                let historicalBaseRate = historicalEntry.rates.first(where: { $0.currencyCode == baseCurrency })?.rate
-
-                if let baseRate = historicalBaseRate, baseRate > Double.ulpOfOne {
-                    // Use historical base rate for accurate conversion
-                    // Formula: (USD → Target) / (USD → Base) = Base → Target
-                    convertedRate = targetRate / baseRate
-                } else {
-                    // Fallback: use current rates if historical rate not available
-                    convertedRate = rateCalculationUseCase.convertRate(
-                        usdToTargetRate: targetRate,
-                        fromBaseCurrency: baseCurrency,
-                        historicalRates: historicalEntry.rates,
-                        exchangeRates: exchangeRates
-                    )
-                }
-            }
+            // Prefer the same-date historical base rate; fall back to current rates,
+            // then to 1.0 (returning the USD-based rate unchanged).
+            let baseRate = historicalRates.usdRate(for: baseCurrency)
+                ?? currentRates.usdRate(for: baseCurrency)
+                ?? 1.0
+            let convertedRate = abs(baseRate) > .ulpOfOne ? targetRate / baseRate : targetRate
 
             chartPoints.append(ChartDataPoint(date: date, rate: convertedRate))
         }
@@ -214,27 +192,18 @@ final class ChartDataPreparationUseCase {
 
         // Percentage change from first to last data point
         let percentChange: Double? = {
-            guard let change = priceChange,
+            guard priceChange != nil,
                   let firstRate = chartData.first?.rate,
-                  firstRate > 0
+                  firstRate > 0,
+                  let lastRate = chartData.last?.rate
             else {
                 return nil
             }
-            return (change / firstRate) * 100
+            return RateMath.percentChange(from: firstRate, to: lastRate)
         }()
 
         // Trend direction based on percentage change with stable threshold
-        let trendDirection: TrendDirection = {
-            guard let percentChange else { return .stable }
-
-            if abs(percentChange) <= TrendDirection.stableChangeThreshold {
-                return .stable
-            } else if percentChange > 0 {
-                return .up
-            } else {
-                return .down
-            }
-        }()
+        let trendDirection = percentChange.map(TrendDirection.init(percentChange:)) ?? .stable
 
         // Calculate volatility (standard deviation of daily returns)
         let volatility: Double? = {

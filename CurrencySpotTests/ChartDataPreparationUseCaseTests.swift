@@ -22,10 +22,7 @@ private let testOutsideDate = createCETDate(year: 2020, month: 9, day: 16)!
 /// Builds a fresh use case over an isolated in-memory cache, shared by every test.
 @MainActor
 private func makeUseCase() -> ChartDataPreparationUseCase {
-    ChartDataPreparationUseCase(
-        rateCalculationUseCase: RateCalculationUseCase(),
-        cacheService: InMemoryCacheService()
-    )
+    ChartDataPreparationUseCase(cacheService: InMemoryCacheService())
 }
 
 /// Creates predictable exchange rates for testing
@@ -40,7 +37,7 @@ private func createTestExchangeRates() -> [ExchangeRateDataValue] {
 /// Creates test historical data with specified parameters
 private func createTestHistoricalData(
     dates: [Date] = [testStartDate, testMiddleDate, testEndDate],
-    targetCurrency: String = "EUR",
+    targetCurrency: CurrencyCode = "EUR",
     targetRate: Double = 1.2,
     includeMissingCurrency: Bool = false
 ) -> [HistoricalRateDataValue] {
@@ -85,7 +82,7 @@ struct ChartDataPreparationUseCaseTests {
             // Regression: the processed-chart cache was keyed only by base/target/range, so a 7-day
             // result cached first would shadow a later 3-month result for the same pair and range.
             let cacheService = InMemoryCacheService()
-            let useCase = ChartDataPreparationUseCase(rateCalculationUseCase: RateCalculationUseCase(), cacheService: cacheService)
+            let useCase = ChartDataPreparationUseCase(cacheService: cacheService)
             let calendar = TimeZoneManager.cetCalendar
             let end = createCETDate(year: 2025, month: 6, day: 6)!
             let range = DateRange(start: calendar.date(byAdding: .day, value: -90, to: end)!, end: end)

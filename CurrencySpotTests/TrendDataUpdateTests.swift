@@ -17,7 +17,7 @@ struct TrendDataUpdateTests {
     private static let fixedToday = createCETDate(year: 2025, month: 1, day: 15)!
 
     /// Deterministic historical data (no randomness) covering `days` ending on the fixed anchor.
-    private func makeHistoricalData(for currency: String, days: Int, endingOn today: Date = fixedToday) -> [HistoricalRateDataValue] {
+    private func makeHistoricalData(for currency: CurrencyCode, days: Int, endingOn today: Date = fixedToday) -> [HistoricalRateDataValue] {
         let calendar = TimeZoneManager.cetCalendar
         return (0 ..< days).reversed().compactMap { dayOffset in
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { return nil }
@@ -36,11 +36,13 @@ struct TrendDataUpdateTests {
     @Test("DataOrchestrationUseCase reports fetched ranges within the requested range on a cold cache")
     func dataOrchestrationReturnsFetchedRanges() async throws {
         let mockService = MockExchangeRateService(today: Self.fixedToday)
-        let cacheService = InMemoryCacheService()
         let dataOrchestrationUseCase = DataOrchestrationUseCase(
-            service: mockService,
-            historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore()),
-            cacheService: cacheService
+            repository: mockService,
+            historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase(
+                syncStore: MockHistoricalSyncStore(),
+                dateProvider: FixedDateProvider(Self.fixedToday)
+            ),
+            dateProvider: FixedDateProvider(Self.fixedToday)
         )
 
         let calendar = TimeZoneManager.cetCalendar
@@ -60,14 +62,16 @@ struct TrendDataUpdateTests {
     @Test("DataOrchestrationUseCase serves from cache without fetching when the range is covered")
     func dataOrchestrationReturnsEmptyFetchedRangesFromCache() async throws {
         let mockService = MockExchangeRateService(today: Self.fixedToday)
-        let cacheService = InMemoryCacheService()
         let dataOrchestrationUseCase = DataOrchestrationUseCase(
-            service: mockService,
-            historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore()),
-            cacheService: cacheService
+            repository: mockService,
+            historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase(
+                syncStore: MockHistoricalSyncStore(),
+                dateProvider: FixedDateProvider(Self.fixedToday)
+            ),
+            dateProvider: FixedDateProvider(Self.fixedToday)
         )
 
-        await cacheService.cacheHistoricalData(makeHistoricalData(for: "EUR", days: 90), for: "EUR")
+        await mockService.replaceCachedHistoricalRates(makeHistoricalData(for: "EUR", days: 90), for: "EUR")
 
         let calendar = TimeZoneManager.cetCalendar
         let endDate = Self.fixedToday
@@ -80,33 +84,52 @@ struct TrendDataUpdateTests {
         #expect(result.fetchedRanges.isEmpty)
     }
 
-    // MARK: - Trend Recalculation Tests (call-counting spy)
+    // MARK: - Trend Recalculation Tests
 
     @Test("Trends recalculate when a fetched range affects the trend window")
     func trendRecalculatesWhenRangeAffectsTrends() async {
         let existing = [TrendDataValue(currencyCode: "EUR", weeklyChange: 1.0, miniChartData: [1.0, 1.1])]
-        let recalculated = [TrendDataValue(currencyCode: "EUR", weeklyChange: 2.0, miniChartData: [1.2, 1.3])]
-        let spy = SpyExchangeRateService(existingTrends: existing, recalculatedTrends: recalculated)
-        spy.affectsTrends = true
-        let useCase = TrendDataUseCase(service: spy)
+        let trendRepository = MockTrendRepository(trends: existing)
+        trendRepository.historicalWindowData = makeHistoricalData(for: "EUR", days: 7)
+        let useCase = TrendDataUseCase(
+            trendRepository: trendRepository,
+            historicalRateRepository: MockHistoricalRateRepository(),
+            dateProvider: FixedDateProvider(Self.fixedToday)
+        )
 
-        let result = await useCase.checkAndRecalculateTrendsIfNeeded(for: [Self.anyRange])
+        // A range ending on "today" overlaps the 7-day trend window.
+        let affectingRange = DateRange(
+            start: TimeZoneManager.cetCalendar.date(byAdding: .day, value: -2, to: Self.fixedToday)!,
+            end: Self.fixedToday
+        )
 
-        #expect(spy.calculateAndSaveTrendDataCallCount == 1)
-        #expect(result == recalculated)
+        let result = await useCase.checkAndRecalculateTrendsIfNeeded(for: [affectingRange])
+
+        #expect(trendRepository.saveTrendDataCallCount == 1)
+        // The recalculated set derives from the historical window fixture, not the stale stored set.
+        #expect(result != existing)
+        #expect(result.contains { $0.currencyCode == "EUR" })
     }
 
     @Test("Trends are NOT recalculated when no range affects the trend window")
     func trendDoesNotRecalculateForUnaffectingRange() async {
         let existing = [TrendDataValue(currencyCode: "EUR", weeklyChange: 1.0, miniChartData: [1.0, 1.1])]
-        let recalculated = [TrendDataValue(currencyCode: "EUR", weeklyChange: 2.0, miniChartData: [1.2, 1.3])]
-        let spy = SpyExchangeRateService(existingTrends: existing, recalculatedTrends: recalculated)
-        spy.affectsTrends = false
-        let useCase = TrendDataUseCase(service: spy)
+        let trendRepository = MockTrendRepository(trends: existing)
+        let useCase = TrendDataUseCase(
+            trendRepository: trendRepository,
+            historicalRateRepository: MockHistoricalRateRepository(),
+            dateProvider: FixedDateProvider(Self.fixedToday)
+        )
 
-        let result = await useCase.checkAndRecalculateTrendsIfNeeded(for: [Self.anyRange])
+        // A range months before the trend window.
+        let unaffectingRange = DateRange(
+            start: createCETDate(year: 2024, month: 10, day: 1)!,
+            end: createCETDate(year: 2024, month: 10, day: 7)!
+        )
 
-        #expect(spy.calculateAndSaveTrendDataCallCount == 0)
+        let result = await useCase.checkAndRecalculateTrendsIfNeeded(for: [unaffectingRange])
+
+        #expect(trendRepository.saveTrendDataCallCount == 0)
         #expect(result == existing)
     }
 
@@ -176,80 +199,23 @@ struct TrendDataUpdateTests {
 
     // MARK: - Fixtures
 
-    private static let anyRange = DateRange(
-        start: createCETDate(year: 2025, month: 3, day: 1)!,
-        end: createCETDate(year: 2025, month: 3, day: 7)!
-    )
-
     @MainActor
     private static func makeFixtureBackedViewModel() -> HistoryViewModel {
         let service = MockExchangeRateService()
-        let cacheService = InMemoryCacheService()
         let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
         return HistoryViewModel(
-            calculatorVM: makeIsolatedCalculatorViewModel(service: service),
+            ratesStore: ExchangeRatesStore(),
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: DataOrchestrationUseCase(
-                service: service,
-                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-                cacheService: cacheService
+                repository: service,
+                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase
             ),
-            chartDataPreparationUseCase: ChartDataPreparationUseCase(
-                rateCalculationUseCase: RateCalculationUseCase(),
-                cacheService: cacheService
+            chartDataPreparationUseCase: ChartDataPreparationUseCase(cacheService: InMemoryCacheService()),
+            trendDataUseCase: TrendDataUseCase(
+                trendRepository: service,
+                historicalRateRepository: service
             ),
-            trendDataUseCase: TrendDataUseCase(service: service)
+            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))
         )
     }
-}
-
-// MARK: - Spy
-
-/// Records trend-recalculation calls and serves distinct trend sets before/after recalculation,
-/// so a use case's "recalculate only when needed" branching is directly observable.
-private final class SpyExchangeRateService: ExchangeRateService {
-    private let base = MockExchangeRateService()
-    var affectsTrends = false
-    private(set) var calculateAndSaveTrendDataCallCount = 0
-    private let existingTrends: [TrendDataValue]
-    private let recalculatedTrends: [TrendDataValue]
-    private var didRecalculate = false
-
-    init(existingTrends: [TrendDataValue], recalculatedTrends: [TrendDataValue]) {
-        self.existingTrends = existingTrends
-        self.recalculatedTrends = recalculatedTrends
-    }
-
-    // Overridden trend behavior under test.
-    func doesDateRangeAffectTrends(startDate _: Date, endDate _: Date) async throws -> Bool { affectsTrends }
-
-    func calculateAndSaveTrendData() async throws {
-        calculateAndSaveTrendDataCallCount += 1
-        didRecalculate = true
-    }
-
-    func loadTrendData() async throws -> [TrendDataValue] {
-        didRecalculate ? recalculatedTrends : existingTrends
-    }
-
-    // Everything else delegates to the standard mock.
-    func shouldFetchNewRates() async -> Bool { await base.shouldFetchNewRates() }
-    func fetchExchangeRates() async throws -> ExchangeRatesResponse { try await base.fetchExchangeRates() }
-    func fetchAndSaveHistoricalRates(from startDate: Date, to endDate: Date) async throws {
-        try await base.fetchAndSaveHistoricalRates(from: startDate, to: endDate)
-    }
-    func saveExchangeRates(_ rates: [String: Double]) async throws { try await base.saveExchangeRates(rates) }
-    func saveHistoricalExchangeRates(_ rates: [String: [String: Double]]) async throws {
-        try await base.saveHistoricalExchangeRates(rates)
-    }
-    func loadExchangeRates() async throws -> [ExchangeRateDataValue] { try await base.loadExchangeRates() }
-    func loadHistoricalRatesForCurrency(currency: String, startDate: String, endDate: String) async throws -> [HistoricalRateDataValue] {
-        try await base.loadHistoricalRatesForCurrency(currency: currency, startDate: startDate, endDate: endDate)
-    }
-    func updateLastFetchDate(_ date: Date) { base.updateLastFetchDate(date) }
-    func getLastFetchDate() -> Date? { base.getLastFetchDate() }
-    func getEarliestStoredDate() async throws -> Date? { try await base.getEarliestStoredDate() }
-    func getLatestStoredDate() async throws -> Date? { try await base.getLatestStoredDate() }
-    func hasSufficientHistoricalDataForTrends() async throws -> Bool { try await base.hasSufficientHistoricalDataForTrends() }
-    func clearAllData() async throws { try await base.clearAllData() }
 }

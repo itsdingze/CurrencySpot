@@ -75,16 +75,17 @@ final class CameraViewModel {
     // MARK: - Dependencies
 
     private let appState: AppState
-    private let calculatorViewModel: CalculatorViewModel
+    private let ratesStore: ExchangeRatesStore
     private let permissionService: CameraPermissionService
     private let scanConversionUseCase: ScanConversionUseCase
     private let stillTextRecognizer: StillTextRecognitionService
     private let torchService: TorchService
     private let localeCurrencyCode: String?
     private let fallbackBaseCurrency: String
+    private let logger: LoggerService
 
     init(
-        calculatorViewModel: CalculatorViewModel,
+        ratesStore: ExchangeRatesStore,
         appState: AppState = .shared,
         permissionService: CameraPermissionService = AVCameraPermissionService(),
         scanConversionUseCase: ScanConversionUseCase = ScanConversionUseCase(),
@@ -92,9 +93,10 @@ final class CameraViewModel {
         torchService: TorchService = AVTorchService(),
         localeCurrencyCode: String? = Locale.current.currency?.identifier,
         fallbackBaseCurrency: String = UserDefaults.standard.string(forKey: UserDefaultsKeys.defaultBaseCurrency) ?? "USD",
-        defaultTargetCurrency: String = UserDefaults.standard.string(forKey: UserDefaultsKeys.defaultTargetCurrency) ?? "EUR"
+        defaultTargetCurrency: String = UserDefaults.standard.string(forKey: UserDefaultsKeys.defaultTargetCurrency) ?? "EUR",
+        logger: LoggerService = OSLogLoggerService()
     ) {
-        self.calculatorViewModel = calculatorViewModel
+        self.ratesStore = ratesStore
         self.appState = appState
         self.permissionService = permissionService
         self.scanConversionUseCase = scanConversionUseCase
@@ -102,6 +104,7 @@ final class CameraViewModel {
         self.torchService = torchService
         self.localeCurrencyCode = localeCurrencyCode
         self.fallbackBaseCurrency = fallbackBaseCurrency
+        self.logger = logger
         targetCurrency = defaultTargetCurrency
         authorization = permissionService.currentStatus()
     }
@@ -139,7 +142,7 @@ final class CameraViewModel {
             // Normal lifecycle (tab switch, backgrounding) — nothing to report.
         } catch {
             guard request == freezeRequestID else { return }
-            AppLogger.error("Frame capture failed: \(error)", category: .viewModel)
+            logger.error("Frame capture failed: \(error)", category: .viewModel)
             appState.errorHandler.handle(AppError.cameraCaptureFailed)
         }
     }
@@ -157,7 +160,7 @@ final class CameraViewModel {
             // Normal lifecycle — nothing to report.
         } catch {
             guard request == freezeRequestID else { return }
-            AppLogger.error("Photo import failed: \(error)", category: .viewModel)
+            logger.error("Photo import failed: \(error)", category: .viewModel)
             appState.errorHandler.handle(AppError.photoImportFailed)
         }
     }
@@ -195,7 +198,7 @@ final class CameraViewModel {
             // Normal lifecycle — nothing to report.
         } catch {
             guard frozenImage === image else { return }
-            AppLogger.error("Still-image text recognition failed: \(error)", category: .viewModel)
+            logger.error("Still-image text recognition failed: \(error)", category: .viewModel)
             appState.errorHandler.handle(AppError.textRecognitionFailed)
             isRecognizingStill = false
         }
@@ -216,7 +219,7 @@ final class CameraViewModel {
                 transcript: item.transcript,
                 baseCurrency: baseCurrency,
                 targetCurrency: targetCurrency,
-                exchangeRates: calculatorViewModel.availableRates
+                exchangeRates: ratesStore.rates
             ).map { conversion in
                 foundRawPrice = foundRawPrice || conversion.isPrice
                 return DetectedItem(
@@ -287,22 +290,24 @@ final class CameraViewModel {
         detectedItems.first { $0.id == id }
     }
 
-    // MARK: - Calculator Passthroughs for the Overlay UI
+    // MARK: - Shared Rates for the Overlay UI
 
-    var availableRates: [ExchangeRateDataValue] { calculatorViewModel.availableRates }
+    var availableRates: [ExchangeRateDataValue] { ratesStore.rates }
 
-    var rateFreshness: String { calculatorViewModel.formattedLastUpdated }
+    var rateFreshness: String { ratesStore.formattedLastUpdated }
 
     var rateUsed: Decimal {
-        scanConversionUseCase.rate(from: baseCurrency, to: targetCurrency, in: calculatorViewModel.availableRates)
+        scanConversionUseCase.rate(from: baseCurrency, to: targetCurrency, in: ratesStore.rates)
     }
 
-    /// The badge-detail shortcut: prefill the calculator with this conversion
-    /// and jump to the Convert tab.
+    /// The badge-detail shortcut: posts a typed pending-conversion request on
+    /// AppState and jumps to the Convert tab; the calculator consumes it on appear.
     func openInConverter(_ item: DetectedItem) {
-        calculatorViewModel.baseCurrency = baseCurrency
-        calculatorViewModel.targetCurrency = targetCurrency
-        calculatorViewModel.inputAmountString = Self.calculatorInput(for: item.conversion.amount)
+        appState.pendingConversion = PendingConversion(
+            baseCurrency: baseCurrency,
+            targetCurrency: targetCurrency,
+            amountInput: Self.calculatorInput(for: item.conversion.amount)
+        )
         destination = nil
         appState.selectedTab = .convert
     }
@@ -353,7 +358,7 @@ final class CameraViewModel {
     /// the locale's currency has no rate data.
     private var autodetectedBaseCurrency: String {
         guard let localeCurrencyCode,
-              calculatorViewModel.availableRates.contains(where: { $0.currencyCode == localeCurrencyCode })
+              ratesStore.rates.contains(where: { $0.currencyCode.rawValue == localeCurrencyCode })
         else { return fallbackBaseCurrency }
         return localeCurrencyCode
     }

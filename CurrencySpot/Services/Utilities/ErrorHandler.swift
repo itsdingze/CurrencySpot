@@ -13,9 +13,15 @@ final class ErrorHandler {
     var currentError: AppError?
     var showingError: Bool = false
 
+    private let clock: ClockService
+
     // nonisolated(unsafe): only ever mutated on the main actor; deinit (nonisolated)
     // reads it once when no other reference can exist.
     private nonisolated(unsafe) var dismissTask: Task<Void, Never>?
+
+    init(clock: ClockService = ContinuousClockService()) {
+        self.clock = clock
+    }
 
     deinit {
         dismissTask?.cancel()
@@ -38,8 +44,8 @@ final class ErrorHandler {
         // Keep currentError briefly so the alert dismisses smoothly. Cancel any prior pending
         // clear, and bail if a new error surfaced while we were waiting.
         dismissTask?.cancel()
-        dismissTask = Task {
-            try? await Task.sleep(for: .seconds(0.3))
+        dismissTask = Task { [clock] in
+            try? await clock.sleep(for: .seconds(0.3))
             guard !Task.isCancelled, !showingError else { return }
             currentError = nil
         }

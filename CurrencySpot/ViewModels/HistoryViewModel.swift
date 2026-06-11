@@ -24,7 +24,8 @@ final class HistoryViewModel {
 
     // MARK: Configuration Properties
 
-    /// Base currency (left side of conversion)
+    /// Base currency (left side of conversion). Stays String at the UI edge;
+    /// follows the calculator's selection via the shared rates store.
     var baseCurrency = "USD" {
         didSet {
             if oldValue != baseCurrency, !isApplyingConfiguration {
@@ -76,8 +77,8 @@ final class HistoryViewModel {
 
     // MARK: Dependencies
 
-    /// Calculator ViewModel for accessing exchange rates
-    private let calculatorVM: CalculatorViewModel
+    /// Shared read-only snapshot of the calculator's current rates and base selection.
+    private let ratesStore: ExchangeRatesStore
 
     /// Use cases for business logic
     private let dataOrchestrationUseCase: DataOrchestrationUseCase
@@ -86,7 +87,9 @@ final class HistoryViewModel {
     private let trendDataUseCase: TrendDataUseCase
 
     /// App-wide state (network reachability, error handling)
-    private let appState = AppState.shared
+    private let appState: AppState
+
+    private let logger: LoggerService
 
     /// Current async task for data fetching (for cancellation)
     private var fetchTask: Task<Void, Never>?
@@ -103,17 +106,43 @@ final class HistoryViewModel {
 
     /// Initializes the HistoryViewModel with dependency injection
     init(
-        calculatorVM: CalculatorViewModel,
+        ratesStore: ExchangeRatesStore,
         historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase,
         dataOrchestrationUseCase: DataOrchestrationUseCase,
         chartDataPreparationUseCase: ChartDataPreparationUseCase,
-        trendDataUseCase: TrendDataUseCase
+        trendDataUseCase: TrendDataUseCase,
+        appState: AppState = .shared,
+        logger: LoggerService = OSLogLoggerService()
     ) {
-        self.calculatorVM = calculatorVM
+        self.ratesStore = ratesStore
         self.historicalDataAnalysisUseCase = historicalDataAnalysisUseCase
         self.dataOrchestrationUseCase = dataOrchestrationUseCase
         self.chartDataPreparationUseCase = chartDataPreparationUseCase
         self.trendDataUseCase = trendDataUseCase
+        self.appState = appState
+        self.logger = logger
+
+        baseCurrency = ratesStore.baseCurrency
+        observeSharedBaseCurrency()
+    }
+
+    // MARK: - Shared Base Currency Sync
+
+    /// Follows the calculator's base selection through the shared store, replacing
+    /// the previous view-driven onAppear/onChange syncing.
+    private func observeSharedBaseCurrency() {
+        withObservationTracking {
+            _ = ratesStore.baseCurrency
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let newValue = ratesStore.baseCurrency
+                if baseCurrency != newValue {
+                    baseCurrency = newValue
+                }
+                observeSharedBaseCurrency()
+            }
+        }
     }
 
     // MARK: - Public Interface
@@ -152,19 +181,12 @@ final class HistoryViewModel {
         loadDataForCurrentConfiguration()
     }
 
-    /// Clears all data when cache is cleared from settings.
-    /// Awaits the cache clear so callers know it has completed before any reload.
-    func clearAllData() async {
+    /// Resets published state after the cross-cutting clear (ClearAllDataUseCase
+    /// wipes the repository, including caches, before signalling this).
+    func clearAllData() {
         displayedChartDataPoints = []
         trendData = []
         errorMessage = nil
-        await dataOrchestrationUseCase.clearAllCache()
-    }
-
-    /// Clears cached data, then initiates a fresh load once the cache is actually cleared.
-    func resetStoredData() async {
-        await clearAllData()
-        loadDataForCurrentConfiguration()
     }
 
     // MARK: - Data Loading
@@ -195,11 +217,16 @@ final class HistoryViewModel {
     private func runLoad(generation: Int) async {
         guard generation == loadGeneration, !Task.isCancelled else { return }
 
+        guard let currency = CurrencyCode(targetCurrency) else {
+            displayedChartDataPoints = []
+            errorMessage = "No historical data available for this currency"
+            return
+        }
+
         isLoading = true
         errorMessage = nil
 
         let dateRange = calculateDateRange()
-        let currency = targetCurrency
 
         do {
             // Use DataOrchestrationUseCase to handle all the complex logic
@@ -212,7 +239,7 @@ final class HistoryViewModel {
             // Always try to update chart even with partial data
             if !result.dataPoints.isEmpty {
                 // Update UI with new data (pass the same dateRange used for fetching)
-                let dataPoints = await preparedChartDataPoints(dateRange: dateRange)
+                let dataPoints = await preparedChartDataPoints(for: currency, dateRange: dateRange)
                 guard generation == loadGeneration, !Task.isCancelled else { return }
                 displayedChartDataPoints = dataPoints
 
@@ -220,7 +247,7 @@ final class HistoryViewModel {
                 errorMessage = nil
             } else {
                 // No data available, but don't treat as error
-                AppLogger.infoPrivate("No historical data available for \(currency)", category: .viewModel)
+                logger.infoPrivate("No historical data available for \(currency)", category: .viewModel)
                 displayedChartDataPoints = []
 
                 // Set a user-friendly message
@@ -233,7 +260,7 @@ final class HistoryViewModel {
 
             // Update trends if new data was fetched
             if result.newDataFetched {
-                AppLogger.info("New data fetched, updating trends...", category: .viewModel)
+                logger.info("New data fetched, updating trends...", category: .viewModel)
                 // Use the actually fetched ranges, not the requested range
                 let trends = await trendDataUseCase.checkAndRecalculateTrendsIfNeeded(
                     for: result.fetchedRanges
@@ -247,12 +274,12 @@ final class HistoryViewModel {
             isLoading = false
 
         } catch is CancellationError {
-            AppLogger.debug("Fetch cancelled", category: .viewModel)
+            logger.debug("Fetch cancelled", category: .viewModel)
             guard generation == loadGeneration else { return }
             fetchTask = nil
             isLoading = false
         } catch {
-            AppLogger.error("Load failed: \(error.localizedDescription)", category: .viewModel)
+            logger.error("Load failed: \(error.localizedDescription)", category: .viewModel)
 
             // Try to use cached data even if the load failed
             let cachedData = await dataOrchestrationUseCase.getCachedData(
@@ -263,8 +290,8 @@ final class HistoryViewModel {
 
             if !cachedData.isEmpty {
                 // We have some cached data, use it
-                AppLogger.info("Using cached data as fallback", category: .viewModel)
-                let dataPoints = await preparedChartDataPoints(dateRange: dateRange)
+                logger.info("Using cached data as fallback", category: .viewModel)
+                let dataPoints = await preparedChartDataPoints(for: currency, dateRange: dateRange)
                 guard generation == loadGeneration, !Task.isCancelled else { return }
                 displayedChartDataPoints = dataPoints
                 errorMessage = "Using cached data (offline)"
@@ -291,85 +318,25 @@ final class HistoryViewModel {
 
     // MARK: - Trend Data Methods
 
-    /// Initializes trend data using TrendDataUseCase
+    /// Initializes trend data using TrendDataUseCase; failures surface through the
+    /// injected error handler (the use case no longer reaches into AppState).
     func initializeTrendData() async {
-        trendData = await trendDataUseCase.initializeTrendData()
+        do {
+            trendData = try await trendDataUseCase.initializeTrendData()
+        } catch {
+            trendData = []
+            if let appError = AppError.from(error) {
+                appState.errorHandler.handle(appError)
+            }
+        }
     }
 
     /// Gets trend data for a specific currency, adjusted for the current base currency
     func getTrendData(for currencyCode: String) -> TrendDataValue? {
-        // Special handling when target currency is USD
-        if currencyCode == "USD", baseCurrency != "USD" {
-            // Need to get the inverse of the base currency trend
-            guard let baseTrend = trendDataUseCase.getTrendData(for: baseCurrency, from: trendData),
-                  !baseTrend.miniChartData.isEmpty
-            else {
-                return nil
-            }
-
-            // Invert the base currency rates to get USD rates
-            // If EUR/USD = 1.1, then USD/EUR = 1/1.1
-            let invertedMiniChartData = baseTrend.miniChartData.map { rate in
-                rate != 0 ? 1.0 / rate : 1.0
-            }
-
-            // Calculate the percentage change from the inverted data
-            guard let firstRate = invertedMiniChartData.first,
-                  let lastRate = invertedMiniChartData.last,
-                  firstRate != 0
-            else {
-                return nil
-            }
-
-            let adjustedChange = ((lastRate - firstRate) / firstRate) * 100
-
-            return TrendDataValue(
-                currencyCode: "USD",
-                weeklyChange: adjustedChange,
-                miniChartData: invertedMiniChartData
-            )
-        }
-
-        guard let targetTrend = trendDataUseCase.getTrendData(for: currencyCode, from: trendData) else {
+        guard let code = CurrencyCode(currencyCode), let base = CurrencyCode(baseCurrency) else {
             return nil
         }
-
-        // If base currency is USD, return the trend as-is (already USD-based)
-        if baseCurrency == "USD" {
-            return targetTrend
-        }
-
-        // Get the base currency's trend data (USD → Base)
-        guard let baseTrend = trendDataUseCase.getTrendData(for: baseCurrency, from: trendData),
-              baseTrend.miniChartData.count == targetTrend.miniChartData.count,
-              baseTrend.miniChartData.count >= 2
-        else {
-            // If we can't find base currency trend or data is invalid, return original
-            return targetTrend
-        }
-
-        // Convert each data point from USD-based to base-currency-based
-        // For each point: Base → Target rate = (USD → Target) / (USD → Base)
-        let adjustedMiniChartData = zip(targetTrend.miniChartData, baseTrend.miniChartData).map { targetRate, baseRate in
-            baseRate != 0 ? targetRate / baseRate : targetRate
-        }
-
-        // Calculate the percentage change from the converted first and last points
-        guard let firstRate = adjustedMiniChartData.first,
-              let lastRate = adjustedMiniChartData.last,
-              firstRate != 0
-        else {
-            return targetTrend
-        }
-
-        let adjustedChange = ((lastRate - firstRate) / firstRate) * 100
-
-        // Return a new TrendDataValue with properly adjusted data
-        return TrendDataValue(
-            currencyCode: currencyCode,
-            weeklyChange: adjustedChange,
-            miniChartData: adjustedMiniChartData
-        )
+        return trendDataUseCase.adjustedTrend(for: code, baseCurrency: base, in: trendData)
     }
 
     // MARK: - Date Range Calculations
@@ -399,26 +366,28 @@ final class HistoryViewModel {
     /// Returns the points instead of publishing them so the caller can apply its
     /// generation/cancellation guard before any state write.
     /// - Parameter dateRange: The date range to use for filtering data (must match the range used for fetching)
-    private func preparedChartDataPoints(dateRange: DateRange) async -> [ChartDataPoint] {
-        let historicalData = await dataOrchestrationUseCase.getCachedData(for: targetCurrency, dateRange: dateRange)
+    private func preparedChartDataPoints(for currency: CurrencyCode, dateRange: DateRange) async -> [ChartDataPoint] {
+        let historicalData = await dataOrchestrationUseCase.getCachedData(for: currency, dateRange: dateRange)
 
         // Guard against empty data
         guard !historicalData.isEmpty else {
-            AppLogger.info("No historical data to display", category: .viewModel)
+            logger.info("No historical data to display", category: .viewModel)
             return []
         }
 
+        guard let base = CurrencyCode(baseCurrency) else { return [] }
+
         let fullDataPoints = await chartDataPreparationUseCase.processHistoricalRateData(
             historicalData: historicalData,
-            baseCurrency: baseCurrency,
-            targetCurrency: targetCurrency,
+            baseCurrency: base,
+            targetCurrency: currency,
             dateRange: dateRange,
-            exchangeRates: calculatorVM.availableRates
+            exchangeRates: ratesStore.rates
         )
 
         // Only return if we have valid data points
         guard !fullDataPoints.isEmpty else {
-            AppLogger.warning("No valid chart data points after processing", category: .viewModel)
+            logger.warning("No valid chart data points after processing", category: .viewModel)
             return []
         }
 

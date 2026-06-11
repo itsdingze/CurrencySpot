@@ -10,25 +10,25 @@ import Foundation
 import SwiftData
 import Testing
 
-@Suite("Exchange Rate Service Tests")
+/// Tests over the real DataCoordinator (repository implementation) + SwiftData persistence,
+/// with a mock network and isolated stores.
+@Suite("Data Coordinator Repository Tests")
 @MainActor
 struct ExchangeRateServiceTests {
     let container: ModelContainer
     let networkService: MockNetworkService
     let syncStore: MockHistoricalSyncStore
+    let persistence: SwiftDataPersistenceService
     let service: DataCoordinator
 
     init() throws {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        container = try ModelContainer(
-            for: ExchangeRateData.self, HistoricalRateData.self, TrendData.self,
-            configurations: config
-        )
+        container = try ModelContainer.inMemoryCurrencySpot()
         networkService = MockNetworkService()
         syncStore = MockHistoricalSyncStore()
+        persistence = SwiftDataPersistenceService(modelContainer: container)
         service = DataCoordinator(
             networkService: networkService,
-            persistenceService: SwiftDataPersistenceService(modelContainer: container),
+            persistenceService: persistence,
             cacheService: InMemoryCacheService(),
             syncStore: syncStore
         )
@@ -38,10 +38,17 @@ struct ExchangeRateServiceTests {
         try #require(createCETDate(year: y, month: m, day: d))
     }
 
+    private func range(_ start: String, _ end: String) throws -> DateRange {
+        DateRange(
+            start: try #require(TimeZoneManager.parseAPIDate(start)),
+            end: try #require(TimeZoneManager.parseAPIDate(end))
+        )
+    }
+
     private func setupHistoricalData(_ dateStrings: [String]) async throws {
         for dateString in dateStrings {
             let rates = ["EUR": 1.21, "GBP": 0.85, "JPY": 110.0]
-            try await service.saveHistoricalExchangeRates([dateString: rates])
+            try await persistence.saveHistoricalExchangeRates([dateString: rates])
         }
     }
 
@@ -65,14 +72,14 @@ struct ExchangeRateServiceTests {
         #expect(syncStore.checkedAt == nil)
     }
 
-    @Test("loadHistoricalRatesForCurrency reads persistence, not a narrower stale in-memory cache")
+    @Test("loadHistoricalRates reads persistence, not a narrower stale in-memory cache")
     func loadHistoricalReadsPersistenceNotStaleCache() async throws {
         // Regression: a successful wide fetch was being shadowed by a narrower cached window,
         // so a 3-month load read back only the ~1-week trend-seed data until the app restarted.
         let cacheService = InMemoryCacheService()
         let coordinator = DataCoordinator(
             networkService: MockNetworkService(),
-            persistenceService: SwiftDataPersistenceService(modelContainer: container),
+            persistenceService: persistence,
             cacheService: cacheService,
             syncStore: MockHistoricalSyncStore()
         )
@@ -80,7 +87,7 @@ struct ExchangeRateServiceTests {
         // Persist a wide window: 10 distinct days.
         let wideDates = (3 ... 12).map { String(format: "2025-03-%02d", $0) }
         for dateString in wideDates {
-            try await coordinator.saveHistoricalExchangeRates([dateString: ["EUR": 1.21]])
+            try await persistence.saveHistoricalExchangeRates([dateString: ["EUR": 1.21]])
         }
 
         // Seed the in-memory cache with only a NARROW 2-day window (this used to shadow the read).
@@ -88,12 +95,10 @@ struct ExchangeRateServiceTests {
             HistoricalRateDataValue(dateString: "2025-03-11", rates: [HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.21)]),
             HistoricalRateDataValue(dateString: "2025-03-12", rates: [HistoricalRateDataPointValue(currencyCode: "EUR", rate: 1.21)]),
         ]
-        await cacheService.cacheHistoricalData(narrow, for: "EUR")
+        await coordinator.replaceCachedHistoricalRates(narrow, for: "EUR")
 
         // Reading the full window must return the 10 persisted rows, not the 2 cached ones.
-        let result = try await coordinator.loadHistoricalRatesForCurrency(
-            currency: "EUR", startDate: "2025-03-01", endDate: "2025-03-31"
-        )
+        let result = try await coordinator.loadHistoricalRates(for: "EUR", in: try range("2025-03-01", "2025-03-31"))
         #expect(result.count == wideDates.count)
     }
 
@@ -121,6 +126,25 @@ struct ExchangeRateServiceTests {
         #expect(defaults.object(forKey: UserDefaultsKeys.lastFetchDate) as? Date == fetchDate)
     }
 
+    @Test("fetchExchangeRates maps the DTO to domain values, persists, and stamps the fetch date")
+    func fetchExchangeRatesOwnsPostFetchBookkeeping() async throws {
+        networkService.exchangeRatesResult = .success(
+            ExchangeRatesResponse(base: "USD", date: "2025-03-12", rates: ["EUR": 0.9, "GBP": 0.75])
+        )
+
+        let rates = try await service.fetchExchangeRates()
+
+        // Domain values include the injected base at 1.0.
+        #expect(rates.contains { $0.currencyCode == "USD" && $0.rate == 1.0 })
+        #expect(rates.contains { $0.currencyCode == "EUR" && $0.rate == 0.9 })
+
+        // Single owner of bookkeeping: persisted and stamped by the coordinator.
+        let persisted = try await persistence.loadExchangeRates()
+        #expect(persisted.count == 3)
+        #expect(networkService.lastFetchDate != nil)
+        #expect(service.lastFetchDate() != nil)
+    }
+
     @Test("Get earliest stored date returns correct date")
     func getEarliestStoredDateReturnsCorrectDate() async throws {
         // Multiple dates in random order
@@ -128,7 +152,7 @@ struct ExchangeRateServiceTests {
         try await setupHistoricalData(testDates)
 
         // WHEN: We get the earliest stored date
-        let earliestDate = try #require(try await service.getEarliestStoredDate())
+        let earliestDate = try #require(try await service.earliestStoredDate())
 
         // THEN: Should return the earliest date.
         // Compare only the date components in CET, matching how dates are stored.
@@ -142,7 +166,7 @@ struct ExchangeRateServiceTests {
     @Test("Get latest stored date returns correct date")
     func getLatestStoredDateReturnsCorrectDate() async throws {
         // Initially should be nil
-        let initialDate = try await service.getLatestStoredDate()
+        let initialDate = try await service.latestStoredDate()
         #expect(initialDate == nil)
 
         // Multiple dates in random order
@@ -150,7 +174,7 @@ struct ExchangeRateServiceTests {
         try await setupHistoricalData(testDates)
 
         // WHEN: We get the latest stored date
-        let latestDate = try await service.getLatestStoredDate()
+        let latestDate = try await service.latestStoredDate()
 
         // THEN: Should return the latest date
         let expectedDate = try #require(TimeZoneManager.parseAPIDate("2025-03-15"))
@@ -166,14 +190,10 @@ struct ExchangeRateServiceTests {
         ]
 
         // WHEN: We save the rates
-        try await service.saveHistoricalExchangeRates(testRates)
+        try await persistence.saveHistoricalExchangeRates(testRates)
 
-        // THEN: We should be able to load them back
-        let loadedRates = try await service.loadHistoricalRatesForCurrency(
-            currency: "EUR",
-            startDate: "2025-03-15",
-            endDate: "2025-03-16"
-        )
+        // THEN: We should be able to load them back through the repository
+        let loadedRates = try await service.loadHistoricalRates(for: "EUR", in: try range("2025-03-15", "2025-03-16"))
 
         #expect(loadedRates.count == 2)
         #expect(loadedRates[0].rates.first(where: { $0.currencyCode == "EUR" })?.rate == 1.21)
@@ -186,7 +206,7 @@ struct ExchangeRateServiceTests {
         let testRates = ["EUR": 1.21, "GBP": 0.85, "JPY": 110.0]
 
         // WHEN: We save the rates
-        try await service.saveExchangeRates(testRates)
+        try await persistence.saveExchangeRates(testRates)
 
         // THEN: We should be able to load them back
         let loadedRates = try await service.loadExchangeRates()
@@ -203,12 +223,12 @@ struct ExchangeRateServiceTests {
         let testRates = ["EUR": 1.21, "GBP": 0.85]
         let historicalRates = ["2025-03-15": ["EUR": 1.21, "GBP": 0.85]]
 
-        try await service.saveExchangeRates(testRates)
-        try await service.saveHistoricalExchangeRates(historicalRates)
+        try await persistence.saveExchangeRates(testRates)
+        try await persistence.saveHistoricalExchangeRates(historicalRates)
 
         // Verify data exists
         let beforeClearCurrent = try await service.loadExchangeRates()
-        let beforeClearEarliest = try await service.getEarliestStoredDate()
+        let beforeClearEarliest = try await service.earliestStoredDate()
         #expect(beforeClearCurrent.isEmpty == false)
         #expect(beforeClearEarliest != nil)
 
@@ -220,45 +240,21 @@ struct ExchangeRateServiceTests {
         await #expect(throws: Error.self) {
             _ = try await service.loadExchangeRates()
         }
-        let afterClearEarliest = try await service.getEarliestStoredDate()
+        let afterClearEarliest = try await service.earliestStoredDate()
         #expect(afterClearEarliest == nil)
     }
 
-    @Test("Date range affects trends detection works correctly")
-    func dateRangeAffectsTrendsDetection() async throws {
-        // The trend window is defined as "the last 7 days from the real clock" inside the
-        // persistence layer, so these fixtures are necessarily relative to Date(). The
-        // offsets are chosen far from the 7-day boundary, so the outcome is stable
-        // regardless of when within a day the test runs.
-        let calendar = TimeZoneManager.cetCalendar
-        let now = Date()
+    @Test("Persisted trend data survives a save/load round trip with validation")
+    func trendDataSaveLoadRoundTrip() async throws {
+        let trends = [
+            TrendDataValue(currencyCode: "EUR", weeklyChange: 2.5, miniChartData: [1.0, 1.02, 1.025]),
+            TrendDataValue(currencyCode: "GBP", weeklyChange: -1.0, miniChartData: [0.8, 0.79]),
+        ]
 
-        func daysFromNow(_ offset: Int) throws -> Date {
-            try #require(calendar.date(byAdding: .day, value: offset, to: now))
-        }
+        try await service.saveTrendData(trends)
+        let loaded = try await service.loadTrendData()
 
-        // CASE 1: Old historical data (30 days ago) - should NOT affect trends
-        let affectsOld = try await service.doesDateRangeAffectTrends(
-            startDate: try daysFromNow(-30), endDate: try daysFromNow(-15)
-        )
-        #expect(affectsOld == false, "Old historical data should not affect trends")
-
-        // CASE 2: Recent data (last 3 days) - should affect trends
-        let affectsRecent = try await service.doesDateRangeAffectTrends(
-            startDate: try daysFromNow(-3), endDate: now
-        )
-        #expect(affectsRecent == true, "Recent data should affect trends")
-
-        // CASE 3: Data spanning from old to recent - should affect trends
-        let affectsSpan = try await service.doesDateRangeAffectTrends(
-            startDate: try daysFromNow(-15), endDate: try daysFromNow(-2)
-        )
-        #expect(affectsSpan == true, "Data spanning into recent window should affect trends")
-
-        // CASE 4: Future data (edge case) - should not affect current trends
-        let affectsFuture = try await service.doesDateRangeAffectTrends(
-            startDate: try daysFromNow(1), endDate: try daysFromNow(2)
-        )
-        #expect(affectsFuture == false, "Future data should not affect current trends")
+        #expect(Set(loaded.map(\.currencyCode)) == Set(["EUR", "GBP"]))
+        #expect(loaded.first { $0.currencyCode == "EUR" }?.miniChartData == [1.0, 1.02, 1.025])
     }
 }

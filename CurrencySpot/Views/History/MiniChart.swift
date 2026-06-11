@@ -122,21 +122,21 @@ struct MiniChart: View {
     VStack(spacing: 200) {
         // Upward trend
         MiniChart(trendDataValue: TrendDataValue(
-            currencyCode: "AUD",
+            currencyCode: CurrencyCode("AUD") ?? .usd,
             weeklyChange: 2.3,
             miniChartData: [1.52, 1.53, 1.54, 1.55, 1.56, 1.57, 1.55]
         ))
 
         // Downward trend
         MiniChart(trendDataValue: TrendDataValue(
-            currencyCode: "AUD",
+            currencyCode: CurrencyCode("AUD") ?? .usd,
             weeklyChange: -1.2,
             miniChartData: [1.52, 1.53, 1.54, 1.55, 1.56, 1.52, 1.55]
         ))
 
         // Stable trend
         MiniChart(trendDataValue: TrendDataValue(
-            currencyCode: "AUD",
+            currencyCode: CurrencyCode("AUD") ?? .usd,
             weeklyChange: 0.08,
             miniChartData: [1.52, 1.53, 1.54, 1.55, 1.56, 1.55, 1.55]
         ))

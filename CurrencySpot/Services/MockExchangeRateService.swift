@@ -5,184 +5,119 @@
 //  Created by Dingze Yu on 6/24/25.
 //
 
-import Foundation
+#if DEBUG
 
-/// Mock implementation of ExchangeRateService for previews and testing
-/// Returns Value Types only - no SwiftData dependencies
-///
-/// Fully deterministic: all generated series derive from fixed fixture values and the
-/// injected `today` anchor, so the same inputs always produce the same outputs.
-struct MockExchangeRateService: ExchangeRateService {
-    /// Anchor for all relative-date fixtures. Defaults to the live clock so
-    /// previews stay current; tests inject a fixed date for reproducible series.
-    private let today: Date
+    import Foundation
 
-    init(today: Date = Date()) {
-        self.today = today
+    /// Mock repository implementation for previews and testing.
+    /// Returns value types only — no SwiftData dependencies.
+    ///
+    /// Fully deterministic: all generated series derive from fixed fixture values and the
+    /// injected `today` anchor, so the same inputs always produce the same outputs.
+    /// Reference storage so the value-typed mock can honor the repository's
+    /// cache read/write contract (orchestration round-trips merged data through it).
+    private final class HistoricalCacheBox: @unchecked Sendable {
+        var storage: [CurrencyCode: [HistoricalRateDataValue]] = [:]
     }
 
-    // MARK: - Network Methods (Return Mock API Responses)
+    struct MockExchangeRateService: ExchangeRateRepository, HistoricalRateRepository, TrendRepository, DataClearing {
+        /// Anchor for all relative-date fixtures. Defaults to the live clock so
+        /// previews stay current; tests inject a fixed date for reproducible series.
+        private let today: Date
+        private let cacheBox = HistoricalCacheBox()
 
-    func shouldFetchNewRates() async -> Bool {
-        false // Always use cached data in previews
-    }
+        init(today: Date = Date()) {
+            self.today = today
+        }
 
-    func fetchExchangeRates() async throws -> ExchangeRatesResponse {
-        ExchangeRatesResponse(
-            base: "USD",
-            date: "2025-06-24",
-            rates: MockExchangeRates.rates
-        )
-    }
+        // MARK: - ExchangeRateRepository
 
-    func fetchAndSaveHistoricalRates(from _: Date, to _: Date) async throws {}
+        func shouldRefreshRates() async -> Bool {
+            false // Always use cached data in previews
+        }
 
-    // MARK: - Save Methods (No-op for Mock)
+        func fetchExchangeRates() async throws -> [ExchangeRateDataValue] {
+            MockExchangeRates.getCurrencyRates()
+        }
 
-    func saveExchangeRates(_: [String: Double]) async throws {
-        // No-op for mock service
-    }
+        func loadExchangeRates() async throws -> [ExchangeRateDataValue] {
+            MockExchangeRates.getCurrencyRates()
+        }
 
-    func saveHistoricalExchangeRates(_: [String: [String: Double]]) async throws {
-        // No-op for mock service
-    }
+        func lastFetchDate() -> Date? {
+            today
+        }
 
-    // MARK: - Load Methods (Return Value Types Directly)
+        // MARK: - HistoricalRateRepository
 
-    func loadExchangeRates() async throws -> [ExchangeRateDataValue] {
-        MockExchangeRates.getCurrencyRates()
-    }
+        func fetchAndSaveHistoricalRates(from _: Date, to _: Date) async throws {}
 
-    func loadHistoricalRates() async throws -> [HistoricalRateDataValue] {
-        // Generate deterministic mock historical data anchored to `today`
-        let calendar = TimeZoneManager.cetCalendar
-        var historicalData: [HistoricalRateDataValue] = []
-
-        for i in 0 ..< 30 { // 30 days of mock data
-            if let date = calendar.date(byAdding: .day, value: -i, to: today) {
-                let dateString = TimeZoneManager.formatForAPI(date)
-                // Fixed per-day drift (±5% over the window) instead of randomness,
-                // so repeated loads return identical series.
-                let variation = 0.95 + Double(i) / 290.0
-
-                let ratePoints = MockExchangeRates.rates.map { currency, rate in
-                    HistoricalRateDataPointValue(
-                        currencyCode: currency,
-                        rate: rate * variation
-                    )
-                }
-
-                let historicalEntry = try HistoricalRateDataValue(
-                    dateString: dateString,
-                    rates: ratePoints
-                )
-
-                historicalData.append(historicalEntry)
+        func loadHistoricalRates(for _: CurrencyCode, in range: DateRange) async throws -> [HistoricalRateDataValue] {
+            try await generatedHistoricalRates().filter { entry in
+                entry.date >= range.start && entry.date <= range.end
             }
         }
 
-        return historicalData.sorted { $0.date < $1.date }
-    }
-
-    func loadHistoricalRatesForCurrency(currency _: String, startDate: String, endDate: String) async throws -> [HistoricalRateDataValue] {
-        let allData = try await loadHistoricalRates()
-
-        guard let startDateObj = TimeZoneManager.parseAPIDate(startDate),
-              let endDateObj = TimeZoneManager.parseAPIDate(endDate)
-        else {
-            return []
+        func earliestStoredDate() async throws -> Date? {
+            today
         }
 
-        return allData.filter { entry in
-            entry.date >= startDateObj && entry.date <= endDateObj
+        func latestStoredDate() async throws -> Date? {
+            today
+        }
+
+        func cachedHistoricalRates(for currency: CurrencyCode) async -> [HistoricalRateDataValue] {
+            cacheBox.storage[currency] ?? []
+        }
+
+        func replaceCachedHistoricalRates(_ data: [HistoricalRateDataValue], for currency: CurrencyCode) async {
+            cacheBox.storage[currency] = data
+        }
+
+        // MARK: - TrendRepository
+
+        func loadTrendData() async throws -> [TrendDataValue] {
+            Array(MockExchangeRates.trendData.values)
+        }
+
+        func saveTrendData(_: [TrendDataValue]) async throws {}
+
+        func loadHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateDataValue] {
+            try await generatedHistoricalRates().filter { entry in
+                entry.date >= startDate && entry.date <= endDate
+            }
+        }
+
+        // MARK: - DataClearing
+
+        func clearAllData() async throws {}
+
+        // MARK: - Fixtures
+
+        /// Generates deterministic mock historical data anchored to `today`.
+        private func generatedHistoricalRates() async throws -> [HistoricalRateDataValue] {
+            let calendar = TimeZoneManager.cetCalendar
+            var historicalData: [HistoricalRateDataValue] = []
+
+            for i in 0 ..< 30 { // 30 days of mock data
+                if let date = calendar.date(byAdding: .day, value: -i, to: today) {
+                    // Fixed per-day drift (±5% over the window) instead of randomness,
+                    // so repeated loads return identical series.
+                    let variation = 0.95 + Double(i) / 290.0
+
+                    let ratePoints = MockExchangeRates.getCurrencyRates().map { rate in
+                        HistoricalRateDataPointValue(
+                            currencyCode: rate.currencyCode,
+                            rate: rate.rate * variation
+                        )
+                    }
+
+                    historicalData.append(HistoricalRateDataValue(date: date, rates: ratePoints))
+                }
+            }
+
+            return historicalData.sorted { $0.date < $1.date }
         }
     }
 
-    // MARK: - Date Management (Mock Implementation)
-
-    func updateLastFetchDate(_: Date) {
-        // Could store in memory for more realistic mock behavior
-    }
-
-    func getEarliestStoredDate() async throws -> Date? {
-        today
-    }
-
-    func getLatestStoredDate() async throws -> Date? {
-        today
-    }
-
-    func getLastFetchDate() -> Date? {
-        today
-    }
-
-    // MARK: - Trend Data Methods
-
-    func loadTrendData() async throws -> [TrendDataValue] {
-        Array(MockExchangeRates.trendData.values)
-    }
-
-    func calculateAndSaveTrendData() async throws {
-        // No-op for mock service - trends are pre-calculated
-    }
-
-    func hasSufficientHistoricalDataForTrends() async throws -> Bool {
-        // Mock service always has sufficient data
-        true
-    }
-
-    func doesDateRangeAffectTrends(startDate: Date, endDate: Date) async throws -> Bool {
-        // For mock service, assume any date range in the last 7 days affects trends
-        let calendar = TimeZoneManager.cetCalendar
-        let trendWindowStart = calendar.date(byAdding: .day, value: -7, to: today) ?? today
-        return startDate <= today && endDate >= trendWindowStart
-    }
-
-    func clearAllData() async throws {
-        // No-op for mock service
-    }
-}
-
-// MARK: - Updated Preview Methods
-
-extension CalculatorViewModel {
-    static func preview() -> CalculatorViewModel {
-        let mockService = MockExchangeRateService()
-        return CalculatorViewModel(service: mockService)
-    }
-}
-
-extension HistoryViewModel {
-    static func preview() -> HistoryViewModel {
-        let mockService = MockExchangeRateService()
-        let calculatorVM = CalculatorViewModel(service: mockService)
-        let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase()
-        let dataOrchestrationUseCase = DataOrchestrationUseCase(
-            service: mockService,
-            historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-            cacheService: InMemoryCacheService()
-        )
-        let cacheService = InMemoryCacheService()
-        let rateCalculationUseCase = RateCalculationUseCase()
-        let chartDataPreparationUseCase = ChartDataPreparationUseCase(
-            rateCalculationUseCase: rateCalculationUseCase,
-            cacheService: cacheService
-        )
-        let trendDataUseCase = TrendDataUseCase(service: mockService)
-
-        return HistoryViewModel(
-            calculatorVM: calculatorVM,
-            historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-            dataOrchestrationUseCase: dataOrchestrationUseCase,
-            chartDataPreparationUseCase: chartDataPreparationUseCase,
-            trendDataUseCase: trendDataUseCase
-        )
-    }
-}
-
-extension SettingsViewModel {
-    static func preview() -> SettingsViewModel {
-        let mockService = MockExchangeRateService()
-        return SettingsViewModel(service: mockService)
-    }
-}
+#endif

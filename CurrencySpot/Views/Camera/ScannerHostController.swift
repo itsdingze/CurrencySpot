@@ -74,7 +74,7 @@ final class ScannerHostController: UIViewController {
                         try? await Task.sleep(for: .milliseconds(300))
                     }
                 }
-                AppLogger.error(
+                OSLogLoggerService().error(
                     "DataScanner failed to start after retries: \(String(describing: lastError))",
                     category: .ui
                 )

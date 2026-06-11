@@ -25,8 +25,8 @@ struct CurrencyPickerView: View {
             exchangeRates.sorted { $0.currencyCode < $1.currencyCode }
         } else {
             exchangeRates.filter { currency in
-                currency.currencyCode.localizedCaseInsensitiveContains(searchText) ||
-                    CurrencyUtilities.shared.name(for: currency.currencyCode).localizedCaseInsensitiveContains(searchText)
+                currency.currencyCode.rawValue.localizedCaseInsensitiveContains(searchText) ||
+                    CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue).localizedCaseInsensitiveContains(searchText)
             }
         }
     }
@@ -68,7 +68,7 @@ struct CurrencyPickerView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 0) {
                             ForEach(favoriteCurrencies, id: \.self) { currency in
-                                if exchangeRates.contains(where: { $0.currencyCode == currency }) {
+                                if exchangeRates.contains(where: { $0.currencyCode.rawValue == currency }) {
                                     Button(action: {
                                         selectedCurrency = currency
                                         dismiss()
@@ -97,21 +97,21 @@ struct CurrencyPickerView: View {
                 List {
                     ForEach(filteredCurrencies, id: \.currencyCode) { currency in
                         Button(action: {
-                            selectedCurrency = currency.currencyCode
+                            selectedCurrency = currency.currencyCode.rawValue
                             dismiss()
                         }) {
                             HStack {
-                                Text(currency.currencyCode)
+                                Text(currency.currencyCode.rawValue)
                                     .font(.system(.headline, design: .rounded))
                                     .fontWeight(.medium)
 
                                 Spacer()
 
-                                Text(CurrencyUtilities.shared.name(for: currency.currencyCode))
+                                Text(CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue))
                                     .font(.system(.subheadline, design: .rounded))
                                     .foregroundStyle(Color.textSecondary)
 
-                                if selectedCurrency == currency.currencyCode {
+                                if selectedCurrency == currency.currencyCode.rawValue {
                                     Image(systemName: "checkmark")
                                         .foregroundStyle(Color.accentColor)
                                         .accessibilityHidden(true)
@@ -119,11 +119,11 @@ struct CurrencyPickerView: View {
                             }
                             .padding(.vertical, 4)
                         }
-                        .accessibilityLabel("\(currency.currencyCode), \(CurrencyUtilities.shared.name(for: currency.currencyCode))")
-                        .accessibilityHint("Selects \(currency.currencyCode) as currency")
+                        .accessibilityLabel("\(currency.currencyCode.rawValue), \(CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue))")
+                        .accessibilityHint("Selects \(currency.currencyCode.rawValue) as currency")
                         .accessibilityValue(currency.rate.toStringMax4Decimals)
-                        .accessibilityInputLabels([currency.currencyCode, CurrencyUtilities.shared.name(for: currency.currencyCode)])
-                        .accessibilityAddTraits(selectedCurrency == currency.currencyCode ? [.isButton, .isSelected] : .isButton)
+                        .accessibilityInputLabels([currency.currencyCode.rawValue, CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue)])
+                        .accessibilityAddTraits(selectedCurrency == currency.currencyCode.rawValue ? [.isButton, .isSelected] : .isButton)
                     }
                 }
                 .listStyle(.plain)

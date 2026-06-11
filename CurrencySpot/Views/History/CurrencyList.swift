@@ -30,17 +30,17 @@ struct CurrencyList: View {
 
     // Cache the base rate to avoid recalculating it
     private var baseRate: Double {
-        calculatorViewModel.availableRates.first { $0.currencyCode == calculatorViewModel.baseCurrency }?.rate ?? 1.0
+        calculatorViewModel.availableRates.first { $0.currencyCode.rawValue == calculatorViewModel.baseCurrency }?.rate ?? 1.0
     }
 
     private var displayedCurrencies: [ExchangeRateDataValue] {
         let filteredCurrencies = calculatorViewModel.availableRates
-            .filter { $0.currencyCode != calculatorViewModel.baseCurrency }
+            .filter { $0.currencyCode.rawValue != calculatorViewModel.baseCurrency }
             .filter { currency in
                 guard !searchText.isEmpty else { return true }
 
-                let name = CurrencyUtilities.shared.name(for: currency.currencyCode)
-                return currency.currencyCode.localizedCaseInsensitiveContains(searchText) ||
+                let name = CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue)
+                return currency.currencyCode.rawValue.localizedCaseInsensitiveContains(searchText) ||
                     name.localizedCaseInsensitiveContains(searchText)
             }
 
@@ -51,7 +51,7 @@ struct CurrencyList: View {
         switch sortOption {
         case .nameAZ:
             currencies.sorted {
-                CurrencyUtilities.shared.name(for: $0.currencyCode) < CurrencyUtilities.shared.name(for: $1.currencyCode)
+                CurrencyUtilities.shared.name(for: $0.currencyCode.rawValue) < CurrencyUtilities.shared.name(for: $1.currencyCode.rawValue)
             }
         case .rateHighToLow:
             currencies.sorted {
@@ -90,14 +90,6 @@ struct CurrencyList: View {
                 trailingToolbarItems
             }
         }
-        .onAppear {
-            // Sync base currency when view appears
-            historyViewModel.baseCurrency = calculatorViewModel.baseCurrency
-        }
-        .onChange(of: calculatorViewModel.baseCurrency) { _, newValue in
-            // Sync when base currency changes in calculator
-            historyViewModel.baseCurrency = newValue
-        }
     }
 
     // MARK: - View Components
@@ -128,13 +120,13 @@ struct CurrencyList: View {
 
     private var currenciesList: some View {
         List {
-            ForEach(displayedCurrencies, id: \.currencyCode) { currency in
+            ForEach(displayedCurrencies) { currency in
                 Button(action: {
-                    navigateToCurrency(currency.currencyCode)
+                    navigateToCurrency(currency.currencyCode.rawValue)
                 }) {
                     CurrencyRow(
-                        currencyCode: currency.currencyCode,
-                        currencyName: CurrencyUtilities.shared.name(for: currency.currencyCode),
+                        currencyCode: currency.currencyCode.rawValue,
+                        currencyName: CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue),
                         rate: calculateExchangeRate(from: currency.rate)
                     )
                 }

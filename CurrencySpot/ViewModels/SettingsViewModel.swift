@@ -115,12 +115,9 @@ final class SettingsViewModel {
     // MARK: - Private Properties
 
     private let userDefaults: UserDefaults
-    private let service: ExchangeRateService
-    private let appState = AppState.shared
-
-    // References to ViewModels for clearing data
-    private weak var calculatorViewModel: CalculatorViewModel?
-    private weak var historyViewModel: HistoryViewModel?
+    private let clearAllDataUseCase: ClearAllDataUseCase
+    private let appState: AppState
+    private let logger: LoggerService
 
     // MARK: - Constants
 
@@ -139,15 +136,15 @@ final class SettingsViewModel {
 
     /// `userDefaults` defaults to `.standard`; tests inject an isolated suite.
     init(
-        service: ExchangeRateService,
-        calculatorViewModel: CalculatorViewModel? = nil,
-        historyViewModel: HistoryViewModel? = nil,
-        userDefaults: UserDefaults = .standard
+        clearAllDataUseCase: ClearAllDataUseCase,
+        appState: AppState = .shared,
+        userDefaults: UserDefaults = .standard,
+        logger: LoggerService = OSLogLoggerService()
     ) {
-        self.service = service
-        self.calculatorViewModel = calculatorViewModel
-        self.historyViewModel = historyViewModel
+        self.clearAllDataUseCase = clearAllDataUseCase
+        self.appState = appState
         self.userDefaults = userDefaults
+        self.logger = logger
 
         accentColor = userDefaults.string(forKey: UserDefaultsKeys.accentColor)
             .flatMap { AccentColorOption(rawValue: $0) } ?? DefaultValues.accentColor
@@ -190,18 +187,14 @@ final class SettingsViewModel {
 
     // MARK: - Data Management Methods
 
-    /// Clear all cached exchange rate data
+    /// Clear all cached exchange rate data. The use case wipes the repository and
+    /// signals each feature's reset; Settings holds no sibling-ViewModel references.
     func clearCachedData() async {
         do {
-            try await service.clearAllData()
-
-            // Clear ViewModels data to prevent stale references
-            calculatorViewModel?.clearAllData()
-            await historyViewModel?.clearAllData()
-
-            AppLogger.info("Cache cleared successfully", category: .viewModel)
+            try await clearAllDataUseCase.execute()
+            logger.info("Cache cleared successfully", category: .viewModel)
         } catch {
-            AppLogger.error("Failed to clear cached data: \(error)", category: .viewModel)
+            logger.error("Failed to clear cached data: \(error)", category: .viewModel)
 
             // Use centralized error handler for user feedback
             if let appError = AppError.from(error) {

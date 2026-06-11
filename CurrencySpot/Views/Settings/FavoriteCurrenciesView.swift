@@ -66,14 +66,14 @@ struct AddCurrencyView: View {
     var filteredCurrencies: [ExchangeRateDataValue] {
         let favorites = viewModel.favoriteCurrencies
 
-        let available = calculatorViewModel.availableRates.filter { !favorites.contains($0.currencyCode) }
+        let available = calculatorViewModel.availableRates.filter { !favorites.contains($0.currencyCode.rawValue) }
 
         if searchText.isEmpty {
             return available.sorted { $0.currencyCode < $1.currencyCode }
         } else {
             return available.filter { currency in
-                currency.currencyCode.localizedCaseInsensitiveContains(searchText) ||
-                    CurrencyUtilities.shared.name(for: currency.currencyCode).localizedCaseInsensitiveContains(searchText)
+                currency.currencyCode.rawValue.localizedCaseInsensitiveContains(searchText) ||
+                    CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue).localizedCaseInsensitiveContains(searchText)
             }
         }
     }
@@ -106,17 +106,17 @@ struct AddCurrencyView: View {
                 List {
                     ForEach(filteredCurrencies, id: \.currencyCode) { currency in
                         Button(action: {
-                            viewModel.addToFavorites(currency.currencyCode)
+                            viewModel.addToFavorites(currency.currencyCode.rawValue)
                             isPresented = false
                         }) {
                             HStack {
-                                Text(currency.currencyCode)
+                                Text(currency.currencyCode.rawValue)
                                     .font(.system(.headline, design: .rounded))
                                     .fontWeight(.medium)
 
                                 Spacer()
 
-                                Text(CurrencyUtilities.shared.name(for: currency.currencyCode))
+                                Text(CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue))
                                     .font(.system(.subheadline, design: .rounded))
                                     .foregroundStyle(.secondary)
                             }

@@ -1,24 +1,11 @@
 //
-//  FrankFurtherAPI.swift
+//  FrankfurterAPI.swift
 //  CurrencySpot
 //
 //  Created by Dingze Yu on 3/24/25.
 //
 
 import Foundation
-
-struct ExchangeRatesResponse: Codable, Sendable {
-    let base: String
-    let date: String
-    let rates: [String: Double]
-}
-
-struct HistoricalRatesResponse: Codable, Sendable {
-    let base: String
-    let start_date: String
-    let end_date: String
-    let rates: [String: [String: Double]]
-}
 
 /// Client for interacting with the Frankfurter exchange rate API
 /// Provides methods to fetch current and historical exchange rates
@@ -50,7 +37,7 @@ final class FrankfurterAPI {
     ///
     /// - Parameter baseCurrency: The reference currency for exchange rates (default: "USD")
     /// - Returns: A ExchangeRatesResponse object that contains the latest exchange rates
-    /// - Throws: AppError if network request fails, API returns an error status, or response cannot be decoded
+    /// - Throws: AppError if network request fails, API returns an error status, or the response is malformed
     func fetchExchangeRates(baseCurrency: String = "USD") async throws -> ExchangeRatesResponse {
         let urlString = "\(baseURL)/rates?base=\(baseCurrency)"
         let url = try NetworkUtility.createURL(from: urlString)
@@ -61,7 +48,7 @@ final class FrankfurterAPI {
             responseType: [FrankfurterV2Rate].self,
             endpoint: "exchange-rates-latest"
         )
-        return FrankfurterV2Mapper.latest(from: entries, base: baseCurrency)
+        return try FrankfurterV2Mapper.latest(from: entries, base: baseCurrency)
     }
 
     /// Fetches historical exchange rates for a specified number of days in the past
@@ -70,7 +57,7 @@ final class FrankfurterAPI {
     ///   - baseCurrency: The reference currency for exchange rates (default: "USD")
     ///   - days: Number of days of historical data to retrieve
     /// - Returns: A HistoricalRatesResponse object that contains the historical exchange rates
-    /// - Throws: AppError if date calculation fails, network request fails, or response cannot be decoded
+    /// - Throws: AppError if date calculation fails, network request fails, or the response is malformed
     func fetchHistoricalRates(baseCurrency: String = "USD", days: Int) async throws -> HistoricalRatesResponse {
         // Calculate date 'days' ago
         let calendar = TimeZoneManager.cetCalendar
@@ -89,7 +76,7 @@ final class FrankfurterAPI {
     ///   - startDate: The start date for historical data
     ///   - endDate: The end date for historical data
     /// - Returns: A HistoricalRatesResponse object that contains the historical exchange rates
-    /// - Throws: AppError if network request fails, or response cannot be decoded
+    /// - Throws: AppError if network request fails, or the response is malformed
     func fetchHistoricalRatesForRange(baseCurrency: String = "USD", startDate: Date, endDate: Date) async throws -> HistoricalRatesResponse {
         // Format dates and build URL
         let startDateString = TimeZoneManager.formatForAPI(startDate)
@@ -104,6 +91,6 @@ final class FrankfurterAPI {
             responseType: [FrankfurterV2Rate].self,
             endpoint: "historical-rates-range"
         )
-        return FrankfurterV2Mapper.historical(from: entries, base: baseCurrency)
+        return try FrankfurterV2Mapper.historical(from: entries, base: baseCurrency)
     }
 }

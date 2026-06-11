@@ -2,7 +2,7 @@
 //  Mocks.swift
 //  CurrencySpotTests
 //
-//  Shared test doubles consumed by multiple test files.
+//  Shared configurable test doubles, one per repository/service protocol.
 //
 
 @testable import CurrencySpot
@@ -72,5 +72,146 @@ final class MockNetworkService: NetworkService {
 
     func getLastFetchDate() -> Date? {
         lastFetchDate
+    }
+}
+
+// MARK: - MockExchangeRateRepository
+
+/// Configurable ExchangeRateRepository double mirroring the production contract:
+/// a successful fetch stamps the last-fetch date (the repository owns bookkeeping).
+final class MockExchangeRateRepository: ExchangeRateRepository {
+    var shouldRefreshRatesResult = false
+    var fetchExchangeRatesResult: Result<[ExchangeRateDataValue], AppError> = .success([
+        ExchangeRateDataValue(currencyCode: "USD", rate: 1.0),
+        ExchangeRateDataValue(currencyCode: "EUR", rate: 0.9),
+    ])
+    var loadExchangeRatesResult: Result<[ExchangeRateDataValue], AppError> = .success([])
+
+    private(set) var fetchExchangeRatesCallCount = 0
+    private(set) var loadExchangeRatesCallCount = 0
+    private(set) var stampedFetchDate: Date?
+
+    func shouldRefreshRates() async -> Bool {
+        shouldRefreshRatesResult
+    }
+
+    func fetchExchangeRates() async throws -> [ExchangeRateDataValue] {
+        fetchExchangeRatesCallCount += 1
+        let rates = try fetchExchangeRatesResult.get()
+        stampedFetchDate = Date()
+        return rates
+    }
+
+    func loadExchangeRates() async throws -> [ExchangeRateDataValue] {
+        loadExchangeRatesCallCount += 1
+        return try loadExchangeRatesResult.get()
+    }
+
+    func lastFetchDate() -> Date? {
+        stampedFetchDate
+    }
+}
+
+// MARK: - MockHistoricalRateRepository
+
+/// Configurable HistoricalRateRepository double with the repository-owned
+/// in-memory cache modeled as a plain dictionary.
+final class MockHistoricalRateRepository: HistoricalRateRepository {
+    var earliestStoredDateResult: Date?
+    var latestStoredDateResult: Date?
+    var historicalDataToReturn: [HistoricalRateDataValue] = []
+    var shouldThrowErrorOnFetch = false
+    var shouldThrowErrorOnLoad = false
+    var errorToThrow: Error = AppError.networkError("Mock error")
+
+    private(set) var fetchAndSaveHistoricalRatesCalls: [(from: Date, to: Date)] = []
+    private(set) var loadHistoricalRatesCallCount = 0
+    private(set) var cachedData: [CurrencyCode: [HistoricalRateDataValue]] = [:]
+    private(set) var replaceCachedCallCount = 0
+    private(set) var cachedReadCount = 0
+
+    var fetchAndSaveHistoricalRatesCallCount: Int {
+        fetchAndSaveHistoricalRatesCalls.count
+    }
+
+    func seedCache(_ data: [HistoricalRateDataValue], for currency: CurrencyCode) {
+        cachedData[currency] = data
+    }
+
+    func fetchAndSaveHistoricalRates(from startDate: Date, to endDate: Date) async throws {
+        // Record the attempt before any throw so failed fetches remain observable.
+        fetchAndSaveHistoricalRatesCalls.append((from: startDate, to: endDate))
+        if shouldThrowErrorOnFetch {
+            throw errorToThrow
+        }
+    }
+
+    func loadHistoricalRates(for _: CurrencyCode, in _: DateRange) async throws -> [HistoricalRateDataValue] {
+        if shouldThrowErrorOnLoad {
+            throw errorToThrow
+        }
+        loadHistoricalRatesCallCount += 1
+        return historicalDataToReturn
+    }
+
+    func earliestStoredDate() async throws -> Date? {
+        earliestStoredDateResult
+    }
+
+    func latestStoredDate() async throws -> Date? {
+        latestStoredDateResult
+    }
+
+    func cachedHistoricalRates(for currency: CurrencyCode) async -> [HistoricalRateDataValue] {
+        cachedReadCount += 1
+        return cachedData[currency] ?? []
+    }
+
+    func replaceCachedHistoricalRates(_ data: [HistoricalRateDataValue], for currency: CurrencyCode) async {
+        replaceCachedCallCount += 1
+        cachedData[currency] = data
+    }
+}
+
+// MARK: - MockTrendRepository
+
+/// Configurable TrendRepository double. `saveTrendData` replaces the stored set,
+/// mirroring the production replace-all semantics.
+final class MockTrendRepository: TrendRepository {
+    var trendsToReturn: [TrendDataValue]
+    var historicalWindowData: [HistoricalRateDataValue] = []
+    var shouldThrowOnLoadTrends = false
+    var shouldThrowOnSave = false
+    var errorToThrow: Error = AppError.unknownError("Mock trend error")
+
+    private(set) var loadTrendDataCallCount = 0
+    private(set) var saveTrendDataCallCount = 0
+    private(set) var loadHistoricalRatesCallCount = 0
+    private(set) var lastSavedTrends: [TrendDataValue]?
+
+    init(trends: [TrendDataValue] = []) {
+        trendsToReturn = trends
+    }
+
+    func loadTrendData() async throws -> [TrendDataValue] {
+        loadTrendDataCallCount += 1
+        if shouldThrowOnLoadTrends {
+            throw errorToThrow
+        }
+        return trendsToReturn
+    }
+
+    func saveTrendData(_ trends: [TrendDataValue]) async throws {
+        saveTrendDataCallCount += 1
+        if shouldThrowOnSave {
+            throw errorToThrow
+        }
+        lastSavedTrends = trends
+        trendsToReturn = trends
+    }
+
+    func loadHistoricalRates(from _: Date, to _: Date) async throws -> [HistoricalRateDataValue] {
+        loadHistoricalRatesCallCount += 1
+        return historicalWindowData
     }
 }

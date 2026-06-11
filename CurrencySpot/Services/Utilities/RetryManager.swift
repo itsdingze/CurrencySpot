@@ -35,10 +35,15 @@ actor RetryManager {
     static let shared = RetryManager()
 
     private let configuration = RetryConfiguration.default
+    private let jitter: @Sendable (ClosedRange<Double>) -> Double
 
     private var retryStates: [String: InternalRetryState] = [:]
 
-    private init() {}
+    /// - Parameter jitter: Random factor source for backoff delays; tests inject
+    ///   a deterministic value.
+    init(jitter: @escaping @Sendable (ClosedRange<Double>) -> Double = { Double.random(in: $0) }) {
+        self.jitter = jitter
+    }
 
     // MARK: - Public Interface
 
@@ -71,8 +76,7 @@ actor RetryManager {
         let cappedDelay = min(exponentialDelay, configuration.maxDelay)
 
         // Add jitter to prevent thundering herd
-        let jitter = Double.random(in: configuration.jitterRange)
-        return cappedDelay * jitter
+        return cappedDelay * jitter(configuration.jitterRange)
     }
 
     /// Checks if more attempts are available for the given endpoint
