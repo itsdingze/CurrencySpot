@@ -100,9 +100,13 @@ struct CameraScannerContainer: View {
         @Bindable var viewModel = viewModel
         switch destination {
         case .basePicker:
-            CurrencyPickerView(selectedCurrency: $viewModel.baseCurrency, exchangeRates: viewModel.availableRates)
+            NavigationStack {
+                CurrencyPickerView(selectedCurrency: $viewModel.baseCurrency, exchangeRates: viewModel.availableRates)
+            }
         case .targetPicker:
-            CurrencyPickerView(selectedCurrency: $viewModel.targetCurrency, exchangeRates: viewModel.availableRates)
+            NavigationStack {
+                CurrencyPickerView(selectedCurrency: $viewModel.targetCurrency, exchangeRates: viewModel.availableRates)
+            }
         case let .badgeDetail(snapshot):
             // Same height-fitting sheet as the accent color picker.
             if #available(iOS 26, *) {
@@ -130,9 +134,12 @@ struct CameraScannerContainer: View {
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     CameraScannerContainer()
         .withDependencyContainer(.preview())
         .environment(AppState.shared)
         .environment(\.colorScheme, .dark)
 }
+#endif
