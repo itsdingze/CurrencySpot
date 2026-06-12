@@ -40,6 +40,8 @@ nonisolated extension CGFloat {
 
     /// Micro badges and chart annotation bubbles.
     static let badgeRadius: CGFloat = 8
+    static let badgePaddingHorizontal: CGFloat = 8
+    static let badgePaddingVertical: CGFloat = 4
     /// The dominant card/field radius.
     static let cardRadius: CGFloat = 12
     /// Containers and primary-action buttons.

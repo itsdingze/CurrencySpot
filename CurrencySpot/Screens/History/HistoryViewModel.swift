@@ -381,7 +381,7 @@ final class HistoryViewModel {
             .map { rate in
                 CurrencyListEntry(
                     code: rate.currencyCode.rawValue,
-                    name: CurrencyUtilities.shared.name(for: rate.currencyCode.rawValue),
+                    name: CurrencyUtilities.name(for: rate.currencyCode.rawValue),
                     rate: rate.rate / baseRate
                 )
             }

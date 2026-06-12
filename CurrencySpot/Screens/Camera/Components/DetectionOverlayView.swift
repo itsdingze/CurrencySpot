@@ -182,8 +182,8 @@ private struct ConvertedPlate: View {
             .lineLimit(1)
             .minimumScaleFactor(0.5)
             .foregroundStyle(Color.accentColor)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, .badgePaddingHorizontal)
+            .padding(.vertical, .badgePaddingVertical)
             .frame(minWidth: boxSize.width + 8, minHeight: boxSize.height + 6)
             .background(.ultraThinMaterial, in: .rect(cornerRadius: cornerRadius))
             .overlay { RoundedRectangle(cornerRadius: cornerRadius).stroke(.white.opacity(0.25), lineWidth: 0.5) }

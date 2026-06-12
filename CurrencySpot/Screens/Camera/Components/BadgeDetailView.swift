@@ -68,7 +68,7 @@ struct BadgeDetailView: View {
         HStack(alignment: .lastTextBaseline, spacing: .tightGap) {
             Text(amount, format: fractionDigits.map { .number.precision(.fractionLength($0)) } ?? .number)
                 .font(.appLargeTitle)
-            Text(CurrencyUtilities.shared.name(for: code))
+            Text(CurrencyUtilities.name(for: code))
                 .font(.appTitle3)
         }
     }

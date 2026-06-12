@@ -339,8 +339,7 @@ final class SettingsViewModel {
     /// - Returns: True if the currency was added, false if it was already in favorites
     @discardableResult
     func addToFavorites(_ currency: String) -> Bool {
-        // Validate currency code
-        guard CurrencyUtilities.shared.isValidCode(currency) else { return false }
+        guard CurrencyCode(currency) != nil else { return false }
 
         // append(_:) is a no-op when the ID is already present.
         let (inserted, _) = favoriteCurrencies.append(currency)

@@ -25,8 +25,8 @@ struct TrendIndicator: View {
         }
         .foregroundStyle(direction.color)
         .font(.appSubheadline.weight(.medium))
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
+        .padding(.horizontal, .badgePaddingHorizontal)
+        .padding(.vertical, .badgePaddingVertical)
         .frame(minWidth: 80, alignment: .trailing)
         .background(
             RoundedRectangle(cornerRadius: .badgeRadius)

@@ -17,12 +17,14 @@ nonisolated final class FrankfurterAPI: Sendable {
 
     private let urlSession: URLSession
     private let retryManager: RetryManager
+    private let dateProvider: DateProvider
 
     /// Default keeps the production session configuration; tests inject a
     /// URLProtocol-stubbed session so requests never reach the live API.
-    init(session: URLSession = FrankfurterAPI.makeDefaultSession(), retryManager: RetryManager = .shared) {
+    init(session: URLSession = FrankfurterAPI.makeDefaultSession(), retryManager: RetryManager = .shared, dateProvider: DateProvider = SystemDateProvider()) {
         urlSession = session
         self.retryManager = retryManager
+        self.dateProvider = dateProvider
     }
 
     /// Production URLSession with appropriate timeout configuration.
@@ -66,7 +68,7 @@ nonisolated final class FrankfurterAPI: Sendable {
     func fetchHistoricalRates(baseCurrency: String = "USD", days: Int) async throws -> HistoricalRatesResponse {
         // Calculate date 'days' ago
         let calendar = TimeZoneManager.cetCalendar
-        let today = Date()
+        let today = dateProvider.now()
         guard let startDate = calendar.date(byAdding: .day, value: -days, to: today) else {
             throw AppError.dateCalculationError("Failed to calculate start date by subtracting \(days) days from \(today)")
         }
