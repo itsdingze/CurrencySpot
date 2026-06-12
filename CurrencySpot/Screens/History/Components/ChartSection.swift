@@ -28,25 +28,15 @@ struct ChartSection: View {
 
     // MARK: - Private Views
 
-    /// `.loading` and `.failed` render their previous points so the chart never
-    /// blanks during a range change; the overlay communicates the load.
+    /// One stable branch for the chart across every load phase
+    /// (`displayedChartDataPoints` already falls back to the previous points
+    /// while loading, so the chart never blanks; the overlay communicates the
+    /// load). Switching over the Loadable cases here would give the chart a
+    /// new structural identity per phase change, resetting its entry-animation
+    /// state and replaying the grow effect on every range change.
     @ViewBuilder
     private var chartContent: some View {
-        switch viewModel.chartData {
-        case .idle:
-            noDataView
-        case let .loading(previous):
-            chartOrPlaceholder(for: previous ?? [])
-        case let .loaded(points):
-            chartOrPlaceholder(for: points)
-        case let .failed(_, previous):
-            chartOrPlaceholder(for: previous ?? [])
-        }
-    }
-
-    @ViewBuilder
-    private func chartOrPlaceholder(for points: [ChartDataPoint]) -> some View {
-        if points.isEmpty {
+        if viewModel.displayedChartDataPoints.isEmpty {
             noDataView
         } else {
             CurrencyChart(isChartSelectionActive: $isChartSelectionActive)
