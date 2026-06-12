@@ -171,7 +171,7 @@ struct SettingsView: View {
                 })
             }
 
-            if let privacyPolicyURL = URL(string: "https://currencyspot.vercel.app") {
+            if let privacyPolicyURL = URL(string: "https://currencyspot.vercel.app/privacy") {
                 Link(destination: privacyPolicyURL) {
                     HStack {
                         Label(title: {
