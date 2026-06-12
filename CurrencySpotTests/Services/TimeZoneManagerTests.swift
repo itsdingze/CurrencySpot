@@ -56,6 +56,19 @@ struct TimeZoneManagerTests {
         #expect(afterFormatted == "2025-03-31")
     }
 
+    @Test("API date handling is Gregorian and ASCII regardless of the device calendar")
+    func apiDatesAreGregorian() {
+        // 2025-03-14T23:00:00Z == midnight CET on 2025-03-15. Fixed epoch
+        // seconds so no Calendar participates in building the expectation —
+        // on a Thai-Buddhist or Japanese-calendar device the unpinned
+        // formatter produced era-relative years (2568) instead of 2025.
+        let reference = Date(timeIntervalSince1970: 1_741_993_200)
+
+        #expect(TimeZoneManager.formatForAPI(reference) == "2025-03-15")
+        #expect(TimeZoneManager.parseAPIDate("2025-03-15") == reference)
+        #expect(TimeZoneManager.cetCalendar.identifier == .gregorian)
+    }
+
     @Test("Display formatters render in the user's locale and local timezone")
     func displayFormatters() throws {
         // Built with the local calendar so the rendered day is host-timezone

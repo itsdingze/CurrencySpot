@@ -11,11 +11,15 @@ nonisolated enum TimeZoneManager {
     // "Europe/Paris" is always available; .gmt is an unreachable safe fallback that avoids a force-unwrap.
     static let cetTimeZone = TimeZone(identifier: "Europe/Paris") ?? .gmt
 
-    static var cetCalendar: Calendar {
-        var calendar = Calendar.current
+    /// Pinned to Gregorian: API dates are ECB calendar dates, and the device
+    /// calendar must not leak into them — a Thai-Buddhist or Japanese device
+    /// calendar resolves year components era-relative (2568, Reiwa 7), which
+    /// would corrupt parseAPIDate and every API date string.
+    static let cetCalendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = cetTimeZone
         return calendar
-    }
+    }()
 
     static func parseAPIDate(_ dateString: String) -> Date? {
         let parts = dateString.split(separator: "-")
@@ -63,19 +67,15 @@ nonisolated enum TimeZoneManager {
         return date
     }
 
-    /// Cached: the historical merge and persistence paths call this once per
-    /// row, and DateFormatter allocation dominates them. Safe to share —
-    /// NSDateFormatter is documented thread-safe since iOS 7 and this
-    /// instance is never mutated after initialization.
-    private static let apiFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = cetTimeZone
-        return formatter
-    }()
+    /// Fixed-format ISO 8601: Gregorian year and ASCII digits regardless of
+    /// the device locale or calendar, unlike an unpinned DateFormatter.
+    /// Cached because the historical merge and persistence paths format once
+    /// per row.
+    private static let apiDateFormat = Date.ISO8601FormatStyle(timeZone: cetTimeZone)
+        .year().month().day().dateSeparator(.dash)
 
     static func formatForAPI(_ date: Date) -> String {
-        apiFormatter.string(from: date)
+        date.formatted(apiDateFormat)
     }
 
     // MARK: - UI Display Methods (Local Timezone)
