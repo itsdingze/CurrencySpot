@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(CalculatorViewModel.self) private var calculatorViewModel
     @Environment(SettingsViewModel.self) private var settingsViewModel
     @Environment(AppState.self) private var appState
 

@@ -11,20 +11,17 @@ import SwiftData
 // MARK: - ModelContainer Factory
 
 extension ModelContainer {
+    /// Single source of truth for the app's persisted model set.
+    static let currencySpotSchema = Schema([
+        ExchangeRateData.self,
+        HistoricalRateData.self,
+        TrendData.self,
+    ])
+
     /// The app's full schema in an in-memory store (tests, previews, fallback boot).
     static func inMemoryCurrencySpot() throws -> ModelContainer {
-        let configuration = ModelConfiguration(
-            for: ExchangeRateData.self,
-            HistoricalRateData.self,
-            TrendData.self,
-            isStoredInMemoryOnly: true
-        )
-        return try ModelContainer(
-            for: ExchangeRateData.self,
-            HistoricalRateData.self,
-            TrendData.self,
-            configurations: configuration
-        )
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        return try ModelContainer(for: currencySpotSchema, configurations: configuration)
     }
 }
 
@@ -189,7 +186,8 @@ final class DependencyContainer {
 
         do {
             let container = try ModelContainer(
-                for: ExchangeRateData.self, HistoricalRateData.self, TrendData.self
+                for: ModelContainer.currencySpotSchema,
+                configurations: ModelConfiguration()
             )
             // One-time data migrations, before any view's .task can fetch. This runs
             // synchronously on the main actor, so it completes before the ViewModels'

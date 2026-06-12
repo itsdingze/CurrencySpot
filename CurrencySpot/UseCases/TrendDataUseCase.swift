@@ -138,13 +138,12 @@ final class TrendDataUseCase {
     /// Whether a date range overlaps the trend calculation window (last 7 days).
     func dateRangeAffectsTrends(startDate: Date, endDate: Date, now: Date) -> Bool {
         let calendar = TimeZoneManager.cetCalendar
-        let trendWindowEnd = calendar.startOfDay(for: now)
-        let trendWindowStart = calendar.date(byAdding: .day, value: -7, to: trendWindowEnd) ?? trendWindowEnd
+        let window = trendWindow(now: now)
 
         let normalizedStartDate = calendar.startOfDay(for: startDate)
         let normalizedEndDate = calendar.startOfDay(for: endDate)
 
-        return normalizedStartDate <= trendWindowEnd && normalizedEndDate >= trendWindowStart
+        return normalizedStartDate <= window.end && normalizedEndDate >= window.start
     }
 
     // MARK: - Cross-Currency Adjustment

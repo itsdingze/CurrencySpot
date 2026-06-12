@@ -1,11 +1,10 @@
 //
-//  ErrorViewModel.swift
+//  AppError.swift
 //  CurrencySpot
 //
 //  Created by Dingze Yu on 4/23/25.
 //
 
-// AppError.swift
 import Foundation
 
 nonisolated enum AppError: Error, Identifiable, Equatable {

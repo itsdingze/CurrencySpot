@@ -8,7 +8,7 @@ import Foundation
 /// Classifies a recognized camera transcript and converts its amount
 /// from the base currency into the target currency.
 final class ScanConversionUseCase {
-    nonisolated struct ScannedConversion: Equatable, Hashable, Sendable {
+    nonisolated struct ScannedConversion: Hashable, Sendable {
         let amount: Decimal
         let converted: Decimal
         let isPrice: Bool
@@ -60,11 +60,6 @@ final class ScanConversionUseCase {
         let classification = classifier.classify(transcript)
         classificationMemo[transcript] = classification
         return classification
-    }
-
-    /// The effective base → target rate, for display in the badge detail.
-    func rate(from base: String, to target: String, in rates: [ExchangeRate]) -> Decimal {
-        convert(1, from: base, to: target, in: rates)
     }
 
     /// Delegates to RateTable's Decimal cross-rate math. Currency selections arrive

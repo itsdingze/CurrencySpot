@@ -195,17 +195,6 @@ final class CalculatorViewModel {
         retryState = .none
     }
 
-    /// Clears cached data and initiates fresh fetch
-    func resetStoredData() async {
-        clearAllData()
-
-        // Wait for existing task to complete instead of cancelling
-        if let existingTask = fetchTask {
-            _ = await existingTask.result
-        }
-        startFetchTask()
-    }
-
     /// Single place that assigns `fetchTask`, so a finishing task can only clear
     /// the handle if it is still the current one (generation check).
     private func startFetchTask() {

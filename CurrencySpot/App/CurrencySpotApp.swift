@@ -5,12 +5,10 @@
 //  Created by Dingze Yu on 2/26/25.
 //
 
-import SwiftData
 import SwiftUI
 
 @main
 struct CurrencySpotApp: App {
-    @State private var appState = AppState.shared
     let dependencyContainer: DependencyContainer
 
     init() {
@@ -29,7 +27,6 @@ struct CurrencySpotApp: App {
                     await dependencyContainer.historyViewModel.initializeTrendData()
                 }
         }
-        .modelContainer(dependencyContainer.modelContainer)
     }
 
     private func getPreferredColorScheme() -> ColorScheme? {

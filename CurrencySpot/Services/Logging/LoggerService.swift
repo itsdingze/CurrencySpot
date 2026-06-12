@@ -51,10 +51,6 @@ nonisolated extension LoggerService {
         log(.warning, message, category: category, isPrivate: false)
     }
 
-    func warningPrivate(_ message: String, category: LogCategory) {
-        log(.warning, message, category: category, isPrivate: true)
-    }
-
     func error(_ message: String, category: LogCategory) {
         log(.error, message, category: category, isPrivate: false)
     }

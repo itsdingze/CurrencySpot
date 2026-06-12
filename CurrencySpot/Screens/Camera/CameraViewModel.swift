@@ -294,12 +294,6 @@ final class CameraViewModel {
 
     var availableRates: [ExchangeRate] { ratesStore.rates }
 
-    var rateFreshness: String { ratesStore.formattedLastUpdated }
-
-    var rateUsed: Decimal {
-        scanConversionUseCase.rate(from: baseCurrency, to: targetCurrency, in: ratesStore.rates)
-    }
-
     /// The badge-detail shortcut: posts a typed pending-conversion request on
     /// AppState and jumps to the Convert tab; the calculator consumes it on appear.
     func openInConverter(_ item: DetectedItem) {
