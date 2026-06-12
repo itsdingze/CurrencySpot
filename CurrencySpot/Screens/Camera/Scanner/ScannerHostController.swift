@@ -53,6 +53,9 @@ final class ScannerHostController: UIViewController {
     }
 
     func syncScanning() {
+        // Called from updateUIViewController on every SwiftUI update — once
+        // per detection frame. Skip the cancel/spawn when already reconciled.
+        if wantsScanning, scanner.isScanning { return }
         startTask?.cancel()
         if wantsScanning {
             // startScanning() can throw transiently (session warming up,

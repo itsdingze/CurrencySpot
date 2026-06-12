@@ -34,7 +34,7 @@ struct DetectionOverlayView: View {
         items.filter { $0.conversion.isPrice }
     }
 
-    private var depths: [UUID: Int] {
+    private func depths(for priceItems: [DetectedItem]) -> [UUID: Int] {
         let plates = priceItems.compactMap { item -> BadgeClusterResolver.Badge? in
             guard let size = plateSizes[item.id] else { return nil }
             return BadgeClusterResolver.Badge(
@@ -47,11 +47,12 @@ struct DetectionOverlayView: View {
     }
 
     var body: some View {
-        let depths = depths
+        let priceItems = priceItems
+        let depths = depths(for: priceItems)
         ZStack {
             ForEach(items) { item in
                 if item.conversion.isPrice {
-                    plate(for: item, depth: depths[item.id])
+                    plate(for: item, depth: depths[item.id], plateCount: priceItems.count)
                 } else {
                     DetectionOutline(item: item, onTap: handleOutlineTap)
                 }
@@ -62,7 +63,7 @@ struct DetectionOverlayView: View {
         .onChange(of: items) { _, _ in syncRevealPromotion() }
     }
 
-    private func plate(for item: DetectedItem, depth: Int?) -> some View {
+    private func plate(for item: DetectedItem, depth: Int?, plateCount: Int) -> some View {
         let depth = depth ?? 0
         return Button {
             handlePlateTap(item.id, depth: depth)
@@ -81,7 +82,7 @@ struct DetectionOverlayView: View {
         .onGeometryChange(for: CGSize.self) { $0.size } action: { plateSizes[item.id] = $0 }
         .position(x: item.bounds.midX, y: item.bounds.midY)
         .opacity(opacity(forDepth: depth))
-        .zIndex(zIndex(forDepth: depth))
+        .zIndex(zIndex(forDepth: depth, plateCount: plateCount))
         .accessibilityHint(depth > 0
             ? "Brings this conversion to the front"
             : "Shows the conversion detail")
@@ -143,8 +144,8 @@ struct DetectionOverlayView: View {
 
     /// Front plate (depth 0) sits highest; deeper plates fall behind but stay
     /// above the outlines, which ride at the ZStack default of 0.
-    private func zIndex(forDepth depth: Int) -> Double {
-        Double(priceItems.count - depth)
+    private func zIndex(forDepth depth: Int, plateCount: Int) -> Double {
+        Double(plateCount - depth)
     }
 }
 

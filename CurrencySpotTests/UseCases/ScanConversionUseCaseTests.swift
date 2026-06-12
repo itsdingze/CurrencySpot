@@ -47,4 +47,28 @@ struct ScanConversionUseCaseTests {
         )
         #expect(result == nil)
     }
+
+    /// The use case caches the rate table and memoizes classifications between
+    /// frames; a rates update must not serve conversions from the stale table.
+    @Test func conversionReflectsUpdatedRates() {
+        let first = useCase.evaluate(
+            transcript: "¥1,200",
+            baseCurrency: "JPY",
+            targetCurrency: "USD",
+            exchangeRates: rates
+        )
+        #expect(first?.converted == 8)
+
+        let updatedRates = [
+            ExchangeRate(currencyCode: "JPY", rate: 100),
+            ExchangeRate(currencyCode: "USD", rate: 1),
+        ]
+        let second = useCase.evaluate(
+            transcript: "¥1,200",
+            baseCurrency: "JPY",
+            targetCurrency: "USD",
+            exchangeRates: updatedRates
+        )
+        #expect(second?.converted == 12)
+    }
 }

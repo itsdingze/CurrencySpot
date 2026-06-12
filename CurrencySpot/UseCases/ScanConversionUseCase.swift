@@ -26,18 +26,40 @@ final class ScanConversionUseCase {
 
     private let classifier = PriceClassifier()
 
+    /// The scanner calls `evaluate` once per recognized token per frame;
+    /// rebuilding the table only when the rates change keeps that path O(1).
+    private var cachedRates: [ExchangeRate] = []
+    private var cachedTable = RateTable([])
+
+    /// Classification is a pure function of the transcript, and scene text
+    /// repeats frame after frame — memoizing skips the regex/NSDataDetector
+    /// passes. Wholesale reset bounds the cache when the scene churns.
+    private var classificationMemo: [String: PriceClassification?] = [:]
+
     func evaluate(
         transcript: String,
         baseCurrency: String,
         targetCurrency: String,
         exchangeRates: [ExchangeRate]
     ) -> ScannedConversion? {
-        guard let classification = classifier.classify(transcript) else { return nil }
+        guard let classification = memoizedClassification(of: transcript) else { return nil }
         return ScannedConversion(
             amount: classification.amount,
             converted: convert(classification.amount, from: baseCurrency, to: targetCurrency, in: exchangeRates),
             isPrice: classification.isPrice
         )
+    }
+
+    private func memoizedClassification(of transcript: String) -> PriceClassification? {
+        if let memoized = classificationMemo[transcript] {
+            return memoized
+        }
+        if classificationMemo.count >= 512 {
+            classificationMemo.removeAll(keepingCapacity: true)
+        }
+        let classification = classifier.classify(transcript)
+        classificationMemo[transcript] = classification
+        return classification
     }
 
     /// The effective base → target rate, for display in the badge detail.
@@ -57,6 +79,10 @@ final class ScanConversionUseCase {
         guard base != target, let baseCode = CurrencyCode(base), let targetCode = CurrencyCode(target) else {
             return amount
         }
-        return RateTable(rates).convert(amount, from: baseCode, to: targetCode)
+        if rates != cachedRates {
+            cachedRates = rates
+            cachedTable = RateTable(rates)
+        }
+        return cachedTable.convert(amount, from: baseCode, to: targetCode)
     }
 }
