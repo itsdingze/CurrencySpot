@@ -60,10 +60,15 @@ struct CalculatorView: View {
             }
         }
         .sheet(item: bindableViewModel.destination) { destination in
-            CurrencyPickerView(
-                selectedCurrency: destination == .basePicker ? bindableViewModel.baseCurrency : bindableViewModel.targetCurrency,
-                exchangeRates: calculatorViewModel.availableRates
-            )
+            // The picker is also pushed from Settings, so the presentation
+            // context owns the stack (a stack inside a pushed destination
+            // invalidates value-based navigation registration).
+            NavigationStack {
+                CurrencyPickerView(
+                    selectedCurrency: destination == .basePicker ? bindableViewModel.baseCurrency : bindableViewModel.targetCurrency,
+                    exchangeRates: calculatorViewModel.availableRates
+                )
+            }
         }
     }
 
@@ -81,7 +86,22 @@ struct CalculatorView: View {
     }
 }
 
-#Preview {
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
+#Preview("Loaded") {
     CalculatorView()
         .withDependencyContainer(DependencyContainer.preview())
 }
+
+#Preview("Loading") {
+    CalculatorView()
+        .environment(CalculatorViewModel.preview(.stalled))
+        .withDependencyContainer(DependencyContainer.preview())
+}
+
+#Preview("Failed") {
+    CalculatorView()
+        .environment(CalculatorViewModel.preview(.failing))
+        .withDependencyContainer(DependencyContainer.preview())
+}
+#endif

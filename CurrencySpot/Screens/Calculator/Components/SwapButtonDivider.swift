@@ -72,3 +72,13 @@ struct SwapButtonDivider: View {
         }
     }
 }
+
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
+#Preview {
+    SwapButtonDivider()
+        .withDependencyContainer(DependencyContainer.preview())
+        .padding()
+        .background(Color.secondaryBackground)
+}
+#endif

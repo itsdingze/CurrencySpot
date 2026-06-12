@@ -93,7 +93,7 @@ struct UnifiedCurrencyView: View {
     }
 
     private var accessibilityContainerValue: String {
-        let currencyName = CurrencyUtilities.shared.name(for: currencyCode)
+        let currencyName = CurrencyUtilities.name(for: currencyCode)
         return "\(amount) \(currencyName)"
     }
 
@@ -149,7 +149,7 @@ struct UnifiedCurrencyView: View {
     }
 
     private var accessibilityAmountValue: String {
-        let currency = CurrencyUtilities.shared.name(for: currencyCode)
+        let currency = CurrencyUtilities.name(for: currencyCode)
         return "\(amount) \(currency)"
     }
 
@@ -187,12 +187,12 @@ struct UnifiedCurrencyView: View {
     }
 
     private var accessibilityButtonValue: String {
-        let currencyName = CurrencyUtilities.shared.name(for: currencyCode)
+        let currencyName = CurrencyUtilities.name(for: currencyCode)
         return "Currently selected: \(currencyName), \(currencyCode)"
     }
 
     private var accessibilityInputLabels: [String] {
-        let currencyName = CurrencyUtilities.shared.name(for: currencyCode)
+        let currencyName = CurrencyUtilities.name(for: currencyCode)
         switch type {
         case .source:
             return ["From currency", "Source currency", currencyCode, currencyName]
@@ -200,4 +200,12 @@ struct UnifiedCurrencyView: View {
             return ["To currency", "Target currency", currencyCode, currencyName]
         }
     }
+}
+
+#Preview {
+    VStack(spacing: 24) {
+        UnifiedCurrencyView(type: .source, amount: "1,234.56", currencyCode: "USD", onPress: {})
+        UnifiedCurrencyView(type: .converted, amount: "1,134.02", currencyCode: "EUR", onPress: {})
+    }
+    .padding()
 }

@@ -77,3 +77,34 @@ struct ChartSection: View {
             .accessibilityHint("Historical exchange rate data is not available for the selected currency pair")
     }
 }
+
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
+#Preview("Loaded") {
+    @Previewable @State var viewModel = HistoryViewModel.preview()
+
+    ChartSection(isChartSelectionActive: .constant(false))
+        .environment(viewModel)
+        .task { viewModel.openHistory(for: "EUR") }
+        .padding()
+}
+
+#Preview("Loading") {
+    @Previewable @State var viewModel = HistoryViewModel.previewLoading()
+
+    ChartSection(isChartSelectionActive: .constant(false))
+        .environment(viewModel)
+        .task { viewModel.openHistory(for: "EUR") }
+        .padding()
+}
+
+#Preview("Failed") {
+    @Previewable @State var viewModel = HistoryViewModel.preview()
+
+    ChartSection(isChartSelectionActive: .constant(false))
+        .environment(viewModel)
+        // An unknown currency code is the public intent that produces `.failed`.
+        .task { viewModel.configure(base: "USD", target: "???") }
+        .padding()
+}
+#endif

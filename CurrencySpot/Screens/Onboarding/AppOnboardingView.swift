@@ -182,9 +182,12 @@ struct CurrencySpotOnboarding: View {
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     let container = DependencyContainer.preview()
 
     CurrencySpotOnboarding()
         .withDependencyContainer(container)
 }
+#endif

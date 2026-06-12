@@ -31,6 +31,8 @@ struct StillFrameView: View {
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     let image = UIGraphicsImageRenderer(size: CGSize(width: 300, height: 400)).image { context in
         UIColor.darkGray.setFill()
@@ -40,3 +42,4 @@ struct StillFrameView: View {
     StillFrameView(image: image)
         .withDependencyContainer(.preview())
 }
+#endif

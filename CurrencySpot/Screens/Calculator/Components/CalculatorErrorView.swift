@@ -68,6 +68,8 @@ struct CalculatorErrorView: View {
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     @Previewable @State var appState = AppState.shared
     let container = DependencyContainer.preview()
@@ -76,3 +78,4 @@ struct CalculatorErrorView: View {
         .withDependencyContainer(container)
         .environment(appState)
 }
+#endif

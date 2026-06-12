@@ -30,9 +30,9 @@ struct HeaderSection: View {
             HStack(alignment: .firstTextBaseline, spacing: .tightGap) {
                 Text(historyViewModel.targetCurrency)
                     .font(.appTitle)
-                    .accessibilityLabel("\(historyViewModel.targetCurrency), \(CurrencyUtilities.shared.name(for: historyViewModel.targetCurrency))")
+                    .accessibilityLabel("\(historyViewModel.targetCurrency), \(CurrencyUtilities.name(for: historyViewModel.targetCurrency))")
 
-                Text(CurrencyUtilities.shared.name(for: historyViewModel.targetCurrency))
+                Text(CurrencyUtilities.name(for: historyViewModel.targetCurrency))
                     .font(.appHeadline.weight(.medium))
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
@@ -131,4 +131,23 @@ struct TimeRangePicker: View {
             }
         }
     }
+}
+
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
+#Preview {
+    HeaderSection(isChartSelectionActive: .constant(false))
+        .withDependencyContainer(DependencyContainer.preview())
+        .padding()
+}
+#endif
+
+#Preview("TimeRangePicker") {
+    @Previewable @State var selectedTimeRange = TimeRange.threeMonths
+
+    TimeRangePicker(
+        selectedTimeRange: selectedTimeRange,
+        onSelect: { selectedTimeRange = $0 }
+    )
+    .padding()
 }

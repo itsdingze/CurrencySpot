@@ -60,3 +60,12 @@ struct RateInfoView: View {
         "1 \(viewModel.baseCurrency) = \(viewModel.conversionRate.toStringMax4Decimals) \(viewModel.targetCurrency)"
     }
 }
+
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
+#Preview {
+    RateInfoView()
+        .withDependencyContainer(DependencyContainer.preview())
+        .padding()
+}
+#endif

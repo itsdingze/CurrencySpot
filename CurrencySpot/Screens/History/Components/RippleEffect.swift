@@ -21,6 +21,7 @@ struct RippleEffect: View {
             .frame(width: 8, height: 8)
             .scaleEffect(scale)
             .opacity(opacity)
+            .accessibilityHidden(true)
             .onChange(of: isActive) { _, newValue in
                 if newValue {
                     startRippleAnimation()
@@ -49,4 +50,12 @@ struct RippleEffect: View {
             }
         }
     }
+}
+
+#Preview {
+    @Previewable @State var isActive = false
+
+    RippleEffect(isActive: isActive, color: .accentColor)
+        .frame(width: 60, height: 60)
+        .task { isActive = true }
 }

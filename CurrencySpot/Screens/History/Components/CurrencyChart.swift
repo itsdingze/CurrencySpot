@@ -217,3 +217,15 @@ struct CurrencyChart: View {
         }
     }
 }
+
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
+#Preview {
+    @Previewable @State var viewModel = HistoryViewModel.preview()
+
+    CurrencyChart(isChartSelectionActive: .constant(false))
+        .environment(viewModel)
+        .task { viewModel.openHistory(for: "EUR") }
+        .padding()
+}
+#endif

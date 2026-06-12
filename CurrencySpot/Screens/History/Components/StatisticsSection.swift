@@ -161,3 +161,15 @@ struct StatisticsSection: View {
         }
     }
 }
+
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
+#Preview {
+    @Previewable @State var viewModel = HistoryViewModel.preview()
+
+    StatisticsSection()
+        .environment(viewModel)
+        .task { viewModel.openHistory(for: "EUR") }
+        .padding()
+}
+#endif

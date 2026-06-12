@@ -53,3 +53,12 @@ struct CurrencyDisplayView: View {
         calculatorViewModel.destination = .targetPicker
     }
 }
+
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
+#Preview {
+    CurrencyDisplayView()
+        .withDependencyContainer(DependencyContainer.preview())
+        .padding()
+}
+#endif

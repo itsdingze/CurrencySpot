@@ -28,8 +28,11 @@ struct CameraView: View {
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     CameraView()
         .withDependencyContainer(.preview())
         .environment(AppState.shared)
 }
+#endif

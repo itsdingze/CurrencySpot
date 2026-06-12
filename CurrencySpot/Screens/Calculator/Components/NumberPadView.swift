@@ -162,3 +162,13 @@ struct NumberPadView: View {
         }
     }
 }
+
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
+#Preview {
+    NumberPadView()
+        .withDependencyContainer(DependencyContainer.preview())
+        .frame(height: 400)
+        .padding()
+}
+#endif

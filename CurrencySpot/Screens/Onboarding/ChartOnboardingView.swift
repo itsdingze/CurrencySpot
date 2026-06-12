@@ -220,6 +220,8 @@ struct ChartOnboardingView: View {
 
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     @Previewable @State var showOnboarding = true
     let container = DependencyContainer.preview()
@@ -227,3 +229,4 @@ struct ChartOnboardingView: View {
     ChartOnboardingView(showOnboarding: $showOnboarding)
         .withDependencyContainer(container)
 }
+#endif

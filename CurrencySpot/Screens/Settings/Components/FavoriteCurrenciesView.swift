@@ -21,7 +21,7 @@ struct FavoriteCurrenciesView: View {
 
                     Spacer()
 
-                    Text(CurrencyUtilities.shared.name(for: currency))
+                    Text(CurrencyUtilities.name(for: currency))
                         .font(.appSubheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -38,10 +38,8 @@ struct FavoriteCurrenciesView: View {
         .navigationTitle("Favorite Currencies")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button(action: {
+                Button("Add currency", systemImage: "plus") {
                     showingAddSheet = true
-                }) {
-                    Image(systemName: "plus")
                 }
             }
 
@@ -72,7 +70,7 @@ struct AddCurrencyView: View {
         } else {
             return available.filter { currency in
                 currency.currencyCode.rawValue.localizedStandardContains(searchText) ||
-                    CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue).localizedStandardContains(searchText)
+                    CurrencyUtilities.name(for: currency.currencyCode.rawValue).localizedStandardContains(searchText)
             }
         }
     }
@@ -87,7 +85,7 @@ struct AddCurrencyView: View {
                     ForEach(filteredCurrencies, id: \.currencyCode) { currency in
                         CurrencyRowButton(
                             code: currency.currencyCode.rawValue,
-                            name: CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue),
+                            name: CurrencyUtilities.name(for: currency.currencyCode.rawValue),
                             action: {
                                 viewModel.addToFavorites(currency.currencyCode.rawValue)
                                 isPresented = false
@@ -109,3 +107,20 @@ struct AddCurrencyView: View {
         }
     }
 }
+
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
+#Preview {
+    NavigationStack {
+        FavoriteCurrenciesView()
+    }
+    .withDependencyContainer(DependencyContainer.preview())
+}
+
+#Preview("AddCurrencyView") {
+    @Previewable @State var isPresented = true
+
+    AddCurrencyView(isPresented: $isPresented)
+        .withDependencyContainer(DependencyContainer.preview())
+}
+#endif

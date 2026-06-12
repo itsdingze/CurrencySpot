@@ -29,12 +29,12 @@ struct DynamicSheet<Content: View>: View {
         }
         .modifier(SheetHeightModifier(height: sheetHeight))
     }
-    
-    var windowSize: CGSize {
-        if let size = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.size{
+
+    private var windowSize: CGSize {
+        if let size = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.size {
             return size
         }
-        
+
         return .zero
     }
 }
@@ -50,4 +50,14 @@ fileprivate struct SheetHeightModifier: ViewModifier, Animatable {
         content
             .presentationDetents(height == .zero ? [.medium] : [.height(height)])
     }
+}
+
+#Preview {
+    Color.clear
+        .sheet(isPresented: .constant(true)) {
+            DynamicSheet(animation: .appSelect) {
+                Text("Sheet content sized to fit")
+                    .padding()
+            }
+        }
 }

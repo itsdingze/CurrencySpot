@@ -67,4 +67,95 @@
         }
     }
 
+    // MARK: - Loadable State Stubs
+
+    /// Pins CalculatorView's load state: `.stalled` never finishes (loading),
+    /// `.failing` always throws (failed).
+    struct StubExchangeRateRepository: ExchangeRateRepository {
+        enum Behavior {
+            case stalled
+            case failing
+        }
+
+        let behavior: Behavior
+
+        func shouldRefreshRates() async -> Bool { true }
+
+        func fetchExchangeRates() async throws -> [ExchangeRate] {
+            switch behavior {
+            case .stalled:
+                try await Task.sleep(for: .seconds(86_400))
+                return []
+            case .failing:
+                throw AppError.networkError("Could not reach the exchange rate server.")
+            }
+        }
+
+        func loadExchangeRates() async throws -> [ExchangeRate] {
+            try await fetchExchangeRates()
+        }
+
+        func lastFetchDate() -> Date? { nil }
+    }
+
+    extension CalculatorViewModel {
+        static func preview(_ behavior: StubExchangeRateRepository.Behavior) -> CalculatorViewModel {
+            CalculatorViewModel(
+                repository: StubExchangeRateRepository(behavior: behavior),
+                ratesStore: ExchangeRatesStore()
+            )
+        }
+    }
+
+    /// Never finishes, so a chart preview stays in `.loading` indefinitely.
+    struct StalledHistoricalRateRepository: HistoricalRateRepository {
+        func fetchAndSaveHistoricalRates(from _: Date, to _: Date) async throws { try await stall() }
+
+        func loadHistoricalRates(for _: CurrencyCode, in _: DateRange) async throws -> [HistoricalRateSnapshot] {
+            try await stall()
+            return []
+        }
+
+        func earliestStoredDate() async throws -> Date? {
+            try await stall()
+            return nil
+        }
+
+        func latestStoredDate() async throws -> Date? {
+            try await stall()
+            return nil
+        }
+
+        func cachedHistoricalRates(for _: CurrencyCode) async -> [HistoricalRateSnapshot] {
+            try? await stall()
+            return []
+        }
+
+        func replaceCachedHistoricalRates(_: [HistoricalRateSnapshot], for _: CurrencyCode) async {}
+
+        private func stall() async throws { try await Task.sleep(for: .seconds(86_400)) }
+    }
+
+    extension HistoryViewModel {
+        /// A view model whose chart load never finishes, pinning `.loading`.
+        static func previewLoading() -> HistoryViewModel {
+            let mockService = MockExchangeRateService()
+            let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: UserDefaultsHistoricalSyncStore())
+
+            return HistoryViewModel(
+                ratesStore: ExchangeRatesStore(),
+                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
+                dataOrchestrationUseCase: DataOrchestrationUseCase(
+                    repository: StalledHistoricalRateRepository(),
+                    historicalDataAnalysisUseCase: historicalDataAnalysisUseCase
+                ),
+                chartDataPreparationUseCase: ChartDataPreparationUseCase(cacheService: InMemoryCacheService()),
+                trendDataUseCase: TrendDataUseCase(
+                    trendRepository: mockService,
+                    historicalRateRepository: mockService
+                )
+            )
+        }
+    }
+
 #endif
