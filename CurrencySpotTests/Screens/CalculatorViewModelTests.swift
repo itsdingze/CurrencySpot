@@ -142,6 +142,27 @@ struct CalculatorViewModelTests {
 
     // MARK: Fetch lifecycle
 
+    @Test("retryFetch is single-flight: a second tap during an in-flight fetch starts no second fetch", .timeLimit(.minutes(1)))
+    func retryFetchIsSingleFlight() async throws {
+        let viewModel = try makeViewModel()
+        repository.fetchExchangeRatesResult = .success([
+            ExchangeRate(currencyCode: "USD", rate: 1.0),
+            ExchangeRate(currencyCode: "EUR", rate: 0.9),
+        ])
+
+        // Both calls run synchronously on the main actor before the spawned
+        // fetch task gets a turn; the second must join, not duplicate.
+        viewModel.retryFetch()
+        viewModel.retryFetch()
+        await waitUntilSettled(viewModel)
+
+        #expect(repository.fetchExchangeRatesCallCount == 1)
+        guard case .loaded = viewModel.loadState else {
+            Issue.record("expected .loaded, got \(viewModel.loadState)")
+            return
+        }
+    }
+
     @Test("checkIfShouldFetch fetches when rates are stale and the device is connected", .timeLimit(.minutes(1)))
     func staleAndConnectedFetches() async throws {
         let viewModel = try makeViewModel()

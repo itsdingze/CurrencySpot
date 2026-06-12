@@ -22,11 +22,7 @@ struct CalculatorView: View {
             VStack(spacing: .elementGap) {
                 if !appState.networkMonitor.isConnected, calculatorViewModel.lastUpdated != nil {
                     OfflineBanner(
-                        refreshAction: {
-                            Task {
-                                await calculatorViewModel.fetchExchangeRates()
-                            }
-                        },
+                        refreshAction: calculatorViewModel.retryFetch,
                         isUsingMockData: calculatorViewModel.isUsingMockData,
                         retryState: calculatorViewModel.retryState
                     )

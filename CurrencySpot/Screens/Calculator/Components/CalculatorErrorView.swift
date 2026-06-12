@@ -31,9 +31,7 @@ struct CalculatorErrorView: View {
 
             if appState.networkMonitor.isConnected {
                 Button("Retry Connection") {
-                    Task {
-                        await calculatorViewModel.fetchExchangeRates()
-                    }
+                    calculatorViewModel.retryFetch()
                 }
                 .padding(.fieldPadding)
                 .background(Color.accentColor)

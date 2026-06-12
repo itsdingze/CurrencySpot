@@ -161,10 +161,21 @@ final class CalculatorViewModel {
         let shouldFetch = await repository.shouldRefreshRates()
 
         if shouldFetch, appState.networkMonitor.isConnected {
+            // A concurrent caller may have started a fetch while this one was
+            // suspended above; joining it instead keeps fetches single-flight.
+            guard fetchTask == nil else { return }
             startFetchTask()
         } else {
             await loadExchangeRates()
         }
+    }
+
+    /// Retry/refresh intent for the error and offline banners. Synchronous on
+    /// the main actor, so a tap during an in-flight fetch is an atomic no-op
+    /// instead of a second concurrent fetch.
+    func retryFetch() {
+        guard fetchTask == nil else { return }
+        startFetchTask()
     }
 
     /// Applies a pending conversion request (e.g. from the camera's "open in
@@ -302,17 +313,13 @@ final class CalculatorViewModel {
 
     /// Updates the retry state based on the current retry manager state
     private func updateRetryState() async {
-        let currentAttempt = await retryManager.getCurrentAttempt(for: exchangeRatesEndpoint)
-        let canRetry = await retryManager.canRetry(for: exchangeRatesEndpoint)
+        let snapshot = await retryManager.snapshot(for: exchangeRatesEndpoint)
 
-        if currentAttempt > 0, canRetry {
-            // Currently retrying
-            retryState = .retrying(attempt: currentAttempt, maxAttempts: 3)
-        } else if currentAttempt > 0, !canRetry {
-            // Exhausted retries
+        if snapshot.attempt > 0, snapshot.canRetry {
+            retryState = .retrying(attempt: snapshot.attempt, maxAttempts: snapshot.maxAttempts)
+        } else if snapshot.attempt > 0 {
             retryState = .exhausted
         } else {
-            // No retries or reset state
             retryState = .none
         }
     }
