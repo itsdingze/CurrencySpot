@@ -6,22 +6,32 @@
 import Foundation
 
 /// Historical rates aggregate: range fetch/load, stored-coverage queries, and the
-/// per-currency in-memory cache that backs chart gap detection.
+/// shared in-memory series that backs chart gap detection.
 protocol HistoricalRateRepository {
-    /// Fetches a date range from the network and saves it to persistent storage.
-    func fetchAndSaveHistoricalRates(from startDate: Date, to endDate: Date) async throws
+    /// Fetches a date range from the network and returns the decoded snapshots immediately.
+    /// Persistence happens behind the returned data, and the coverage watermark is recorded
+    /// only after that save commits. Readers that need the rows on disk must sequence
+    /// behind `waitForPendingHistoricalWrites()`.
+    func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot]
 
-    /// Loads stored historical rates for a currency within a range,
-    /// with a network fallback when persistence fails.
-    func loadHistoricalRates(for currency: CurrencyCode, in range: DateRange) async throws -> [HistoricalRateSnapshot]
+    /// Suspends until every scheduled background historical save has settled.
+    func waitForPendingHistoricalWrites() async
+
+    /// Loads ALL stored historical rates within a range, with a network fallback when
+    /// persistence fails. Deliberately currency-agnostic: results feed the shared
+    /// series, and a per-currency-filtered date set would poison it for every other
+    /// currency.
+    func loadHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot]
 
     /// Bounds of the persisted historical data; nil when nothing is stored.
     func earliestStoredDate() async throws -> Date?
     func latestStoredDate() async throws -> Date?
 
-    /// The in-memory historical cache for a currency (merged, deduplicated, date-sorted).
-    func cachedHistoricalRates(for currency: CurrencyCode) async -> [HistoricalRateSnapshot]
+    /// The shared in-memory historical series (merged, deduplicated, date-sorted).
+    /// Every snapshot carries all currencies, so one series serves every chart.
+    func cachedHistoricalRates() async -> [HistoricalRateSnapshot]
 
-    /// Replaces the in-memory historical cache for a currency.
-    func replaceCachedHistoricalRates(_ data: [HistoricalRateSnapshot], for currency: CurrencyCode) async
+    /// Merges new rows into the shared series by date, atomically, and returns the
+    /// merged result. Concurrent loads union instead of overwriting each other.
+    func mergeCachedHistoricalRates(_ new: [HistoricalRateSnapshot]) async -> [HistoricalRateSnapshot]
 }

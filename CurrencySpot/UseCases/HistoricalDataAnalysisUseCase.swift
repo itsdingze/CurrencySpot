@@ -114,12 +114,6 @@ final class HistoricalDataAnalysisUseCase {
         return RateRefreshPolicy.shouldRefetch(now: now, lastFetch: syncStore.checkedAt)
     }
 
-    /// Records that `[from, through]` has now been fetched/checked. Called after every successful
-    /// fetch — including ones that return no rows — so empty days count as checked.
-    func recordSync(from: Date, through: Date, now: Date) {
-        syncStore.record(from: from, through: through, at: now)
-    }
-
     // MARK: - Data Merging
 
     /// Merges existing and new historical data, removing duplicates and maintaining sort order
@@ -127,20 +121,6 @@ final class HistoricalDataAnalysisUseCase {
         existing: [HistoricalRateSnapshot],
         new: [HistoricalRateSnapshot]
     ) -> [HistoricalRateSnapshot] {
-        // Create a dictionary for fast lookup of existing dates
-        var existingByDate: [String: HistoricalRateSnapshot] = [:]
-        for item in existing {
-            existingByDate[TimeZoneManager.formatForAPI(item.date)] = item
-        }
-
-        // Add new items, overwriting any duplicates
-        for item in new {
-            existingByDate[TimeZoneManager.formatForAPI(item.date)] = item
-        }
-
-        // Convert back to array and sort by date
-        return existingByDate.values.sorted { first, second in
-            first.date < second.date
-        }
+        HistoricalRateSnapshot.merge(existing: existing, new: new)
     }
 }

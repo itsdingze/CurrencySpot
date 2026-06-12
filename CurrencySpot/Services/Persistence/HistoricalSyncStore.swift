@@ -43,9 +43,33 @@ final class UserDefaultsHistoricalSyncStore: HistoricalSyncStore {
     var checkedAt: Date? { defaults.object(forKey: UserDefaultsKeys.historicalSyncCheckedAt) as? Date }
 
     func record(from newFrom: Date, through newThrough: Date, at now: Date) {
+        // The window must stay contiguous: uniting across an unfetched middle would
+        // claim those dates as checked, permanently hiding them from gap detection.
+        // On a disjoint record, keep the window that reaches further forward (the
+        // live edge drives freshness) instead of uniting.
+        if let from, let through, !Self.overlapsOrAdjacent(from: from, through: through, newFrom: newFrom, newThrough: newThrough) {
+            guard newThrough > through else { return } // keep the existing window; drop the record
+            defaults.set(newFrom, forKey: UserDefaultsKeys.historicalSyncFrom)
+            defaults.set(newThrough, forKey: UserDefaultsKeys.historicalSyncThrough)
+            defaults.set(now, forKey: UserDefaultsKeys.historicalSyncCheckedAt)
+            return
+        }
+
         defaults.set(min(from ?? newFrom, newFrom), forKey: UserDefaultsKeys.historicalSyncFrom)
         defaults.set(max(through ?? newThrough, newThrough), forKey: UserDefaultsKeys.historicalSyncThrough)
         defaults.set(now, forKey: UserDefaultsKeys.historicalSyncCheckedAt)
+    }
+
+    /// True when `[newFrom, newThrough]` touches `[from, through]` (overlap or a gap
+    /// of at most one day), so the min/max union introduces no unchecked middle.
+    private static func overlapsOrAdjacent(from: Date, through: Date, newFrom: Date, newThrough: Date) -> Bool {
+        let calendar = TimeZoneManager.cetCalendar
+        guard let throughPlusDay = calendar.date(byAdding: .day, value: 1, to: through),
+              let fromMinusDay = calendar.date(byAdding: .day, value: -1, to: from)
+        else {
+            return true // date math failure: fall back to the historical union behavior
+        }
+        return newFrom <= throughPlusDay && newThrough >= fromMinusDay
     }
 
     func reset() {

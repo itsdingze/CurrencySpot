@@ -23,6 +23,15 @@ final class DataCoordinator {
     private let dateProvider: DateProvider
     private let logger: LoggerService
 
+    /// Tail of the deferred historical-save chain. Writes run behind the snapshots
+    /// returned to callers so rendering is never blocked on a persistence transaction.
+    private var pendingHistoricalWrite: Task<Void, Never>?
+
+    /// Bumped at the start of `clearAllData`. A fetch that began under an older epoch
+    /// must not persist, record coverage, or surface data after the wipe — its rows
+    /// belong to the world the user just erased.
+    private var clearEpoch = 0
+
     // MARK: - Initialization
 
     /// - Parameter syncStore: Historical coverage window, reset alongside a full data clear so the
@@ -160,47 +169,99 @@ extension DataCoordinator: ExchangeRateRepository {
 // MARK: - HistoricalRateRepository
 
 extension DataCoordinator: HistoricalRateRepository {
-    /// Fetches historical rates for a specific date range and coordinates storage.
-    func fetchAndSaveHistoricalRates(from startDate: Date, to endDate: Date) async throws {
+    /// Fetches historical rates for a date range and returns the decoded snapshots immediately.
+    /// The SwiftData save runs behind the returned data (`schedulePersist`), so a chart render
+    /// is never blocked on a multi-thousand-row insert transaction.
+    func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
+        let epoch = clearEpoch
         let historicalResponse = try await networkService.fetchHistoricalRates(
             from: startDate,
             to: endDate
         )
 
-        // Save to persistence layer
-        try await persistenceService.saveHistoricalExchangeRates(historicalResponse.rates)
+        // A clear ran while this fetch was in flight. Throwing (rather than returning
+        // stale snapshots) also keeps joiners from re-warming the wiped cache.
+        guard epoch == clearEpoch else { throw CancellationError() }
 
-        // Update the last fetch date
+        let snapshots = await Self.snapshots(from: historicalResponse.rates)
+
+        // Re-check after the off-main mapping: a clear may have run during it.
+        guard epoch == clearEpoch else { throw CancellationError() }
+
+        schedulePersist(of: historicalResponse.rates, from: startDate, through: endDate, epoch: epoch)
         networkService.updateLastFetchDate(dateProvider.now())
+        return snapshots
     }
 
-    /// Loads historical rates from persistence (the source of truth), with a network fallback on error.
+    func waitForPendingHistoricalWrites() async {
+        await pendingHistoricalWrite?.value
+    }
+
+    /// Persists fetched rates behind the returned snapshots, chaining writes in arrival order.
+    /// The coverage watermark is recorded only after the save commits: recording first would,
+    /// after a crash in between, claim coverage over rows that never landed — leaving chart
+    /// gaps that gap detection would never refetch.
+    private func schedulePersist(of rates: [String: [String: Double]], from startDate: Date, through endDate: Date, epoch: Int) {
+        let previousWrite = pendingHistoricalWrite
+        pendingHistoricalWrite = Task {
+            await previousWrite?.value
+            guard !Task.isCancelled, epoch == clearEpoch else { return }
+            do {
+                try await persistenceService.saveHistoricalExchangeRates(rates)
+                // A clear may have started while the save was running; recording then
+                // would claim coverage over a wiped store.
+                guard epoch == clearEpoch else { return }
+                syncStore.record(from: startDate, through: endDate, at: dateProvider.now())
+            } catch {
+                // The rendered rows never reached disk. Leaving them in the shared
+                // series would let the next gap fetch anchor PAST this hole and record
+                // coverage over dates that are not persisted — a hole gap detection
+                // would never refetch. Evict the failed window so the cache reflects
+                // persisted truth again.
+                let cached = await cacheService.getCachedHistoricalData() ?? []
+                await cacheService.cacheHistoricalData(cached.filter { $0.date < startDate || $0.date > endDate })
+                logger.warning("Deferred historical save failed; window evicted and coverage not recorded: \(error.localizedDescription)", category: .persistence)
+            }
+        }
+    }
+
+    /// Re-keys validated DTO rows (FrankfurterV2Mapper checked codes, rates, and dates at the
+    /// network boundary) into domain snapshots, sorted by date as cache merging expects.
+    /// `@concurrent` because a year of rates is ~60k point structs — far too much work
+    /// for the main actor this coordinator lives on.
+    @concurrent
+    private nonisolated static func snapshots(from rates: [String: [String: Double]]) async -> [HistoricalRateSnapshot] {
+        rates.compactMap { dateString, currencyRates -> HistoricalRateSnapshot? in
+            guard let date = TimeZoneManager.parseAPIDate(dateString) else { return nil }
+            let points = currencyRates.compactMap { code, rate in
+                CurrencyCode(code).map { HistoricalRatePoint(currencyCode: $0, rate: rate) }
+            }
+            return HistoricalRateSnapshot(date: date, rates: points)
+        }
+        .sorted { $0.date < $1.date }
+    }
+
+    /// Loads all historical rates in range from persistence (the source of truth),
+    /// with a network fallback on error.
     ///
     /// This deliberately does NOT read the in-memory cache: the historical cache is owned by
     /// `DataOrchestrationUseCase`, which reads it for gap detection and writes the merged result.
     /// Reading it here would shadow data just written by a fresh fetch (a successful 3-month fetch
     /// would still read back only the older, narrower cached window).
-    func loadHistoricalRates(for currency: CurrencyCode, in range: DateRange) async throws -> [HistoricalRateSnapshot] {
+    func loadHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
         do {
             return try await persistenceService.loadHistoricalRates(
-                currency: currency.rawValue,
                 from: range.start,
                 to: range.end
             )
         } catch {
             logger.warning("Failed to load historical data from persistence: \(error.localizedDescription)", category: .persistence)
 
-            // Try to fetch from network if connected
+            // Try to fetch from network if connected. The fetched snapshots are returned
+            // directly; re-reading persistence here would race the deferred save.
             if await networkService.shouldFetchNewRates() {
                 do {
-                    try await fetchAndSaveHistoricalRates(from: range.start, to: range.end)
-
-                    // Try loading again after fetch
-                    return try await persistenceService.loadHistoricalRates(
-                        currency: currency.rawValue,
-                        from: range.start,
-                        to: range.end
-                    )
+                    return try await fetchHistoricalRates(from: range.start, to: range.end)
                 } catch {
                     logger.warning("Network fetch for historical data also failed: \(error.localizedDescription)", category: .network)
                 }
@@ -219,12 +280,12 @@ extension DataCoordinator: HistoricalRateRepository {
         try await persistenceService.getLatestStoredDate()
     }
 
-    func cachedHistoricalRates(for currency: CurrencyCode) async -> [HistoricalRateSnapshot] {
-        await cacheService.getCachedHistoricalData(for: currency.rawValue) ?? []
+    func cachedHistoricalRates() async -> [HistoricalRateSnapshot] {
+        await cacheService.getCachedHistoricalData() ?? []
     }
 
-    func replaceCachedHistoricalRates(_ data: [HistoricalRateSnapshot], for currency: CurrencyCode) async {
-        await cacheService.cacheHistoricalData(data, for: currency.rawValue)
+    func mergeCachedHistoricalRates(_ new: [HistoricalRateSnapshot]) async -> [HistoricalRateSnapshot] {
+        await cacheService.mergeHistoricalData(new)
     }
 }
 
@@ -258,6 +319,16 @@ extension DataCoordinator: TrendRepository {
 
 extension DataCoordinator: DataClearing {
     func clearAllData() async throws {
+        // Fence off in-flight fetches before anything else: a fetch landing while this
+        // method is suspended would otherwise schedule a fresh, unguarded persist.
+        clearEpoch += 1
+
+        // Settle any deferred historical write, or it could land after the wipe
+        // and resurrect rows under a freshly reset watermark.
+        pendingHistoricalWrite?.cancel()
+        await pendingHistoricalWrite?.value
+        pendingHistoricalWrite = nil
+
         // Clear from persistence layer
         try await persistenceService.clearAllData()
 

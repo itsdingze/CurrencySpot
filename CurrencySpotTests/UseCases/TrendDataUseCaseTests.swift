@@ -79,7 +79,7 @@ struct TrendDataUseCaseTests {
         #expect(result.contains { $0.currencyCode == "EUR" })
         #expect(result.contains { $0.currencyCode == "GBP" })
         #expect(result.contains { $0.currencyCode == "JPY" })
-        #expect(historicalRepository.fetchAndSaveHistoricalRatesCallCount == 0)
+        #expect(historicalRepository.fetchHistoricalRatesCallCount == 0)
         #expect(trendRepository.saveTrendDataCallCount == 0)
     }
 
@@ -92,7 +92,7 @@ struct TrendDataUseCaseTests {
 
         let result = try await useCase.initializeTrendData()
 
-        #expect(historicalRepository.fetchAndSaveHistoricalRatesCallCount == 0)
+        #expect(historicalRepository.fetchHistoricalRatesCallCount == 0)
         #expect(trendRepository.saveTrendDataCallCount == 1)
         #expect(result.count == 2) // EUR and GBP computed from the window data
         let eur = try #require(result.first { $0.currencyCode == "EUR" })
@@ -100,17 +100,24 @@ struct TrendDataUseCaseTests {
         #expect(eur.miniChartData == [1.0, 1.1])
     }
 
-    @Test("When no existing trends and insufficient data, should fetch then calculate")
+    @Test("When no existing trends and insufficient data, should fetch and calculate from the fetched snapshots")
     func whenNoExistingTrendsAndInsufficientData_shouldFetchThenCalculate() async throws {
         let trendRepository = MockTrendRepository(trends: [])
-        trendRepository.historicalWindowData = [] // insufficient
+        trendRepository.historicalWindowData = [] // insufficient on disk
         let historicalRepository = MockHistoricalRateRepository()
+        // Render-first repository: the fetch RETURNS the window's rows; the deferred save
+        // means a persistence read-back would still be empty here.
+        historicalRepository.fetchedDataToReturn = Self.windowHistoricalData()
         let useCase = makeUseCase(trendRepository: trendRepository, historicalRepository: historicalRepository)
 
         _ = try await useCase.initializeTrendData()
 
-        #expect(historicalRepository.fetchAndSaveHistoricalRatesCallCount == 1)
+        #expect(historicalRepository.fetchHistoricalRatesCallCount == 1)
         #expect(trendRepository.saveTrendDataCallCount == 1)
+        // Trends were computed from the fetched snapshots, not a stale read-back.
+        let saved = try #require(trendRepository.lastSavedTrends)
+        #expect(saved.count == 2)
+        #expect(saved.contains { $0.currencyCode == "EUR" })
     }
 
     @Test("When fetching historical data, should use a 7-day window")
@@ -121,9 +128,23 @@ struct TrendDataUseCaseTests {
 
         _ = try await useCase.initializeTrendData()
 
-        let fetchRange = try #require(historicalRepository.fetchAndSaveHistoricalRatesCalls.first)
+        let fetchRange = try #require(historicalRepository.fetchHistoricalRatesCalls.first)
         let daysDifference = Self.calendar.dateComponents([.day], from: fetchRange.from, to: fetchRange.to).day
         #expect(daysDifference == 7)
+    }
+
+    @Test("Trend recalculation waits for pending historical writes before reading the window")
+    func recalculationWaitsForPendingWrites() async {
+        let trendRepository = MockTrendRepository(trends: Self.sampleTrendData)
+        trendRepository.historicalWindowData = Self.windowHistoricalData()
+        let historicalRepository = MockHistoricalRateRepository()
+        let useCase = makeUseCase(trendRepository: trendRepository, historicalRepository: historicalRepository)
+
+        _ = await useCase.checkAndRecalculateTrendsIfNeeded(for: Self.affectingRanges)
+
+        // The window read must be sequenced behind the deferred chart-fetch save.
+        #expect(historicalRepository.waitForPendingWritesCallCount == 1)
+        #expect(trendRepository.saveTrendDataCallCount == 1)
     }
 
     @Test("When load trends fails, the error propagates to the caller")

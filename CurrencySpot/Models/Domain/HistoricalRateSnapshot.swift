@@ -34,3 +34,19 @@ nonisolated struct HistoricalRateSnapshot: Identifiable, Equatable, Sendable {
         self.rates = rates
     }
 }
+
+nonisolated extension HistoricalRateSnapshot {
+    /// Merges two series by date — rows in `new` replace same-day rows in `existing` —
+    /// returning a date-sorted result. Lives on the domain type so both the analysis
+    /// use case and the cache actor share one implementation.
+    static func merge(existing: [HistoricalRateSnapshot], new: [HistoricalRateSnapshot]) -> [HistoricalRateSnapshot] {
+        var byDate: [String: HistoricalRateSnapshot] = [:]
+        for item in existing {
+            byDate[TimeZoneManager.formatForAPI(item.date)] = item
+        }
+        for item in new {
+            byDate[TimeZoneManager.formatForAPI(item.date)] = item
+        }
+        return byDate.values.sorted { $0.date < $1.date }
+    }
+}

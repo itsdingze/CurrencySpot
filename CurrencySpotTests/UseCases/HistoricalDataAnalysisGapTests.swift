@@ -78,19 +78,4 @@ struct HistoricalDataAnalysisGapTests {
         #expect(uc.shouldFetchGap(gapStart: today, gapEnd: today, now: now) == true)
     }
 
-    @Test("recordSync forwards the fetched range to the store")
-    func recordSyncForwards() {
-        let mock = MockHistoricalSyncStore()
-        let uc = HistoricalDataAnalysisUseCase(syncStore: mock)
-        let from = Self.day(2026, 6, 1)
-        let through = Self.day(2026, 6, 7)
-        let now = Self.day(2026, 6, 7).addingTimeInterval(9 * 3600)
-
-        uc.recordSync(from: from, through: through, now: now)
-
-        #expect(mock.recordCallCount == 1)
-        #expect(mock.from == from)
-        #expect(mock.through == through)
-        #expect(mock.checkedAt == now)
-    }
 }

@@ -94,10 +94,10 @@ struct ExchangeRateServiceTests {
             HistoricalRateSnapshot(dateString: "2025-03-11", rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.21)]),
             HistoricalRateSnapshot(dateString: "2025-03-12", rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.21)]),
         ]
-        await coordinator.replaceCachedHistoricalRates(narrow, for: "EUR")
+        _ = await coordinator.mergeCachedHistoricalRates(narrow)
 
         // Reading the full window must return the 10 persisted rows, not the 2 cached ones.
-        let result = try await coordinator.loadHistoricalRates(for: "EUR", in: try range("2025-03-01", "2025-03-31"))
+        let result = try await coordinator.loadHistoricalRates(in: try range("2025-03-01", "2025-03-31"))
         #expect(result.count == wideDates.count)
     }
 
@@ -192,7 +192,7 @@ struct ExchangeRateServiceTests {
         try await persistence.saveHistoricalExchangeRates(testRates)
 
         // THEN: We should be able to load them back through the repository
-        let loadedRates = try await service.loadHistoricalRates(for: "EUR", in: try range("2025-03-15", "2025-03-16"))
+        let loadedRates = try await service.loadHistoricalRates(in: try range("2025-03-15", "2025-03-16"))
 
         #expect(loadedRates.count == 2)
         #expect(loadedRates[0].rates.first(where: { $0.currencyCode == "EUR" })?.rate == 1.21)

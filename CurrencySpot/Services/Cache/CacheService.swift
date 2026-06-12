@@ -19,11 +19,16 @@ nonisolated protocol CacheService: Sendable {
     /// Retrieves cached exchange rates
     func getCachedExchangeRates() async -> [ExchangeRate]?
 
-    /// Stores historical data for a specific currency in memory cache
-    func cacheHistoricalData(_ data: [HistoricalRateSnapshot], for currency: String) async
+    /// Stores the shared historical series (every snapshot carries all currencies)
+    func cacheHistoricalData(_ data: [HistoricalRateSnapshot]) async
 
-    /// Retrieves cached historical data for a specific currency
-    func getCachedHistoricalData(for currency: String) async -> [HistoricalRateSnapshot]?
+    /// Merges new rows into the shared historical series by date and returns the
+    /// result. Atomic inside the cache: concurrent writers union instead of
+    /// last-writer-wins clobbering each other's rows.
+    func mergeHistoricalData(_ new: [HistoricalRateSnapshot]) async -> [HistoricalRateSnapshot]
+
+    /// Retrieves the shared historical series
+    func getCachedHistoricalData() async -> [HistoricalRateSnapshot]?
 
     /// Stores trend data in memory cache
     func cacheTrendData(_ trends: [Trend]) async
@@ -49,7 +54,6 @@ actor InMemoryCacheService: CacheService {
 
     private enum CacheConstants {
         static let exchangeRatesLimit = 1 // Only need current rates
-        static let historicalDataLimit = 10 // Maximum currency pairs
         static let trendDataLimit = 1 // Only need current trends
         static let processedChartDataLimit = 50 // Cache processed chart data for currency pairs
 
@@ -62,8 +66,12 @@ actor InMemoryCacheService: CacheService {
     /// Current exchange rates cache
     private let exchangeRatesCache = NSCache<NSString, NSArray>()
 
-    /// Historical data cache organized by currency
-    private let historicalDataCache = NSCache<NSString, NSArray>()
+    /// The shared all-currency historical series. A stored property, NOT an NSCache:
+    /// this series is the render source for every chart, and NSCache silently evicts
+    /// under the very memory spikes the launch warm-up produces — observed as the
+    /// freshly prefetched year vanishing before the first chart open. A few MB held
+    /// deliberately beats an unpredictable re-read from SwiftData.
+    private var historicalSeries: [HistoricalRateSnapshot] = []
 
     /// Trend data cache
     private let trendDataCache = NSCache<NSString, NSArray>()
@@ -77,10 +85,6 @@ actor InMemoryCacheService: CacheService {
         // Configure exchange rates cache
         exchangeRatesCache.countLimit = CacheConstants.exchangeRatesLimit
         exchangeRatesCache.name = "InMemoryCacheService.ExchangeRates"
-
-        // Configure historical data cache
-        historicalDataCache.countLimit = CacheConstants.historicalDataLimit
-        historicalDataCache.name = "InMemoryCacheService.HistoricalData"
 
         // Configure trend data cache
         trendDataCache.countLimit = CacheConstants.trendDataLimit
@@ -109,21 +113,22 @@ actor InMemoryCacheService: CacheService {
 
     // MARK: - Historical Data Cache
 
-    func cacheHistoricalData(_ data: [HistoricalRateSnapshot], for currency: String) {
+    /// One shared series for every currency: each snapshot already carries all ~160
+    /// currencies' rates, so per-currency entries would only duplicate the same rows.
+    func cacheHistoricalData(_ data: [HistoricalRateSnapshot]) {
         // IMPORTANT: The data passed here is already merged, deduplicated, and sorted by DataOrchestrationUseCase
-
-        // Simply cache the already-processed data directly
-        let cachedArray = data as NSArray
-        historicalDataCache.setObject(cachedArray, forKey: currency as NSString)
+        historicalSeries = data
     }
 
-    func getCachedHistoricalData(for currency: String) -> [HistoricalRateSnapshot]? {
-        guard let cachedArray = historicalDataCache.object(forKey: currency as NSString),
-              let data = cachedArray as? [HistoricalRateSnapshot]
-        else {
-            return nil
-        }
-        return data
+    /// Synchronous on the actor: no suspension between the read and the write, which
+    /// is what makes concurrent merges union rather than overwrite.
+    func mergeHistoricalData(_ new: [HistoricalRateSnapshot]) -> [HistoricalRateSnapshot] {
+        historicalSeries = HistoricalRateSnapshot.merge(existing: historicalSeries, new: new)
+        return historicalSeries
+    }
+
+    func getCachedHistoricalData() -> [HistoricalRateSnapshot]? {
+        historicalSeries.isEmpty ? nil : historicalSeries
     }
 
     // MARK: - Trend Data Cache
@@ -162,7 +167,7 @@ actor InMemoryCacheService: CacheService {
 
     func clearCache() {
         exchangeRatesCache.removeAllObjects()
-        historicalDataCache.removeAllObjects()
+        historicalSeries = []
         trendDataCache.removeAllObjects()
         processedChartDataCache.removeAllObjects()
     }

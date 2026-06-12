@@ -71,7 +71,7 @@ struct TrendDataUpdateTests {
             dateProvider: FixedDateProvider(Self.fixedToday)
         )
 
-        await mockService.replaceCachedHistoricalRates(makeHistoricalData(for: "EUR", days: 90), for: "EUR")
+        _ = await mockService.mergeCachedHistoricalRates(makeHistoricalData(for: "EUR", days: 90))
 
         let calendar = TimeZoneManager.cetCalendar
         let endDate = Self.fixedToday

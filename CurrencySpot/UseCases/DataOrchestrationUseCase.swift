@@ -33,6 +33,42 @@ final class DataOrchestrationUseCase {
         self.logger = logger
     }
 
+    // MARK: - Single-Flight Fetch
+
+    /// Normalized day-range key for an in-flight network fetch.
+    private struct FetchKey: Hashable {
+        let start: Date
+        let end: Date
+    }
+
+    /// In-flight network fetches. A load whose gap is covered by one of these joins it
+    /// instead of issuing a duplicate request — otherwise the launch prefetch and a
+    /// user's first chart tap would download the same window twice. MainActor isolation
+    /// keeps check-and-insert atomic (no suspension between them).
+    private var inFlightFetches: [FetchKey: Task<[HistoricalRateSnapshot], Error>] = [:]
+
+    /// Fetches a range, joining a covering in-flight fetch when one exists. A joined
+    /// result is a superset of the requested range; the date-keyed merge makes the
+    /// extra days harmless.
+    private func fetchJoiningInFlight(_ range: DateRange) async throws -> [HistoricalRateSnapshot] {
+        let calendar = TimeZoneManager.cetCalendar
+        let key = FetchKey(start: calendar.startOfDay(for: range.start), end: calendar.startOfDay(for: range.end))
+
+        if let covering = inFlightFetches.first(where: { $0.key.start <= key.start && $0.key.end >= key.end })?.value {
+            logger.debug("Joining in-flight fetch covering \(TimeZoneManager.formatForAPI(range.start)) to \(TimeZoneManager.formatForAPI(range.end))", category: .network)
+            return try await covering.value
+        }
+
+        // Unstructured on purpose: the fetch must survive its originating load's
+        // cancellation so joiners (and the shared cache) still receive the data.
+        let fetch = Task { [repository] in
+            try await repository.fetchHistoricalRates(from: range.start, to: range.end)
+        }
+        inFlightFetches[key] = fetch
+        defer { inFlightFetches[key] = nil }
+        return try await fetch.value
+    }
+
     // MARK: - Public Interface
 
     /// Loads historical data for the specified currency and date range
@@ -41,8 +77,9 @@ final class DataOrchestrationUseCase {
         for currency: CurrencyCode,
         dateRange: DateRange
     ) async throws -> (dataPoints: [HistoricalRateSnapshot], newDataFetched: Bool, fetchedRanges: [DateRange]) {
-        // Step 1: Check the in-memory cache first
-        let cachedData = await repository.cachedHistoricalRates(for: currency)
+        // Step 1: Check the shared in-memory series first (one fetch covers every
+        // currency, so any chart's load warms the cache for all of them)
+        let cachedData = await repository.cachedHistoricalRates()
         let cache = cachedData.isEmpty ? nil : CurrencyCache(data: cachedData)
 
         let missingRanges: [DateRange]
@@ -70,38 +107,29 @@ final class DataOrchestrationUseCase {
 
         for missingRange in missingRanges {
             do {
-                // Only fetch if SwiftData doesn't have the required range
-                let shouldFetch = try await shouldFetchMissingData(for: missingRange)
-                if shouldFetch {
-                    // Try to fetch the missing data from API
+                // Only fetch the sub-range persistence doesn't already cover
+                if let gap = try await fetchableGap(for: missingRange) {
                     do {
-                        try await repository.fetchAndSaveHistoricalRates(
-                            from: missingRange.start,
-                            to: missingRange.end
-                        )
-                        // Track that this range was actually fetched from API
-                        actuallyFetchedRanges.append(missingRange)
-                        // Record coverage even if the response was empty, so known-empty days
-                        // aren't refetched on every chart open.
-                        historicalDataAnalysisUseCase.recordSync(
-                            from: missingRange.start,
-                            through: missingRange.end,
-                            now: dateProvider.now()
-                        )
-                        logger.info("Fetched new data from API for range: \(TimeZoneManager.formatForAPI(missingRange.start)) to \(TimeZoneManager.formatForAPI(missingRange.end))", category: .network)
+                        // Render-first: the fetch returns decoded snapshots directly. Reading
+                        // them back from persistence would block on the deferred save.
+                        let fetched = try await fetchJoiningInFlight(gap)
+                        actuallyFetchedRanges.append(gap)
+                        newDataPoints.append(contentsOf: fetched)
+                        logger.info("Fetched new data from API for range: \(TimeZoneManager.formatForAPI(gap.start)) to \(TimeZoneManager.formatForAPI(gap.end))", category: .network)
+                        // When the gap was the whole missing range there is nothing
+                        // persisted left to read back.
+                        if gap.start <= missingRange.start, gap.end >= missingRange.end {
+                            continue
+                        }
                     } catch {
                         logger.warning("Failed to fetch from API: \(error.localizedDescription)", category: .network)
-                        // Continue with what we have
+                        // Fall through to whatever persistence already has for this range.
                     }
                 } else {
                     logger.debug("Loading existing data from SwiftData for range: \(TimeZoneManager.formatForAPI(missingRange.start)) to \(TimeZoneManager.formatForAPI(missingRange.end))", category: .persistence)
                 }
 
-                // Load it from SwiftData (whether newly fetched or existing)
-                let rangeData = try await repository.loadHistoricalRates(
-                    for: currency,
-                    in: missingRange
-                )
+                let rangeData = try await repository.loadHistoricalRates(in: missingRange)
                 newDataPoints.append(contentsOf: rangeData)
             } catch {
                 logger.warning("Error loading data for range: \(error.localizedDescription)", category: .useCase)
@@ -109,20 +137,20 @@ final class DataOrchestrationUseCase {
             }
         }
 
-        // Step 3: Merge and update cache
-        let existingCachedData = cache?.data ?? []
-        let mergedData = historicalDataAnalysisUseCase.mergeHistoricalData(existing: existingCachedData, new: newDataPoints)
-
-        await repository.replaceCachedHistoricalRates(mergedData, for: currency)
+        // Step 3: Merge into the shared series. The merge is atomic inside the cache
+        // actor, so loads that ran concurrently with this one union their rows
+        // instead of last-writer-wins overwriting each other.
+        let mergedData = await repository.mergeCachedHistoricalRates(newDataPoints)
 
         logger.infoPrivate("Cache updated: Loaded \(newDataPoints.count) new points for \(currency)", category: .cache)
 
         return (dataPoints: mergedData, newDataFetched: !actuallyFetchedRanges.isEmpty, fetchedRanges: actuallyFetchedRanges)
     }
 
-    /// Gets cached data for a specific currency within the given date range
-    func getCachedData(for currency: CurrencyCode, dateRange: DateRange) async -> [HistoricalRateSnapshot] {
-        let cachedData = await repository.cachedHistoricalRates(for: currency)
+    /// Gets cached data within the given date range. The shared series carries every
+    /// currency, so the caller's pair selection happens downstream in chart preparation.
+    func getCachedData(dateRange: DateRange) async -> [HistoricalRateSnapshot] {
+        let cachedData = await repository.cachedHistoricalRates()
 
         // Filter cached data by current time range
         return cachedData.filter { entry in
@@ -130,20 +158,23 @@ final class DataOrchestrationUseCase {
         }
     }
 
-    /// Determines if we should fetch missing data by comparing SwiftData's stored date range
-    /// with the required range. Only fetch if required range extends beyond stored data
-    /// AND there are actual business days in the gap.
-    private func shouldFetchMissingData(for missingRange: DateRange) async throws -> Bool {
+    /// The sub-range of `missingRange` actually worth a network fetch, or nil when stored
+    /// data plus the coverage watermark show nothing new would come back. Scoping the
+    /// fetch to the gap — instead of the whole missing range — keeps a new day's warm-up
+    /// at a day or two of payload rather than re-downloading the full window; the
+    /// persisted remainder is read back locally.
+    private func fetchableGap(for missingRange: DateRange) async throws -> DateRange? {
         // Get both earliest and latest dates in single batch
         guard let earliestStoredDate = try await repository.earliestStoredDate(),
               let latestStoredDate = try await repository.latestStoredDate()
         else {
             // No stored data - fetch unless the coverage watermark says we already checked it
-            return historicalDataAnalysisUseCase.shouldFetchGap(
+            let shouldFetch = historicalDataAnalysisUseCase.shouldFetchGap(
                 gapStart: missingRange.start,
                 gapEnd: missingRange.end,
                 now: dateProvider.now()
             )
+            return shouldFetch ? missingRange : nil
         }
 
         let calendar = TimeZoneManager.cetCalendar
@@ -174,14 +205,17 @@ final class DataOrchestrationUseCase {
             // the day (intraday revisions are cosmetic, and refetching the whole window would
             // reintroduce over-fetching). The empty-today case takes the `requiredEnd > storedEnd`
             // branch above, where shouldFetchGap's TTL governs the live-edge recheck.
-            return false
+            return nil
         }
 
         // Fetch the consolidated gap unless the coverage watermark already covers it.
-        return historicalDataAnalysisUseCase.shouldFetchGap(
+        // Anchoring at the stored bounds keeps recorded ranges adjacent to existing
+        // coverage, preserving the contiguous-watermark invariant.
+        let shouldFetch = historicalDataAnalysisUseCase.shouldFetchGap(
             gapStart: gapStart,
             gapEnd: gapEnd,
             now: dateProvider.now()
         )
+        return shouldFetch ? DateRange(start: gapStart, end: gapEnd) : nil
     }
 }

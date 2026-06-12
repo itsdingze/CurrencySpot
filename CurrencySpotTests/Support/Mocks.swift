@@ -61,8 +61,13 @@ final class MockNetworkService: NetworkService {
         return try exchangeRatesResult.get()
     }
 
+    /// When set, historical fetches suspend here until the test releases it — lets
+    /// tests run other work (e.g. clearAllData) while a fetch is in flight.
+    var historicalFetchBarrier: (() async -> Void)?
+
     func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> HistoricalRatesResponse {
         fetchHistoricalRatesCalls.append((from: startDate, to: endDate))
+        await historicalFetchBarrier?()
         return try historicalRatesResult.get()
     }
 
@@ -119,34 +124,51 @@ final class MockExchangeRateRepository: ExchangeRateRepository {
 final class MockHistoricalRateRepository: HistoricalRateRepository {
     var earliestStoredDateResult: Date?
     var latestStoredDateResult: Date?
+    /// Returned by persistence read-backs (`loadHistoricalRates`).
     var historicalDataToReturn: [HistoricalRateSnapshot] = []
+    /// Returned by network fetches (`fetchHistoricalRates`).
+    var fetchedDataToReturn: [HistoricalRateSnapshot] = []
+    /// When set, takes precedence over `fetchedDataToReturn` so each fetch can
+    /// return range-specific rows.
+    var fetchedDataProvider: ((Date, Date) -> [HistoricalRateSnapshot])?
     var shouldThrowErrorOnFetch = false
     var shouldThrowErrorOnLoad = false
     var errorToThrow: Error = AppError.networkError("Mock error")
 
-    private(set) var fetchAndSaveHistoricalRatesCalls: [(from: Date, to: Date)] = []
+    private(set) var fetchHistoricalRatesCalls: [(from: Date, to: Date)] = []
     private(set) var loadHistoricalRatesCallCount = 0
-    private(set) var cachedData: [CurrencyCode: [HistoricalRateSnapshot]] = [:]
-    private(set) var replaceCachedCallCount = 0
+    private(set) var waitForPendingWritesCallCount = 0
+    private(set) var cachedData: [HistoricalRateSnapshot] = []
+    private(set) var mergeCachedCallCount = 0
     private(set) var cachedReadCount = 0
 
-    var fetchAndSaveHistoricalRatesCallCount: Int {
-        fetchAndSaveHistoricalRatesCalls.count
+    var fetchHistoricalRatesCallCount: Int {
+        fetchHistoricalRatesCalls.count
     }
 
-    func seedCache(_ data: [HistoricalRateSnapshot], for currency: CurrencyCode) {
-        cachedData[currency] = data
+    func seedCache(_ data: [HistoricalRateSnapshot]) {
+        cachedData = data
     }
 
-    func fetchAndSaveHistoricalRates(from startDate: Date, to endDate: Date) async throws {
+    /// When set, every fetch suspends here until the test releases it — lets tests
+    /// hold a fetch in flight while a second load races it.
+    var fetchBarrier: (() async -> Void)?
+
+    func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
         // Record the attempt before any throw so failed fetches remain observable.
-        fetchAndSaveHistoricalRatesCalls.append((from: startDate, to: endDate))
+        fetchHistoricalRatesCalls.append((from: startDate, to: endDate))
+        await fetchBarrier?()
         if shouldThrowErrorOnFetch {
             throw errorToThrow
         }
+        return fetchedDataProvider?(startDate, endDate) ?? fetchedDataToReturn
     }
 
-    func loadHistoricalRates(for _: CurrencyCode, in _: DateRange) async throws -> [HistoricalRateSnapshot] {
+    func waitForPendingHistoricalWrites() async {
+        waitForPendingWritesCallCount += 1
+    }
+
+    func loadHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
         if shouldThrowErrorOnLoad {
             throw errorToThrow
         }
@@ -162,14 +184,63 @@ final class MockHistoricalRateRepository: HistoricalRateRepository {
         latestStoredDateResult
     }
 
-    func cachedHistoricalRates(for currency: CurrencyCode) async -> [HistoricalRateSnapshot] {
+    func cachedHistoricalRates() async -> [HistoricalRateSnapshot] {
         cachedReadCount += 1
-        return cachedData[currency] ?? []
+        return cachedData
     }
 
-    func replaceCachedHistoricalRates(_ data: [HistoricalRateSnapshot], for currency: CurrencyCode) async {
-        replaceCachedCallCount += 1
-        cachedData[currency] = data
+    func mergeCachedHistoricalRates(_ new: [HistoricalRateSnapshot]) async -> [HistoricalRateSnapshot] {
+        mergeCachedCallCount += 1
+        cachedData = HistoricalRateSnapshot.merge(existing: cachedData, new: new)
+        return cachedData
+    }
+}
+
+// MARK: - MockPersistenceService
+
+/// Configurable PersistenceService double. An actor (like the production `@ModelActor`)
+/// so it satisfies the protocol's `Sendable` requirement without unchecked state.
+actor MockPersistenceService: PersistenceService {
+    private(set) var savedHistoricalRates: [[String: [String: Double]]] = []
+    private(set) var clearAllDataCallCount = 0
+    /// True when a historical save landed after `clearAllData` — the resurrection
+    /// hazard deferred writes must never produce.
+    private(set) var savedHistoricalAfterClear = false
+
+    private var saveHistoricalError: Error?
+
+    func stubSaveHistoricalError(_ error: Error?) {
+        saveHistoricalError = error
+    }
+
+    func saveExchangeRates(_: [String: Double]) async throws {}
+
+    func saveHistoricalExchangeRates(_ rates: [String: [String: Double]]) async throws {
+        if let saveHistoricalError {
+            throw saveHistoricalError
+        }
+        if clearAllDataCallCount > 0 {
+            savedHistoricalAfterClear = true
+        }
+        savedHistoricalRates.append(rates)
+    }
+
+    func loadExchangeRates() async throws -> [ExchangeRate] { [] }
+
+    func loadHistoricalRates(currency _: String, from _: Date, to _: Date) async throws -> [HistoricalRateSnapshot] { [] }
+
+    func loadHistoricalRates(from _: Date, to _: Date) async throws -> [HistoricalRateSnapshot] { [] }
+
+    func getEarliestStoredDate() async throws -> Date? { nil }
+
+    func getLatestStoredDate() async throws -> Date? { nil }
+
+    func loadTrendData() async throws -> [Trend] { [] }
+
+    func saveTrendData(_: [Trend]) async throws {}
+
+    func clearAllData() async throws {
+        clearAllDataCallCount += 1
     }
 }
 

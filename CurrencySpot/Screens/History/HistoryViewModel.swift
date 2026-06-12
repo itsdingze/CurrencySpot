@@ -321,10 +321,7 @@ final class HistoryViewModel {
             logger.error("Load failed: \(error.localizedDescription)", category: .viewModel)
 
             // Try to use cached data even if the load failed
-            let cachedData = await dataOrchestrationUseCase.getCachedData(
-                for: currency,
-                dateRange: dateRange
-            )
+            let cachedData = await dataOrchestrationUseCase.getCachedData(dateRange: dateRange)
             guard generation == loadGeneration, !Task.isCancelled else { return }
 
             if !cachedData.isEmpty {
@@ -361,6 +358,14 @@ final class HistoryViewModel {
         }
     }
 
+    /// Sub-quarter-second loads show no overlay at all (with the warmed shared series
+    /// that is nearly every load), and an overlay that did appear lingers just long
+    /// enough not to read as a flicker.
+    private enum LoadingOverlayTiming {
+        static let showDebounce: Duration = .seconds(0.25)
+        static let minimumDisplay: Duration = .seconds(0.15)
+    }
+
     /// Debounce/minimum-duration state machine for the chart loading overlay,
     /// previously inlined in ChartSection with raw `Task.sleep`.
     private func loadingPhaseChanged(isLoading: Bool) {
@@ -368,7 +373,7 @@ final class HistoryViewModel {
 
         if isLoading {
             loadingOverlayTask = Task {
-                try? await clock.sleep(for: .seconds(0.05))
+                try? await clock.sleep(for: LoadingOverlayTiming.showDebounce)
                 guard !Task.isCancelled else { return }
                 withAnimation(.appQuickFade) {
                     showLoadingOverlay = true
@@ -376,7 +381,7 @@ final class HistoryViewModel {
             }
         } else if showLoadingOverlay {
             loadingOverlayTask = Task {
-                try? await clock.sleep(for: .seconds(0.3))
+                try? await clock.sleep(for: LoadingOverlayTiming.minimumDisplay)
                 guard !Task.isCancelled else { return }
                 withAnimation(.appQuickFade) {
                     showLoadingOverlay = false
@@ -415,6 +420,23 @@ final class HistoryViewModel {
         case .nameAZ: entries.sorted { $0.name < $1.name }
         case .rateHighToLow: entries.sorted { $0.rate > $1.rate }
         case .rateLowToHigh: entries.sorted { $0.rate < $1.rate }
+        }
+    }
+
+    // MARK: - Prefetch
+
+    /// Warms the shared historical series with a today-anchored one-year window so
+    /// chart opens, range switches within a year, and currency switches all render
+    /// from memory. Runs from the app root task after the trend seed and never touches
+    /// published chart state. Offline it still warms the series from persistence.
+    func prefetchHistoricalWindow() async {
+        let range = historicalDataAnalysisUseCase.calculateDateRange(for: .oneYear)
+        do {
+            // USD rows carry every currency's rate, so one warm pass covers all charts.
+            _ = try await dataOrchestrationUseCase.loadHistoricalData(for: .usd, dateRange: range)
+        } catch {
+            // Purely opportunistic: the next chart open loads on demand as before.
+            logger.debug("Historical prefetch did not complete: \(error.localizedDescription)", category: .viewModel)
         }
     }
 
@@ -474,7 +496,7 @@ final class HistoryViewModel {
     /// generation/cancellation guard before any state write.
     /// - Parameter dateRange: The date range to use for filtering data (must match the range used for fetching)
     private func preparedChartDataPoints(for currency: CurrencyCode, dateRange: DateRange) async -> [ChartDataPoint] {
-        let historicalData = await dataOrchestrationUseCase.getCachedData(for: currency, dateRange: dateRange)
+        let historicalData = await dataOrchestrationUseCase.getCachedData(dateRange: dateRange)
 
         // Guard against empty data
         guard !historicalData.isEmpty else {

@@ -108,6 +108,44 @@ struct ViewModelTests {
             #expect(viewModel.chartData == .idle)
         }
 
+        @Test("prefetchHistoricalWindow warms a today-anchored 1-year window without touching chart state")
+        func prefetchWarmsSharedSeriesSilently() async throws {
+            let repository = MockHistoricalRateRepository()
+            repository.earliestStoredDateResult = nil // nothing stored → the prefetch fetches
+            repository.fetchedDataToReturn = [
+                HistoricalRateSnapshot(date: Date(timeIntervalSince1970: 1_700_000_000), rates: [
+                    HistoricalRatePoint(currencyCode: "EUR", rate: 0.9),
+                ]),
+            ]
+            let analysis = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
+            let viewModel = HistoryViewModel(
+                ratesStore: ExchangeRatesStore(),
+                historicalDataAnalysisUseCase: analysis,
+                dataOrchestrationUseCase: DataOrchestrationUseCase(
+                    repository: repository,
+                    historicalDataAnalysisUseCase: analysis
+                ),
+                chartDataPreparationUseCase: ChartDataPreparationUseCase(cacheService: InMemoryCacheService()),
+                trendDataUseCase: TrendDataUseCase(
+                    trendRepository: MockTrendRepository(),
+                    historicalRateRepository: repository
+                ),
+                appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
+                clock: ImmediateClock()
+            )
+
+            await viewModel.prefetchHistoricalWindow()
+
+            // Published chart state is untouched — the prefetch is invisible to the UI.
+            #expect(viewModel.chartData == .idle)
+
+            // One today-anchored, year-long fetch warmed the shared series.
+            let call = try #require(repository.fetchHistoricalRatesCalls.first)
+            let days = TimeZoneManager.cetCalendar.dateComponents([.day], from: call.from, to: call.to).day ?? 0
+            #expect(days >= 364 && days <= 366)
+            #expect(repository.cachedData.isEmpty == false)
+        }
+
         @Test("chartSeriesID changes only when a new series' points land, not at selection time", .timeLimit(.minutes(1)))
         func chartSeriesIDFollowsThePoints() async {
             await viewModel.loadCurrentConfigurationAndWait()

@@ -109,9 +109,14 @@
 
     /// Never finishes, so a chart preview stays in `.loading` indefinitely.
     struct StalledHistoricalRateRepository: HistoricalRateRepository {
-        func fetchAndSaveHistoricalRates(from _: Date, to _: Date) async throws { try await stall() }
+        func fetchHistoricalRates(from _: Date, to _: Date) async throws -> [HistoricalRateSnapshot] {
+            try await stall()
+            return []
+        }
 
-        func loadHistoricalRates(for _: CurrencyCode, in _: DateRange) async throws -> [HistoricalRateSnapshot] {
+        func waitForPendingHistoricalWrites() async {}
+
+        func loadHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await stall()
             return []
         }
@@ -126,12 +131,12 @@
             return nil
         }
 
-        func cachedHistoricalRates(for _: CurrencyCode) async -> [HistoricalRateSnapshot] {
+        func cachedHistoricalRates() async -> [HistoricalRateSnapshot] {
             try? await stall()
             return []
         }
 
-        func replaceCachedHistoricalRates(_: [HistoricalRateSnapshot], for _: CurrencyCode) async {}
+        func mergeCachedHistoricalRates(_: [HistoricalRateSnapshot]) async -> [HistoricalRateSnapshot] { [] }
 
         private func stall() async throws { try await Task.sleep(for: .seconds(86_400)) }
     }

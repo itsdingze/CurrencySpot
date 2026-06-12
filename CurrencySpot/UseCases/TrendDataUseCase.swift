@@ -79,6 +79,9 @@ final class TrendDataUseCase {
 
     /// Recomputes trends over the current window from stored historical rates and saves them.
     private func recalculateAndSaveTrends() async throws {
+        // The chart fetch that triggered this recalculation persists in the background;
+        // wait for that write so the window read below sees the new rows.
+        await historicalRateRepository.waitForPendingHistoricalWrites()
         let window = trendWindow(now: dateProvider.now())
         let historicalData = try await trendRepository.loadHistoricalRates(from: window.start, to: window.end)
         try await trendRepository.saveTrendData(Self.calculateTrends(from: historicalData))
@@ -96,9 +99,10 @@ final class TrendDataUseCase {
         var historicalData = try await trendRepository.loadHistoricalRates(from: window.start, to: window.end)
 
         // Need at least 2 days of data for meaningful trends; fetch the window if short.
+        // The fetch returns the window's snapshots directly — a persistence read-back
+        // here would race the deferred save.
         if historicalData.count < 2 {
-            try await historicalRateRepository.fetchAndSaveHistoricalRates(from: window.start, to: window.end)
-            historicalData = try await trendRepository.loadHistoricalRates(from: window.start, to: window.end)
+            historicalData = try await historicalRateRepository.fetchHistoricalRates(from: window.start, to: window.end)
         }
 
         try await trendRepository.saveTrendData(Self.calculateTrends(from: historicalData))

@@ -17,7 +17,7 @@
     /// Reference storage so the value-typed mock can honor the repository's
     /// cache read/write contract (orchestration round-trips merged data through it).
     private final class HistoricalCacheBox {
-        var storage: [CurrencyCode: [HistoricalRateSnapshot]] = [:]
+        var storage: [HistoricalRateSnapshot] = []
     }
 
     struct MockExchangeRateService: ExchangeRateRepository, HistoricalRateRepository, TrendRepository, DataClearing {
@@ -50,9 +50,15 @@
 
         // MARK: - HistoricalRateRepository
 
-        func fetchAndSaveHistoricalRates(from _: Date, to _: Date) async throws {}
+        func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
+            try await generatedHistoricalRates().filter { entry in
+                entry.date >= startDate && entry.date <= endDate
+            }
+        }
 
-        func loadHistoricalRates(for _: CurrencyCode, in range: DateRange) async throws -> [HistoricalRateSnapshot] {
+        func waitForPendingHistoricalWrites() async {}
+
+        func loadHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await generatedHistoricalRates().filter { entry in
                 entry.date >= range.start && entry.date <= range.end
             }
@@ -66,12 +72,13 @@
             today
         }
 
-        func cachedHistoricalRates(for currency: CurrencyCode) async -> [HistoricalRateSnapshot] {
-            cacheBox.storage[currency] ?? []
+        func cachedHistoricalRates() async -> [HistoricalRateSnapshot] {
+            cacheBox.storage
         }
 
-        func replaceCachedHistoricalRates(_ data: [HistoricalRateSnapshot], for currency: CurrencyCode) async {
-            cacheBox.storage[currency] = data
+        func mergeCachedHistoricalRates(_ new: [HistoricalRateSnapshot]) async -> [HistoricalRateSnapshot] {
+            cacheBox.storage = HistoricalRateSnapshot.merge(existing: cacheBox.storage, new: new)
+            return cacheBox.storage
         }
 
         // MARK: - TrendRepository
