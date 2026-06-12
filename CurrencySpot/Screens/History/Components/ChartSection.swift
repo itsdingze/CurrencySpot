@@ -18,7 +18,11 @@ struct ChartSection: View {
             ZStack {
                 chartContent
 
-                if viewModel.showLoadingOverlay {
+                // The debounce/min-display overlay exists to avoid blinking a
+                // spinner over EXISTING points during quick range changes; a
+                // first load has no points and shows the spinner in its base
+                // placeholder immediately instead.
+                if viewModel.showLoadingOverlay, !viewModel.displayedChartDataPoints.isEmpty {
                     loadingView
                         .transition(.opacity)
                 }
@@ -37,9 +41,23 @@ struct ChartSection: View {
     @ViewBuilder
     private var chartContent: some View {
         if viewModel.displayedChartDataPoints.isEmpty {
-            noDataView
+            if isAwaitingFirstResult {
+                loadingView
+            } else {
+                noDataView
+            }
         } else {
             CurrencyChart(isChartSelectionActive: $isChartSelectionActive)
+        }
+    }
+
+    /// Empty because no load has produced a result yet — distinct from a load
+    /// that completed and genuinely returned nothing. Rendering "No data
+    /// available" for this state flashed the message on every first entry.
+    private var isAwaitingFirstResult: Bool {
+        switch viewModel.chartData {
+        case .idle, .loading: true
+        case .loaded, .failed: false
         }
     }
 
