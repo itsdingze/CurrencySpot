@@ -47,11 +47,43 @@ nonisolated protocol PersistenceService: Sendable {
 
 // MARK: - SwiftDataPersistenceService
 
-@ModelActor
+/// SwiftData persistence behind a dedicated serial dispatch queue.
+///
+/// Deliberately NOT `@ModelActor`: its `DefaultSerialModelExecutor` runs jobs on the
+/// main thread regardless of where the actor is created (verified by
+/// `PersistenceThreadingTests`), which froze the UI for seconds while the launch
+/// warm-up saved a year of rates. Using a `DispatchSerialQueue` as the actor's
+/// executor pins every save and fetch to a background queue; the `ModelContext` is
+/// created lazily on that queue and confined to it ever after.
 actor SwiftDataPersistenceService: PersistenceService {
-    // @ModelActor owns the generated initializer, so the logger cannot be injected;
-    // a default live instance is the accepted seam here.
+    private nonisolated let queue = DispatchSerialQueue(label: "CurrencySpot.SwiftDataPersistence", qos: .userInitiated)
+
+    nonisolated var unownedExecutor: UnownedSerialExecutor {
+        queue.asUnownedSerialExecutor()
+    }
+
+    private let modelContainer: ModelContainer
+
+    private var _modelContext: ModelContext?
+    private var modelContext: ModelContext {
+        if let _modelContext { return _modelContext }
+        let context = ModelContext(modelContainer)
+        _modelContext = context
+        return context
+    }
+
     private let logger: LoggerService = OSLogLoggerService()
+
+    init(modelContainer: ModelContainer) {
+        self.modelContainer = modelContainer
+    }
+
+    #if DEBUG
+        /// Test probe: which thread this actor's executor actually runs on.
+        func isExecutingOnMainThread() -> Bool {
+            Thread.isMainThread
+        }
+    #endif
 
     // MARK: - Data Persistence Methods
 
