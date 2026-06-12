@@ -149,6 +149,20 @@ struct TrendDataUseCaseTests {
         }
     }
 
+    @Test("checkAndRecalculateTrendsIfNeeded degrades gracefully when trend persistence fails")
+    func recalculationFailureDegradesGracefully() async {
+        let trendRepository = MockTrendRepository(trends: [])
+        trendRepository.historicalWindowData = Self.windowHistoricalData()
+        trendRepository.shouldThrowOnSave = true
+        let useCase = makeUseCase(trendRepository: trendRepository)
+
+        // The main load flow must continue with empty trends, not throw.
+        let trends = await useCase.checkAndRecalculateTrendsIfNeeded(for: Self.affectingRanges)
+
+        #expect(trends.isEmpty)
+        #expect(trendRepository.saveTrendDataCallCount == 1)
+    }
+
     // MARK: - calculateTrends (pure math, moved out of the persistence layer)
 
     @Test("calculateTrends computes per-currency weekly change and sparkline, sorted by date")

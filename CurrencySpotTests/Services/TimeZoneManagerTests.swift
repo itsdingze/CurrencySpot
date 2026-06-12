@@ -55,4 +55,23 @@ struct TimeZoneManagerTests {
         #expect(beforeFormatted == "2025-03-29")
         #expect(afterFormatted == "2025-03-31")
     }
+
+    @Test("Display formatters render in the user's locale and local timezone")
+    func displayFormatters() throws {
+        // Built with the local calendar so the rendered day is host-timezone
+        // independent; the test plan pins the locale to en_US.
+        var components = DateComponents()
+        components.year = 2025
+        components.month = 3
+        components.day = 15
+        components.hour = 14
+        components.minute = 30
+        let date = try #require(Calendar.current.date(from: components))
+
+        #expect(TimeZoneManager.formatForChartDisplay(date) == "Mar 15, 2025")
+
+        let lastUpdated = TimeZoneManager.formatLastUpdated(date)
+        #expect(lastUpdated.contains("Mar 15, 2025"))
+        #expect(lastUpdated.contains("2:30"))
+    }
 }

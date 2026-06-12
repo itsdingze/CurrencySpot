@@ -172,6 +172,51 @@ struct ChartDataPreparationUseCaseTests {
             #expect(result.contains { $0.date == testMiddleDate } == false, "Should not include middle date with missing currency")
         }
 
+        @Test("Non-USD base prefers the same-date historical base rate over current rates")
+        func nonUSDBasePrefersHistoricalRate() async {
+            let useCase = makeUseCase()
+            // Historical GBP (0.6) differs from the current GBP rate (0.8) so
+            // precedence is observable in the converted value.
+            let historicalData = [
+                HistoricalRateSnapshot(date: testStartDate, rates: [
+                    HistoricalRatePoint(currencyCode: "EUR", rate: 1.2),
+                    HistoricalRatePoint(currencyCode: "GBP", rate: 0.6),
+                ]),
+            ]
+
+            let result = await useCase.processHistoricalRateData(
+                historicalData: historicalData,
+                baseCurrency: "GBP",
+                targetCurrency: "EUR",
+                dateRange: DateRange(start: testStartDate, end: testEndDate),
+                exchangeRates: createTestExchangeRates()
+            )
+
+            #expect(result.count == 1)
+            #expect(abs((result.first?.rate ?? 0) - 2.0) < 0.0001, "1.2 / 0.6 historical, not 1.2 / 0.8 current")
+        }
+
+        @Test("Non-USD base falls back to current rates when the historical row lacks the base currency")
+        func nonUSDBaseFallsBackToCurrentRates() async {
+            let useCase = makeUseCase()
+            let historicalData = [
+                HistoricalRateSnapshot(date: testStartDate, rates: [
+                    HistoricalRatePoint(currencyCode: "EUR", rate: 1.2),
+                ]),
+            ]
+
+            let result = await useCase.processHistoricalRateData(
+                historicalData: historicalData,
+                baseCurrency: "GBP",
+                targetCurrency: "EUR",
+                dateRange: DateRange(start: testStartDate, end: testEndDate),
+                exchangeRates: createTestExchangeRates()
+            )
+
+            #expect(result.count == 1)
+            #expect(abs((result.first?.rate ?? 0) - 1.5) < 0.0001, "1.2 / 0.8 via the current-rates fallback")
+        }
+
         @Test("Should use USD base currency without conversion")
         func shouldUseUSDBaseCurrencyWithoutConversion() async {
             // GIVEN: Use case with USD base currency
