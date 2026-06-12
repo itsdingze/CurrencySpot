@@ -6,7 +6,7 @@
 import Foundation
 
 /// A current USD-normalized exchange rate for one currency.
-struct ExchangeRate: Identifiable, Equatable, Sendable {
+nonisolated struct ExchangeRate: Identifiable, Equatable, Sendable {
     let currencyCode: CurrencyCode
     let rate: Double
 

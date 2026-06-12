@@ -6,7 +6,7 @@
 import Foundation
 
 /// A currency's weekly trend: percentage change plus the sparkline series behind it.
-struct Trend: Identifiable, Equatable, Sendable {
+nonisolated struct Trend: Identifiable, Equatable, Sendable {
     let currencyCode: CurrencyCode
     let weeklyChange: Double
     let miniChartData: [Double]

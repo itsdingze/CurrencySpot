@@ -13,7 +13,6 @@ import Testing
 /// Tests over the real DataCoordinator (repository implementation) + SwiftData persistence,
 /// with a mock network and isolated stores.
 @Suite("Data Coordinator Repository Tests")
-@MainActor
 struct ExchangeRateServiceTests {
     let container: ModelContainer
     let networkService: MockNetworkService

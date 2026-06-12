@@ -10,7 +10,9 @@ struct PriceClassification: Equatable, Sendable {
     let isPrice: Bool
 }
 
-struct PriceClassifier: Sendable {
+/// MainActor (via default isolation), which the non-Sendable compiled `Regex`
+/// statics rely on; all callers (camera scan pipeline) live on the main actor.
+struct PriceClassifier {
     private static let currencySymbols = Set("$€£¥₩₹฿₫₺₪")
 
     private static let numberToken = /[0-9]+(?:[.,][0-9]+)*/

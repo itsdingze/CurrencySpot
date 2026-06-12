@@ -7,7 +7,7 @@ import Foundation
 
 /// Represents a single data point for chart visualization.
 /// Identity is the date: each series carries at most one point per date.
-struct ChartDataPoint: Identifiable, Equatable, Sendable {
+nonisolated struct ChartDataPoint: Identifiable, Equatable, Sendable {
     let date: Date
     let rate: Double
 
@@ -16,7 +16,7 @@ struct ChartDataPoint: Identifiable, Equatable, Sendable {
 
 // MARK: - Nearest-Point Lookup
 
-extension RandomAccessCollection<ChartDataPoint> where Index == Int {
+nonisolated extension RandomAccessCollection<ChartDataPoint> where Index == Int {
     /// Day-granularity nearest point to `date`, found by binary search.
     /// Assumes the collection is sorted ascending by date (chart series are).
     func closestPoint(to date: Date, calendar: Calendar = TimeZoneManager.cetCalendar) -> ChartDataPoint? {

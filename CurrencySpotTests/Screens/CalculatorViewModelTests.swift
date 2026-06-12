@@ -8,7 +8,6 @@ import Foundation
 import Testing
 
 @Suite("CalculatorViewModel Tests")
-@MainActor
 struct CalculatorViewModelTests {
     private let repository = MockExchangeRateRepository()
     private let ratesStore = ExchangeRatesStore()

@@ -49,20 +49,19 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
 // MARK: - SettingsViewModel
 
 @Observable
-@MainActor
 final class SettingsViewModel {
     // MARK: - Navigation State
 
     /// Mutually exclusive presentations driven by Settings (and the app's
     /// first-launch onboarding, which this ViewModel owns via `hasSeenOnboarding`).
-    enum Destination: Equatable {
+    nonisolated enum Destination: Equatable {
         case alert(SettingsAlert)
         case accentColorPicker
         case onboarding
     }
 
     /// Destructive-action confirmations in Settings.
-    enum SettingsAlert: Identifiable {
+    nonisolated enum SettingsAlert: Identifiable {
         case clearCachedData
         case resetPreferences
 

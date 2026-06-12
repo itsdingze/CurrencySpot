@@ -8,7 +8,7 @@ import Foundation
 /// A validated currency code: exactly 3 ASCII uppercase letters.
 /// Validation happens once at data boundaries (network mapper, persistence mappers);
 /// everything downstream can trust the value.
-struct CurrencyCode: Hashable, Sendable {
+nonisolated struct CurrencyCode: Hashable, Sendable {
     let rawValue: String
 
     init(validating rawValue: String) throws {
@@ -35,13 +35,13 @@ struct CurrencyCode: Hashable, Sendable {
     }
 }
 
-extension CurrencyCode: Comparable {
+nonisolated extension CurrencyCode: Comparable {
     static func < (lhs: CurrencyCode, rhs: CurrencyCode) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
 }
 
-extension CurrencyCode: Codable {
+nonisolated extension CurrencyCode: Codable {
     init(from decoder: Decoder) throws {
         try self.init(validating: decoder.singleValueContainer().decode(String.self))
     }
@@ -52,6 +52,6 @@ extension CurrencyCode: Codable {
     }
 }
 
-extension CurrencyCode: CustomStringConvertible {
+nonisolated extension CurrencyCode: CustomStringConvertible {
     var description: String { rawValue }
 }

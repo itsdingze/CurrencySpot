@@ -9,7 +9,6 @@ import Foundation
 import Network
 
 @Observable
-@MainActor
 final class NetworkMonitor {
     var isConnected = true
     private let monitor = NWPathMonitor()

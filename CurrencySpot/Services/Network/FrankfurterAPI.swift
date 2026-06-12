@@ -9,18 +9,20 @@ import Foundation
 
 /// Client for interacting with the Frankfurter exchange rate API
 /// Provides methods to fetch current and historical exchange rates
-final class FrankfurterAPI {
+nonisolated final class FrankfurterAPI: Sendable {
     /// Singleton instance for app-wide access
     static let shared = FrankfurterAPI()
 
     private let baseURL = "https://api.frankfurter.dev/v2"
 
     private let urlSession: URLSession
+    private let retryManager: RetryManager
 
     /// Default keeps the production session configuration; tests inject a
     /// URLProtocol-stubbed session so requests never reach the live API.
-    init(session: URLSession = FrankfurterAPI.makeDefaultSession()) {
+    init(session: URLSession = FrankfurterAPI.makeDefaultSession(), retryManager: RetryManager = .shared) {
         urlSession = session
+        self.retryManager = retryManager
     }
 
     /// Production URLSession with appropriate timeout configuration.
@@ -38,6 +40,8 @@ final class FrankfurterAPI {
     /// - Parameter baseCurrency: The reference currency for exchange rates (default: "USD")
     /// - Returns: A ExchangeRatesResponse object that contains the latest exchange rates
     /// - Throws: AppError if network request fails, API returns an error status, or the response is malformed
+    /// `@concurrent`: keeps response decoding and v2 mapping off the caller's actor.
+    @concurrent
     func fetchExchangeRates(baseCurrency: String = "USD") async throws -> ExchangeRatesResponse {
         let urlString = "\(baseURL)/rates?base=\(baseCurrency)"
         let url = try NetworkUtility.createURL(from: urlString)
@@ -46,7 +50,8 @@ final class FrankfurterAPI {
             url: url,
             urlSession: urlSession,
             responseType: [FrankfurterV2Rate].self,
-            endpoint: "exchange-rates-latest"
+            endpoint: "exchange-rates-latest",
+            retryManager: retryManager
         )
         return try FrankfurterV2Mapper.latest(from: entries, base: baseCurrency)
     }
@@ -77,6 +82,8 @@ final class FrankfurterAPI {
     ///   - endDate: The end date for historical data
     /// - Returns: A HistoricalRatesResponse object that contains the historical exchange rates
     /// - Throws: AppError if network request fails, or the response is malformed
+    /// `@concurrent`: keeps response decoding and the forward-fill mapping off the caller's actor.
+    @concurrent
     func fetchHistoricalRatesForRange(baseCurrency: String = "USD", startDate: Date, endDate: Date) async throws -> HistoricalRatesResponse {
         // Format dates and build URL
         let startDateString = TimeZoneManager.formatForAPI(startDate)
@@ -89,7 +96,8 @@ final class FrankfurterAPI {
             url: url,
             urlSession: urlSession,
             responseType: [FrankfurterV2Rate].self,
-            endpoint: "historical-rates-range"
+            endpoint: "historical-rates-range",
+            retryManager: retryManager
         )
         return try FrankfurterV2Mapper.historical(from: entries, base: baseCurrency)
     }

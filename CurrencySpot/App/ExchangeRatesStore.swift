@@ -14,7 +14,6 @@ import Observation
 /// policy and publishes its result here. Camera and History features read this store
 /// instead of reaching into a sibling ViewModel, which keeps the mock-data offline
 /// path (which exists only in the calculator) visible to every feature.
-@MainActor
 @Observable
 final class ExchangeRatesStore {
     private(set) var rates: [ExchangeRate] = []

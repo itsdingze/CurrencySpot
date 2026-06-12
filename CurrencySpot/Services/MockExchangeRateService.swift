@@ -16,7 +16,7 @@
     /// injected `today` anchor, so the same inputs always produce the same outputs.
     /// Reference storage so the value-typed mock can honor the repository's
     /// cache read/write contract (orchestration round-trips merged data through it).
-    private final class HistoricalCacheBox: @unchecked Sendable {
+    private final class HistoricalCacheBox {
         var storage: [CurrencyCode: [HistoricalRateSnapshot]] = [:]
     }
 

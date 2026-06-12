@@ -10,7 +10,10 @@ import SwiftData
 
 // MARK: - PersistenceService Protocol
 
-protocol PersistenceService {
+/// `nonisolated` keeps the protocol out of MainActor default isolation so the
+/// `@ModelActor` conformer can satisfy it; `Sendable` lets MainActor callers hand
+/// the existential to nonisolated async work.
+nonisolated protocol PersistenceService: Sendable {
     /// Saves exchange rates to persistent storage
     func saveExchangeRates(_ rates: [String: Double]) async throws
 

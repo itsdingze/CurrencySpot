@@ -6,7 +6,7 @@
 import Foundation
 
 /// Network DTO: historical USD-normalized rates keyed by API date string, then currency code.
-struct HistoricalRatesResponse: Codable, Sendable {
+nonisolated struct HistoricalRatesResponse: Codable, Sendable {
     let base: String
     let startDate: String
     let endDate: String

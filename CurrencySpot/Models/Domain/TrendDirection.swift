@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-enum TrendDirection: Sendable {
+nonisolated enum TrendDirection: Sendable {
     case up
     case down
     case stable

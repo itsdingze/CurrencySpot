@@ -4,7 +4,7 @@
 //
 
 /// User-visible retry progress for the offline banner.
-enum RetryState {
+nonisolated enum RetryState {
     case none
     case retrying(attempt: Int, maxAttempts: Int)
     case exhausted

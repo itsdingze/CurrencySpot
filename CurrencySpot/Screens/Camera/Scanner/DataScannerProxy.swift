@@ -7,7 +7,6 @@ import UIKit
 
 /// Hands the hosting SwiftUI view a line to the scanner for imperative
 /// one-shot calls (photo capture).
-@MainActor
 final class DataScannerProxy {
     weak var host: ScannerHostController?
 
@@ -25,6 +24,7 @@ final class DataScannerProxy {
 
     /// Redrawing a full-resolution photo takes tens of milliseconds —
     /// keep it off the main actor.
+    @concurrent
     private nonisolated static func crop(_ photo: UIImage, toAspectRatio aspectRatio: CGFloat?) async -> UIImage {
         photo.croppedToPreview(aspectRatio: aspectRatio)
     }
@@ -36,13 +36,13 @@ final class DataScannerProxy {
     }
 }
 
-private extension CGRect {
+private nonisolated extension CGRect {
     var aspectRatio: CGFloat? {
         height > 0 ? width / height : nil
     }
 }
 
-private extension UIImage {
+private nonisolated extension UIImage {
     /// The region an aspect-filled preview of this image would show in a
     /// view with the given width-to-height ratio.
     func croppedToPreview(aspectRatio: CGFloat?) -> UIImage {

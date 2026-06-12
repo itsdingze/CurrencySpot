@@ -14,7 +14,6 @@ import Testing
 /// orchestration/chart-preparation use cases, with a mock network and isolated UserDefaults.
 /// Covers only what the per-layer suites don't: the layers working together.
 @Suite("Integration Tests")
-@MainActor
 struct IntegrationTests {
     private let container: ModelContainer
     private let persistence: SwiftDataPersistenceService

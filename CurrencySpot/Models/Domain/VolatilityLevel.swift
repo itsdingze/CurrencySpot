@@ -9,7 +9,7 @@ import SwiftUI
 
 /// Qualitative bucket for annualized volatility (percent), driving display text and color.
 /// Computing the level from the raw value avoids matching against already-formatted strings.
-enum VolatilityLevel: CaseIterable, Sendable {
+nonisolated enum VolatilityLevel: CaseIterable, Sendable {
     case veryLow, low, moderate, high, veryHigh
 
     /// Classifies an annualized volatility percentage into a level.
@@ -55,7 +55,7 @@ enum VolatilityLevel: CaseIterable, Sendable {
     }
 }
 
-private extension Color {
+private nonisolated extension Color {
     /// Muted green for the "Low" volatility band.
     static let volatilityLow = Color(red: 143 / 255, green: 197 / 255, blue: 112 / 255)
 }

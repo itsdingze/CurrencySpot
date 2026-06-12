@@ -15,7 +15,6 @@
 
     extension DependencyContainer {
         /// Creates a preview-ready dependency container with in-memory storage.
-        @MainActor
         static func preview() -> DependencyContainer {
             do {
                 return DependencyContainer(modelContainer: try ModelContainer.inMemoryCurrencySpot())

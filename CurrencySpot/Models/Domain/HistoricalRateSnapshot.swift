@@ -6,7 +6,7 @@
 import Foundation
 
 /// One currency's USD-normalized rate on a historical date.
-struct HistoricalRatePoint: Identifiable, Equatable, Sendable {
+nonisolated struct HistoricalRatePoint: Identifiable, Equatable, Sendable {
     let currencyCode: CurrencyCode
     let rate: Double
 
@@ -15,7 +15,7 @@ struct HistoricalRatePoint: Identifiable, Equatable, Sendable {
 
 /// All recorded rates for a single historical date.
 /// Identity is the date: collections of these are merged/deduplicated by date upstream.
-struct HistoricalRateSnapshot: Identifiable, Equatable, Sendable {
+nonisolated struct HistoricalRateSnapshot: Identifiable, Equatable, Sendable {
     let date: Date
     let rates: [HistoricalRatePoint]
 

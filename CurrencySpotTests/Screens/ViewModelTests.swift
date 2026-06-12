@@ -11,7 +11,6 @@ import SwiftData
 import Testing
 
 @Suite("ViewModel Tests")
-@MainActor
 struct ViewModelTests {
     // Builds a HistoryViewModel backed entirely by MockExchangeRateService so trend
     // data is the deterministic MockExchangeRates.trendData fixture and no network runs.
@@ -44,7 +43,6 @@ struct ViewModelTests {
     }
 
     @Suite("HistoryViewModel Tests")
-    @MainActor
     struct HistoryViewModelTests {
         let viewModel = ViewModelTests.makeHistoryViewModel()
 

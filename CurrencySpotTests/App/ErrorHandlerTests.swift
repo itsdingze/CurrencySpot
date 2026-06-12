@@ -8,7 +8,6 @@ import Foundation
 import Testing
 
 @Suite("ErrorHandler Tests")
-@MainActor
 struct ErrorHandlerTests {
     private let handler = ErrorHandler()
 

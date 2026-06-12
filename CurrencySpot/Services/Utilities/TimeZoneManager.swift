@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum TimeZoneManager {
+nonisolated enum TimeZoneManager {
     // "Europe/Paris" is always available; .gmt is an unreachable safe fallback that avoids a force-unwrap.
     static let cetTimeZone = TimeZone(identifier: "Europe/Paris") ?? .gmt
 

@@ -35,7 +35,6 @@ private struct MockStillTextRecognitionService: StillTextRecognitionService {
     }
 }
 
-@MainActor
 struct CameraViewModelTests {
     /// VM wired with USD-normalized mock rates and a JPY → USD pair.
     /// Each test gets its own `AppState` so parallel runs can't interfere.

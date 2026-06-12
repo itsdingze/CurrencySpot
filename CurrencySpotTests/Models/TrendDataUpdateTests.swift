@@ -136,7 +136,6 @@ struct TrendDataUpdateTests {
     // MARK: - Base Currency Conversion Tests (exact values from the fixture)
 
     @Test("EUR-base GBP trend is GBP/EUR per point with the derived weekly change")
-    @MainActor
     func trendConversionNonUSDBase() async {
         let viewModel = Self.makeFixtureBackedViewModel()
         await viewModel.initializeTrendData()
@@ -160,7 +159,6 @@ struct TrendDataUpdateTests {
     }
 
     @Test("EUR-base USD trend is the inverted EUR fixture with the derived weekly change")
-    @MainActor
     func trendConversionUSDInversion() async {
         let viewModel = Self.makeFixtureBackedViewModel()
         await viewModel.initializeTrendData()
@@ -187,7 +185,6 @@ struct TrendDataUpdateTests {
     // MARK: - Integration
 
     @Test("Loading new data triggers a trend recalculation that populates trend data")
-    @MainActor
     func loadTriggersTrendRecalculation() async {
         let viewModel = Self.makeFixtureBackedViewModel()
         #expect(viewModel.trendData.isEmpty) // nothing loaded yet
@@ -201,7 +198,6 @@ struct TrendDataUpdateTests {
 
     // MARK: - Fixtures
 
-    @MainActor
     private static func makeFixtureBackedViewModel() -> HistoryViewModel {
         let service = MockExchangeRateService()
         let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())

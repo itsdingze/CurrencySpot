@@ -16,7 +16,6 @@ enum DataMigration {
     ///
     /// The completion flag is only set after a successful save, so a failed purge retries on the
     /// next launch rather than silently leaving stale v1 data behind.
-    @MainActor
     static func runIfNeeded(modelContainer: ModelContainer, defaults: UserDefaults = .standard) {
         guard !defaults.bool(forKey: migratedToV2Key) else { return }
 

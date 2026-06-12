@@ -8,7 +8,6 @@
 import Foundation
 
 @Observable
-@MainActor
 final class ErrorHandler {
     /// Single source of truth for the global error alert: non-nil means presented.
     private(set) var currentError: AppError?

@@ -8,7 +8,7 @@
 import Foundation
 
 /// A closed start/end date interval used for historical data queries.
-struct DateRange: Sendable {
+nonisolated struct DateRange: Sendable {
     let start: Date
     let end: Date
 }

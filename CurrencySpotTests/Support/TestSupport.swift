@@ -54,7 +54,6 @@ struct ImmediateClock: ClockService {
 /// Builds an environment-isolated CalculatorViewModel: unique UserDefaults suite
 /// (never `.standard`) and a non-monitoring AppState, so connectivity and currency
 /// preferences are deterministic regardless of the host machine.
-@MainActor
 func makeIsolatedCalculatorViewModel(
     repository: (ExchangeRateRepository)? = nil,
     ratesStore: ExchangeRatesStore? = nil,

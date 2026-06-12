@@ -10,7 +10,6 @@ import Foundation
 import Testing
 
 @Suite("Trend Data Use Case Tests")
-@MainActor
 struct TrendDataUseCaseTests {
     // MARK: - Test Data Constants
 

@@ -7,7 +7,6 @@ import VisionKit
 
 /// Gate for the Camera tab. Per the camera plan, unsupported devices hide the tab entirely.
 enum CameraScanAvailability {
-    @MainActor
     static var isSupported: Bool {
         #if DEBUG && targetEnvironment(simulator)
         // DataScanner needs a Neural Engine and a camera, so the simulator reports

@@ -11,7 +11,6 @@ import Foundation
 
 /// Use case responsible for chart data preparation and processing
 /// Extracted from HistoryViewModel to separate concerns
-@MainActor
 final class ChartDataPreparationUseCase {
     // MARK: - Dependencies
 
@@ -66,8 +65,9 @@ final class ChartDataPreparationUseCase {
         return chartPoints
     }
 
-    /// Pure transform from historical rows to chart points. Nonisolated so the work
+    /// Pure transform from historical rows to chart points. `@concurrent` so the work
     /// runs on the cooperative pool instead of blocking the main actor.
+    @concurrent
     private nonisolated static func transformHistoricalData(
         _ historicalData: [HistoricalRateSnapshot],
         baseCurrency: CurrencyCode,

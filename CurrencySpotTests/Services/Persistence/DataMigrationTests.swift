@@ -9,7 +9,6 @@ import Testing
 @testable import CurrencySpot
 
 @Suite("DataMigration")
-@MainActor
 struct DataMigrationTests {
     private static func makeContainer() throws -> ModelContainer {
         let configuration = ModelConfiguration(

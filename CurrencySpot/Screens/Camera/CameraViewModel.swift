@@ -8,11 +8,10 @@ import IdentifiedCollections
 import Observation
 import UIKit
 
-@MainActor
 @Observable
 final class CameraViewModel {
     /// Mutually exclusive presentations over the camera feed.
-    enum Destination: Identifiable, Hashable {
+    nonisolated enum Destination: Identifiable, Hashable {
         case basePicker
         case targetPicker
         /// The item at presentation time. The sheet re-resolves the live item

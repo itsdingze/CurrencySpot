@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class TrendData {
+nonisolated final class TrendData {
     @Attribute(.unique) var currencyCode: String
     var weeklyChange: Double // % change over 7 days
 
@@ -39,7 +39,7 @@ final class TrendData {
 
 // MARK: - Entity <-> Domain Mapping
 
-extension TrendData {
+nonisolated extension TrendData {
     /// Validates the stored code at the persistence → domain boundary.
     func toDomain() throws -> Trend {
         Trend(

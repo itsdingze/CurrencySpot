@@ -8,7 +8,7 @@ import Foundation
 /// Classifies a recognized camera transcript and converts its amount
 /// from the base currency into the target currency.
 final class ScanConversionUseCase {
-    struct ScannedConversion: Equatable, Hashable, Sendable {
+    nonisolated struct ScannedConversion: Equatable, Hashable, Sendable {
         let amount: Decimal
         let converted: Decimal
         let isPrice: Bool

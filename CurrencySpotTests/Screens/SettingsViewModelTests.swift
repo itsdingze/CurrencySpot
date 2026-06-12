@@ -8,7 +8,6 @@ import Foundation
 import Testing
 
 @Suite("SettingsViewModel Tests")
-@MainActor
 struct SettingsViewModelTests {
     private let viewModel: SettingsViewModel
 

@@ -9,7 +9,10 @@ import Foundation
 
 // MARK: - CacheService Protocol
 
-protocol CacheService {
+/// `nonisolated` keeps the protocol out of MainActor default isolation so the
+/// actor conformer can satisfy it; `Sendable` lets MainActor callers hand the
+/// existential to nonisolated async work.
+nonisolated protocol CacheService: Sendable {
     /// Stores exchange rates in memory cache
     func cacheExchangeRates(_ rates: [ExchangeRate]) async
 

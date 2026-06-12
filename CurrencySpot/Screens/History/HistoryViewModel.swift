@@ -11,7 +11,6 @@ import SwiftUI
 // MARK: - HistoryViewModel
 
 @Observable
-@MainActor
 final class HistoryViewModel {
     // MARK: - Chart State
 

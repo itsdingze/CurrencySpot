@@ -8,7 +8,7 @@
 // AppError.swift
 import Foundation
 
-enum AppError: Error, Identifiable, Equatable {
+nonisolated enum AppError: Error, Identifiable, Equatable {
     case networkError(String)
     case noInternetConnection
     case noCachedData

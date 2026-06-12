@@ -11,7 +11,7 @@ import SwiftUI
 extension Binding {
     /// Bool projection of one payload-less destination case; setting `false`
     /// dismisses it without clobbering a different, newer destination.
-    func isPresenting<Wrapped: Equatable>(_ destination: Wrapped) -> Binding<Bool> where Value == Wrapped? {
+    func isPresenting<Wrapped: Equatable & Sendable>(_ destination: Wrapped) -> Binding<Bool> where Value == Wrapped? {
         Binding<Bool>(
             get: { wrappedValue == destination },
             set: { isActive in

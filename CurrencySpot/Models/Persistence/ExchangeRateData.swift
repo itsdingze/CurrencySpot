@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class ExchangeRateData {
+nonisolated final class ExchangeRateData {
     @Attribute(.unique) var currencyCode: String
     var rate: Double
 
@@ -21,7 +21,7 @@ final class ExchangeRateData {
 
 // MARK: - Entity -> Domain Mapping
 
-extension ExchangeRateData {
+nonisolated extension ExchangeRateData {
     /// Validates the stored code at the persistence → domain boundary.
     func toDomain() throws -> ExchangeRate {
         ExchangeRate(currencyCode: try CurrencyCode(validating: currencyCode), rate: rate)

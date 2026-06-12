@@ -8,7 +8,7 @@ import Foundation
 /// USD-normalized cross-rate table: the single owner of base → target conversion math.
 /// Every stored rate means "1 USD = rate units of the currency"; USD itself is
 /// implicitly 1.0 when absent (historical rows never store it).
-struct RateTable: Equatable, Sendable {
+nonisolated struct RateTable: Equatable, Sendable {
     private let usdRates: [CurrencyCode: Double]
 
     static let empty = RateTable(rates: [:])

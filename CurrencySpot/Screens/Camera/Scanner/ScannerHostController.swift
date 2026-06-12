@@ -10,7 +10,6 @@ import VisionKit
 /// Starting any earlier (e.g. from the first representable update) throws
 /// because the scanner's view isn't in a window yet, and that silent failure
 /// left the live feed unrecognized until something retriggered scanning.
-@MainActor
 final class ScannerHostController: UIViewController {
     let scanner: DataScannerViewController
     var wantsScanning = true
@@ -58,7 +57,7 @@ final class ScannerHostController: UIViewController {
         if wantsScanning {
             // startScanning() can throw transiently (session warming up,
             // a capture still settling), so retry briefly instead of giving up.
-            startTask = Task { @MainActor [weak self] in
+            startTask = Task { [weak self] in
                 var lastError: Error?
                 for _ in 0..<10 {
                     guard let self, self.wantsScanning, !Task.isCancelled else { return }

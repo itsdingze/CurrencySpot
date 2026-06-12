@@ -18,7 +18,6 @@ struct PendingConversion: Equatable, Sendable {
 }
 
 @Observable
-@MainActor
 final class AppState {
     static let shared = AppState()
 

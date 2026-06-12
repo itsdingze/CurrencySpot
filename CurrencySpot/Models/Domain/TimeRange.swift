@@ -8,7 +8,7 @@
 import Foundation
 
 /// Represents different time ranges for historical data
-enum TimeRange: String, CaseIterable, Identifiable {
+nonisolated enum TimeRange: String, CaseIterable, Identifiable {
     case oneWeek = "1W"
     case oneMonth = "1M"
     case threeMonths = "3M"

@@ -9,7 +9,7 @@ import Foundation
 
 /// Utility for common networking operations
 /// Provides unified HTTP error handling and JSON decoding across the app
-enum NetworkUtility {
+nonisolated enum NetworkUtility {
     // MARK: - Retry-Enabled Network Requests
 
     /// Performs a network request with automatic retry logic, unified error handling and JSON decoding
@@ -18,16 +18,19 @@ enum NetworkUtility {
     ///   - urlSession: The URLSession to use for the request
     ///   - responseType: The expected response type conforming to Codable
     ///   - endpoint: Identifier for retry tracking (defaults to URL path)
+    ///   - retryManager: Retry state tracker; production shares one instance so the
+    ///     calculator's retry indicator reflects network-layer attempts
     /// - Returns: Decoded response object of the specified type
     /// - Throws: AppError for network, HTTP, or decoding failures after all retries exhausted
-    static func performRequestWithRetry<T: Codable>(
+    @concurrent
+    static func performRequestWithRetry<T: Codable & Sendable>(
         url: URL,
         urlSession: URLSession,
         responseType: T.Type,
-        endpoint: String? = nil
+        endpoint: String? = nil,
+        retryManager: RetryManager = .shared
     ) async throws -> T {
         let endpointKey = endpoint ?? url.path
-        let retryManager = RetryManager.shared
         // Static context: no DI seam reaches here, so a local live logger is used.
         let logger = OSLogLoggerService()
 
@@ -110,7 +113,8 @@ enum NetworkUtility {
     ///   - responseType: The expected response type conforming to Codable
     /// - Returns: Decoded response object of the specified type
     /// - Throws: AppError for network, HTTP, or decoding failures
-    static func performRequest<T: Codable>(
+    @concurrent
+    static func performRequest<T: Codable & Sendable>(
         url: URL,
         urlSession: URLSession,
         responseType _: T.Type

@@ -10,10 +10,9 @@ import SwiftUI
 // MARK: - CalculatorViewModel
 
 @Observable
-@MainActor
 final class CalculatorViewModel {
     /// Mutually exclusive presentations over the calculator.
-    enum Destination: Identifiable, Hashable {
+    nonisolated enum Destination: Identifiable, Hashable {
         case basePicker
         case targetPicker
 
@@ -66,7 +65,7 @@ final class CalculatorViewModel {
     private let logger: LoggerService
     private var fetchTask: Task<Void, Never>?
     private var fetchGeneration = 0
-    private let retryManager = RetryManager.shared
+    private let retryManager: RetryManager
     private let exchangeRatesEndpoint = "exchange-rates-latest"
 
     // Cross-rate table for O(1) currency lookups
@@ -82,11 +81,13 @@ final class CalculatorViewModel {
         ratesStore: ExchangeRatesStore,
         appState: AppState = .shared,
         userDefaults: UserDefaults = .standard,
+        retryManager: RetryManager = .shared,
         logger: LoggerService = OSLogLoggerService()
     ) {
         self.repository = repository
         self.ratesStore = ratesStore
         self.appState = appState
+        self.retryManager = retryManager
         self.logger = logger
 
         // Load user preferences for default currencies

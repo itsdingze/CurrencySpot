@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class HistoricalRateDataPoint {
+nonisolated final class HistoricalRateDataPoint {
     var currencyCode: String
     var rate: Double
     var historicalData: HistoricalRateData?
@@ -21,7 +21,7 @@ final class HistoricalRateDataPoint {
 }
 
 @Model
-final class HistoricalRateData {
+nonisolated final class HistoricalRateData {
     @Attribute(.unique) var date: Date
     @Relationship(deleteRule: .cascade, inverse: \HistoricalRateDataPoint.historicalData)
     var rates: [HistoricalRateDataPoint] = []
@@ -42,7 +42,7 @@ final class HistoricalRateData {
 
 // MARK: - Entity -> Domain Mapping
 
-extension HistoricalRateData {
+nonisolated extension HistoricalRateData {
     /// Validates stored codes at the persistence → domain boundary.
     func toDomain() throws -> HistoricalRateSnapshot {
         HistoricalRateSnapshot(

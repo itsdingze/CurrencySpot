@@ -7,11 +7,11 @@
 
 import Foundation
 
-enum ToastType: Sendable {
+nonisolated enum ToastType: Sendable {
     case cacheCleared, preferencesReset
 }
 
-struct ToastData: Identifiable, Sendable {
+nonisolated struct ToastData: Identifiable, Sendable {
     let id = UUID()
     let type: ToastType
 

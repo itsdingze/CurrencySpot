@@ -33,7 +33,6 @@ extension ModelContainer {
 /// Centralized dependency injection container.
 /// Every service/repository/provider parameter has a working default; tests and
 /// previews override only what they need.
-@MainActor
 @Observable
 final class DependencyContainer {
     // MARK: - Core Services

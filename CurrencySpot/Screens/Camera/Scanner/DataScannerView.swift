@@ -8,7 +8,6 @@ import VisionKit
 
 /// Wraps VisionKit's live scanner. Recognition stays on `.text()` so the app
 /// sees every number and decides for itself which ones are price candidates.
-@MainActor
 struct DataScannerView: UIViewControllerRepresentable {
     let isScanning: Bool
     let proxy: DataScannerProxy
@@ -55,7 +54,6 @@ struct DataScannerView: UIViewControllerRepresentable {
         Coordinator(onItemsChanged: onItemsChanged, onItemTapped: onItemTapped)
     }
 
-    @MainActor
     final class Coordinator: NSObject, DataScannerViewControllerDelegate {
         var onItemsChanged: ([RecognizedTextItem]) -> Void
         var onItemTapped: (UUID) -> Void

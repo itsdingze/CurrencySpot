@@ -12,7 +12,9 @@ import Testing
 /// Intercepts every request on a stubbed session and serves canned responses keyed by
 /// absolute URL. Keying by URL (instead of a single shared handler) keeps parallel
 /// tests independent — each test registers its own unique URL.
-private final class StubURLProtocol: URLProtocol {
+/// `nonisolated`: URLProtocol's overridable methods are nonisolated and the
+/// loading system calls them off-main; static stub state is NSLock-guarded.
+private nonisolated final class StubURLProtocol: URLProtocol {
     struct Stub {
         let statusCode: Int
         let data: Data

@@ -41,7 +41,8 @@ struct DynamicSheet<Content: View>: View {
 
 fileprivate struct SheetHeightModifier: ViewModifier, Animatable {
     var height: CGFloat
-    var animatableData: CGFloat {
+    // Animatable is nonisolated; the accessor only touches a Sendable stored property.
+    nonisolated var animatableData: CGFloat {
         get { height }
         set { height = newValue }
     }

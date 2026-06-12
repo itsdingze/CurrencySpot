@@ -14,7 +14,6 @@ import Foundation
 /// Reset signal mechanism: ViewModels register reset closures through the
 /// DependencyContainer at wiring time. This keeps Settings free of sibling-VM
 /// references and is trivially testable (register a spy closure, run execute()).
-@MainActor
 final class ClearAllDataUseCase {
     private let repository: DataClearing
     private var resetHandlers: [@MainActor () async -> Void] = []

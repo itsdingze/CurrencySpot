@@ -10,7 +10,7 @@ import Foundation
 ///
 /// This is the network boundary's validation gate: every entry's currency code, rate, and
 /// date are checked here, so downstream layers never see malformed values.
-enum FrankfurterV2Mapper {
+nonisolated enum FrankfurterV2Mapper {
     /// Maps a v2 "latest" array into the keyed `ExchangeRatesResponse` the app consumes.
     static func latest(from entries: [FrankfurterV2Rate], base: String) throws -> ExchangeRatesResponse {
         try validate(entries)

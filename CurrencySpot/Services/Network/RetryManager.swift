@@ -8,7 +8,7 @@
 import Foundation
 
 /// Configuration for retry behavior
-private struct RetryConfiguration {
+private nonisolated struct RetryConfiguration {
     let maxAttempts: Int
     let baseDelay: TimeInterval
     let maxDelay: TimeInterval
@@ -23,7 +23,7 @@ private struct RetryConfiguration {
 }
 
 /// Tracks retry state for network operations
-private enum InternalRetryState {
+private nonisolated enum InternalRetryState {
     case initial
     case retrying(attempt: Int, nextDelay: TimeInterval)
     case exhausted
@@ -39,9 +39,13 @@ actor RetryManager {
 
     private var retryStates: [String: InternalRetryState] = [:]
 
+    /// Default jitter source; a nonisolated static so the default value expression
+    /// is not MainActor-isolated under default actor isolation.
+    private nonisolated static let defaultJitter: @Sendable (ClosedRange<Double>) -> Double = { Double.random(in: $0) }
+
     /// - Parameter jitter: Random factor source for backoff delays; tests inject
     ///   a deterministic value.
-    init(jitter: @escaping @Sendable (ClosedRange<Double>) -> Double = { Double.random(in: $0) }) {
+    init(jitter: @escaping @Sendable (ClosedRange<Double>) -> Double = RetryManager.defaultJitter) {
         self.jitter = jitter
     }
 

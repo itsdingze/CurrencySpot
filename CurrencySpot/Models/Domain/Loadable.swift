@@ -11,14 +11,14 @@ import Foundation
 /// The `previous` payloads on `.loading` and `.failed` are what enable graceful
 /// degradation: a refetch shows stale data instead of blanking the screen, and a
 /// failure can fall back to the last known good value.
-enum Loadable<T> {
+nonisolated enum Loadable<T> {
     case idle
     case loading(previous: T?)
     case loaded(T)
     case failed(AppError, previous: T?)
 }
 
-extension Loadable {
+nonisolated extension Loadable {
     /// The current or last known value, regardless of phase.
     var value: T? {
         switch self {
@@ -44,4 +44,4 @@ extension Loadable {
     }
 }
 
-extension Loadable: Equatable where T: Equatable {}
+nonisolated extension Loadable: Equatable where T: Equatable {}
