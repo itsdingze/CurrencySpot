@@ -51,7 +51,7 @@ struct VolatilityInfoView: View {
             }
         }
         .padding(.cardPadding)
-        .frame(width: 320)
+        .frame(idealWidth: 320, maxWidth: 400)
         .background(Color(UIColor.systemBackground))
         .presentationBackground(.regularMaterial)
     }
@@ -67,7 +67,7 @@ struct VolatilityInfoView: View {
             Text(level.displayName)
                 .font(.appCaption.weight(.medium))
                 .foregroundStyle(.primary)
-                .frame(width: 70, alignment: .leading)
+                .frame(minWidth: 70, alignment: .leading)
 
             Text(level.rangeDescription)
                 .font(.appCaption)

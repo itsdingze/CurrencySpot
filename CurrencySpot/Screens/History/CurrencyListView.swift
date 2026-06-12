@@ -81,20 +81,22 @@ struct CurrencyListView: View {
                 }
             } label: {
                 if #available(iOS 26, *) {
-                    Image(systemName: "arrow.up.arrow.down")
+                    Label("Sort", systemImage: "arrow.up.arrow.down")
                         .foregroundStyle(Color.accentColor)
-                }
-                else{
-                    Image(systemName: "arrow.up.arrow.down.circle.fill")
+                } else {
+                    Label("Sort", systemImage: "arrow.up.arrow.down.circle.fill")
                         .font(.appTitle2)
                         .symbolRenderingMode(.palette)
                         .foregroundStyle(Color.accentColor, Color.tertiaryBackground)
                 }
             }
+            .labelStyle(.iconOnly)
         }
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     let container = DependencyContainer.preview()
 
@@ -103,3 +105,4 @@ struct CurrencyListView: View {
     }
     .withDependencyContainer(container)
 }
+#endif

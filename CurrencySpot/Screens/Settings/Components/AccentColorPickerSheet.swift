@@ -15,14 +15,13 @@ struct AccentColorPickerSheet: View {
             colorPreviewButton
         }
         .sheet(isPresented: Bindable(settingsViewModel).destination.isPresenting(.accentColorPicker)) {
-            if #available(iOS 26, *){
+            if #available(iOS 26, *) {
                 DynamicSheet(animation: .appSelect) {
                     ColorCustomizationSheet(
                         selectedColor: Bindable(settingsViewModel).accentColor
                     )
                 }
-            }
-            else{
+            } else {
                 ColorCustomizationSheet(
                     selectedColor: Bindable(settingsViewModel).accentColor
                 )
@@ -56,6 +55,8 @@ struct AccentColorPickerSheet: View {
                 .fill(settingsViewModel.accentColor.color)
                 .frame(width: colorButtonSize, height: colorButtonSize)
         }
+        .accessibilityLabel("Accent color: \(settingsViewModel.accentColor.rawValue)")
+        .accessibilityHint("Opens the accent color picker")
     }
 }
 
@@ -71,33 +72,13 @@ struct ColorCustomizationSheet: View {
     private let colorButtonSize: CGFloat = 40
 
     var body: some View {
-        if #available(iOS 26, *){
-            VStack(spacing: 32) {
-                ZStack {
-                    Text("Accent Color")
-                        .font(.appTitle2)
-                        .frame(maxWidth: .infinity)
-                    
-                    HStack {
-                        Spacer()
-                        
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.title)
-                                .foregroundStyle(Color.gray, Color.closeButtonBackdrop)
-                        }
-                    }
-                }
-                
-                VStack(spacing: contentSpacing) {
-                    colorSelectionGrid
-                }
+        if #available(iOS 26, *) {
+            VStack(spacing: contentSpacing) {
+                header
+                colorSelectionGrid
             }
             .padding()
-        }
-        else{
+        } else {
             NavigationStack {
                 VStack(spacing: contentSpacing) {
                     colorSelectionGrid
@@ -110,6 +91,28 @@ struct ColorCustomizationSheet: View {
                         Button("Done") { dismiss() }
                     }
                 }
+            }
+        }
+    }
+
+    private var header: some View {
+        ZStack {
+            Text("Accent Color")
+                .font(.appTitle2)
+                .frame(maxWidth: .infinity)
+                .accessibilityAddTraits(.isHeader)
+
+            HStack {
+                Spacer()
+
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title)
+                        .foregroundStyle(Color.gray, Color.closeButtonBackdrop)
+                }
+                .accessibilityLabel("Close")
             }
         }
     }
@@ -143,6 +146,8 @@ struct ColorCustomizationSheet: View {
                 .scaleEffect(isSelected ? 1.1 : 1.0)
                 .animation(.snappy(duration: 0.3), value: isSelected)
         }
+        .accessibilityLabel(colorOption.rawValue)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: - Private Methods
@@ -154,6 +159,8 @@ struct ColorCustomizationSheet: View {
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     let container = DependencyContainer.preview()
 
@@ -164,3 +171,4 @@ struct ColorCustomizationSheet: View {
     }
     .withDependencyContainer(container)
 }
+#endif

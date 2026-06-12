@@ -52,7 +52,6 @@ struct ContentView: View {
             .accessibilityHint("Configure app settings and default currencies")
             .accessibilityInputLabels(["Settings", "Preferences", "Configuration"])
         }
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .alert(
             "Error: \(appState.errorHandler.currentError?.title ?? "")",
             isPresented: errorAlertPresented,
@@ -93,6 +92,8 @@ struct ContentView: View {
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     @Previewable @State var appState = AppState.shared
     let container = DependencyContainer.preview()
@@ -101,3 +102,4 @@ struct ContentView: View {
         .withDependencyContainer(container)
         .environment(appState)
 }
+#endif

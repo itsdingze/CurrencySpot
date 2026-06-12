@@ -34,6 +34,7 @@ struct CurrencyRow: View {
             VStack(alignment: .trailing, spacing: .hairlineGap) {
                 Text(entry.rate.toStringMax4Decimals)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .font(.appTitle2)
                     .monospacedDigit()
 
@@ -41,11 +42,13 @@ struct CurrencyRow: View {
                     TrendIndicator(change: trend.weeklyChange, direction: trend.direction)
                 }
             }
-            .frame(width: 108, alignment: .trailing)
+            .frame(minWidth: 108, alignment: .trailing)
         }
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     let container = DependencyContainer.preview()
 
@@ -56,3 +59,4 @@ struct CurrencyRow: View {
     .listStyle(.plain)
     .withDependencyContainer(container)
 }
+#endif

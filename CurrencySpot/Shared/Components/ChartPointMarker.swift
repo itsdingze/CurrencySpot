@@ -24,6 +24,7 @@ struct ChartPointMarker: View {
                 .fill(color)
                 .frame(width: innerSize, height: innerSize)
         }
+        .accessibilityHidden(true)
     }
 }
 
