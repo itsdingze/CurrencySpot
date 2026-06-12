@@ -17,7 +17,7 @@
     /// Reference storage so the value-typed mock can honor the repository's
     /// cache read/write contract (orchestration round-trips merged data through it).
     private final class HistoricalCacheBox: @unchecked Sendable {
-        var storage: [CurrencyCode: [HistoricalRateDataValue]] = [:]
+        var storage: [CurrencyCode: [HistoricalRateSnapshot]] = [:]
     }
 
     struct MockExchangeRateService: ExchangeRateRepository, HistoricalRateRepository, TrendRepository, DataClearing {
@@ -36,11 +36,11 @@
             false // Always use cached data in previews
         }
 
-        func fetchExchangeRates() async throws -> [ExchangeRateDataValue] {
+        func fetchExchangeRates() async throws -> [ExchangeRate] {
             MockExchangeRates.getCurrencyRates()
         }
 
-        func loadExchangeRates() async throws -> [ExchangeRateDataValue] {
+        func loadExchangeRates() async throws -> [ExchangeRate] {
             MockExchangeRates.getCurrencyRates()
         }
 
@@ -52,7 +52,7 @@
 
         func fetchAndSaveHistoricalRates(from _: Date, to _: Date) async throws {}
 
-        func loadHistoricalRates(for _: CurrencyCode, in range: DateRange) async throws -> [HistoricalRateDataValue] {
+        func loadHistoricalRates(for _: CurrencyCode, in range: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await generatedHistoricalRates().filter { entry in
                 entry.date >= range.start && entry.date <= range.end
             }
@@ -66,23 +66,23 @@
             today
         }
 
-        func cachedHistoricalRates(for currency: CurrencyCode) async -> [HistoricalRateDataValue] {
+        func cachedHistoricalRates(for currency: CurrencyCode) async -> [HistoricalRateSnapshot] {
             cacheBox.storage[currency] ?? []
         }
 
-        func replaceCachedHistoricalRates(_ data: [HistoricalRateDataValue], for currency: CurrencyCode) async {
+        func replaceCachedHistoricalRates(_ data: [HistoricalRateSnapshot], for currency: CurrencyCode) async {
             cacheBox.storage[currency] = data
         }
 
         // MARK: - TrendRepository
 
-        func loadTrendData() async throws -> [TrendDataValue] {
+        func loadTrendData() async throws -> [Trend] {
             Array(MockExchangeRates.trendData.values)
         }
 
-        func saveTrendData(_: [TrendDataValue]) async throws {}
+        func saveTrendData(_: [Trend]) async throws {}
 
-        func loadHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateDataValue] {
+        func loadHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
             try await generatedHistoricalRates().filter { entry in
                 entry.date >= startDate && entry.date <= endDate
             }
@@ -95,9 +95,9 @@
         // MARK: - Fixtures
 
         /// Generates deterministic mock historical data anchored to `today`.
-        private func generatedHistoricalRates() async throws -> [HistoricalRateDataValue] {
+        private func generatedHistoricalRates() async throws -> [HistoricalRateSnapshot] {
             let calendar = TimeZoneManager.cetCalendar
-            var historicalData: [HistoricalRateDataValue] = []
+            var historicalData: [HistoricalRateSnapshot] = []
 
             for i in 0 ..< 30 { // 30 days of mock data
                 if let date = calendar.date(byAdding: .day, value: -i, to: today) {
@@ -106,13 +106,13 @@
                     let variation = 0.95 + Double(i) / 290.0
 
                     let ratePoints = MockExchangeRates.getCurrencyRates().map { rate in
-                        HistoricalRateDataPointValue(
+                        HistoricalRatePoint(
                             currencyCode: rate.currencyCode,
                             rate: rate.rate * variation
                         )
                     }
 
-                    historicalData.append(HistoricalRateDataValue(date: date, rates: ratePoints))
+                    historicalData.append(HistoricalRateSnapshot(date: date, rates: ratePoints))
                 }
             }
 

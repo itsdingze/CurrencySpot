@@ -40,7 +40,7 @@ final class DataOrchestrationUseCase {
     func loadHistoricalData(
         for currency: CurrencyCode,
         dateRange: DateRange
-    ) async throws -> (dataPoints: [HistoricalRateDataValue], newDataFetched: Bool, fetchedRanges: [DateRange]) {
+    ) async throws -> (dataPoints: [HistoricalRateSnapshot], newDataFetched: Bool, fetchedRanges: [DateRange]) {
         // Step 1: Check the in-memory cache first
         let cachedData = await repository.cachedHistoricalRates(for: currency)
         let cache = cachedData.isEmpty ? nil : CurrencyCache(data: cachedData)
@@ -65,7 +65,7 @@ final class DataOrchestrationUseCase {
         }
 
         // Step 2: Look at SwiftData and fetch missing data
-        var newDataPoints: [HistoricalRateDataValue] = []
+        var newDataPoints: [HistoricalRateSnapshot] = []
         var actuallyFetchedRanges: [DateRange] = []
 
         for missingRange in missingRanges {
@@ -121,7 +121,7 @@ final class DataOrchestrationUseCase {
     }
 
     /// Gets cached data for a specific currency within the given date range
-    func getCachedData(for currency: CurrencyCode, dateRange: DateRange) async -> [HistoricalRateDataValue] {
+    func getCachedData(for currency: CurrencyCode, dateRange: DateRange) async -> [HistoricalRateSnapshot] {
         let cachedData = await repository.cachedHistoricalRates(for: currency)
 
         // Filter cached data by current time range

@@ -17,11 +17,11 @@ struct RateTable: Equatable, Sendable {
         usdRates = rates
     }
 
-    init(_ rates: [ExchangeRateDataValue]) {
+    init(_ rates: [ExchangeRate]) {
         usdRates = Dictionary(rates.map { ($0.currencyCode, $0.rate) }, uniquingKeysWith: { _, last in last })
     }
 
-    init(points: [HistoricalRateDataPointValue]) {
+    init(points: [HistoricalRatePoint]) {
         usdRates = Dictionary(points.map { ($0.currencyCode, $0.rate) }, uniquingKeysWith: { _, last in last })
     }
 

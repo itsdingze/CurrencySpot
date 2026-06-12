@@ -26,13 +26,13 @@ enum MockExchangeRates {
         "RUB": 75.0,
     ]
 
-    static func getCurrencyRates() -> [ExchangeRateDataValue] {
+    static func getCurrencyRates() -> [ExchangeRate] {
         rates.compactMap { code, rate in
-            CurrencyCode(code).map { ExchangeRateDataValue(currencyCode: $0, rate: rate) }
+            CurrencyCode(code).map { ExchangeRate(currencyCode: $0, rate: rate) }
         }
     }
 
-    static let trendData: [String: TrendDataValue] = [
+    static let trendData: [String: Trend] = [
         "AUD": makeTrend("AUD", weeklyChange: 2.3, miniChartData: [1.52, 1.53, 1.54, 1.55, 1.56, 1.57, 1.55]),
         "BRL": makeTrend("BRL", weeklyChange: -1.8, miniChartData: [5.65, 5.63, 5.61, 5.59, 5.57, 5.55, 5.58]),
         "GBP": makeTrend("GBP", weeklyChange: -0.5, miniChartData: [0.76, 0.755, 0.753, 0.751, 0.749, 0.748, 0.75]),
@@ -47,8 +47,8 @@ enum MockExchangeRates {
     ]
 
     /// Fixture builder: codes here are compile-time constants, so force-validation is safe.
-    private static func makeTrend(_ code: String, weeklyChange: Double, miniChartData: [Double]) -> TrendDataValue {
-        TrendDataValue(
+    private static func makeTrend(_ code: String, weeklyChange: Double, miniChartData: [Double]) -> Trend {
+        Trend(
             currencyCode: CurrencyCode(code) ?? .usd,
             weeklyChange: weeklyChange,
             miniChartData: miniChartData

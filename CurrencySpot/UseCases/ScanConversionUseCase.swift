@@ -30,7 +30,7 @@ final class ScanConversionUseCase {
         transcript: String,
         baseCurrency: String,
         targetCurrency: String,
-        exchangeRates: [ExchangeRateDataValue]
+        exchangeRates: [ExchangeRate]
     ) -> ScannedConversion? {
         guard let classification = classifier.classify(transcript) else { return nil }
         return ScannedConversion(
@@ -41,7 +41,7 @@ final class ScanConversionUseCase {
     }
 
     /// The effective base → target rate, for display in the badge detail.
-    func rate(from base: String, to target: String, in rates: [ExchangeRateDataValue]) -> Decimal {
+    func rate(from base: String, to target: String, in rates: [ExchangeRate]) -> Decimal {
         convert(1, from: base, to: target, in: rates)
     }
 
@@ -52,7 +52,7 @@ final class ScanConversionUseCase {
         _ amount: Decimal,
         from base: String,
         to target: String,
-        in rates: [ExchangeRateDataValue]
+        in rates: [ExchangeRate]
     ) -> Decimal {
         guard base != target, let baseCode = CurrencyCode(base), let targetCode = CurrencyCode(target) else {
             return amount

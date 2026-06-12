@@ -14,10 +14,10 @@ protocol ExchangeRateRepository {
     /// Fetches fresh rates from the network. Persisting, caching, and stamping the
     /// last-fetch date happen inside the repository (single owner of post-fetch
     /// bookkeeping). Falls back to cached/persisted rates when the network fails.
-    func fetchExchangeRates() async throws -> [ExchangeRateDataValue]
+    func fetchExchangeRates() async throws -> [ExchangeRate]
 
     /// Cache-first load of current rates, with the network as a last resort.
-    func loadExchangeRates() async throws -> [ExchangeRateDataValue]
+    func loadExchangeRates() async throws -> [ExchangeRate]
 
     /// Timestamp of the most recent successful fetch.
     func lastFetchDate() -> Date?

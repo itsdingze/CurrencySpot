@@ -13,15 +13,15 @@ protocol HistoricalRateRepository {
 
     /// Loads stored historical rates for a currency within a range,
     /// with a network fallback when persistence fails.
-    func loadHistoricalRates(for currency: CurrencyCode, in range: DateRange) async throws -> [HistoricalRateDataValue]
+    func loadHistoricalRates(for currency: CurrencyCode, in range: DateRange) async throws -> [HistoricalRateSnapshot]
 
     /// Bounds of the persisted historical data; nil when nothing is stored.
     func earliestStoredDate() async throws -> Date?
     func latestStoredDate() async throws -> Date?
 
     /// The in-memory historical cache for a currency (merged, deduplicated, date-sorted).
-    func cachedHistoricalRates(for currency: CurrencyCode) async -> [HistoricalRateDataValue]
+    func cachedHistoricalRates(for currency: CurrencyCode) async -> [HistoricalRateSnapshot]
 
     /// Replaces the in-memory historical cache for a currency.
-    func replaceCachedHistoricalRates(_ data: [HistoricalRateDataValue], for currency: CurrencyCode) async
+    func replaceCachedHistoricalRates(_ data: [HistoricalRateSnapshot], for currency: CurrencyCode) async
 }

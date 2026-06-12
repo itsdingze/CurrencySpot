@@ -124,11 +124,11 @@ final class HistoricalDataAnalysisUseCase {
 
     /// Merges existing and new historical data, removing duplicates and maintaining sort order
     func mergeHistoricalData(
-        existing: [HistoricalRateDataValue],
-        new: [HistoricalRateDataValue]
-    ) -> [HistoricalRateDataValue] {
+        existing: [HistoricalRateSnapshot],
+        new: [HistoricalRateSnapshot]
+    ) -> [HistoricalRateSnapshot] {
         // Create a dictionary for fast lookup of existing dates
-        var existingByDate: [String: HistoricalRateDataValue] = [:]
+        var existingByDate: [String: HistoricalRateSnapshot] = [:]
         for item in existing {
             existingByDate[TimeZoneManager.formatForAPI(item.date)] = item
         }

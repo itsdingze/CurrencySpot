@@ -49,7 +49,7 @@ final class TrendDataUseCase {
     /// Computes per-currency weekly trends from raw historical rows.
     /// Currencies with fewer than 2 data points in the window are skipped;
     /// USD is omitted because its trends derive from inverting other currencies.
-    static func calculateTrends(from historicalData: [HistoricalRateDataValue]) -> [TrendDataValue] {
+    static func calculateTrends(from historicalData: [HistoricalRateSnapshot]) -> [Trend] {
         var currencyDateRates: [CurrencyCode: [(Date, Double)]] = [:]
 
         for historicalDay in historicalData {
@@ -69,7 +69,7 @@ final class TrendDataUseCase {
                 return nil
             }
 
-            return TrendDataValue(
+            return Trend(
                 currencyCode: currencyCode,
                 weeklyChange: weeklyChange,
                 miniChartData: sortedRates.map(\.1)
@@ -88,7 +88,7 @@ final class TrendDataUseCase {
 
     /// Initializes trend data by checking stored trends and fetching/calculating if needed.
     /// Throws on failure; the calling ViewModel routes errors to its error handler.
-    func initializeTrendData() async throws -> [TrendDataValue] {
+    func initializeTrendData() async throws -> [Trend] {
         let existingTrends = try await trendRepository.loadTrendData()
         guard existingTrends.isEmpty else { return existingTrends }
 
@@ -106,12 +106,12 @@ final class TrendDataUseCase {
     }
 
     /// Gets trend data for a specific currency
-    func getTrendData(for currencyCode: CurrencyCode, from trendData: [TrendDataValue]) -> TrendDataValue? {
+    func getTrendData(for currencyCode: CurrencyCode, from trendData: [Trend]) -> Trend? {
         trendData.first { $0.currencyCode == currencyCode }
     }
 
     /// Checks if any of the missing ranges affect trend calculation and recalculates trends if needed
-    func checkAndRecalculateTrendsIfNeeded(for missingRanges: [DateRange]) async -> [TrendDataValue] {
+    func checkAndRecalculateTrendsIfNeeded(for missingRanges: [DateRange]) async -> [Trend] {
         do {
             let now = dateProvider.now()
             let shouldRecalculateTrends = missingRanges.contains { range in
@@ -155,8 +155,8 @@ final class TrendDataUseCase {
     func adjustedTrend(
         for currencyCode: CurrencyCode,
         baseCurrency: CurrencyCode,
-        in trendData: [TrendDataValue]
-    ) -> TrendDataValue? {
+        in trendData: [Trend]
+    ) -> Trend? {
         // Special handling when the target currency is USD: invert the base series.
         if currencyCode == .usd, baseCurrency != .usd {
             guard let baseTrend = getTrendData(for: baseCurrency, from: trendData),
@@ -177,7 +177,7 @@ final class TrendDataUseCase {
                 return nil
             }
 
-            return TrendDataValue(
+            return Trend(
                 currencyCode: .usd,
                 weeklyChange: adjustedChange,
                 miniChartData: invertedMiniChartData
@@ -214,7 +214,7 @@ final class TrendDataUseCase {
             return targetTrend
         }
 
-        return TrendDataValue(
+        return Trend(
             currencyCode: currencyCode,
             weeklyChange: adjustedChange,
             miniChartData: adjustedMiniChartData

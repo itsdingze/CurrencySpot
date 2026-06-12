@@ -29,11 +29,11 @@ final class ChartDataPreparationUseCase {
 
     /// Processes historical rate data for the specified currency pair within the given time range
     func processHistoricalRateData(
-        historicalData: [HistoricalRateDataValue],
+        historicalData: [HistoricalRateSnapshot],
         baseCurrency: CurrencyCode,
         targetCurrency: CurrencyCode,
         dateRange: DateRange,
-        exchangeRates: [ExchangeRateDataValue]
+        exchangeRates: [ExchangeRate]
     ) async -> [ChartDataPoint] {
         // Generate a cache key for this configuration AND its input coverage. The processed output
         // depends on the actual historical rows, not just the date range: the same currency pair +
@@ -69,11 +69,11 @@ final class ChartDataPreparationUseCase {
     /// Pure transform from historical rows to chart points. Nonisolated so the work
     /// runs on the cooperative pool instead of blocking the main actor.
     private nonisolated static func transformHistoricalData(
-        _ historicalData: [HistoricalRateDataValue],
+        _ historicalData: [HistoricalRateSnapshot],
         baseCurrency: CurrencyCode,
         targetCurrency: CurrencyCode,
         dateRange: DateRange,
-        exchangeRates: [ExchangeRateDataValue]
+        exchangeRates: [ExchangeRate]
     ) async -> [ChartDataPoint] {
         let currentRates = RateTable(exchangeRates)
         var chartPoints: [ChartDataPoint] = []
