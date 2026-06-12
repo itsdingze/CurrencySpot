@@ -10,12 +10,11 @@ struct VolatilityInfoView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: .sectionGap) {
             // Header
             HStack {
                 Text("What is Volatility?")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                    .font(.appHeadline)
 
                 Spacer()
 
@@ -23,7 +22,7 @@ struct VolatilityInfoView: View {
                     dismiss()
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 22))
+                        .font(.appTitle2)
                         .foregroundStyle(.secondary.opacity(0.6))
                         .symbolRenderingMode(.hierarchical)
                 }
@@ -33,25 +32,25 @@ struct VolatilityInfoView: View {
             }
 
             // Content
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: .elementGap) {
                 Text("Volatility measures how much the exchange rate fluctuates over time.")
-                    .font(.subheadline)
+                    .font(.appSubheadline)
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: .tightGap) {
                     ForEach(VolatilityLevel.allCases, id: \.self) { level in
                         volatilityLevelRow(level)
                     }
                 }
 
                 Text("Lower volatility means more stable exchange rates, while higher volatility indicates larger price swings.")
-                    .font(.caption)
+                    .font(.appCaption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(20)
+        .padding(.cardPadding)
         .frame(width: 320)
         .background(Color(UIColor.systemBackground))
         .presentationBackground(.regularMaterial)
@@ -59,20 +58,19 @@ struct VolatilityInfoView: View {
 
     @ViewBuilder
     private func volatilityLevelRow(_ level: VolatilityLevel) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: .tightGap) {
             Circle()
                 .fill(level.color)
                 .frame(width: 8, height: 8)
                 .accessibilityHidden(true)
 
             Text(level.displayName)
-                .font(.caption)
-                .fontWeight(.medium)
+                .font(.appCaption.weight(.medium))
                 .foregroundStyle(.primary)
                 .frame(width: 70, alignment: .leading)
 
             Text(level.rangeDescription)
-                .font(.caption)
+                .font(.appCaption)
                 .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)

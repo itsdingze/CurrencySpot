@@ -48,13 +48,13 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView(.vertical) {
-                VStack(alignment: .center, spacing: 40) {
+                VStack(alignment: .center, spacing: .onboardingGap) {
                     icon
                         .frame(maxWidth: .infinity)
                         .blurSlide(animateIcon)
 
                     Text(title)
-                        .font(.system(.title, design: .rounded, weight: .bold))
+                        .font(.appTitle)
                         .multilineTextAlignment(.center)
                         .blurSlide(animateTitle)
                         .accessibilityAddTraits(.isHeader)
@@ -70,21 +70,17 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
 
                 Button(action: onContinue) {
                     Text(buttonTitle)
-                        .font(.system(.headline, design: .rounded, weight: .semibold))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
                 }
-                .tint(Color.accentColor)
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.roundedRectangle(radius: 16))
-                .padding(.bottom, 10)
+                .buttonStyle(.primaryAction)
+                .padding(.bottom, .tightGap)
                 .accessibilityLabel("Continue to app")
                 .accessibilityHint("Finishes onboarding and opens the main app")
                 .accessibilityInputLabels(["Continue", "Get started", "Finish", "Next"])
             }
             .blurSlide(animateFooter)
         }
-        .safeAreaPadding(.horizontal, 36)
+        .safeAreaPadding(.horizontal, .onboardingInset)
         .interactiveDismissDisabled()
         .allowsHitTesting(animateFooter)
         .accessibilityElement(children: .contain)
@@ -121,7 +117,7 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
     }
 
     private var cardsView: some View {
-        VStack(alignment: .leading, spacing: 40) {
+        VStack(alignment: .leading, spacing: .onboardingGap) {
             ForEach(cards) { card in
                 FeatureRow(symbol: card.symbol, title: card.title, subtitle: card.subTitle)
                     .blurSlide(animatedCardIDs.contains(card.id))
@@ -155,7 +151,7 @@ struct CurrencySpotOnboarding: View {
                         RoundedRectangle(cornerRadius: 22)
                             .stroke(Color.gray.opacity(0.2), lineWidth: 1.5)
                     }
-                    .padding(.top, 40)
+                    .padding(.top, .onboardingGap)
             },
             cards: [
                 OnBoardingCard(
@@ -179,7 +175,7 @@ struct CurrencySpotOnboarding: View {
                     .font(.caption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 24)
+                    .padding(.vertical, .blockGap)
             },
             onContinue: settingsViewModel.dismissOnboarding
         )

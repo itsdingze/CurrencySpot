@@ -26,37 +26,35 @@ struct BadgeDetailView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title)
-                        .foregroundStyle(Color.gray, Color.primary.opacity(0.1))
+                        .foregroundStyle(Color.gray, Color.closeButtonBackdrop)
                 }
                 .accessibilityLabel("Close")
             }
 
-            VStack(spacing: 8) {
+            VStack(spacing: .tightGap) {
                 amountLine(item.conversion.amount, code: baseCurrency)
                     .foregroundStyle(Color.textSecondary)
 
                 Image(systemName: "arrow.down")
-                    .font(.system(.headline, design: .rounded).weight(.semibold))
+                    .font(.appHeadline)
                     .foregroundStyle(Color.textSecondary)
                     .accessibilityHidden(true)
 
                 amountLine(item.conversion.converted, code: targetCurrency, fractionDigits: 2)
                     .foregroundStyle(Color.textPrimary)
             }
-            .padding(.top, 8)
+            .padding(.top, .tightGap)
 
-            VStack(spacing: 16) {
+            VStack(spacing: .sectionGap) {
                 Button(action: openInConverter) {
                     Label("Open in Convert", systemImage: "arrow.left.arrow.right")
-                        .font(.system(.headline, design: .rounded))
-                        .padding(.vertical, 4)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.primaryAction)
 
                 Button(action: hideConversion) {
                     Label("Hide this conversion", systemImage: "eye.slash")
-                        .font(.system(.subheadline, design: .rounded))
+                        .font(.appSubheadline)
                 }
                 .foregroundStyle(Color.textSecondary)
             }
@@ -67,11 +65,11 @@ struct BadgeDetailView: View {
     }
 
     private func amountLine(_ amount: Decimal, code: String, fractionDigits: Int? = nil) -> some View {
-        HStack(alignment: .lastTextBaseline, spacing: 6) {
+        HStack(alignment: .lastTextBaseline, spacing: .tightGap) {
             Text(amount, format: fractionDigits.map { .number.precision(.fractionLength($0)) } ?? .number)
-                .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                .font(.appLargeTitle)
             Text(CurrencyUtilities.shared.name(for: code))
-                .font(.system(.title3, design: .rounded).weight(.semibold))
+                .font(.appTitle3)
         }
     }
 }

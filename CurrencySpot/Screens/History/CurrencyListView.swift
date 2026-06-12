@@ -13,7 +13,7 @@ struct CurrencyListView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            VStack(spacing: 12) {
+            VStack(spacing: .elementGap) {
                 searchBar
                 currenciesList
             }
@@ -42,7 +42,7 @@ struct CurrencyListView: View {
     private var searchBar: some View {
         SearchField(prompt: "Search currencies", text: Bindable(historyViewModel).searchText)
             .padding(.horizontal)
-            .padding(.top, 4)
+            .padding(.top, .hairlineGap)
     }
 
     private var currenciesList: some View {
@@ -61,7 +61,7 @@ struct CurrencyListView: View {
             // iOS 26 renders the large title via the navigation bar; older versions need an explicit title.
             if #unavailable(iOS 26) {
                 Text("History")
-                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                    .font(.appLargeTitle)
             }
         }
     }
@@ -86,7 +86,7 @@ struct CurrencyListView: View {
                 }
                 else{
                     Image(systemName: "arrow.up.arrow.down.circle.fill")
-                        .font(.system(size: 24, design: .rounded))
+                        .font(.appTitle2)
                         .symbolRenderingMode(.palette)
                         .foregroundStyle(Color.accentColor, Color.tertiaryBackground)
                 }

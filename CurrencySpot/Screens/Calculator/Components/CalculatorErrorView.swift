@@ -13,15 +13,14 @@ struct CalculatorErrorView: View {
     var errorMessage: String?
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: .elementGap) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(.largeTitle, design: .rounded))
+                .font(.appLargeTitle)
                 .foregroundStyle(Color.secondaryAccent)
                 .accessibilityHidden(true)
 
             Text("Unable to Load Exchange Rates")
-                .font(.system(.title3, design: .rounded))
-                .fontWeight(.bold)
+                .font(.appTitle3.bold())
                 .foregroundStyle(Color.textPrimary)
                 .accessibilityAddTraits(.isHeader)
 
@@ -36,10 +35,10 @@ struct CalculatorErrorView: View {
                         await calculatorViewModel.fetchExchangeRates()
                     }
                 }
-                .padding(12)
+                .padding(.fieldPadding)
                 .background(Color.accentColor)
                 .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: .cardRadius))
                 .accessibilityLabel("Retry loading exchange rates")
                 .accessibilityHint("Attempts to fetch exchange rates from server again")
                 .accessibilityInputLabels(["Retry", "Try again", "Reload"])
@@ -47,16 +46,16 @@ struct CalculatorErrorView: View {
                 Button("Use Mock Data") {
                     calculatorViewModel.useMockData()
                 }
-                .padding(12)
+                .padding(.fieldPadding)
                 .background(Color.accentColor)
                 .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: .cardRadius))
                 .accessibilityLabel("Use sample data")
                 .accessibilityHint("Loads sample exchange rates for testing purposes")
                 .accessibilityInputLabels(["Mock data", "Sample data", "Demo mode"])
 
                 Text("Note: Mock data is not accurate for real conversions")
-                    .font(.system(.caption, design: .rounded))
+                    .font(.appCaption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Color.textSecondary)
                     .accessibilityLabel("Warning: Sample data is not accurate for real currency conversions")

@@ -96,9 +96,6 @@ struct NumberPadView: View {
     @State private var clearPressed = false
     @State private var deletePressed = false
 
-    private let buttonSpacing: CGFloat = 12
-    private let rowSpacing: CGFloat = 12
-
     private let buttonLayout: [[NumberPadButton]] = [
         [.number("7"), .number("8"), .number("9")],
         [.number("4"), .number("5"), .number("6")],
@@ -107,9 +104,9 @@ struct NumberPadView: View {
     ]
 
     var body: some View {
-        VStack(spacing: rowSpacing) {
+        VStack(spacing: .elementGap) {
             ForEach(buttonLayout.indices, id: \.self) { rowIndex in
-                HStack(spacing: buttonSpacing) {
+                HStack(spacing: .elementGap) {
                     ForEach(buttonLayout[rowIndex]) { button in
                         numberPadButton(button)
                     }
@@ -132,7 +129,7 @@ struct NumberPadView: View {
     private func numberPadButton(_ button: NumberPadButton) -> some View {
         Button(action: { buttonTapped(button) }) {
             Text(button.label)
-                .font(.system(.title, design: .rounded, weight: .bold))
+                .font(.appTitle)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .foregroundStyle(button.foregroundColor)

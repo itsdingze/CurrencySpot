@@ -14,7 +14,7 @@ struct ChartPreviewSection: View {
     @State private var showLowest = false
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: .blockGap) {
             Chart {
                 RuleMark(y: .value("Average", SampleChartData.averageRate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
@@ -53,12 +53,12 @@ struct ChartPreviewSection: View {
                     )
                     .symbol {
                         ZStack {
-                            RippleEffect(isActive: showHighest, color: .green)
+                            RippleEffect(isActive: showHighest, color: .success)
 
-                            ChartPointMarker(color: .green, outerSize: 8, innerSize: 7)
+                            ChartPointMarker(color: .success, outerSize: 8, innerSize: 7)
                         }
                         .opacity(showHighest ? 1.0 : 0.0)
-                        .animation(.smooth(duration: 0.3), value: showHighest)
+                        .animation(.appToggle, value: showHighest)
                     }
                 }
 
@@ -69,12 +69,12 @@ struct ChartPreviewSection: View {
                     )
                     .symbol {
                         ZStack {
-                            RippleEffect(isActive: showLowest, color: .red)
+                            RippleEffect(isActive: showLowest, color: .failure)
 
-                            ChartPointMarker(color: .red, outerSize: 8, innerSize: 7)
+                            ChartPointMarker(color: .failure, outerSize: 8, innerSize: 7)
                         }
                         .opacity(showLowest ? 1.0 : 0.0)
-                        .animation(.smooth(duration: 0.3), value: showLowest)
+                        .animation(.appToggle, value: showLowest)
                     }
                 }
             }
@@ -83,15 +83,15 @@ struct ChartPreviewSection: View {
             .chartYScale(domain: SampleChartData.chartYDomain)
             .frame(height: 180)
 
-            VStack(spacing: 8) {
-                HStack(spacing: 12) {
+            VStack(spacing: .tightGap) {
+                HStack(spacing: .elementGap) {
                     MockStatCard(
                         label: "Highest",
                         value: String(format: "%.4f", SampleChartData.highestPoint?.rate ?? 0),
                         isToggled: showHighest,
-                        color: .green
+                        color: .success
                     ) {
-                        withAnimation(.smooth(duration: 0.3)) {
+                        withAnimation(.appToggle) {
                             showHighest.toggle()
                         }
                     }
@@ -100,22 +100,22 @@ struct ChartPreviewSection: View {
                         label: "Lowest",
                         value: String(format: "%.4f", SampleChartData.lowestPoint?.rate ?? 0),
                         isToggled: showLowest,
-                        color: .red
+                        color: .failure
                     ) {
-                        withAnimation(.smooth(duration: 0.3)) {
+                        withAnimation(.appToggle) {
                             showLowest.toggle()
                         }
                     }
                 }
 
-                HStack(spacing: 12) {
+                HStack(spacing: .elementGap) {
                     MockStatCard(
                         label: "Average",
                         value: String(format: "%.4f", SampleChartData.averageRate),
                         isToggled: showAverage,
                         color: .gray
                     ) {
-                        withAnimation(.smooth(duration: 0.3)) {
+                        withAnimation(.appToggle) {
                             showAverage.toggle()
                         }
                     }
@@ -129,7 +129,7 @@ struct ChartPreviewSection: View {
                 }
             }
         }
-        .padding(.top, 20)
+        .padding(.top, .blockGap)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Interactive chart statistics demonstration")
         .accessibilityHint("Watch the chart indicators toggle as statistics are selected")
@@ -143,22 +143,22 @@ struct ChartPreviewSection: View {
 
         while !Task.isCancelled {
             do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
-            withAnimation(.smooth(duration: 0.3)) {
+            withAnimation(.appToggle) {
                 showAverage = true
             }
 
             do { try await Task.sleep(for: .seconds(0.7)) } catch { return }
-            withAnimation(.smooth(duration: 0.3)) {
+            withAnimation(.appToggle) {
                 showHighest = true
             }
 
             do { try await Task.sleep(for: .seconds(0.7)) } catch { return }
-            withAnimation(.smooth(duration: 0.3)) {
+            withAnimation(.appToggle) {
                 showLowest = true
             }
 
             do { try await Task.sleep(for: .seconds(1.6)) } catch { return }
-            withAnimation(.smooth(duration: 0.3)) {
+            withAnimation(.appToggle) {
                 showAverage = false
                 showHighest = false
                 showLowest = false
@@ -178,8 +178,8 @@ private struct MockStatCard: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: .hairlineGap) {
+                HStack(spacing: .hairlineGap) {
                     Text(label)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -188,19 +188,18 @@ private struct MockStatCard: View {
                         Circle()
                             .fill(color.opacity(isToggled ? 1.0 : 0.3))
                             .frame(width: 5, height: 5)
-                            .animation(.smooth(duration: 0.3), value: isToggled)
+                            .animation(.appToggle, value: isToggled)
                     }
                 }
 
                 Text(value)
-                    .font(.system(.footnote, design: .rounded).monospacedDigit())
-                    .fontWeight(.medium)
+                    .font(.appFootnote.weight(.medium).monospacedDigit())
                     .foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(6)
+            .padding(.chipPadding)
             .background(
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: .badgeRadius)
                     .fill(isToggled && color != nil ?
                         Color.accentColor.opacity(0.08) :
                         Color.gray.opacity(0.05))

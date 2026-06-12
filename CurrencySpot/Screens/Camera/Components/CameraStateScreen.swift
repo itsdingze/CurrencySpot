@@ -19,38 +19,35 @@ struct CameraStateScreen: View {
         VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 24) {
-                VStack(spacing: 12) {
+            VStack(spacing: .blockGap) {
+                VStack(spacing: .elementGap) {
                     Image(systemName: icon)
-                        .font(.system(size: 56, weight: .medium))
+                        .font(.heroIcon)
                         .foregroundStyle(Color.accentColor)
                         .accessibilityHidden(true)
 
                     Text(title)
-                        .font(.system(.title2, design: .rounded, weight: .bold))
+                        .font(.appTitle2.bold())
                         .multilineTextAlignment(.center)
                         .accessibilityAddTraits(.isHeader)
 
                     Text(message)
-                        .font(.system(.subheadline, design: .rounded))
+                        .font(.appSubheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
 
                 Button(action: action) {
                     Text(buttonTitle)
-                        .font(.system(.headline, design: .rounded, weight: .semibold))
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, .chipPadding)
                 }
-                .tint(Color.accentColor)
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.primaryAction)
                 .accessibilityHint(buttonHint)
             }
 
             Spacer()
         }
-        .safeAreaPadding(.horizontal, 36)
+        .safeAreaPadding(.horizontal, .onboardingInset)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.background.ignoresSafeArea())
     }

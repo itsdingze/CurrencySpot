@@ -35,7 +35,7 @@ struct RippleEffect: View {
         scale = 1
         opacity = 0
 
-        withAnimation(.snappy) {
+        withAnimation(.appSelect) {
             scale = 3.0
             opacity = 1.0
         }

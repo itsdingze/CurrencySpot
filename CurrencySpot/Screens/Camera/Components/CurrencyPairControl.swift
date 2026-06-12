@@ -11,10 +11,8 @@ struct CurrencyPairControl: View {
     @Environment(CameraViewModel.self) private var viewModel
     @State private var isFlipped = false
 
-    private let flipDuration: TimeInterval = 0.6
-
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: .sectionGap) {
             currencyButton(
                 code: viewModel.baseCurrency,
                 caption: "From",
@@ -31,8 +29,8 @@ struct CurrencyPairControl: View {
                 accessibilityLabel: "Converted currency"
             )
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, .cardPadding)
+        .padding(.vertical, .chipPadding)
         .adaptiveGlassBackground(in: .capsule, isInteractive: true)
     }
 
@@ -47,14 +45,14 @@ struct CurrencyPairControl: View {
         } label: {
             VStack(spacing: 0) {
                 Text(caption)
-                    .font(.system(.caption, design: .rounded))
+                    .font(.appCaption)
                     .foregroundStyle(Color.textSecondary)
 
                 FixedWidthCurrencyLabel(code: code)
                     .foregroundStyle(Color.textPrimary)
             }
         }
-        .padding(.horizontal, 8)
+        .buttonStyle(CurrencyCodeButtonStyle())
         .accessibilityLabel(accessibilityLabel)
         .accessibilityValue(code)
         .accessibilityHint("Opens the currency picker")
@@ -62,13 +60,13 @@ struct CurrencyPairControl: View {
 
     private var swapButton: some View {
         Button {
-            withAnimation(.bouncy(duration: flipDuration)) {
+            withAnimation(.appFlip) {
                 isFlipped.toggle()
                 viewModel.swapCurrencies()
             }
         } label: {
             Image(systemName: "arrow.trianglehead.swap")
-                .font(.system(.headline, design: .rounded))
+                .font(.appHeadline)
                 .foregroundStyle(Color.accentColor)
                 .rotationEffect(.degrees(90))
                 .rotation3DEffect(

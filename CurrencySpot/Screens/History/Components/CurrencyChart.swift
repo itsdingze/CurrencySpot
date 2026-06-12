@@ -100,12 +100,12 @@ struct CurrencyChart: View {
                 )
                 .symbol {
                     ZStack {
-                        RippleEffect(isActive: viewModel.showHighestPoint, color: .green)
+                        RippleEffect(isActive: viewModel.showHighestPoint, color: .success)
 
-                        ChartPointMarker(color: .green)
+                        ChartPointMarker(color: .success)
                     }
                     .opacity(viewModel.showHighestPoint ? 1.0 : 0.0)
-                    .animation(.smooth(duration: 0.3), value: viewModel.showHighestPoint)
+                    .animation(.appToggle, value: viewModel.showHighestPoint)
                 }
             }
 
@@ -117,12 +117,12 @@ struct CurrencyChart: View {
                 )
                 .symbol {
                     ZStack {
-                        RippleEffect(isActive: viewModel.showLowestPoint, color: .red)
+                        RippleEffect(isActive: viewModel.showLowestPoint, color: .failure)
 
-                        ChartPointMarker(color: .red)
+                        ChartPointMarker(color: .failure)
                     }
                     .opacity(viewModel.showLowestPoint ? 1.0 : 0.0)
-                    .animation(.smooth(duration: 0.3), value: viewModel.showLowestPoint)
+                    .animation(.appToggle, value: viewModel.showLowestPoint)
                 }
             }
 
@@ -139,8 +139,8 @@ struct CurrencyChart: View {
                                 .foregroundStyle(chartColor)
                         }
                         .fontDesign(.rounded)
-                        .padding(8)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(chartColor).opacity(0.2))
+                        .padding(.chipPadding)
+                        .background(RoundedRectangle(cornerRadius: .badgeRadius).fill(chartColor).opacity(0.2))
                     }
 
                 PointMark(
@@ -189,7 +189,7 @@ struct CurrencyChart: View {
             }
         }
         .padding(8)
-        .frame(height: 260)
+        .frame(height: .chartHeight)
     }
 
     // MARK: - Accessibility Helpers

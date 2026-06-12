@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import SwiftUI
 
 // MARK: - Bundle Extensions
 
@@ -25,16 +24,6 @@ extension Bundle {
     var appVersionWithBuild: String {
         "\(appVersion) (\(buildNumber))"
     }
-}
-
-// MARK: - Color Extensions
-
-extension Color {
-    /// Primary text color that adapts to light/dark mode
-    static let textPrimary = Color(UIColor.label)
-
-    /// Secondary text color that adapts to light/dark mode
-    static let textSecondary = Color(UIColor.secondaryLabel)
 }
 
 // MARK: - Date Extensions

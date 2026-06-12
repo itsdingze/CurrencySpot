@@ -6,7 +6,7 @@
 import SwiftUI
 
 /// The magnifier + text field + clear-button search bar shared by the currency
-/// lists and pickers. A later design phase swaps these for `.searchable` in one place.
+/// lists and pickers.
 struct SearchField: View {
     let prompt: String
     @Binding var text: String
@@ -32,9 +32,9 @@ struct SearchField: View {
                 .accessibilityInputLabels(["Clear", "Reset search"])
             }
         }
-        .padding(10)
+        .padding(.fieldPadding)
         .background(Color.tertiaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: .cardRadius))
     }
 
     private func clearText() {

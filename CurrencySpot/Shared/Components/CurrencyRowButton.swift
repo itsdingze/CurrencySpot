@@ -17,13 +17,12 @@ struct CurrencyRowButton: View {
         Button(action: action) {
             HStack {
                 Text(code)
-                    .font(.system(.headline, design: .rounded))
-                    .fontWeight(.medium)
+                    .font(.appHeadline.weight(.medium))
 
                 Spacer()
 
                 Text(name)
-                    .font(.system(.subheadline, design: .rounded))
+                    .font(.appSubheadline)
                     .foregroundStyle(Color.textSecondary)
 
                 if isSelected {
@@ -32,7 +31,7 @@ struct CurrencyRowButton: View {
                         .accessibilityHidden(true)
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, .hairlineGap)
         }
     }
 }

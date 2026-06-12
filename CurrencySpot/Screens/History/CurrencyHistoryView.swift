@@ -13,7 +13,7 @@ struct CurrencyHistoryView: View {
     @State private var isChartSelectionActive: Bool = false
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: .sectionGap) {
             HeaderSection(
                 isChartSelectionActive: $isChartSelectionActive
             )
@@ -44,7 +44,7 @@ struct CurrencyHistoryView: View {
     private var footerSection: some View {
         HStack {
             Text("Exchange rates aggregated from central banks worldwide")
-                .font(.system(.caption, design: .rounded))
+                .font(.appCaption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

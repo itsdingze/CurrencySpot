@@ -13,7 +13,7 @@ struct FeatureRow: View {
     let subtitle: String
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .center, spacing: .elementGap) {
             Image(systemName: "circle")
                 .opacity(0)
                 .frame(width: 40)
@@ -25,14 +25,14 @@ struct FeatureRow: View {
                         .accessibilityHidden(true)
                 }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: .tightGap) {
                 Text(title)
-                    .font(.system(.headline, design: .rounded, weight: .semibold))
+                    .font(.appHeadline)
                     .lineLimit(1)
                     .accessibilityAddTraits(.isHeader)
 
                 Text(subtitle)
-                    .font(.system(.subheadline, design: .rounded, weight: .regular))
+                    .font(.appSubheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(3)
             }

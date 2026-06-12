@@ -14,18 +14,18 @@ struct NavigationHeader: View {
     let onSkip: () -> Void
 
     var body: some View {
-        HStack(spacing: 36) {
+        HStack(spacing: .onboardingGap) {
             backButton
             progressIndicator
             skipButton
         }
-        .padding(.top, 36)
+        .padding(.top, .onboardingGap)
     }
 
     private var backButton: some View {
         Button(action: onBack) {
             Image(systemName: "chevron.left")
-                .font(.system(.subheadline, weight: .medium))
+                .font(.appSubheadline.weight(.medium))
                 .foregroundStyle(.primary)
         }
         .opacity(currentPage > 0 ? 1 : 0)
@@ -35,12 +35,12 @@ struct NavigationHeader: View {
     }
 
     private var progressIndicator: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: .tightGap) {
             ForEach(0 ..< totalPages, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 2)
                     .fill(index <= currentPage ? Color.accentColor : Color.gray.opacity(0.3))
                     .frame(height: 4)
-                    .animation(.snappy, value: currentPage)
+                    .animation(.appSelect, value: currentPage)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -50,7 +50,7 @@ struct NavigationHeader: View {
 
     private var skipButton: some View {
         Button("Skip", action: onSkip)
-            .font(.system(.subheadline, design: .rounded, weight: .medium))
+            .font(.appSubheadline.weight(.medium))
             .foregroundStyle(.primary)
             .accessibilityLabel("Skip onboarding")
             .accessibilityHint("Skips chart feature tutorial and returns to main app")

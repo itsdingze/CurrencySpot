@@ -14,14 +14,14 @@ struct StatisticsSection: View {
     @State private var showVolatilityInfo = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: .hairlineGap) {
             HStack(spacing: 0) {
                 Button(action: toggleHighestPoint) {
                     statCard(
                         label: "Highest",
                         value: viewModel.formattedHighestRate,
                         isToggled: viewModel.showHighestPoint,
-                        indicatorColor: .green
+                        indicatorColor: .success
                     )
                 }
                 .buttonStyle(.plain)
@@ -33,7 +33,7 @@ struct StatisticsSection: View {
                         label: "Lowest",
                         value: viewModel.formattedLowestRate,
                         isToggled: viewModel.showLowestPoint,
-                        indicatorColor: .red
+                        indicatorColor: .failure
                     )
                 }
                 .buttonStyle(.plain)
@@ -62,19 +62,19 @@ struct StatisticsSection: View {
     // MARK: - Private Methods
 
     private func toggleHighestPoint() {
-        withAnimation(.smooth(duration: 0.3)) {
+        withAnimation(.appToggle) {
             viewModel.showHighestPoint.toggle()
         }
     }
 
     private func toggleLowestPoint() {
-        withAnimation(.smooth(duration: 0.3)) {
+        withAnimation(.appToggle) {
             viewModel.showLowestPoint.toggle()
         }
     }
 
     private func toggleAverageLine() {
-        withAnimation(.smooth(duration: 0.3)) {
+        withAnimation(.appToggle) {
             viewModel.showAverageLine.toggle()
         }
     }
@@ -83,10 +83,10 @@ struct StatisticsSection: View {
 
     @ViewBuilder
     private func statCard(label: String, value: String, isToggled: Bool = false, indicatorColor: Color? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 4) {
+        VStack(alignment: .leading, spacing: .hairlineGap) {
+            HStack(spacing: .hairlineGap) {
                 Text(label)
-                    .font(.system(.subheadline, design: .rounded))
+                    .font(.appSubheadline)
                     .foregroundStyle(.secondary)
                     .accessibilityAddTraits(.isHeader)
 
@@ -94,16 +94,15 @@ struct StatisticsSection: View {
                     Circle()
                         .fill(color.opacity(isToggled ? 1.0 : 0.3))
                         .frame(width: 6, height: 6)
-                        .animation(.smooth(duration: 0.3), value: isToggled)
+                        .animation(.appToggle, value: isToggled)
                 }
             }
 
             Text(value)
-                .font(.system(.headline, design: .rounded).monospacedDigit())
-                .fontWeight(.medium)
+                .font(.appHeadline.weight(.medium).monospacedDigit())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(6)
+        .padding(.chipPadding)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label): \(value)")
@@ -126,18 +125,18 @@ struct StatisticsSection: View {
 
     @ViewBuilder
     private func volatilityCard(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: .hairlineGap) {
             Button(action: {
                 showVolatilityInfo = true
             }) {
-                HStack(spacing: 4) {
+                HStack(spacing: .hairlineGap) {
                     Text(label)
-                        .font(.system(.subheadline, design: .rounded))
+                        .font(.appSubheadline)
                         .foregroundStyle(.secondary)
                         .accessibilityAddTraits(.isHeader)
 
                     Image(systemName: "info.circle")
-                        .font(.system(.caption, weight: .regular))
+                        .font(.appCaption)
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                 }
@@ -148,12 +147,11 @@ struct StatisticsSection: View {
             .accessibilityInputLabels(["Volatility info", "What is volatility"])
 
             Text(value)
-                .font(.system(.subheadline, design: .rounded))
-                .fontWeight(.medium)
+                .font(.appSubheadline.weight(.medium))
                 .foregroundStyle(viewModel.volatilityLevel?.color ?? .primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(6)
+        .padding(.chipPadding)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Volatility: \(value)")
         .accessibilityValue("Exchange rate volatility level: \(value)")

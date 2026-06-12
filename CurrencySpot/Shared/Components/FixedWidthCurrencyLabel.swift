@@ -19,7 +19,7 @@ struct FixedWidthCurrencyLabel: View {
             Text(code)
                 .contentTransition(.numericText())
         }
-        .font(.system(.headline, design: .rounded, weight: .bold))
+        .font(.appHeadline.bold())
     }
 }
 

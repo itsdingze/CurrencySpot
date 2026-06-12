@@ -57,8 +57,8 @@ struct DetectionOverlayView: View {
                 }
             }
         }
-        .animation(.easeOut(duration: 0.15), value: items)
-        .animation(.easeOut(duration: 0.15), value: promotions)
+        .animation(.appTrack, value: items)
+        .animation(.appTrack, value: promotions)
         .onChange(of: items) { _, _ in syncRevealPromotion() }
     }
 

@@ -36,7 +36,7 @@ struct CurrencyPickerView: View {
             VStack {
                 SearchField(prompt: "Search currency code or name", text: $searchText)
                     .padding(.horizontal)
-                    .padding(.top, 8)
+                    .padding(.top, .tightGap)
 
                 // Quick access to common currencies
                 if searchText.isEmpty {
@@ -49,14 +49,8 @@ struct CurrencyPickerView: View {
                                         dismiss()
                                     }) {
                                         Text(currency)
-                                            .font(.system(.headline, design: .rounded))
-                                            .fontWeight(.medium)
-                                            .padding(.vertical, 8)
-                                            .padding(.horizontal, 12)
                                     }
-                                    .background(selectedCurrency == currency ? Color.accentColor : Color.clear)
-                                    .foregroundStyle(selectedCurrency == currency ? .white : .textPrimary)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .buttonStyle(CurrencyChipButtonStyle(isSelected: selectedCurrency == currency))
                                     .accessibilityLabel("\(currency), \(CurrencyUtilities.shared.name(for: currency))")
                                     .accessibilityHint("Selects \(currency) as currency")
                                     .accessibilityInputLabels([currency, CurrencyUtilities.shared.name(for: currency)])
@@ -66,7 +60,7 @@ struct CurrencyPickerView: View {
                         }
                         .padding(.horizontal)
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, .tightGap)
                 }
 
                 List {

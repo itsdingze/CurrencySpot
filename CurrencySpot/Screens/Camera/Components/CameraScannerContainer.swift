@@ -47,15 +47,15 @@ struct CameraScannerContainer: View {
                     onPlateTap: { viewModel.showBadgeDetail(for: $0) }
                 )
             }
-            .clipShape(.rect(cornerRadius: 32))
+            .clipShape(.rect(cornerRadius: .previewRadius))
             // Controls anchor to the feed's own edges, not the safe area,
             // so their padding tracks the rounded frame.
             .overlay(alignment: .top) {
                 CurrencyPairControl()
-                    .padding(.top, 24)
+                    .padding(.top, .screenInset)
             }
             .overlay(alignment: .bottom) {
-                VStack(spacing: 16) {
+                VStack(spacing: .sectionGap) {
                     ScanStatusCapsule(
                         isLive: viewModel.frozenImage == nil,
                         hasPrices: viewModel.hasPrices,
@@ -63,9 +63,9 @@ struct CameraScannerContainer: View {
                     )
                     CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, .screenInset)
             }
-            .padding(.bottom, 24)
+            .padding(.bottom, .screenInset)
         }
         .onChange(of: viewModel.availableRates) {
             viewModel.refreshConversions()
@@ -106,7 +106,7 @@ struct CameraScannerContainer: View {
         case let .badgeDetail(snapshot):
             // Same height-fitting sheet as the accent color picker.
             if #available(iOS 26, *) {
-                DynamicSheet(animation: .snappy) {
+                DynamicSheet(animation: .appSelect) {
                     badgeDetail(for: snapshot)
                 }
             } else {

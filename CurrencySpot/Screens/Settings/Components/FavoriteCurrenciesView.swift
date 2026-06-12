@@ -17,13 +17,12 @@ struct FavoriteCurrenciesView: View {
             ForEach(viewModel.favoriteCurrencies, id: \.self) { currency in
                 HStack {
                     Text(currency)
-                        .font(.system(.headline, design: .rounded))
-                        .fontWeight(.medium)
+                        .font(.appHeadline.weight(.medium))
 
                     Spacer()
 
                     Text(CurrencyUtilities.shared.name(for: currency))
-                        .font(.system(.subheadline, design: .rounded))
+                        .font(.appSubheadline)
                         .foregroundStyle(.secondary)
                 }
             }

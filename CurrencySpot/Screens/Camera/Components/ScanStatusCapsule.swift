@@ -30,11 +30,11 @@ struct ScanStatusCapsule: View {
         ZStack {
             if let message {
                 Text(message)
-                    .font(.system(.subheadline, design: .rounded))
+                    .font(.appSubheadline)
                     .foregroundStyle(Color.textPrimary)
                     .modifier(Shimmer(active: phase == .scanning))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, .cardPadding)
+                    .padding(.vertical, .chipPadding)
                     .background(.regularMaterial, in: .capsule)
                     .transition(.opacity)
             }

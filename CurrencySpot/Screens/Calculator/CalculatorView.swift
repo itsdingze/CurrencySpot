@@ -19,7 +19,7 @@ struct CalculatorView: View {
         ZStack {
             Color.background.ignoresSafeArea()
 
-            VStack(spacing: 12) {
+            VStack(spacing: .elementGap) {
                 if !appState.networkMonitor.isConnected, calculatorViewModel.lastUpdated != nil {
                     OfflineBanner(
                         refreshAction: {
@@ -68,7 +68,7 @@ struct CalculatorView: View {
     }
 
     private func mainContentView() -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: .elementGap) {
             CurrencyDisplayView()
                 .layoutPriority(1)
 

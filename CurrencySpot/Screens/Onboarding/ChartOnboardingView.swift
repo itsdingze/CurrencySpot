@@ -23,7 +23,7 @@ struct ChartOnboardingView: View {
             contentScrollView
             footerSection
         }
-        .safeAreaPadding(.horizontal, 36)
+        .safeAreaPadding(.horizontal, .onboardingInset)
         .interactiveDismissDisabled()
         .allowsHitTesting(shouldAnimateFooter)
         .accessibilityElement(children: .contain)
@@ -42,7 +42,7 @@ struct ChartOnboardingView: View {
             currentPage: $currentOnboardingPage,
             totalPages: totalPages,
             onBack: {
-                withAnimation(.snappy) {
+                withAnimation(.appSelect) {
                     resetAnimations()
                     currentOnboardingPage = max(0, currentOnboardingPage - 1)
                 }
@@ -58,7 +58,7 @@ struct ChartOnboardingView: View {
 
     private var contentScrollView: some View {
         ScrollView(.vertical) {
-            VStack(alignment: .center, spacing: 40) {
+            VStack(alignment: .center, spacing: .onboardingGap) {
                 chartSection
                 titleSection
                 featuresSection
@@ -90,13 +90,13 @@ struct ChartOnboardingView: View {
         Group {
             if currentOnboardingPage == 0 {
                 Text("Interactive Chart")
-                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .font(.appTitle)
                     .multilineTextAlignment(.center)
                     .blurSlide(shouldAnimateTitle)
                     .accessibilityAddTraits(.isHeader)
             } else {
                 Text("Explore Data Points")
-                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .font(.appTitle)
                     .multilineTextAlignment(.center)
                     .blurSlide(shouldAnimateTitle)
                     .accessibilityAddTraits(.isHeader)
@@ -117,7 +117,7 @@ struct ChartOnboardingView: View {
     }
 
     private var firstPageFeatures: some View {
-        VStack(alignment: .leading, spacing: 40) {
+        VStack(alignment: .leading, spacing: .onboardingGap) {
             FeatureRow(
                 symbol: "hand.tap",
                 title: "Toggle Chart Elements",
@@ -133,7 +133,7 @@ struct ChartOnboardingView: View {
     }
 
     private var secondPageFeatures: some View {
-        VStack(alignment: .leading, spacing: 40) {
+        VStack(alignment: .leading, spacing: .onboardingGap) {
             FeatureRow(
                 symbol: "hand.point.up.left",
                 title: "Touch to Select",
@@ -150,17 +150,15 @@ struct ChartOnboardingView: View {
 
     private var footerSection: some View {
         continueButton
-            .padding(.top, 24)
+            .padding(.top, .blockGap)
     }
 
     private var continueButton: some View {
         Button(action: handleContinueAction) {
             continueButtonLabel
         }
-        .tint(Color.accentColor)
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.roundedRectangle(radius: 16))
-        .padding(.bottom, 10)
+        .buttonStyle(.primaryAction)
+        .padding(.bottom, .tightGap)
         .blurSlide(shouldAnimateFooter)
         .accessibilityLabel(continueAccessibilityLabel)
         .accessibilityHint(continueAccessibilityHint)
@@ -169,9 +167,7 @@ struct ChartOnboardingView: View {
 
     private var continueButtonLabel: some View {
         Text(currentOnboardingPage == totalPages - 1 ? "Let's Start!" : "Continue")
-            .font(.system(.headline, design: .rounded, weight: .semibold))
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 4)
     }
 
     private var continueAccessibilityLabel: String {

@@ -14,15 +14,14 @@ struct CurrencyRow: View {
     var body: some View {
         let trendData = historyViewModel.getTrendData(for: entry.code)
 
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: .elementGap) {
+            VStack(alignment: .leading, spacing: .hairlineGap) {
                 Text(entry.code)
-                    .font(.system(.title2, design: .rounded))
-                    .fontWeight(.semibold)
+                    .font(.appTitle2)
 
                 Text(entry.name)
                     .lineLimit(1)
-                    .font(.system(.subheadline, design: .rounded))
+                    .font(.appSubheadline)
                     .foregroundStyle(Color.textSecondary)
             }
 
@@ -32,11 +31,10 @@ struct CurrencyRow: View {
                 MiniChart(trend: trend)
             }
 
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: .hairlineGap) {
                 Text(entry.rate.toStringMax4Decimals)
                     .lineLimit(1)
-                    .font(.system(.title2, design: .rounded))
-                    .fontWeight(.semibold)
+                    .font(.appTitle2)
                     .monospacedDigit()
 
                 if let trend = trendData {

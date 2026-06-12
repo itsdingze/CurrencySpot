@@ -78,16 +78,14 @@ struct ChartInteractionSection: View {
                         .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
                             VStack {
                                 Text(selectedDataPoint.date.chartDisplay)
-                                    .font(.subheadline)
                                     .foregroundStyle(Color.accentColor)
 
                                 Text(selectedDataPoint.rate.toStringMax4Decimals)
-                                    .font(.subheadline)
                                     .foregroundStyle(Color.accentColor)
                             }
-                            .fontDesign(.rounded)
-                            .padding(8)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.accentColor.opacity(0.2)))
+                            .font(.appSubheadline)
+                            .padding(.chipPadding)
+                            .background(RoundedRectangle(cornerRadius: .badgeRadius).fill(Color.selectionFill))
                         }
 
                     PointMark(
@@ -117,7 +115,7 @@ struct ChartInteractionSection: View {
             let position = computeFingerPositionForDataPoint(currentDataPointIndex, in: geometry)
 
             Image(systemName: "hand.point.up.left.fill")
-                .font(.system(size: 28))
+                .font(.title)
                 .foregroundStyle(Color.accentColor)
                 .position(position)
                 .opacity(fingerOpacity)
@@ -154,20 +152,20 @@ struct ChartInteractionSection: View {
         while !Task.isCancelled {
             currentDataPointIndex = 1
 
-            withAnimation(.snappy) {
+            withAnimation(.appSelect) {
                 fingerAnimationState = .appearing
             }
 
             do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
 
-            withAnimation(.snappy) {
+            withAnimation(.appSelect) {
                 fingerAnimationState = .touchDown
                 selectedDate = SampleChartData.points[currentDataPointIndex].date
             }
 
             do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
 
-            withAnimation(.snappy) {
+            withAnimation(.appSelect) {
                 fingerAnimationState = .dragging
             }
 
@@ -191,14 +189,14 @@ struct ChartInteractionSection: View {
 
             do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
 
-            withAnimation(.snappy) {
+            withAnimation(.appSelect) {
                 fingerAnimationState = .touchUp
                 selectedDate = nil
             }
 
             do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
 
-            withAnimation(.snappy) {
+            withAnimation(.appSelect) {
                 fingerAnimationState = .disappearing
             }
 

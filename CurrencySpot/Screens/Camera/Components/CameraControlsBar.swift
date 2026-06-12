@@ -72,7 +72,7 @@ struct CameraControlsBar: View {
                 .frame(width: 56, height: 56)
         } else {
             Image(systemName: "xmark")
-                .font(.system(.title2, design: .rounded).weight(.semibold))
+                .font(.appTitle2)
                 .foregroundStyle(.white)
         }
     }
@@ -82,7 +82,7 @@ struct CameraControlsBar: View {
             viewModel.toggleTorch()
         } label: {
             Image(systemName: viewModel.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                .font(.system(.headline, design: .rounded))
+                .font(.appHeadline)
                 .foregroundStyle(viewModel.isTorchOn ? Color.accentColor : .primary)
                 .frame(width: 48, height: 48)
                 .adaptiveGlassBackground(in: .circle, isInteractive: true)
@@ -93,7 +93,7 @@ struct CameraControlsBar: View {
     private var photoImportButton: some View {
         PhotosPicker(selection: $pickedPhoto, matching: .images) {
             Image(systemName: "photo.on.rectangle")
-                .font(.system(.headline, design: .rounded))
+                .font(.appHeadline)
                 .foregroundStyle(.primary)
                 .frame(width: 44, height: 44)
                 .adaptiveGlassBackground(in: .circle, isInteractive: true)

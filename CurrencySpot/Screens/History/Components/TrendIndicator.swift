@@ -12,7 +12,7 @@ struct TrendIndicator: View {
     let direction: TrendDirection
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: .hairlineGap) {
             Image(systemName: "circle")
                 .opacity(0)
                 .overlay {
@@ -24,12 +24,12 @@ struct TrendIndicator: View {
                 .monospacedDigit()
         }
         .foregroundStyle(direction.color)
-        .font(.system(.subheadline, design: .rounded, weight: .medium))
+        .font(.appSubheadline.weight(.medium))
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
         .frame(minWidth: 80, alignment: .trailing)
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: .badgeRadius)
                 .fill(direction.color.opacity(0.12))
                 .stroke(direction.color.opacity(0.1), lineWidth: 1)
         )

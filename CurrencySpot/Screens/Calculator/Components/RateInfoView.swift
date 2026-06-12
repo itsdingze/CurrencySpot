@@ -10,10 +10,8 @@ import SwiftUI
 struct RateInfoView: View {
     @Environment(CalculatorViewModel.self) private var viewModel: CalculatorViewModel
 
-    private let itemSpacing: CGFloat = 4
-
     var body: some View {
-        VStack(spacing: itemSpacing) {
+        VStack(spacing: .hairlineGap) {
             if shouldShowConversionRate {
                 conversionRateText
             }
@@ -38,7 +36,7 @@ struct RateInfoView: View {
     @ViewBuilder
     private var conversionRateText: some View {
         Text(formattedConversionRate)
-            .font(.system(.caption, design: .rounded))
+            .font(.appCaption)
             .foregroundStyle(Color.textSecondary)
             .accessibilityLabel("Current exchange rate: \(formattedConversionRate)")
             .accessibilityAddTraits(.updatesFrequently)
@@ -47,7 +45,7 @@ struct RateInfoView: View {
     @ViewBuilder
     private var lastUpdatedText: some View {
         Text(viewModel.formattedLastUpdated)
-            .font(.system(.caption2, design: .rounded))
+            .font(.appCaption)
             .foregroundStyle(Color.textSecondary)
             .accessibilityLabel("Exchange rates last updated: \(viewModel.formattedLastUpdated)")
     }

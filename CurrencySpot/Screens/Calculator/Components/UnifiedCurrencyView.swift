@@ -53,7 +53,7 @@ struct UnifiedCurrencyView: View {
             case .source:
                 .textSecondary.opacity(0.2)
             case .converted:
-                .accentColor.opacity(0.2)
+                .selectionFill
             }
         }
 
@@ -73,7 +73,7 @@ struct UnifiedCurrencyView: View {
     let onPress: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: .tightGap) {
             titleView
             contentRow
         }
@@ -111,7 +111,7 @@ struct UnifiedCurrencyView: View {
     @ViewBuilder
     private var titleView: some View {
         Text(type.title)
-            .font(.system(.headline, design: .rounded, weight: .medium))
+            .font(.appHeadline.weight(.medium))
             .foregroundStyle(type.titleColor)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityAddTraits(.isHeader)
@@ -129,7 +129,7 @@ struct UnifiedCurrencyView: View {
     @ViewBuilder
     private var amountText: some View {
         Text(amount)
-            .font(.system(.largeTitle, design: .rounded, weight: .bold).monospacedDigit())
+            .font(.appLargeTitle.monospacedDigit())
             .foregroundStyle(type.amountColor)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
@@ -160,17 +160,12 @@ struct UnifiedCurrencyView: View {
                 FixedWidthCurrencyLabel(code: currencyCode)
 
                 Image(systemName: "chevron.down")
-                    .font(.system(.caption, design: .rounded))
+                    .font(.appCaption)
                     .bold()
             }
         }
+        .buttonStyle(CurrencyCodeButtonStyle(fill: type.backgroundColor, stroke: type.strokeColor))
         .foregroundStyle(type.buttonColor)
-        .padding(8)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(type.backgroundColor)
-                .stroke(type.strokeColor, lineWidth: 1)
-        )
         .accessibilityLabel(accessibilityButtonLabel)
         .accessibilityHint(accessibilityButtonHint)
         .accessibilityValue(accessibilityButtonValue)

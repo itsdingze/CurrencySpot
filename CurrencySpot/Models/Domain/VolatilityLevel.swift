@@ -46,11 +46,11 @@ nonisolated enum VolatilityLevel: CaseIterable, Sendable {
 
     var color: Color {
         switch self {
-        case .veryLow: .green
+        case .veryLow: .success
         case .low: .volatilityLow
         case .moderate: .yellow
-        case .high: .orange
-        case .veryHigh: .red
+        case .high: .warning
+        case .veryHigh: .failure
         }
     }
 }

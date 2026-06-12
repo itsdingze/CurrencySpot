@@ -12,7 +12,7 @@ struct HeaderSection: View {
     @Binding var isChartSelectionActive: Bool
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: .sectionGap) {
             currentRateView
 
             TimeRangePicker(
@@ -26,14 +26,14 @@ struct HeaderSection: View {
     // MARK: - Private Views
 
     private var currentRateView: some View {
-        VStack(spacing: 4) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+        VStack(spacing: .hairlineGap) {
+            HStack(alignment: .firstTextBaseline, spacing: .tightGap) {
                 Text(historyViewModel.targetCurrency)
-                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .font(.appTitle)
                     .accessibilityLabel("\(historyViewModel.targetCurrency), \(CurrencyUtilities.shared.name(for: historyViewModel.targetCurrency))")
 
                 Text(CurrencyUtilities.shared.name(for: historyViewModel.targetCurrency))
-                    .font(.system(.headline, design: .rounded, weight: .medium))
+                    .font(.appHeadline.weight(.medium))
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
 
@@ -42,9 +42,9 @@ struct HeaderSection: View {
 
             ViewThatFits(in: .horizontal) {
                 // Try horizontal layout first
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: .tightGap) {
                     Text(historyViewModel.formattedCurrentRate)
-                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .font(.appTitle3)
                         .accessibilityLabel("Current rate: \(historyViewModel.formattedCurrentRate)")
                         .accessibilityAddTraits(.updatesFrequently)
 
@@ -53,7 +53,7 @@ struct HeaderSection: View {
                        let priceChange = historyViewModel.priceChange
                     {
                         percentChangeIndicator(priceChange: priceChange, percentChange: percentChange)
-                            .font(.system(.subheadline, design: .rounded, weight: .medium))
+                            .font(.appSubheadline.weight(.medium))
                     }
 
                     Spacer()
@@ -61,9 +61,9 @@ struct HeaderSection: View {
 
                 // Fall back to vertical layout when horizontal doesn't fit
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: .hairlineGap) {
                         Text(historyViewModel.formattedCurrentRate)
-                            .font(.system(.title3, design: .rounded, weight: .semibold))
+                            .font(.appTitle3)
                             .accessibilityLabel("Current rate: \(historyViewModel.formattedCurrentRate)")
                             .accessibilityAddTraits(.updatesFrequently)
 
@@ -72,7 +72,7 @@ struct HeaderSection: View {
                            let priceChange = historyViewModel.priceChange
                         {
                             percentChangeIndicator(priceChange: priceChange, percentChange: percentChange)
-                                .font(.system(.headline, design: .rounded, weight: .medium))
+                                .font(.appHeadline.weight(.medium))
                         }
                     }
 
@@ -84,13 +84,13 @@ struct HeaderSection: View {
 
     @ViewBuilder
     private func percentChangeIndicator(priceChange: Double, percentChange: Double) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: .hairlineGap) {
             Image(systemName: historyViewModel.trendDirection.systemImage)
                 .accessibilityHidden(true)
 
             Text("\(priceChange.formatted(.number.precision(.fractionLength(0 ... 4)).sign(strategy: .never))) (\(abs(percentChange).toStringMax2Decimals)%)")
         }
-        .font(.system(.subheadline, design: .rounded, weight: .medium))
+        .font(.appSubheadline.weight(.medium))
         .foregroundStyle(historyViewModel.trendDirection.color)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityChangeLabel(priceChange: priceChange, percentChange: percentChange))
@@ -118,25 +118,11 @@ struct TimeRangePicker: View {
                     onSelect(timeRange)
                 }) {
                     Text(timeRange.rawValue)
-                        .font(.system(.headline, design: .rounded, weight: selectedTimeRange == timeRange ? .semibold : .regular))
-                        .padding(8)
-                        .padding(.horizontal, 2)
-                        .foregroundStyle(
-                            selectedTimeRange == timeRange ?
-                                Color.accentColor : Color.secondary
-                        )
                 }
-                .frame(maxWidth: .infinity)
-                .background(
-                    ZStack {
-                        if selectedTimeRange == timeRange {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.accentColor.opacity(0.2))
-                                .matchedGeometryEffect(id: "ACTIVEBUTTON", in: animation)
-                        }
-                    }
-                    .animation(.snappy, value: selectedTimeRange)
-                )
+                .buttonStyle(SegmentedTabButtonStyle(
+                    isSelected: selectedTimeRange == timeRange,
+                    namespace: animation
+                ))
                 .accessibilityLabel(timeRange.displayName)
                 .accessibilityHint("Show exchange rate history for \(timeRange.displayName)")
                 .accessibilityValue(selectedTimeRange == timeRange ? "Selected" : "Not selected")

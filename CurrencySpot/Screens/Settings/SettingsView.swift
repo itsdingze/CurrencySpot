@@ -185,7 +185,7 @@ struct SettingsView: View {
                         Spacer()
 
                         Image(systemName: "arrow.up.right")
-                            .font(.system(.caption, design: .rounded))
+                            .font(.appCaption)
                             .foregroundStyle(.secondary)
                             .accessibilityHidden(true)
                     }
@@ -205,7 +205,7 @@ struct SettingsView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(.snappy, value: settingsViewModel.toast != nil)
+        .animation(.appSelect, value: settingsViewModel.toast != nil)
     }
 
     // MARK: - Private Views
@@ -241,7 +241,7 @@ struct SettingsView: View {
     private func settingsActionButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
         Button(role: .destructive, action: action) {
             Label(title, systemImage: icon)
-                .foregroundStyle(.red)
+                .foregroundStyle(Color.failure)
         }
     }
 }

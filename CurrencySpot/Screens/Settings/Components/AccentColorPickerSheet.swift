@@ -16,7 +16,7 @@ struct AccentColorPickerSheet: View {
         }
         .sheet(isPresented: Bindable(settingsViewModel).destination.isPresenting(.accentColorPicker)) {
             if #available(iOS 26, *){
-                DynamicSheet(animation: .snappy) {
+                DynamicSheet(animation: .appSelect) {
                     ColorCustomizationSheet(
                         selectedColor: Bindable(settingsViewModel).accentColor
                     )
@@ -27,7 +27,7 @@ struct AccentColorPickerSheet: View {
                     selectedColor: Bindable(settingsViewModel).accentColor
                 )
                 .presentationDetents([.fraction(0.25)])
-                .presentationCornerRadius(32)
+                .presentationCornerRadius(.previewRadius)
             }
         }
     }
@@ -75,7 +75,7 @@ struct ColorCustomizationSheet: View {
             VStack(spacing: 32) {
                 ZStack {
                     Text("Accent Color")
-                        .font(.system(.title2, design: .rounded, weight: .semibold))
+                        .font(.appTitle2)
                         .frame(maxWidth: .infinity)
                     
                     HStack {
@@ -86,7 +86,7 @@ struct ColorCustomizationSheet: View {
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.title)
-                                .foregroundStyle(Color.gray, Color.primary.opacity(0.1))
+                                .foregroundStyle(Color.gray, Color.closeButtonBackdrop)
                         }
                     }
                 }
@@ -136,7 +136,7 @@ struct ColorCustomizationSheet: View {
                 .overlay {
                     if isSelected {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .font(.callout).bold()
                             .foregroundStyle(.white)
                     }
                 }
@@ -148,7 +148,7 @@ struct ColorCustomizationSheet: View {
     // MARK: - Private Methods
 
     private func selectColor(_ colorOption: AccentColorOption) {
-        withAnimation(.snappy) {
+        withAnimation(.appSelect) {
             selectedColor = colorOption
         }
     }

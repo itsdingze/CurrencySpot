@@ -12,17 +12,17 @@ struct ToastView: View {
     let icon: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: .elementGap) {
             Image(systemName: icon)
-                .font(.system(.title3, design: .rounded))
-                .foregroundStyle(.green)
+                .font(.appTitle3)
+                .foregroundStyle(Color.success)
 
             Text(message)
-                .font(.system(.headline, design: .rounded))
+                .font(.appHeadline)
         }
-        .padding(12)
+        .padding(.fieldPadding)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: .cardRadius)
                 .fill(Color.secondaryBackground)
                 .stroke(Color.background, lineWidth: 2)
         )

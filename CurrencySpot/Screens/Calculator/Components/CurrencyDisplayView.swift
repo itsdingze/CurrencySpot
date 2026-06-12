@@ -8,19 +8,15 @@ import SwiftUI
 struct CurrencyDisplayView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel: CalculatorViewModel
 
-    private let containerCornerRadius: CGFloat = 16
-    private let itemSpacing: CGFloat = 8
-    private let containerPadding: CGFloat = 16
-
     var body: some View {
-        VStack(spacing: itemSpacing) {
+        VStack(spacing: .tightGap) {
             sourceCurrencyView
             SwapButtonDivider()
             targetCurrencyView
         }
-        .padding(containerPadding)
+        .padding(.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: containerCornerRadius)
+            RoundedRectangle(cornerRadius: .containerRadius)
                 .fill(Color.secondaryBackground)
         )
     }

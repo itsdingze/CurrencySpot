@@ -14,7 +14,7 @@ struct ChartSection: View {
     @Binding var isChartSelectionActive: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: .elementGap) {
             ZStack {
                 chartContent
 
@@ -54,14 +54,14 @@ struct ChartSection: View {
     }
 
     private var loadingView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: .elementGap) {
             ProgressView()
                 .progressViewStyle(.circular)
         }
         .padding()
-        .frame(maxWidth: .infinity, maxHeight: 260)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .frame(maxWidth: .infinity, maxHeight: .chartHeight)
+        .background(Color.chartPlaceholder)
+        .clipShape(RoundedRectangle(cornerRadius: .cardRadius))
         .accessibilityLabel("Loading chart data")
         .accessibilityHint("Please wait while historical exchange rate data is being loaded")
         .accessibilityAddTraits(.updatesFrequently)
@@ -70,9 +70,9 @@ struct ChartSection: View {
     private var noDataView: some View {
         Text("No data available")
             .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, maxHeight: 260)
-            .background(Color(.systemGray6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(maxWidth: .infinity, maxHeight: .chartHeight)
+            .background(Color.chartPlaceholder)
+            .clipShape(RoundedRectangle(cornerRadius: .cardRadius))
             .accessibilityLabel("Chart data not available")
             .accessibilityHint("Historical exchange rate data is not available for the selected currency pair")
     }

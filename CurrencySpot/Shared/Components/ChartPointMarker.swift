@@ -12,7 +12,7 @@ struct ChartPointMarker: View {
     let color: Color
     var outerSize: CGFloat = 8
     var innerSize: CGFloat = 6
-    var backgroundColor: Color = Color(.systemBackground)
+    var backgroundColor: Color = .markerKnockout
 
     var body: some View {
         ZStack {

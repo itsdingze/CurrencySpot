@@ -20,7 +20,7 @@ struct OfflineBanner: View {
                 .accessibilityHidden(true)
 
             Text(displayText)
-                .font(.system(.subheadline, design: .rounded))
+                .font(.appSubheadline)
                 .foregroundStyle(.secondary)
 
             Spacer()
@@ -40,7 +40,7 @@ struct OfflineBanner: View {
                 .accessibilityInputLabels(["Refresh", "Update", "Retry"])
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, .screenInset)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityLabelText)
         .accessibilityHint(accessibilityHintText)
@@ -64,9 +64,9 @@ struct OfflineBanner: View {
         case .retrying:
             .blue
         case .exhausted:
-            .red
+            .failure
         case .none:
-            .orange
+            .warning
         }
     }
 

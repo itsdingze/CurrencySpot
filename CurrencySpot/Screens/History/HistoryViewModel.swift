@@ -352,7 +352,7 @@ final class HistoryViewModel {
             loadingOverlayTask = Task {
                 try? await clock.sleep(for: .seconds(0.05))
                 guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.2)) {
+                withAnimation(.appQuickFade) {
                     showLoadingOverlay = true
                 }
             }
@@ -360,7 +360,7 @@ final class HistoryViewModel {
             loadingOverlayTask = Task {
                 try? await clock.sleep(for: .seconds(0.3))
                 guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.2)) {
+                withAnimation(.appQuickFade) {
                     showLoadingOverlay = false
                 }
             }

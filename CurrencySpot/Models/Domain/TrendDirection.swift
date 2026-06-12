@@ -25,9 +25,9 @@ nonisolated enum TrendDirection: Sendable {
 
     var color: Color {
         switch self {
-        case .up: .green
-        case .down: .red
-        case .stable: .orange
+        case .up: .success
+        case .down: .failure
+        case .stable: .warning
         }
     }
 

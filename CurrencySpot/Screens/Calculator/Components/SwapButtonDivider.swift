@@ -13,7 +13,6 @@ struct SwapButtonDivider: View {
 
     private let dividerHeight: CGFloat = 2
     private let buttonSize: CGFloat = 40
-    private let flipDuration: TimeInterval = 0.6
 
     var body: some View {
         ZStack {
@@ -57,7 +56,7 @@ struct SwapButtonDivider: View {
     @ViewBuilder
     private var swapIcon: some View {
         Image(systemName: "arrow.trianglehead.swap")
-            .font(.system(.headline, design: .rounded))
+            .font(.appHeadline)
             .rotation3DEffect(
                 .degrees(isFlipped ? 180 : 0),
                 axis: (x: 1, y: 0, z: 0)
@@ -67,7 +66,7 @@ struct SwapButtonDivider: View {
     // MARK: - Private Methods
 
     private func performSwap() {
-        withAnimation(.bouncy(duration: flipDuration)) {
+        withAnimation(.appFlip) {
             isFlipped.toggle()
             viewModel.swapCurrencies()
         }
