@@ -53,7 +53,7 @@ final class DependencyContainer {
     let dataOrchestrationUseCase: DataOrchestrationUseCase
     let chartDataPreparationUseCase: ChartDataPreparationUseCase
     let trendDataUseCase: TrendDataUseCase
-    let clearAllDataUseCase: ClearAllDataUseCase
+    let refreshAllDataUseCase: RefreshAllDataUseCase
 
     // MARK: - Shared State and ViewModels
 
@@ -122,7 +122,7 @@ final class DependencyContainer {
             logger: logger
         )
 
-        clearAllDataUseCase = ClearAllDataUseCase(repository: dataCoordinator)
+        refreshAllDataUseCase = RefreshAllDataUseCase(repository: dataCoordinator)
 
         ratesStore = ExchangeRatesStore()
 
@@ -145,7 +145,7 @@ final class DependencyContainer {
         )
 
         settingsViewModel = SettingsViewModel(
-            clearAllDataUseCase: clearAllDataUseCase,
+            refreshAllDataUseCase: refreshAllDataUseCase,
             appState: appState,
             clock: clockService,
             logger: logger
@@ -158,10 +158,10 @@ final class DependencyContainer {
 
         // The cross-cutting clear resets each feature's published state after the
         // repository wipe, without Settings holding sibling-ViewModel references.
-        clearAllDataUseCase.registerResetHandler { [calculatorViewModel] in
+        refreshAllDataUseCase.registerResetHandler { [calculatorViewModel] in
             calculatorViewModel.clearAllData()
         }
-        clearAllDataUseCase.registerResetHandler { [historyViewModel] in
+        refreshAllDataUseCase.registerResetHandler { [historyViewModel] in
             historyViewModel.clearAllData()
         }
         // A wipe is recovery, not data-lessness: rebuild immediately so the app never
@@ -170,7 +170,7 @@ final class DependencyContainer {
         // then any chart left on screen, then the same tiered history warm-up the app
         // runs at launch. Unstructured on purpose: the settings interaction must not
         // block on a multi-MB re-download.
-        clearAllDataUseCase.registerResetHandler { [dataOrchestrationUseCase, calculatorViewModel, historyViewModel] in
+        refreshAllDataUseCase.registerResetHandler { [dataOrchestrationUseCase, calculatorViewModel, historyViewModel] in
             dataOrchestrationUseCase.dropInFlightFetches()
             await calculatorViewModel.checkIfShouldFetch()
             Task {

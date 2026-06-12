@@ -1,22 +1,22 @@
 //
-//  ClearAllDataUseCase.swift
+//  RefreshAllDataUseCase.swift
 //  CurrencySpot
 //
 
 import Foundation
 
-// MARK: - ClearAllDataUseCase
+// MARK: - RefreshAllDataUseCase
 
-/// Owns the cross-cutting "wipe and refresh" action: wipes the repository
+/// Owns the cross-cutting "Refresh All Data" action: wipes the repository
 /// (persistence, caches, fetch stamps, sync coverage), then runs every handler the
 /// container registered — feature state resets followed by the post-wipe rebuild
-/// (rate refetch plus the tiered history warm-up). `execute()` is wipe-and-refresh,
-/// not a pure wipe.
+/// (rate refetch plus the tiered history warm-up). The wipe itself stays a
+/// repository concern (`DataClearing`); this use case is the intent on top of it.
 ///
 /// Handler mechanism: closures register through the DependencyContainer at wiring
 /// time. This keeps Settings free of sibling-VM references and is trivially
 /// testable (register a spy closure, run execute()).
-final class ClearAllDataUseCase {
+final class RefreshAllDataUseCase {
     private let repository: DataClearing
     private var resetHandlers: [@MainActor () async -> Void] = []
 

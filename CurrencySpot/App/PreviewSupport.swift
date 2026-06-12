@@ -63,7 +63,7 @@
 
     extension SettingsViewModel {
         static func preview() -> SettingsViewModel {
-            SettingsViewModel(clearAllDataUseCase: ClearAllDataUseCase(repository: MockExchangeRateService()))
+            SettingsViewModel(refreshAllDataUseCase: RefreshAllDataUseCase(repository: MockExchangeRateService()))
         }
     }
 

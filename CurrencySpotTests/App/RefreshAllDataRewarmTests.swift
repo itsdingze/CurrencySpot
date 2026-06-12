@@ -1,5 +1,5 @@
 //
-//  ClearAllDataRewarmTests.swift
+//  RefreshAllDataRewarmTests.swift
 //  CurrencySpotTests
 //
 //  "Refresh All Data" is recovery, not data-lessness: after the wipe, the container's
@@ -12,8 +12,8 @@ import Foundation
 import SwiftData
 import Testing
 
-@Suite("Clear-all-data rewarm wiring")
-struct ClearAllDataRewarmTests {
+@Suite("Refresh-all-data rewarm wiring")
+struct RefreshAllDataRewarmTests {
     @Test("refreshing all data kicks the rate refetch and the history warm-up", .timeLimit(.minutes(1)))
     func clearKicksRewarm() async throws {
         let network = MockNetworkService()
@@ -27,7 +27,7 @@ struct ClearAllDataRewarmTests {
             syncStore: MockHistoricalSyncStore()
         )
 
-        try await container.clearAllDataUseCase.execute()
+        try await container.refreshAllDataUseCase.execute()
 
         // Both rebuild paths reach the network without waiting for a relaunch.
         while network.fetchExchangeRatesCallCount == 0 || network.fetchHistoricalRatesCalls.isEmpty {

@@ -16,7 +16,7 @@ struct SettingsViewModelTests {
         let defaults = UserDefaults(suiteName: suiteName) ?? .standard
         defaults.removePersistentDomain(forName: suiteName)
         viewModel = SettingsViewModel(
-            clearAllDataUseCase: ClearAllDataUseCase(repository: MockExchangeRateService()),
+            refreshAllDataUseCase: RefreshAllDataUseCase(repository: MockExchangeRateService()),
             appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
             userDefaults: defaults,
             clock: ImmediateClock()
@@ -68,7 +68,7 @@ struct SettingsViewModelTests {
         let defaults = UserDefaults(suiteName: suiteName) ?? .standard
         defaults.removePersistentDomain(forName: suiteName)
         let offlineViewModel = SettingsViewModel(
-            clearAllDataUseCase: ClearAllDataUseCase(repository: spy),
+            refreshAllDataUseCase: RefreshAllDataUseCase(repository: spy),
             appState: AppState(networkMonitor: monitor),
             userDefaults: defaults,
             clock: ImmediateClock()

@@ -171,7 +171,7 @@ final class SettingsViewModel {
     // MARK: - Private Properties
 
     private let userDefaults: UserDefaults
-    private let clearAllDataUseCase: ClearAllDataUseCase
+    private let refreshAllDataUseCase: RefreshAllDataUseCase
     private let appState: AppState
     private let clock: ClockService
     private let logger: LoggerService
@@ -193,13 +193,13 @@ final class SettingsViewModel {
 
     /// `userDefaults` defaults to `.standard`; tests inject an isolated suite.
     init(
-        clearAllDataUseCase: ClearAllDataUseCase,
+        refreshAllDataUseCase: RefreshAllDataUseCase,
         appState: AppState = .shared,
         userDefaults: UserDefaults = .standard,
         clock: ClockService = ContinuousClockService(),
         logger: LoggerService = OSLogLoggerService()
     ) {
-        self.clearAllDataUseCase = clearAllDataUseCase
+        self.refreshAllDataUseCase = refreshAllDataUseCase
         self.appState = appState
         self.userDefaults = userDefaults
         self.clock = clock
@@ -331,7 +331,7 @@ final class SettingsViewModel {
     @discardableResult
     func refreshAllData() async -> Bool {
         do {
-            try await clearAllDataUseCase.execute()
+            try await refreshAllDataUseCase.execute()
             logger.info("Data wipe complete; refresh started", category: .viewModel)
             return true
         } catch {

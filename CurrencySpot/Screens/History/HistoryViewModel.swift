@@ -234,7 +234,7 @@ final class HistoryViewModel {
         loadDataForCurrentConfiguration()
     }
 
-    /// Resets published state after the cross-cutting clear (ClearAllDataUseCase
+    /// Resets published state after the cross-cutting clear (RefreshAllDataUseCase
     /// wipes the repository, including caches, before signalling this).
     func clearAllData() {
         publishChart(.idle)

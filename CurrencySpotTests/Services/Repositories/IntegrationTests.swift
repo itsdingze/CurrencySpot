@@ -115,11 +115,11 @@ struct IntegrationTests {
         #expect(viewModel.targetCurrency == "JPY")
     }
 
-    @Test("ClearAllDataUseCase wipes the repository and signals registered feature resets")
-    func clearAllDataUseCaseClearsAndSignals() async throws {
+    @Test("RefreshAllDataUseCase wipes the repository and signals registered feature resets")
+    func refreshAllDataUseCaseClearsAndSignals() async throws {
         try await persistence.saveExchangeRates(["EUR": 0.9])
 
-        let useCase = ClearAllDataUseCase(repository: service)
+        let useCase = RefreshAllDataUseCase(repository: service)
         var resetSignals = 0
         useCase.registerResetHandler { resetSignals += 1 }
         useCase.registerResetHandler { resetSignals += 1 }
