@@ -114,6 +114,23 @@ final class HistoricalDataAnalysisUseCase {
         return RateRefreshPolicy.shouldRefetch(now: now, lastFetch: syncStore.checkedAt)
     }
 
+    /// Re-claims coverage from persisted row bounds. Persistence grows contiguously
+    /// (every fetched gap anchors at the stored edge), so stored bounds never span
+    /// unchecked dates. Heals a watermark that under-claims after the store's
+    /// contiguity guard dropped a record.
+    func repairCoverage(from: Date, through: Date) {
+        syncStore.record(from: from, through: through, at: dateProvider.now())
+    }
+
+    /// True when the coverage watermark spans the entire range — every day inside it
+    /// was already fetched (or checked and found empty), so persistence is authoritative.
+    func isRangeCovered(_ range: DateRange) -> Bool {
+        guard let from = syncStore.from, let through = syncStore.through else { return false }
+        let calendar = TimeZoneManager.cetCalendar
+        return calendar.startOfDay(for: from) <= calendar.startOfDay(for: range.start)
+            && calendar.startOfDay(for: through) >= calendar.startOfDay(for: range.end)
+    }
+
     // MARK: - Data Merging
 
     /// Merges existing and new historical data, removing duplicates and maintaining sort order

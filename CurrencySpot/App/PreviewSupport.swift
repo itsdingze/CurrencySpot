@@ -116,6 +116,13 @@
 
         func waitForPendingHistoricalWrites() async {}
 
+        func fetchTransientHistoricalRates(for _: [CurrencyCode], from _: Date, to _: Date) async throws -> [HistoricalRateSnapshot] {
+            try await stall()
+            return []
+        }
+
+        func fetchAndPersistHistoricalRates(from _: Date, to _: Date) async throws { try await stall() }
+
         func loadHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await stall()
             return []

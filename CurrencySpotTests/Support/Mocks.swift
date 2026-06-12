@@ -71,6 +71,14 @@ final class MockNetworkService: NetworkService {
         return try historicalRatesResult.get()
     }
 
+    private(set) var fetchHistoricalRatesQuotesCalls: [(from: Date, to: Date, quotes: [String])] = []
+
+    func fetchHistoricalRates(from startDate: Date, to endDate: Date, quotes: [String]) async throws -> HistoricalRatesResponse {
+        fetchHistoricalRatesQuotesCalls.append((from: startDate, to: endDate, quotes: quotes))
+        await historicalFetchBarrier?()
+        return try historicalRatesResult.get()
+    }
+
     func updateLastFetchDate(_ date: Date) {
         lastFetchDate = date
     }
@@ -168,6 +176,28 @@ final class MockHistoricalRateRepository: HistoricalRateRepository {
         waitForPendingWritesCallCount += 1
     }
 
+    /// Returned by transient pair-scoped fetches.
+    var transientDataToReturn: [HistoricalRateSnapshot] = []
+    private(set) var fetchTransientCalls: [(currencies: [CurrencyCode], from: Date, to: Date)] = []
+
+    func fetchTransientHistoricalRates(for currencies: [CurrencyCode], from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
+        fetchTransientCalls.append((currencies: currencies, from: startDate, to: endDate))
+        if shouldThrowErrorOnFetch {
+            throw errorToThrow
+        }
+        return transientDataToReturn
+    }
+
+    private(set) var fetchAndPersistCalls: [(from: Date, to: Date)] = []
+
+    func fetchAndPersistHistoricalRates(from startDate: Date, to endDate: Date) async throws {
+        fetchAndPersistCalls.append((from: startDate, to: endDate))
+        await fetchBarrier?()
+        if shouldThrowErrorOnFetch {
+            throw errorToThrow
+        }
+    }
+
     func loadHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
         if shouldThrowErrorOnLoad {
             throw errorToThrow
@@ -226,8 +256,6 @@ actor MockPersistenceService: PersistenceService {
     }
 
     func loadExchangeRates() async throws -> [ExchangeRate] { [] }
-
-    func loadHistoricalRates(currency _: String, from _: Date, to _: Date) async throws -> [HistoricalRateSnapshot] { [] }
 
     func loadHistoricalRates(from _: Date, to _: Date) async throws -> [HistoricalRateSnapshot] { [] }
 

@@ -58,6 +58,16 @@
 
         func waitForPendingHistoricalWrites() async {}
 
+        func fetchAndPersistHistoricalRates(from _: Date, to _: Date) async throws {}
+
+        func fetchTransientHistoricalRates(for currencies: [CurrencyCode], from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
+            try await generatedHistoricalRates()
+                .filter { $0.date >= startDate && $0.date <= endDate }
+                .map { day in
+                    HistoricalRateSnapshot(date: day.date, rates: day.rates.filter { currencies.contains($0.currencyCode) })
+                }
+        }
+
         func loadHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await generatedHistoricalRates().filter { entry in
                 entry.date >= range.start && entry.date <= range.end

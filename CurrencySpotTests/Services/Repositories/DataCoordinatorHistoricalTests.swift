@@ -164,6 +164,82 @@ struct DataCoordinatorHistoricalTests {
         #expect(remaining.map(\.date) == [outside.date])
     }
 
+    // MARK: - Transient pair fetches
+
+    @Test("a transient pair fetch returns snapshots but persists, records, and stamps nothing")
+    func transientFetchLeavesEveryStoreUntouched() async throws {
+        let network = MockNetworkService()
+        network.historicalRatesResult = .success(Self.response(rates: [
+            "2025-01-14": ["EUR": 0.85],
+        ]))
+        let persistence = MockPersistenceService()
+        let syncStore = MockHistoricalSyncStore()
+        let coordinator = Self.makeCoordinator(network: network, persistence: persistence, syncStore: syncStore)
+
+        let snapshots = try await coordinator.fetchTransientHistoricalRates(
+            for: ["EUR", "GBP"],
+            from: Self.startDate,
+            to: Self.endDate
+        )
+        await coordinator.waitForPendingHistoricalWrites()
+
+        #expect(snapshots.count == 1)
+        let quotes = try #require(network.fetchHistoricalRatesQuotesCalls.first)
+        #expect(Set(quotes.quotes) == Set(["EUR", "GBP"]))
+        // Pair-scoped rows must never masquerade as all-currency coverage.
+        #expect(await persistence.savedHistoricalRates.isEmpty)
+        #expect(syncStore.recordCallCount == 0)
+        #expect(network.lastFetchDate == nil)
+    }
+
+    @Test("a transient fetch in flight when clearAllData runs surfaces nothing", .timeLimit(.minutes(1)))
+    func clearAllDataFencesInFlightTransientFetches() async throws {
+        let network = MockNetworkService()
+        network.historicalRatesResult = .success(Self.response(rates: [
+            "2025-01-14": ["EUR": 0.85],
+        ]))
+        var releaseFetch: (() -> Void)!
+        let gate = AsyncStream<Void> { continuation in
+            releaseFetch = { continuation.finish() }
+        }
+        network.historicalFetchBarrier = { for await _ in gate {} }
+        let coordinator = Self.makeCoordinator(
+            network: network,
+            persistence: MockPersistenceService(),
+            syncStore: MockHistoricalSyncStore()
+        )
+
+        let fetchTask = Task { try await coordinator.fetchTransientHistoricalRates(for: ["EUR"], from: Self.startDate, to: Self.endDate) }
+        while network.fetchHistoricalRatesQuotesCalls.isEmpty {
+            await Task.yield()
+        }
+        try await coordinator.clearAllData()
+        releaseFetch()
+
+        await #expect(throws: CancellationError.self) {
+            _ = try await fetchTask.value
+        }
+    }
+
+    @Test("fetchAndPersistHistoricalRates persists, records, and stamps without snapshots")
+    func fetchAndPersistSavesAndRecords() async throws {
+        let network = MockNetworkService()
+        network.historicalRatesResult = .success(Self.response(rates: [
+            "2025-01-14": ["EUR": 0.85],
+        ]))
+        let persistence = MockPersistenceService()
+        let syncStore = MockHistoricalSyncStore()
+        let coordinator = Self.makeCoordinator(network: network, persistence: persistence, syncStore: syncStore)
+
+        try await coordinator.fetchAndPersistHistoricalRates(from: Self.startDate, to: Self.endDate)
+        await coordinator.waitForPendingHistoricalWrites()
+
+        #expect(await persistence.savedHistoricalRates.count == 1)
+        #expect(syncStore.recordCallCount == 1)
+        #expect(syncStore.from == Self.startDate)
+        #expect(network.lastFetchDate != nil)
+    }
+
     // MARK: - clearAllData barrier
 
     @Test("clearAllData settles pending writes; nothing is saved or recorded after the wipe")

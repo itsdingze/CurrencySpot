@@ -26,6 +26,24 @@ struct HistoricalDataAnalysisGapTests {
         #expect(uc.shouldFetchGap(gapStart: d, gapEnd: d, now: Self.day(2026, 6, 10)) == true)
     }
 
+    @Test("isRangeCovered is true only when the watermark spans the whole range")
+    func isRangeCoveredSpansWholeRange() {
+        let from = Self.day(2026, 6, 1)
+        let through = Self.day(2026, 6, 7)
+        let uc = Self.useCase(from: from, through: through, checkedAt: through)
+
+        #expect(uc.isRangeCovered(DateRange(start: Self.day(2026, 6, 2), end: Self.day(2026, 6, 6))) == true)
+        #expect(uc.isRangeCovered(DateRange(start: from, end: through)) == true)
+        #expect(uc.isRangeCovered(DateRange(start: Self.day(2026, 5, 30), end: through)) == false) // starts before
+        #expect(uc.isRangeCovered(DateRange(start: from, end: Self.day(2026, 6, 8))) == false) // ends after
+    }
+
+    @Test("isRangeCovered is false before anything has been synced")
+    func isRangeCoveredEmptyStore() {
+        let uc = Self.useCase(from: nil, through: nil, checkedAt: nil)
+        #expect(uc.isRangeCovered(DateRange(start: Self.day(2026, 6, 1), end: Self.day(2026, 6, 7))) == false)
+    }
+
     @Test("gap older than the covered window → fetch (back-fill)")
     func extendsBeforeCoverage() {
         let uc = Self.useCase(from: Self.day(2026, 6, 1), through: Self.day(2026, 6, 7), checkedAt: Self.day(2026, 6, 7))

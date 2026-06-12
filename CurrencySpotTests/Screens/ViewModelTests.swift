@@ -108,6 +108,42 @@ struct ViewModelTests {
             #expect(viewModel.chartData == .idle)
         }
 
+        @Test("a failed 5Y load publishes .failed instead of rendering the resident year", .timeLimit(.minutes(1)))
+        func archiveLoadFailurePublishesFailed() async throws {
+            let repository = MockHistoricalRateRepository()
+            repository.shouldThrowErrorOnFetch = true // the archive bridge is unreachable
+            // The resident series holds a year of rows — which must NOT be presented
+            // as a loaded five-year chart.
+            repository.seedCache([
+                HistoricalRateSnapshot(date: Date(timeIntervalSince1970: 1_700_000_000), rates: [
+                    HistoricalRatePoint(currencyCode: "EUR", rate: 0.9),
+                ]),
+            ])
+            let analysis = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
+            let viewModel = HistoryViewModel(
+                ratesStore: ExchangeRatesStore(),
+                historicalDataAnalysisUseCase: analysis,
+                dataOrchestrationUseCase: DataOrchestrationUseCase(
+                    repository: repository,
+                    historicalDataAnalysisUseCase: analysis
+                ),
+                chartDataPreparationUseCase: ChartDataPreparationUseCase(cacheService: InMemoryCacheService()),
+                trendDataUseCase: TrendDataUseCase(
+                    trendRepository: MockTrendRepository(),
+                    historicalRateRepository: repository
+                ),
+                appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
+                clock: ImmediateClock()
+            )
+
+            viewModel.selectTimeRange(.fiveYears)
+
+            await ViewModelTests.waitUntil {
+                if case .failed = viewModel.chartData { return true }
+                return false
+            }
+        }
+
         @Test("prefetchHistoricalWindow warms a today-anchored 1-year window without touching chart state")
         func prefetchWarmsSharedSeriesSilently() async throws {
             let repository = MockHistoricalRateRepository()

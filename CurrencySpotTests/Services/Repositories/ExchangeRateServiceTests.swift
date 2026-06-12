@@ -65,7 +65,7 @@ struct ExchangeRateServiceTests {
 
         try await service.clearAllData()
 
-        // Otherwise "Clear Cached Data" would leave a coverage claim over an empty store → blank charts.
+        // Otherwise "Refresh All Data" would leave a coverage claim over an empty store → blank charts.
         #expect(syncStore.from == nil)
         #expect(syncStore.through == nil)
         #expect(syncStore.checkedAt == nil)
@@ -197,6 +197,33 @@ struct ExchangeRateServiceTests {
         #expect(loadedRates.count == 2)
         #expect(loadedRates[0].rates.first(where: { $0.currencyCode == "EUR" })?.rate == 1.21)
         #expect(loadedRates[1].rates.first(where: { $0.currencyCode == "EUR" })?.rate == 1.22)
+    }
+
+    @Test("an undecodable blob row is purged so the next save can repair its date")
+    func corruptBlobRowIsPurgedAndRepairable() async throws {
+        // A corrupt row alongside a valid one (e.g. a pre-blob leftover or disk damage).
+        let context = container.mainContext
+        context.insert(HistoricalRateData(date: try #require(TimeZoneManager.parseAPIDate("2025-03-15")), ratesData: Data("garbage".utf8)))
+        context.insert(try HistoricalRateData(dateString: "2025-03-16", rates: ["EUR": 1.22]))
+        try context.save()
+
+        // The load fails loudly — but purges the broken row on its way out.
+        await #expect(throws: (any Error).self) {
+            _ = try await persistence.loadHistoricalRates(
+                from: try #require(TimeZoneManager.parseAPIDate("2025-03-15")),
+                to: try #require(TimeZoneManager.parseAPIDate("2025-03-16"))
+            )
+        }
+
+        // The save dedupe no longer sees the broken date, so a refetch repairs it…
+        try await persistence.saveHistoricalExchangeRates(["2025-03-15": ["EUR": 1.21]])
+
+        // …and the reload succeeds with both days intact.
+        let reloaded = try await persistence.loadHistoricalRates(
+            from: try #require(TimeZoneManager.parseAPIDate("2025-03-15")),
+            to: try #require(TimeZoneManager.parseAPIDate("2025-03-16"))
+        )
+        #expect(reloaded.count == 2)
     }
 
     @Test("Save and load current exchange rates")

@@ -282,14 +282,16 @@ final class HistoryViewModel {
             // Use DataOrchestrationUseCase to handle all the complex logic
             let result = try await dataOrchestrationUseCase.loadHistoricalData(
                 for: currency,
+                base: CurrencyCode(baseCurrency) ?? .usd,
                 dateRange: dateRange
             )
             guard generation == loadGeneration, !Task.isCancelled else { return }
 
             // Always try to update chart even with partial data
             if !result.dataPoints.isEmpty {
-                // Update UI with new data (pass the same dateRange used for fetching)
-                let dataPoints = await preparedChartDataPoints(for: currency, dateRange: dateRange)
+                // Chart from the returned rows: archive ranges never enter the
+                // resident series, so re-reading the cache would come up empty.
+                let dataPoints = await preparedChartDataPoints(for: currency, from: result.dataPoints, dateRange: dateRange)
                 guard generation == loadGeneration, !Task.isCancelled else { return }
                 publishChart(.loaded(dataPoints))
             } else {
@@ -320,14 +322,18 @@ final class HistoryViewModel {
         } catch {
             logger.error("Load failed: \(error.localizedDescription)", category: .viewModel)
 
-            // Try to use cached data even if the load failed
-            let cachedData = await dataOrchestrationUseCase.getCachedData(dateRange: dateRange)
+            // Try to use cached data even if the load failed — except for archive
+            // ranges: the resident series can never legitimately cover them, and
+            // falling back would render ~1Y of points as a loaded 5Y chart.
+            let cachedData = DataOrchestrationUseCase.isArchiveRange(dateRange)
+                ? []
+                : await dataOrchestrationUseCase.getCachedData(dateRange: dateRange)
             guard generation == loadGeneration, !Task.isCancelled else { return }
 
             if !cachedData.isEmpty {
                 // We have some cached data, use it
                 logger.info("Using cached data as fallback", category: .viewModel)
-                let dataPoints = await preparedChartDataPoints(for: currency, dateRange: dateRange)
+                let dataPoints = await preparedChartDataPoints(for: currency, from: cachedData, dateRange: dateRange)
                 guard generation == loadGeneration, !Task.isCancelled else { return }
                 publishChart(.loaded(dataPoints))
             } else {
@@ -427,8 +433,11 @@ final class HistoryViewModel {
 
     /// Warms the shared historical series with a today-anchored one-year window so
     /// chart opens, range switches within a year, and currency switches all render
-    /// from memory. Runs from the app root task after the trend seed and never touches
-    /// published chart state. Offline it still warms the series from persistence.
+    /// from memory — then backfills the five-year archive into the blob store
+    /// (persistence only; the resident series and published chart state stay
+    /// untouched). Runs from the app root task after the trend seed; on first launch
+    /// the archive tier is a multi-year download, so nothing latency-sensitive may
+    /// sequence behind this call. Offline it still warms the series from persistence.
     func prefetchHistoricalWindow() async {
         let range = historicalDataAnalysisUseCase.calculateDateRange(for: .oneYear)
         do {
@@ -438,6 +447,10 @@ final class HistoryViewModel {
             // Purely opportunistic: the next chart open loads on demand as before.
             logger.debug("Historical prefetch did not complete: \(error.localizedDescription)", category: .viewModel)
         }
+
+        // Final warm-up tier: the five-year archive lands in persistence only, after
+        // which 5Y charts read from the blob store instead of bridging via the network.
+        await dataOrchestrationUseCase.backfillArchive()
     }
 
     // MARK: - Trend Data Methods
@@ -495,9 +508,7 @@ final class HistoryViewModel {
     /// Returns the points instead of publishing them so the caller can apply its
     /// generation/cancellation guard before any state write.
     /// - Parameter dateRange: The date range to use for filtering data (must match the range used for fetching)
-    private func preparedChartDataPoints(for currency: CurrencyCode, dateRange: DateRange) async -> [ChartDataPoint] {
-        let historicalData = await dataOrchestrationUseCase.getCachedData(dateRange: dateRange)
-
+    private func preparedChartDataPoints(for currency: CurrencyCode, from historicalData: [HistoricalRateSnapshot], dateRange: DateRange) async -> [ChartDataPoint] {
         // Guard against empty data
         guard !historicalData.isEmpty else {
             logger.info("No historical data to display", category: .viewModel)

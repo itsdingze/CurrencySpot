@@ -47,16 +47,30 @@ final class DataOrchestrationUseCase {
     /// keeps check-and-insert atomic (no suspension between them).
     private var inFlightFetches: [FetchKey: Task<[HistoricalRateSnapshot], Error>] = [:]
 
-    /// Fetches a range, joining a covering in-flight fetch when one exists. A joined
-    /// result is a superset of the requested range; the date-keyed merge makes the
-    /// extra days harmless.
+    /// Bumped when the registry is dropped wholesale; an originator from an older
+    /// generation must not evict a fresh fetch registered under its key.
+    private var fetchGeneration = 0
+
+    /// Empties the in-flight registry. Run after a data wipe: fetches that started
+    /// before the wipe are epoch-doomed in the coordinator, and post-wipe loads
+    /// joining them would inherit that failure while online.
+    func dropInFlightFetches() {
+        fetchGeneration += 1
+        inFlightFetches.removeAll()
+    }
+
+    /// Fetches a range, joining a covering in-flight fetch when one exists. A covering
+    /// fetch's result is a superset of the requested range; it is clamped to the
+    /// requested days so a joiner never carries more into the resident merge than its
+    /// own gap asked for (the originating load still merges its full result).
     private func fetchJoiningInFlight(_ range: DateRange) async throws -> [HistoricalRateSnapshot] {
         let calendar = TimeZoneManager.cetCalendar
         let key = FetchKey(start: calendar.startOfDay(for: range.start), end: calendar.startOfDay(for: range.end))
 
         if let covering = inFlightFetches.first(where: { $0.key.start <= key.start && $0.key.end >= key.end })?.value {
             logger.debug("Joining in-flight fetch covering \(TimeZoneManager.formatForAPI(range.start)) to \(TimeZoneManager.formatForAPI(range.end))", category: .network)
-            return try await covering.value
+            let superset = try await covering.value
+            return superset.filter { $0.date >= key.start && $0.date <= key.end }
         }
 
         // Unstructured on purpose: the fetch must survive its originating load's
@@ -64,16 +78,134 @@ final class DataOrchestrationUseCase {
         let fetch = Task { [repository] in
             try await repository.fetchHistoricalRates(from: range.start, to: range.end)
         }
+        let generation = fetchGeneration
         inFlightFetches[key] = fetch
-        defer { inFlightFetches[key] = nil }
+        defer {
+            if generation == fetchGeneration {
+                inFlightFetches[key] = nil
+            }
+        }
         return try await fetch.value
     }
 
     // MARK: - Public Interface
 
+    /// Days a range may span and still be served by (and merged into) the resident
+    /// in-memory series. Anything longer is archive territory: five years of every
+    /// currency held resident would cost 20+ MB, so those ranges read from the blob
+    /// store on demand instead.
+    private static let residentWindowDays = 370
+
+    /// Internal (not private) so the ViewModel's failure fallback can refuse to
+    /// render the resident series for a range it can never legitimately cover.
+    static func isArchiveRange(_ range: DateRange) -> Bool {
+        let days = TimeZoneManager.cetCalendar.dateComponents([.day], from: range.start, to: range.end).day ?? 0
+        return days > residentWindowDays
+    }
+
     /// Loads historical data for the specified currency and date range
     /// Returns the loaded data points and whether any new data was actually fetched from API
     func loadHistoricalData(
+        for currency: CurrencyCode,
+        dateRange: DateRange
+    ) async throws -> (dataPoints: [HistoricalRateSnapshot], newDataFetched: Bool, fetchedRanges: [DateRange]) {
+        try await loadHistoricalData(for: currency, base: .usd, dateRange: dateRange)
+    }
+
+    /// Loads historical data for the specified pair and date range. The base currency
+    /// only matters on the archive bridge path, where a pair-scoped fetch needs both
+    /// sides of the conversion.
+    func loadHistoricalData(
+        for currency: CurrencyCode,
+        base: CurrencyCode,
+        dateRange: DateRange
+    ) async throws -> (dataPoints: [HistoricalRateSnapshot], newDataFetched: Bool, fetchedRanges: [DateRange]) {
+        if Self.isArchiveRange(dateRange) {
+            return try await loadArchiveData(for: currency, base: base, dateRange: dateRange)
+        }
+        return try await loadResidentData(for: currency, dateRange: dateRange)
+    }
+
+    /// Archive ranges never touch the resident series: covered ranges read from the
+    /// blob store (milliseconds since the schema change); uncovered ones bridge with
+    /// a one-off pair-scoped fetch until the background backfill lands.
+    private func loadArchiveData(
+        for currency: CurrencyCode,
+        base: CurrencyCode,
+        dateRange: DateRange
+    ) async throws -> (dataPoints: [HistoricalRateSnapshot], newDataFetched: Bool, fetchedRanges: [DateRange]) {
+        // Coverage is checked through yesterday: the watermark only reaches today
+        // after the day's first live-edge fetch, and an archive chart doesn't need
+        // today's still-moving row — requiring it would bypass (and offline, lose)
+        // the entire local archive every new day.
+        let calendar = TimeZoneManager.cetCalendar
+        let coverageEnd = calendar.date(byAdding: .day, value: -1, to: dateRange.end) ?? dateRange.end
+        if historicalDataAnalysisUseCase.isRangeCovered(DateRange(start: dateRange.start, end: coverageEnd)) {
+            do {
+                let rows = try await repository.loadHistoricalRates(in: dateRange)
+                if !rows.isEmpty {
+                    logger.infoPrivate("Archive range served from the blob store for \(currency)", category: .persistence)
+                    return (dataPoints: rows, newDataFetched: false, fetchedRanges: [])
+                }
+            } catch {
+                logger.warning("Archive store read failed: \(error.localizedDescription)", category: .persistence)
+            }
+        }
+
+        // Backfill hasn't landed (or the read failed): bridge with a transient
+        // pair-scoped fetch.
+        let pair = Array(Set([currency, base]).subtracting([CurrencyCode.usd]))
+        guard !pair.isEmpty else {
+            // USD against USD is 1.0 by definition; synthesize the day grid instead
+            // of claiming no data exists (the rate table treats absent USD as 1.0).
+            return (dataPoints: Self.emptyDayGrid(for: dateRange), newDataFetched: false, fetchedRanges: [])
+        }
+
+        do {
+            let snapshots = try await repository.fetchTransientHistoricalRates(
+                for: pair,
+                from: dateRange.start,
+                to: dateRange.end
+            )
+            logger.infoPrivate("Archive range bridged with a transient pair fetch for \(currency)", category: .network)
+            // newDataFetched stays false: nothing entered persistence, so trends must
+            // not recalculate from this.
+            return (dataPoints: snapshots, newDataFetched: false, fetchedRanges: [])
+        } catch {
+            // Bridge unreachable (offline): the stored archive beats an error — but
+            // only when it actually reaches the requested start. Serving a partial
+            // archive (say, just the resident year) as a loaded 5Y chart would mask
+            // the failure the ViewModel is supposed to surface. ~7 days of tolerance
+            // absorbs sparse publishing at the range start.
+            guard let earliest = try? await repository.earliestStoredDate(),
+                  let coverageFloor = calendar.date(byAdding: .day, value: 7, to: calendar.startOfDay(for: dateRange.start)),
+                  calendar.startOfDay(for: earliest) <= coverageFloor,
+                  let rows = try? await repository.loadHistoricalRates(in: dateRange),
+                  !rows.isEmpty
+            else { throw error }
+            logger.info("Archive bridge failed; serving the stored archive instead: \(error.localizedDescription)", category: .persistence)
+            return (dataPoints: rows, newDataFetched: false, fetchedRanges: [])
+        }
+    }
+
+    /// One snapshot per day with no rates — the USD/USD series, where every value
+    /// is the rate table's implicit 1.0.
+    private static func emptyDayGrid(for range: DateRange) -> [HistoricalRateSnapshot] {
+        let calendar = TimeZoneManager.cetCalendar
+        var snapshots: [HistoricalRateSnapshot] = []
+        var date = calendar.startOfDay(for: range.start)
+        let end = calendar.startOfDay(for: range.end)
+        while date <= end {
+            snapshots.append(HistoricalRateSnapshot(date: date, rates: []))
+            guard let next = calendar.date(byAdding: .day, value: 1, to: date) else { break }
+            date = next
+        }
+        return snapshots
+    }
+
+    /// Resident-window loads: gap-detect against the shared series, fetch what is
+    /// missing, and merge the result back into the series.
+    private func loadResidentData(
         for currency: CurrencyCode,
         dateRange: DateRange
     ) async throws -> (dataPoints: [HistoricalRateSnapshot], newDataFetched: Bool, fetchedRanges: [DateRange]) {
@@ -145,6 +277,56 @@ final class DataOrchestrationUseCase {
         logger.infoPrivate("Cache updated: Loaded \(newDataPoints.count) new points for \(currency)", category: .cache)
 
         return (dataPoints: mergedData, newDataFetched: !actuallyFetchedRanges.isEmpty, fetchedRanges: actuallyFetchedRanges)
+    }
+
+    /// In-flight archive backfill; concurrent callers (launch warm-up overlapping a
+    /// user-initiated refresh) join it instead of starting a second multi-MB download.
+    private var backfillTask: Task<Void, Never>?
+
+    /// Backfills the five-year archive into persistence without touching the resident
+    /// in-memory series. Runs after the resident warm-up; once its watermark records,
+    /// every archive view reads from the blob store in milliseconds. Best-effort: a
+    /// failure just leaves archive views on the transient-fetch bridge.
+    func backfillArchive() async {
+        if let backfillTask {
+            await backfillTask.value
+            return
+        }
+        let task = Task { await runArchiveBackfill() }
+        backfillTask = task
+        defer { backfillTask = nil }
+        await task.value
+    }
+
+    private func runArchiveBackfill() async {
+        let archiveRange = historicalDataAnalysisUseCase.calculateDateRange(for: .fiveYears)
+        do {
+            guard let gap = try await fetchableGap(for: archiveRange) else {
+                await repairCoverageIfUnderClaiming(for: archiveRange)
+                return
+            }
+            // Fetch-to-disk, deliberately OUTSIDE the in-flight registry: a resident
+            // load joining a multi-year fetch would flood the resident series, and
+            // mapping ~300k snapshots only to discard them is wasted work.
+            try await repository.fetchAndPersistHistoricalRates(from: gap.start, to: gap.end)
+            logger.info("Archive backfill complete: \(TimeZoneManager.formatForAPI(gap.start)) to \(TimeZoneManager.formatForAPI(gap.end))", category: .network)
+        } catch {
+            logger.warning("Archive backfill did not complete: \(error.localizedDescription)", category: .network)
+        }
+    }
+
+    /// Heals a watermark that under-claims persisted rows (the store's contiguity
+    /// guard can drop a record). Persistence grows contiguously — every fetched gap
+    /// anchors at the stored edge — so claiming the stored bounds never spans
+    /// unchecked dates, and it un-wedges archive reads that would otherwise bridge
+    /// over the network forever.
+    private func repairCoverageIfUnderClaiming(for archiveRange: DateRange) async {
+        guard !historicalDataAnalysisUseCase.isRangeCovered(archiveRange),
+              let earliest = try? await repository.earliestStoredDate(),
+              let latest = try? await repository.latestStoredDate()
+        else { return }
+        historicalDataAnalysisUseCase.repairCoverage(from: earliest, through: latest)
+        logger.info("Coverage watermark repaired from stored bounds", category: .persistence)
     }
 
     /// Gets cached data within the given date range. The shared series carries every

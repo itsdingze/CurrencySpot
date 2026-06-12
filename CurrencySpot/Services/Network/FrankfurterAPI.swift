@@ -82,16 +82,21 @@ nonisolated final class FrankfurterAPI: Sendable {
     ///   - baseCurrency: The reference currency for exchange rates (default: "USD")
     ///   - startDate: The start date for historical data
     ///   - endDate: The end date for historical data
+    ///   - quotes: When non-empty, restricts the response to these quote currencies —
+    ///     a five-year single-pair series is ~15 KB versus ~3 MB unfiltered.
     /// - Returns: A HistoricalRatesResponse object that contains the historical exchange rates
     /// - Throws: AppError if network request fails, or the response is malformed
     /// `@concurrent`: keeps response decoding and the forward-fill mapping off the caller's actor.
     @concurrent
-    func fetchHistoricalRatesForRange(baseCurrency: String = "USD", startDate: Date, endDate: Date) async throws -> HistoricalRatesResponse {
+    func fetchHistoricalRatesForRange(baseCurrency: String = "USD", startDate: Date, endDate: Date, quotes: [String] = []) async throws -> HistoricalRatesResponse {
         // Format dates and build URL
         let startDateString = TimeZoneManager.formatForAPI(startDate)
         let endDateString = TimeZoneManager.formatForAPI(endDate)
 
-        let urlString = "\(baseURL)/rates?base=\(baseCurrency)&from=\(startDateString)&to=\(endDateString)"
+        var urlString = "\(baseURL)/rates?base=\(baseCurrency)&from=\(startDateString)&to=\(endDateString)"
+        if !quotes.isEmpty {
+            urlString += "&quotes=\(quotes.joined(separator: ","))"
+        }
         let url = try NetworkUtility.createURL(from: urlString)
 
         let entries = try await NetworkUtility.performRequestWithRetry(

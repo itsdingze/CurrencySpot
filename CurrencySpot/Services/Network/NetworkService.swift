@@ -19,6 +19,9 @@ protocol NetworkService {
     /// Fetches historical rates for a specific date range
     func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> HistoricalRatesResponse
 
+    /// Fetches historical rates for specific quote currencies only (pair-scoped archive views)
+    func fetchHistoricalRates(from startDate: Date, to endDate: Date, quotes: [String]) async throws -> HistoricalRatesResponse
+
     /// Updates the last fetch date
     func updateLastFetchDate(_ date: Date)
 
@@ -80,6 +83,14 @@ final class FrankfurterNetworkService: NetworkService {
         try await api.fetchHistoricalRatesForRange(
             startDate: startDate,
             endDate: endDate
+        )
+    }
+
+    func fetchHistoricalRates(from startDate: Date, to endDate: Date, quotes: [String]) async throws -> HistoricalRatesResponse {
+        try await api.fetchHistoricalRatesForRange(
+            startDate: startDate,
+            endDate: endDate,
+            quotes: quotes
         )
     }
 

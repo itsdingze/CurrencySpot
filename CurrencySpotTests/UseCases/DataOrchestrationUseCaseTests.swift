@@ -33,10 +33,20 @@ struct DataOrchestrationUseCaseTests {
     ) -> DataOrchestrationUseCase {
         DataOrchestrationUseCase(
             repository: repository,
-            historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase(syncStore: syncStore),
+            historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase(
+                syncStore: syncStore,
+                dateProvider: FixedDateProvider(baseDate)
+            ),
             dateProvider: FixedDateProvider(baseDate)
         )
     }
+
+    private static func day(_ offset: Int) -> Date {
+        calendar.startOfDay(for: calendar.date(byAdding: .day, value: offset, to: baseDate)!)
+    }
+
+    /// A five-year, today-anchored range — beyond the resident window.
+    private static let archiveRange = DateRange(start: day(-1827), end: day(0))
 
     /// Creates test historical data for specified dates
     static func createTestHistoricalData(dates: [Date]) -> [HistoricalRateSnapshot] {
@@ -361,6 +371,284 @@ struct DataOrchestrationUseCaseTests {
     // NOTE: Sync-coverage watermark recording now lives with the deferred persist in
     // DataCoordinator (record only after the save commits) and is covered by
     // DataCoordinatorHistoricalTests.
+
+    // MARK: - Archive range Tests
+
+    @Test("a covered archive range loads from the blob store without touching the resident series")
+    func archiveRange_covered_loadsFromStore() async throws {
+        let repository = MockHistoricalRateRepository()
+        let blobRows = Self.createTestHistoricalData(dates: [Self.day(-1000), Self.day(-1)])
+        repository.historicalDataToReturn = blobRows
+        // The backfill already recorded the full five years.
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        let result = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+
+        #expect(result.dataPoints == blobRows)
+        #expect(result.newDataFetched == false)
+        #expect(repository.loadHistoricalRatesCallCount == 1)
+        #expect(repository.fetchHistoricalRatesCallCount == 0)
+        #expect(repository.fetchTransientCalls.isEmpty)
+        // The archive must never inflate the resident in-memory series.
+        #expect(repository.mergeCachedCallCount == 0)
+        #expect(repository.cachedData.isEmpty)
+    }
+
+    @Test("an uncovered archive range bridges with a transient pair fetch, leaving every store untouched")
+    func archiveRange_uncovered_bridgesWithTransientFetch() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.transientDataToReturn = Self.createTestHistoricalData(dates: [Self.day(-1000)])
+        // Only the resident year is covered so far.
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-365), through: Self.day(0), checkedAt: Self.day(0))
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        let result = try await useCase.loadHistoricalData(for: "EUR", base: "GBP", dateRange: Self.archiveRange)
+
+        #expect(result.dataPoints == repository.transientDataToReturn)
+        #expect(result.newDataFetched == false) // nothing persisted: trends must not recalculate
+        let transient = try #require(repository.fetchTransientCalls.first)
+        #expect(Set(transient.currencies) == Set(["EUR", "GBP"] as [CurrencyCode]))
+        #expect(transient.from == Self.archiveRange.start)
+        #expect(transient.to == Self.archiveRange.end)
+        // No all-currency fetch, no persistence read, no resident-series merge.
+        #expect(repository.fetchHistoricalRatesCallCount == 0)
+        #expect(repository.loadHistoricalRatesCallCount == 0)
+        #expect(repository.mergeCachedCallCount == 0)
+    }
+
+    @Test("a USD pair's transient fetch requests only the non-USD side")
+    func archiveRange_usdPair_requestsOnlyNonUSDQuote() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.transientDataToReturn = Self.createTestHistoricalData(dates: [Self.day(-1000)])
+
+        let useCase = Self.makeUseCase(repository: repository)
+
+        _ = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+
+        let transient = try #require(repository.fetchTransientCalls.first)
+        #expect(transient.currencies == ["EUR"]) // the rate table synthesizes USD's 1.0
+    }
+
+    // MARK: - backfillArchive Tests
+
+    @Test("backfillArchive fetches the archive gap straight to disk, never touching the resident series")
+    func backfillArchive_fetchesGapOnly() async throws {
+        let repository = MockHistoricalRateRepository()
+        // The resident warm-up already stored and recorded the year.
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-365), through: Self.day(0), checkedAt: Self.day(0))
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        // Only the un-stored older years are fetched, anchored at the stored edge,
+        // through the persist-only path (no snapshots, no joinable registry entry).
+        let call = try #require(repository.fetchAndPersistCalls.first)
+        #expect(call.from == Self.archiveRange.start)
+        #expect(call.to == Self.day(-365))
+        #expect(repository.fetchAndPersistCalls.count == 1)
+        #expect(repository.fetchHistoricalRatesCallCount == 0)
+        #expect(repository.mergeCachedCallCount == 0)
+        #expect(repository.cachedData.isEmpty)
+    }
+
+    @Test("backfillArchive is a no-op once the watermark covers the archive")
+    func backfillArchive_skipsWhenCovered() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-1827)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        #expect(repository.fetchAndPersistCalls.isEmpty)
+        #expect(repository.fetchHistoricalRatesCallCount == 0)
+        #expect(syncStore.recordCallCount == 0)
+    }
+
+    @Test("a resident load during the archive backfill never absorbs archive rows", .timeLimit(.minutes(1)))
+    func backfill_concurrentResidentLoad_keepsResidentSeriesSmall() async throws {
+        let repository = MockHistoricalRateRepository()
+        // Degenerate warm-up: nothing stored, nothing recorded — the backfill's gap
+        // is the whole five years, the worst case for a join.
+        repository.earliestStoredDateResult = nil
+        repository.fetchedDataToReturn = Self.createTestHistoricalData(dates: [Self.startDate, Self.endDate])
+
+        var releaseFetches: (() -> Void)!
+        let gate = AsyncStream<Void> { continuation in
+            releaseFetches = { continuation.finish() }
+        }
+        repository.fetchBarrier = { for await _ in gate {} }
+
+        let useCase = Self.makeUseCase(repository: repository)
+
+        async let backfill: Void = useCase.backfillArchive()
+        async let resident = useCase.loadHistoricalData(for: "EUR", dateRange: Self.testDateRange)
+
+        while repository.fetchAndPersistCalls.isEmpty || repository.fetchHistoricalRatesCalls.isEmpty {
+            await Task.yield()
+        }
+        releaseFetches()
+        _ = await backfill
+        _ = try await resident
+
+        // The resident load fetched its own range (no join with the archive fetch)
+        // and the series holds only resident-window dates.
+        #expect(repository.fetchHistoricalRatesCallCount == 1)
+        let residentFetch = try #require(repository.fetchHistoricalRatesCalls.first)
+        #expect(residentFetch.from == Self.testDateRange.start)
+        #expect(repository.cachedData.allSatisfy { $0.date >= Self.testDateRange.start && $0.date <= Self.testDateRange.end })
+    }
+
+    @Test("backfillArchive repairs a watermark that under-claims persisted rows")
+    func backfillArchive_repairsUnderClaimingWatermark() async throws {
+        let repository = MockHistoricalRateRepository()
+        // Rows span the full archive, but the watermark only claims the last year
+        // (e.g. the contiguity guard dropped a record at some point).
+        repository.earliestStoredDateResult = Self.day(-1827)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-365), through: Self.day(0), checkedAt: Self.day(0))
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        // Nothing to fetch (rows exist), but coverage is healed from stored bounds
+        // so archive reads stop bridging over the network forever.
+        #expect(repository.fetchAndPersistCalls.isEmpty)
+        #expect(syncStore.recordCallCount == 1)
+        #expect(syncStore.from == Self.day(-1827))
+    }
+
+    @Test("an archive covered through yesterday still reads from the blob store")
+    func archiveRange_coveredThroughYesterday_loadsFromStore() async throws {
+        let repository = MockHistoricalRateRepository()
+        let blobRows = Self.createTestHistoricalData(dates: [Self.day(-1000), Self.day(-1)])
+        repository.historicalDataToReturn = blobRows
+        // The day's live-edge fetch hasn't run yet: the watermark ends at yesterday.
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(-1), checkedAt: Self.day(-1))
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        let result = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+
+        #expect(result.dataPoints == blobRows)
+        #expect(repository.fetchTransientCalls.isEmpty)
+        #expect(repository.loadHistoricalRatesCallCount == 1)
+    }
+
+    @Test("a failed archive bridge falls back to a complete stored archive")
+    func archiveRange_bridgeFails_servesStoredArchive() async throws {
+        let repository = MockHistoricalRateRepository()
+        let storedRows = Self.createTestHistoricalData(dates: [Self.day(-1000)])
+        repository.historicalDataToReturn = storedRows
+        repository.earliestStoredDateResult = Self.day(-1827) // archive reaches the range start
+        repository.shouldThrowErrorOnFetch = true // the transient bridge is unreachable
+        // Watermark missing entirely — coverage check fails, bridge is attempted.
+        let useCase = Self.makeUseCase(repository: repository)
+
+        let result = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+
+        #expect(repository.fetchTransientCalls.count == 1)
+        #expect(result.dataPoints == storedRows)
+        #expect(result.newDataFetched == false)
+    }
+
+    @Test("a failed bridge with only a partial archive on disk surfaces the error")
+    func archiveRange_bridgeFailsPartialStore_throws() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.historicalDataToReturn = Self.createTestHistoricalData(dates: [Self.day(-300)])
+        repository.earliestStoredDateResult = Self.day(-365) // only the resident year on disk
+        repository.shouldThrowErrorOnFetch = true
+
+        let useCase = Self.makeUseCase(repository: repository)
+
+        // Rendering one stored year as a loaded 5Y chart would mask the failure;
+        // the error must reach the ViewModel's archive guard instead.
+        await #expect(throws: (any Error).self) {
+            _ = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+        }
+    }
+
+    @Test("a load after dropInFlightFetches re-fetches instead of joining a doomed fetch", .timeLimit(.minutes(1)))
+    func droppedRegistry_isNotJoined() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = nil
+        repository.fetchedDataToReturn = Self.createTestHistoricalData(dates: [Self.startDate, Self.endDate])
+
+        var releaseFetches: (() -> Void)!
+        let gate = AsyncStream<Void> { continuation in
+            releaseFetches = { continuation.finish() }
+        }
+        repository.fetchBarrier = { for await _ in gate {} }
+
+        let useCase = Self.makeUseCase(repository: repository)
+
+        async let first = useCase.loadHistoricalData(for: "EUR", dateRange: Self.testDateRange)
+        while repository.fetchHistoricalRatesCalls.isEmpty {
+            await Task.yield()
+        }
+
+        // A wipe ran: the parked fetch is doomed. A fresh load must not join it.
+        useCase.dropInFlightFetches()
+        async let second = useCase.loadHistoricalData(for: "GBP", dateRange: Self.testDateRange)
+        while repository.fetchHistoricalRatesCalls.count < 2 {
+            await Task.yield()
+        }
+        releaseFetches()
+        _ = try await (first, second)
+
+        #expect(repository.fetchHistoricalRatesCallCount == 2)
+    }
+
+    @Test("concurrent backfills share one archive download", .timeLimit(.minutes(1)))
+    func concurrentBackfills_shareOneDownload() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-365), through: Self.day(0), checkedAt: Self.day(0))
+
+        var releaseFetches: (() -> Void)!
+        let gate = AsyncStream<Void> { continuation in
+            releaseFetches = { continuation.finish() }
+        }
+        repository.fetchBarrier = { for await _ in gate {} }
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        // Launch warm-up overlapping a user-initiated refresh.
+        async let first: Void = useCase.backfillArchive()
+        async let second: Void = useCase.backfillArchive()
+        while repository.fetchAndPersistCalls.isEmpty {
+            await Task.yield()
+        }
+        for _ in 0 ..< 20 {
+            await Task.yield()
+        }
+        releaseFetches()
+        _ = await (first, second)
+
+        #expect(repository.fetchAndPersistCalls.count == 1)
+    }
+
+    @Test("a USD/USD archive view renders the synthesized flat series, not 'no data'")
+    func archiveRange_usdAgainstUsd_synthesizesDayGrid() async throws {
+        let repository = MockHistoricalRateRepository()
+        let useCase = Self.makeUseCase(repository: repository)
+
+        let result = try await useCase.loadHistoricalData(for: "USD", base: "USD", dateRange: Self.archiveRange)
+
+        #expect(result.dataPoints.count == 1828) // one snapshot per day, inclusive
+        #expect(result.dataPoints.allSatisfy { $0.rates.isEmpty }) // the rate table supplies USD's 1.0
+        #expect(repository.fetchTransientCalls.isEmpty)
+    }
 
     // MARK: - getCachedData Tests
 

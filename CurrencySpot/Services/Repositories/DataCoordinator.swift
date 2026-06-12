@@ -197,6 +197,34 @@ extension DataCoordinator: HistoricalRateRepository {
         await pendingHistoricalWrite?.value
     }
 
+    /// Pair-scoped fetch for archive views: decoded snapshots only, no persistence,
+    /// no watermark record, no fetch-date stamp — the rows cover a single pair and
+    /// must never be mistaken for all-currency coverage.
+    func fetchTransientHistoricalRates(for currencies: [CurrencyCode], from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
+        let epoch = clearEpoch
+        let response = try await networkService.fetchHistoricalRates(
+            from: startDate,
+            to: endDate,
+            quotes: currencies.map(\.rawValue)
+        )
+        guard epoch == clearEpoch else { throw CancellationError() }
+        let snapshots = await Self.snapshots(from: response.rates)
+        // Re-check after the off-main mapping: a clear may have run during it.
+        guard epoch == clearEpoch else { throw CancellationError() }
+        return snapshots
+    }
+
+    /// Fetch-to-disk for the archive backfill: persists and records like a normal
+    /// fetch but skips the snapshot mapping — a five-year all-currency response is
+    /// ~300k points, and the backfill would only throw them away.
+    func fetchAndPersistHistoricalRates(from startDate: Date, to endDate: Date) async throws {
+        let epoch = clearEpoch
+        let response = try await networkService.fetchHistoricalRates(from: startDate, to: endDate)
+        guard epoch == clearEpoch else { throw CancellationError() }
+        schedulePersist(of: response.rates, from: startDate, through: endDate, epoch: epoch)
+        networkService.updateLastFetchDate(dateProvider.now())
+    }
+
     /// Persists fetched rates behind the returned snapshots, chaining writes in arrival order.
     /// The coverage watermark is recorded only after the save commits: recording first would,
     /// after a crash in between, claim coverage over rows that never landed — leaving chart
@@ -257,14 +285,15 @@ extension DataCoordinator: HistoricalRateRepository {
         } catch {
             logger.warning("Failed to load historical data from persistence: \(error.localizedDescription)", category: .persistence)
 
-            // Try to fetch from network if connected. The fetched snapshots are returned
-            // directly; re-reading persistence here would race the deferred save.
-            if await networkService.shouldFetchNewRates() {
-                do {
-                    return try await fetchHistoricalRates(from: range.start, to: range.end)
-                } catch {
-                    logger.warning("Network fetch for historical data also failed: \(error.localizedDescription)", category: .network)
-                }
+            // A read failure is exceptional — typically corrupt rows that just purged
+            // themselves — so fetch unconditionally (no freshness gate): the refetch
+            // re-inserts the purged dates now rather than after the TTL lapses. The
+            // fetched snapshots are returned directly; re-reading persistence here
+            // would race the deferred save.
+            do {
+                return try await fetchHistoricalRates(from: range.start, to: range.end)
+            } catch {
+                logger.warning("Network fetch for historical data also failed: \(error.localizedDescription)", category: .network)
             }
 
             // Return empty array as final fallback
