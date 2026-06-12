@@ -41,7 +41,7 @@ struct CameraScannerContainer: View {
                 }
 
                 DetectionOverlayView(
-                    items: viewModel.detectedItems,
+                    items: viewModel.detectedItems.elements,
                     targetCurrency: viewModel.targetCurrency,
                     onOutlineTap: { viewModel.toggleConversion(for: $0) },
                     onPlateTap: { viewModel.showBadgeDetail(for: $0) }

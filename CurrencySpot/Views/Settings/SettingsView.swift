@@ -7,41 +7,10 @@
 
 import SwiftUI
 
-// MARK: - Supporting Types
-
-private enum AlertType: Identifiable {
-    case clearCachedData, resetPreferences
-
-    var id: Self { self }
-
-    func alert(onConfirm: @escaping (AlertType) -> Void) -> Alert {
-        switch self {
-        case .clearCachedData:
-            Alert(
-                title: Text("Clear Cached Data"),
-                message: Text("This will remove all cached exchange rates and historical data. You'll need to fetch new data when you next use the app."),
-                primaryButton: .destructive(Text("Clear")) { onConfirm(self) },
-                secondaryButton: .cancel()
-            )
-        case .resetPreferences:
-            Alert(
-                title: Text("Reset Preferences"),
-                message: Text("This will reset all settings to their default values. Your cached data will not be affected."),
-                primaryButton: .destructive(Text("Reset")) { onConfirm(self) },
-                secondaryButton: .cancel()
-            )
-        }
-    }
-}
-
 struct SettingsView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel: CalculatorViewModel
     @Environment(SettingsViewModel.self) private var settingsViewModel: SettingsViewModel
     @Environment(AppState.self) private var appState: AppState
-
-    @State private var alertType: AlertType?
-    @State private var toastData: ToastData?
-    @State private var toastDismissTask: Task<Void, Never>?
 
     private var bindableSettingsViewModel: Bindable<SettingsViewModel> {
         Bindable(settingsViewModel)
@@ -56,10 +25,54 @@ struct SettingsView: View {
             dataManagementSection
             aboutSection
         }
-        .alert(item: $alertType) { $0.alert(onConfirm: handleAlertConfirmation) }
-        .overlay(toastOverlay)
-        .onDisappear {
-            toastDismissTask?.cancel()
+        .navigationDestination(for: SettingsRoute.self) { route in
+            destinationView(for: route)
+        }
+        .alert(
+            settingsViewModel.pendingAlert?.title ?? "",
+            isPresented: isAlertPresented,
+            presenting: settingsViewModel.pendingAlert
+        ) { alert in
+            Button(alert.confirmTitle, role: .destructive) {
+                settingsViewModel.confirmAlert(alert)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { alert in
+            Text(alert.message)
+        }
+        .overlay { toastOverlay }
+    }
+
+    /// Bool projection of the alert destination for the modern alert API;
+    /// system dismissal writes `nil` back to the ViewModel.
+    private var isAlertPresented: Binding<Bool> {
+        Binding(
+            get: { settingsViewModel.pendingAlert != nil },
+            set: { isActive in
+                if !isActive, settingsViewModel.pendingAlert != nil {
+                    settingsViewModel.destination = nil
+                }
+            }
+        )
+    }
+
+    // MARK: - Navigation Destinations
+
+    @ViewBuilder
+    private func destinationView(for route: SettingsRoute) -> some View {
+        switch route {
+        case .defaultBaseCurrency:
+            CurrencyPickerView(
+                selectedCurrency: bindableSettingsViewModel.defaultBaseCurrency,
+                exchangeRates: calculatorViewModel.availableRates
+            )
+        case .defaultTargetCurrency:
+            CurrencyPickerView(
+                selectedCurrency: bindableSettingsViewModel.defaultTargetCurrency,
+                exchangeRates: calculatorViewModel.availableRates
+            )
+        case .favoriteCurrencies:
+            FavoriteCurrenciesView()
         }
     }
 
@@ -99,10 +112,7 @@ struct SettingsView: View {
                 icon: "dollarsign.circle.fill",
                 iconColors: (Color.white, Color.green),
                 currentValue: settingsViewModel.defaultBaseCurrency,
-                destination: CurrencyPickerView(
-                    selectedCurrency: bindableSettingsViewModel.defaultBaseCurrency,
-                    exchangeRates: calculatorViewModel.availableRates
-                )
+                route: .defaultBaseCurrency
             )
             .accessibilityHint("Set the default source currency for conversions")
 
@@ -111,14 +121,11 @@ struct SettingsView: View {
                 icon: "dollarsign.circle.fill",
                 iconColors: (Color.white, Color.green),
                 currentValue: settingsViewModel.defaultTargetCurrency,
-                destination: CurrencyPickerView(
-                    selectedCurrency: bindableSettingsViewModel.defaultTargetCurrency,
-                    exchangeRates: calculatorViewModel.availableRates
-                )
+                route: .defaultTargetCurrency
             )
             .accessibilityHint("Set the default target currency for conversions")
 
-            NavigationLink(destination: FavoriteCurrenciesView()) {
+            NavigationLink(value: SettingsRoute.favoriteCurrencies) {
                 Label("Favorite Currencies", systemImage: "star.circle.fill")
                     .symbolRenderingMode(.multicolor)
             }
@@ -133,7 +140,7 @@ struct SettingsView: View {
             settingsActionButton(
                 icon: "trash.circle.fill",
                 title: "Clear Cached Data",
-                action: { alertType = .clearCachedData }
+                action: settingsViewModel.clearCachedDataTapped
             )
             .accessibilityLabel("Clear cached data")
             .accessibilityHint("Removes all cached exchange rates and historical data")
@@ -142,7 +149,7 @@ struct SettingsView: View {
             settingsActionButton(
                 icon: "arrow.triangle.2.circlepath.circle.fill",
                 title: "Reset All Preferences",
-                action: { alertType = .resetPreferences }
+                action: settingsViewModel.resetPreferencesTapped
             )
             .accessibilityLabel("Reset all preferences")
             .accessibilityHint("Resets all settings to their default values")
@@ -193,12 +200,12 @@ struct SettingsView: View {
 
     private var toastOverlay: some View {
         Group {
-            if let toast = toastData {
+            if let toast = settingsViewModel.toast {
                 ToastView(message: toast.message, icon: toast.icon)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(.snappy, value: toastData != nil)
+        .animation(.snappy, value: settingsViewModel.toast != nil)
     }
 
     // MARK: - Private Views
@@ -209,9 +216,9 @@ struct SettingsView: View {
         icon: String,
         iconColors: (Color, Color),
         currentValue: String,
-        destination: some View
+        route: SettingsRoute
     ) -> some View {
-        NavigationLink(destination: destination) {
+        NavigationLink(value: route) {
             HStack {
                 Label(title: {
                     Text(title)
@@ -235,32 +242,6 @@ struct SettingsView: View {
         Button(role: .destructive, action: action) {
             Label(title, systemImage: icon)
                 .foregroundStyle(.red)
-        }
-    }
-
-    // MARK: - Helper Methods
-
-    private func handleAlertConfirmation(for alertType: AlertType) {
-        switch alertType {
-        case .clearCachedData:
-            Task {
-                await settingsViewModel.clearCachedData()
-                showToast(.cacheCleared)
-            }
-        case .resetPreferences:
-            settingsViewModel.resetSettingsToDefault()
-            showToast(.preferencesReset)
-        }
-    }
-
-    private func showToast(_ type: ToastType) {
-        toastData = ToastData(type: type)
-
-        toastDismissTask?.cancel()
-        toastDismissTask = Task {
-            try? await Task.sleep(for: .seconds(2))
-            guard !Task.isCancelled else { return }
-            toastData = nil
         }
     }
 }

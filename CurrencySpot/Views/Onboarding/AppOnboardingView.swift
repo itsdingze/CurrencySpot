@@ -8,10 +8,12 @@
 import SwiftUI
 
 struct OnBoardingCard: Identifiable {
-    var id: String = UUID().uuidString
     var symbol: String
     var title: String
     var subTitle: String
+
+    /// Stable across rebuilds (a stored UUID would change identity every init).
+    var id: String { "\(symbol)-\(title)" }
 }
 
 struct AppOnboardingView<Icon: View, Footer: View>: View {
@@ -36,13 +38,11 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
         self.cards = cards
         self.footer = footer()
         self.onContinue = onContinue
-
-        _animateCards = .init(initialValue: Array(repeating: false, count: self.cards.count))
     }
 
     @State private var animateIcon: Bool = false
     @State private var animateTitle: Bool = false
-    @State private var animateCards: [Bool]
+    @State private var animatedCardIDs: Set<String> = []
     @State private var animateFooter: Bool = false
 
     var body: some View {
@@ -59,7 +59,7 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
                         .blurSlide(animateTitle)
                         .accessibilityAddTraits(.isHeader)
 
-                    CardsView()
+                    cardsView
                 }
             }
             .scrollIndicators(.hidden)
@@ -106,10 +106,10 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
 
             do { try await Task.sleep(for: .seconds(0.2)) } catch { return }
 
-            for index in animateCards.indices {
+            for (index, card) in cards.enumerated() {
                 let delay = Double(index) * 0.1
                 await delayedAnimation(delay) {
-                    animateCards[index] = true
+                    animatedCardIDs.insert(card.id)
                 }
                 guard !Task.isCancelled else { return }
             }
@@ -120,56 +120,12 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
         }
     }
 
-    @ViewBuilder
-    func CardsView() -> some View {
+    private var cardsView: some View {
         VStack(alignment: .leading, spacing: 40) {
-            ForEach(cards.indices, id: \.self) { index in
-                let card = cards[index]
-
-                HStack(alignment: .center, spacing: 12) {
-                    Image(systemName: "circle")
-                        .opacity(0)
-                        .frame(width: 40)
-                        .overlay(
-                            Image(systemName: card.symbol)
-                                .font(.title)
-                                .foregroundStyle(Color.accentColor)
-                                .frame(width: 45)
-                                .accessibilityHidden(true)
-                        )
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(card.title)
-                            .font(.system(.headline, design: .rounded, weight: .semibold))
-                            .lineLimit(1)
-                            .accessibilityAddTraits(.isHeader)
-
-                        Text(card.subTitle)
-                            .font(.system(.subheadline, design: .rounded, weight: .regular))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(3)
-                    }
-                }
-                .blurSlide(animateCards[index])
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(card.title): \(card.subTitle)")
+            ForEach(cards) { card in
+                FeatureRow(symbol: card.symbol, title: card.title, subtitle: card.subTitle)
+                    .blurSlide(animatedCardIDs.contains(card.id))
             }
-        }
-    }
-
-    private func delayedAnimation(_ delay: Double, action: @escaping () -> Void) async {
-        guard delay > 0 else {
-            withAnimation(.smooth) { action() }
-            return
-        }
-
-        do {
-            try await Task.sleep(for: .seconds(delay))
-        } catch {
-            return
-        }
-        withAnimation(.smooth) {
-            action()
         }
     }
 }
@@ -185,7 +141,6 @@ extension View {
 }
 
 struct CurrencySpotOnboarding: View {
-    @Binding var showOnBoarding: Bool
     @Environment(SettingsViewModel.self) private var settingsViewModel
 
     var body: some View {
@@ -196,10 +151,10 @@ struct CurrencySpotOnboarding: View {
                     .resizable()
                     .frame(width: 80, height: 80)
                     .clipShape(RoundedRectangle(cornerRadius: 22))
-                    .overlay(
+                    .overlay {
                         RoundedRectangle(cornerRadius: 22)
                             .stroke(Color.gray.opacity(0.2), lineWidth: 1.5)
-                    )
+                    }
                     .padding(.top, 40)
             },
             cards: [
@@ -226,17 +181,14 @@ struct CurrencySpotOnboarding: View {
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 24)
             },
-            onContinue: {
-                showOnBoarding = false
-            }
+            onContinue: settingsViewModel.dismissOnboarding
         )
     }
 }
 
 #Preview {
-    @Previewable @State var showOnBoarding = true
     let container = DependencyContainer.preview()
 
-    CurrencySpotOnboarding(showOnBoarding: $showOnBoarding)
+    CurrencySpotOnboarding()
         .withDependencyContainer(container)
 }

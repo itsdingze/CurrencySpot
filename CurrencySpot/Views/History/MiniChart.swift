@@ -87,24 +87,17 @@ struct MiniChart: View {
                 y: .value("Rate", lastValue)
             )
             .symbol {
-                endpointSymbol
+                ChartPointMarker(
+                    color: direction.color,
+                    outerSize: endpointSize,
+                    innerSize: innerPointSize,
+                    backgroundColor: .background
+                )
             }
         }
     }
 
     // MARK: - Private Views
-
-    @ViewBuilder
-    private var endpointSymbol: some View {
-        ZStack {
-            Circle()
-                .fill(Color.background)
-                .frame(width: endpointSize, height: endpointSize)
-            Circle()
-                .fill(direction.color)
-                .frame(width: innerPointSize, height: innerPointSize)
-        }
-    }
 
     private var areaGradient: LinearGradient {
         LinearGradient(

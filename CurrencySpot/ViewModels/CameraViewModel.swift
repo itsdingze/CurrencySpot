@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import IdentifiedCollections
 import Observation
 import UIKit
 
@@ -25,7 +26,7 @@ final class CameraViewModel {
     // MARK: - UI State
 
     private(set) var authorization: CameraAuthorizationStatus = .notDetermined
-    private(set) var detectedItems: [DetectedItem] = []
+    private(set) var detectedItems: IdentifiedArrayOf<DetectedItem> = []
     private(set) var frozenImage: UIImage?
     private(set) var isScanning = true
     private(set) var isRecognizingStill = false
@@ -214,7 +215,7 @@ final class CameraViewModel {
     func updateRecognizedItems(_ items: [RecognizedTextItem]) {
         recognizedItems = items
         var foundRawPrice = false
-        detectedItems = items.compactMap { item in
+        detectedItems = IdentifiedArray(uniqueElements: items.compactMap { item in
             scanConversionUseCase.evaluate(
                 transcript: item.transcript,
                 baseCurrency: baseCurrency,
@@ -229,7 +230,7 @@ final class CameraViewModel {
                     conversion: effectiveConversion(conversion, for: item.id)
                 )
             }
-        }
+        })
         classifierFoundPrices = foundRawPrice
     }
 
@@ -250,7 +251,7 @@ final class CameraViewModel {
     /// Tapping an outline toggles its converted badge: pin it for numbers the
     /// classifier skipped, or dismiss it for ones it (or the user) pinned.
     func toggleConversion(for id: UUID) {
-        guard let item = detectedItems.first(where: { $0.id == id }) else { return }
+        guard let item = detectedItems[id: id] else { return }
         if item.conversion.isPrice {
             if manualPriceOverrides.contains(id) {
                 manualPriceOverrides.remove(id)
@@ -270,7 +271,7 @@ final class CameraViewModel {
     /// The detail sheet's escape hatch for misread or misclassified plates:
     /// uncovers the original text and dismisses the sheet.
     func hideConversion(for id: UUID) {
-        guard let item = detectedItems.first(where: { $0.id == id }), item.conversion.isPrice else { return }
+        guard let item = detectedItems[id: id], item.conversion.isPrice else { return }
         if manualPriceOverrides.contains(id) {
             manualPriceOverrides.remove(id)
         } else {
@@ -281,13 +282,13 @@ final class CameraViewModel {
     }
 
     func showBadgeDetail(for id: UUID) {
-        guard let item = detectedItems.first(where: { $0.id == id }), item.conversion.isPrice else { return }
+        guard let item = detectedItems[id: id], item.conversion.isPrice else { return }
         destination = .badgeDetail(item)
     }
 
     /// Resolves the live item for an open badge-detail sheet.
     func detectedItem(for id: UUID) -> DetectedItem? {
-        detectedItems.first { $0.id == id }
+        detectedItems[id: id]
     }
 
     // MARK: - Shared Rates for the Overlay UI

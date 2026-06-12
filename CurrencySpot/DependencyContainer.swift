@@ -144,12 +144,14 @@ final class DependencyContainer {
             chartDataPreparationUseCase: chartDataPreparationUseCase,
             trendDataUseCase: trendDataUseCase,
             appState: appState,
+            clock: clockService,
             logger: logger
         )
 
         settingsViewModel = SettingsViewModel(
             clearAllDataUseCase: clearAllDataUseCase,
             appState: appState,
+            clock: clockService,
             logger: logger
         )
 

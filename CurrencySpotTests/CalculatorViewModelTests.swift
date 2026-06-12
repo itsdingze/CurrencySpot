@@ -35,6 +35,16 @@ struct CalculatorViewModelTests {
         }
     }
 
+    /// Yields the main actor until the load lifecycle settles in a terminal case.
+    private func waitUntilSettled(_ viewModel: CalculatorViewModel) async {
+        await waitUntil {
+            switch viewModel.loadState {
+            case .loaded, .failed: true
+            case .idle, .loading: false
+            }
+        }
+    }
+
     // MARK: Initialization
 
     @Test("initializes with currencies from the injected defaults, falling back to USD/EUR")
@@ -42,7 +52,7 @@ struct CalculatorViewModelTests {
         let viewModel = try makeViewModel()
         #expect(viewModel.baseCurrency == "USD")
         #expect(viewModel.targetCurrency == "EUR")
-        #expect(viewModel.isLoading == true)
+        #expect(viewModel.loadState == .idle)
         #expect(viewModel.availableRates.isEmpty)
     }
 
@@ -144,13 +154,61 @@ struct CalculatorViewModelTests {
         ])
 
         await viewModel.checkIfShouldFetch()
-        await waitUntil { viewModel.isLoading == false }
+        await waitUntilSettled(viewModel)
 
         #expect(repository.fetchExchangeRatesCallCount == 1)
         #expect(viewModel.availableRates.contains { $0.currencyCode == "EUR" && $0.rate == 0.9 })
         #expect(viewModel.availableRates.contains { $0.currencyCode == "USD" && $0.rate == 1.0 })
         #expect(viewModel.lastUpdated != nil)
-        #expect(viewModel.errorMessage == nil)
+        guard case let .loaded(rates) = viewModel.loadState else {
+            Issue.record("expected .loaded, got \(viewModel.loadState)")
+            return
+        }
+        #expect(rates == viewModel.availableRates)
+    }
+
+    @Test("fetchExchangeRates transitions loading(previous:) → loaded", .timeLimit(.minutes(1)))
+    func fetchTransitionsThroughLoadingToLoaded() async throws {
+        let viewModel = try makeViewModel()
+        let fetched = [
+            ExchangeRateDataValue(currencyCode: "USD", rate: 1.0),
+            ExchangeRateDataValue(currencyCode: "EUR", rate: 0.9),
+        ]
+        repository.fetchExchangeRatesResult = .success(fetched)
+        appState.networkMonitor.isConnected = true
+        #expect(viewModel.loadState == .idle)
+
+        let fetchTask = Task { await viewModel.fetchExchangeRates() }
+        await waitUntil { viewModel.loadState.isLoading }
+
+        guard case let .loading(previous) = viewModel.loadState else {
+            Issue.record("expected .loading, got \(viewModel.loadState)")
+            return
+        }
+        #expect(previous == nil) // first load: nothing to keep on screen
+
+        await fetchTask.value
+        #expect(viewModel.loadState == .loaded(fetched))
+    }
+
+    @Test("a refetch keeps the previous rates in the loading phase", .timeLimit(.minutes(1)))
+    func refetchKeepsPreviousRatesWhileLoading() async throws {
+        let viewModel = try makeViewModel()
+        let initial = [ExchangeRateDataValue(currencyCode: "EUR", rate: 0.9)]
+        appState.networkMonitor.isConnected = true
+        repository.loadExchangeRatesResult = .success(initial)
+        await viewModel.checkIfShouldFetch()
+        try #require(viewModel.loadState == .loaded(initial))
+
+        let fetchTask = Task { await viewModel.fetchExchangeRates() }
+        await waitUntil { viewModel.loadState.isLoading }
+
+        guard case let .loading(previous) = viewModel.loadState else {
+            Issue.record("expected .loading, got \(viewModel.loadState)")
+            return
+        }
+        #expect(previous == initial)
+        await fetchTask.value
     }
 
     @Test("checkIfShouldFetch loads from cache when rates are fresh")
@@ -165,7 +223,7 @@ struct CalculatorViewModelTests {
         #expect(repository.fetchExchangeRatesCallCount == 0)
         #expect(viewModel.availableRates.count == 1)
         #expect(viewModel.availableRates.first?.rate == 0.88)
-        #expect(viewModel.isLoading == false)
+        #expect(viewModel.loadState == .loaded([ExchangeRateDataValue(currencyCode: "EUR", rate: 0.88)]))
         #expect(viewModel.isUsingMockData == false)
     }
 
@@ -178,12 +236,14 @@ struct CalculatorViewModelTests {
         repository.loadExchangeRatesResult = .success([ExchangeRateDataValue(currencyCode: "GBP", rate: 0.75)])
 
         await viewModel.checkIfShouldFetch()
-        await waitUntil { viewModel.isLoading == false }
+        await waitUntilSettled(viewModel)
 
         #expect(repository.fetchExchangeRatesCallCount == 1)
         #expect(viewModel.availableRates.count == 1)
         #expect(viewModel.availableRates.first?.currencyCode == "GBP")
         #expect(viewModel.isUsingMockData == false)
+        // The cache fallback succeeded, so the lifecycle ends loaded, not failed.
+        #expect(viewModel.loadState == .loaded([ExchangeRateDataValue(currencyCode: "GBP", rate: 0.75)]))
     }
 
     @Test("offline with no cached data falls back to mock data")
@@ -198,8 +258,11 @@ struct CalculatorViewModelTests {
         #expect(repository.fetchExchangeRatesCallCount == 0)
         #expect(viewModel.isUsingMockData == true)
         #expect(viewModel.availableRates.count == MockExchangeRates.rates.count)
-        #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage == nil)
+        guard case let .loaded(rates) = viewModel.loadState else {
+            Issue.record("expected .loaded mock data, got \(viewModel.loadState)")
+            return
+        }
+        #expect(rates.count == MockExchangeRates.rates.count)
     }
 
     @Test(
@@ -216,10 +279,13 @@ struct CalculatorViewModelTests {
         repository.loadExchangeRatesResult = .failure(.noCachedData)
 
         await viewModel.checkIfShouldFetch()
-        await waitUntil { viewModel.isLoading == false }
+        await waitUntilSettled(viewModel)
 
-        #expect(viewModel.isLoading == false)
-        #expect(viewModel.errorMessage != nil)
+        guard case let .failed(error, _) = viewModel.loadState else {
+            Issue.record("expected .failed, got \(viewModel.loadState)")
+            return
+        }
+        #expect(error == .networkError("stubbed fetch failure"))
         #expect(viewModel.availableRates.isEmpty)
         #expect(viewModel.isUsingMockData == false)
     }
@@ -266,12 +332,94 @@ struct CalculatorViewModelTests {
 
         #expect(viewModel.availableRates.isEmpty)
         #expect(viewModel.lastUpdated == nil)
-        #expect(viewModel.errorMessage == nil)
-        #expect(viewModel.isLoading == false)
+        #expect(viewModel.loadState == .loaded([]))
         #expect(viewModel.isUsingMockData == false)
         guard case .none = viewModel.retryState else {
             Issue.record("retryState should be .none after clearAllData, got \(viewModel.retryState)")
             return
         }
+    }
+
+    // MARK: Input intents
+
+    @Test("appendDigit replaces a leading zero and appends thereafter")
+    func appendDigitLeadingZero() throws {
+        let viewModel = try makeViewModel()
+        #expect(viewModel.inputAmountString == "0")
+
+        #expect(viewModel.appendDigit("0") == true)
+        #expect(viewModel.inputAmountString == "0") // 0 over 0 stays 0
+
+        #expect(viewModel.appendDigit("7") == true)
+        #expect(viewModel.inputAmountString == "7")
+
+        #expect(viewModel.appendDigit("5") == true)
+        #expect(viewModel.inputAmountString == "75")
+    }
+
+    @Test("appendDigit rejects input beyond the 15-digit maximum")
+    func appendDigitMaxLength() throws {
+        let viewModel = try makeViewModel()
+        viewModel.inputAmountString = String(repeating: "9", count: 15)
+
+        #expect(viewModel.appendDigit("1") == false)
+        #expect(viewModel.inputAmountString == String(repeating: "9", count: 15))
+    }
+
+    @Test("deleteLastDigit drops the last digit and bottoms out at zero")
+    func deleteLastDigitSemantics() throws {
+        let viewModel = try makeViewModel()
+        viewModel.inputAmountString = "123"
+
+        viewModel.deleteLastDigit()
+        #expect(viewModel.inputAmountString == "12")
+        viewModel.deleteLastDigit()
+        #expect(viewModel.inputAmountString == "1")
+        viewModel.deleteLastDigit()
+        #expect(viewModel.inputAmountString == "0")
+        viewModel.deleteLastDigit()
+        #expect(viewModel.inputAmountString == "0")
+    }
+
+    @Test("clearInput resets the amount to zero")
+    func clearInputResets() throws {
+        let viewModel = try makeViewModel()
+        viewModel.inputAmountString = "4200"
+
+        viewModel.clearInput()
+
+        #expect(viewModel.inputAmountString == "0")
+    }
+
+    // MARK: Currency pair intents
+
+    @Test("swapCurrencies exchanges base and target and publishes the new base")
+    func swapCurrenciesExchangesPair() throws {
+        let viewModel = try makeViewModel()
+        viewModel.baseCurrency = "USD"
+        viewModel.targetCurrency = "JPY"
+
+        viewModel.swapCurrencies()
+
+        #expect(viewModel.baseCurrency == "JPY")
+        #expect(viewModel.targetCurrency == "USD")
+        #expect(ratesStore.baseCurrency == "JPY")
+    }
+
+    // MARK: Destination
+
+    @Test("destination drives the currency picker sheet for either side")
+    func destinationTransitions() throws {
+        let viewModel = try makeViewModel()
+        #expect(viewModel.destination == nil)
+
+        viewModel.destination = .basePicker
+        #expect(viewModel.destination == .basePicker)
+
+        viewModel.destination = .targetPicker
+        #expect(viewModel.destination == .targetPicker)
+
+        viewModel.destination = nil
+        #expect(viewModel.destination == nil)
     }
 }

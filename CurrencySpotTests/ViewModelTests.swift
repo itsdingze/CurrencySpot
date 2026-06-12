@@ -31,8 +31,16 @@ struct ViewModelTests {
                 trendRepository: service,
                 historicalRateRepository: service
             ),
-            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))
+            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
+            clock: ImmediateClock()
         )
+    }
+
+    /// Yields the main actor until `condition` holds; tests guard hangs with `.timeLimit`.
+    private static func waitUntil(_ condition: () -> Bool) async {
+        while condition() == false {
+            await Task.yield()
+        }
     }
 
     @Suite("HistoryViewModel Tests")
@@ -70,9 +78,95 @@ struct ViewModelTests {
 
         @Test("Loading the current configuration populates displayed chart data")
         func loadPopulatesChartData() async {
-            #expect(viewModel.displayedChartDataPoints.isEmpty)
+            #expect(viewModel.chartData == .idle)
             await viewModel.loadCurrentConfigurationAndWait()
-            #expect(viewModel.displayedChartDataPoints.isEmpty == false)
+
+            guard case let .loaded(points) = viewModel.chartData else {
+                Issue.record("expected .loaded, got \(viewModel.chartData)")
+                return
+            }
+            #expect(points.isEmpty == false)
+            #expect(viewModel.displayedChartDataPoints == points)
+        }
+
+        @Test("selectTimeRange switches the range and triggers a load", .timeLimit(.minutes(1)))
+        func selectTimeRangeReloads() async {
+            #expect(viewModel.chartData == .idle)
+
+            viewModel.selectTimeRange(.oneMonth)
+            #expect(viewModel.selectedTimeRange == .oneMonth)
+
+            await ViewModelTests.waitUntil {
+                if case let .loaded(points) = viewModel.chartData { return !points.isEmpty }
+                return false
+            }
+        }
+
+        @Test("selectTimeRange with the current range is a no-op")
+        func selectTimeRangeSameValueNoOp() {
+            #expect(viewModel.selectedTimeRange == .threeMonths)
+            viewModel.selectTimeRange(.threeMonths)
+            // No load was triggered: the lifecycle is still untouched.
+            #expect(viewModel.chartData == .idle)
+        }
+
+        @Test("openHistory targets the picked currency against the shared base and resets the range", .timeLimit(.minutes(1)))
+        func openHistoryConfiguresPair() async {
+            viewModel.openHistory(for: "GBP")
+
+            #expect(viewModel.targetCurrency == "GBP")
+            #expect(viewModel.baseCurrency == "USD")
+            #expect(viewModel.selectedTimeRange == .threeMonths)
+
+            await ViewModelTests.waitUntil {
+                if case let .loaded(points) = viewModel.chartData { return !points.isEmpty }
+                return false
+            }
+        }
+
+        @Test("chart onboarding presents after the delayed check on first visit only")
+        func chartOnboardingPresentation() async {
+            #expect(viewModel.isChartOnboardingPresented == false)
+
+            await viewModel.presentChartOnboardingIfNeeded(hasSeenChartOnboarding: true)
+            #expect(viewModel.isChartOnboardingPresented == false)
+
+            await viewModel.presentChartOnboardingIfNeeded(hasSeenChartOnboarding: false)
+            #expect(viewModel.isChartOnboardingPresented == true)
+        }
+
+        @Test("displayedCurrencies excludes the base, adjusts rates, and reacts to search and sort", .timeLimit(.minutes(1)))
+        func displayedCurrenciesFilterAndSort() async {
+            let store = ExchangeRatesStore()
+            let viewModel = ViewModelTests.makeHistoryViewModel(ratesStore: store)
+
+            store.update(
+                rates: [
+                    ExchangeRateDataValue(currencyCode: "USD", rate: 1.0),
+                    ExchangeRateDataValue(currencyCode: "EUR", rate: 0.8),
+                    ExchangeRateDataValue(currencyCode: "GBP", rate: 0.5),
+                ],
+                lastUpdated: nil,
+                isUsingMockData: false
+            )
+            // Observation delivery hops through the main actor's queue.
+            await ViewModelTests.waitUntil { viewModel.displayedCurrencies.count == 2 }
+
+            // Base (USD) excluded; default sort is name A-Z ("British Pound" < "Euro").
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP", "EUR"])
+            #expect(viewModel.displayedCurrencies.first?.rate == 0.5) // 0.5 / 1.0
+
+            viewModel.selectSortOption(.rateHighToLow)
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP"])
+
+            viewModel.selectSortOption(.rateLowToHigh)
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP", "EUR"])
+
+            viewModel.searchText = "euro"
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR"])
+
+            viewModel.searchText = ""
+            #expect(viewModel.displayedCurrencies.count == 2)
         }
 
         @Test("Follows the calculator's base currency through the shared rates store")

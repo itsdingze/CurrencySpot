@@ -12,9 +12,19 @@ import SwiftUI
 @Observable
 @MainActor
 final class CalculatorViewModel {
+    /// Mutually exclusive presentations over the calculator.
+    enum Destination: Identifiable, Hashable {
+        case basePicker
+        case targetPicker
+
+        var id: Self { self }
+    }
+
     // MARK: - Input and Calculation Properties
 
     var inputAmountString = "0"
+
+    private let maxInputLength = 15
 
     /// Currently displayed rates. Published through the shared store (single writer);
     /// the setter exists for state resets and tests.
@@ -35,13 +45,14 @@ final class CalculatorViewModel {
 
     // MARK: - UI State Properties
 
-    var showCurrencyPicker = false
-    var isSelectingFromCurrency = true
+    var destination: Destination?
 
     // MARK: - Loading and Error State Properties
 
-    var isLoading = true
-    var errorMessage: String?
+    /// Lifecycle of the rate load. The rates themselves live in the shared
+    /// `ExchangeRatesStore`; this tracks the async phase the UI renders.
+    private(set) var loadState: Loadable<[ExchangeRateDataValue]> = .idle
+
     var retryState: RetryState = .none
 
     var lastUpdated: Date? { ratesStore.lastUpdated }
@@ -109,6 +120,33 @@ final class CalculatorViewModel {
         ratesStore.formattedLastUpdated
     }
 
+    // MARK: - Input Intents
+
+    /// Appends a digit to the implied-cents input string.
+    /// - Returns: `false` when the input is already at its maximum length.
+    @discardableResult
+    func appendDigit(_ digit: String) -> Bool {
+        guard inputAmountString.count < maxInputLength || inputAmountString == "0" else {
+            return false
+        }
+        inputAmountString = inputAmountString == "0" ? digit : inputAmountString + digit
+        return true
+    }
+
+    func clearInput() {
+        inputAmountString = "0"
+    }
+
+    func deleteLastDigit() {
+        inputAmountString = inputAmountString.count > 1 ? String(inputAmountString.dropLast()) : "0"
+    }
+
+    // MARK: - Currency Pair Intents
+
+    func swapCurrencies() {
+        (baseCurrency, targetCurrency) = (targetCurrency, baseCurrency)
+    }
+
     // MARK: - Public Interface Methods
 
     /// Checks if new data should be fetched and initiates fetch or loads cached data
@@ -141,8 +179,7 @@ final class CalculatorViewModel {
     /// Clears all data when cache is cleared from settings
     func clearAllData() {
         publish(rates: [], lastUpdated: nil, isUsingMockData: false)
-        errorMessage = nil
-        isLoading = false
+        loadState = .loaded([])
         retryState = .none
     }
 
@@ -175,8 +212,7 @@ final class CalculatorViewModel {
     /// Fetches fresh exchange rate data through the repository, which owns all
     /// post-fetch bookkeeping (persist, cache, last-fetch stamp).
     func fetchExchangeRates() async {
-        isLoading = true
-        errorMessage = nil
+        loadState = .loading(previous: loadState.value)
         publish(rates: availableRates, lastUpdated: lastUpdated, isUsingMockData: false)
         await updateRetryState()
 
@@ -186,45 +222,52 @@ final class CalculatorViewModel {
 
             // Reset retry state on success
             retryState = .none
+            loadState = .loaded(rates)
 
         } catch {
             // Update retry state based on current attempt
             await updateRetryState()
 
-            // Error handling with fallback to cache
-            if let appError = AppError.from(error) {
-                errorMessage = appError.message
-                appState.errorHandler.handle(appError)
+            // A nil AppError means cancellation — nothing to surface.
+            let fetchError = AppError.from(error)
+            if let fetchError {
+                appState.errorHandler.handle(fetchError)
             }
-            // If error is nil (cancellation), don't show error message
 
-            // Try to load from cache as fallback
-            await loadExchangeRates(showErrorOnFailure: false)
+            // Try to load from cache as fallback; if that also fails (online),
+            // the fetch error is what surfaces.
+            await loadExchangeRates(surfacing: fetchError, reportCacheError: false)
         }
-
-        isLoading = false
     }
 
-    /// Loads exchange rate data from local cache
-    /// - Parameter showErrorOnFailure: Whether to display error messages if loading fails
-    private func loadExchangeRates(showErrorOnFailure: Bool = true) async {
+    /// Loads exchange rate data from local cache.
+    /// - Parameters:
+    ///   - pendingError: A prior fetch error that should surface if the cache
+    ///     cannot provide a fallback (the fetch-failure path).
+    ///   - reportCacheError: Whether a cache failure itself is surfaced
+    ///     (the cache-first path).
+    private func loadExchangeRates(surfacing pendingError: AppError? = nil, reportCacheError: Bool = true) async {
         do {
             let rates = try await repository.loadExchangeRates()
             publish(rates: rates, lastUpdated: repository.lastFetchDate(), isUsingMockData: false)
-            isLoading = false
-            errorMessage = nil
+            loadState = .loaded(rates)
 
         } catch {
-            if showErrorOnFailure, let appError = AppError.from(error) {
-                errorMessage = appError.message
-                appState.errorHandler.handle(appError)
+            let cacheError = AppError.from(error)
+            if reportCacheError, let cacheError {
+                appState.errorHandler.handle(cacheError)
             }
 
             if appState.networkMonitor.isConnected {
                 // Online but no usable data: keep the error state. Calling back into
                 // a fetch here would re-enter the pipeline that just failed (and
                 // previously self-deadlocked awaiting its own fetchTask).
-                isLoading = false
+                if let surfacedError = pendingError ?? (reportCacheError ? cacheError : nil) {
+                    loadState = .failed(surfacedError, previous: loadState.value)
+                } else {
+                    // Cancellation: end the loading phase without an error.
+                    loadState = .loaded(availableRates)
+                }
             } else {
                 // Offline with no SwiftData - use mock data as fallback
                 useMockData()
@@ -236,9 +279,9 @@ final class CalculatorViewModel {
 
     /// Loads mock data for testing or offline use
     func useMockData() {
-        publish(rates: MockExchangeRates.getCurrencyRates(), lastUpdated: nil, isUsingMockData: true)
-        isLoading = false
-        errorMessage = nil
+        let rates = MockExchangeRates.getCurrencyRates()
+        publish(rates: rates, lastUpdated: nil, isUsingMockData: true)
+        loadState = .loaded(rates)
     }
 
     // MARK: - Rates Publishing

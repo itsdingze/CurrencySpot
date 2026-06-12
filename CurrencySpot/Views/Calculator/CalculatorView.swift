@@ -9,7 +9,7 @@ import SwiftUI
 
 struct CalculatorView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel
-    @Environment(AppState.self) var appState
+    @Environment(AppState.self) private var appState
 
     private var bindableViewModel: Bindable<CalculatorViewModel> {
         Bindable(calculatorViewModel)
@@ -32,17 +32,18 @@ struct CalculatorView: View {
                     )
                 }
 
-                if calculatorViewModel.isLoading {
+                switch calculatorViewModel.loadState {
+                case .idle, .loading:
                     ProgressView("Loading exchange rates...")
                         .accessibilityLabel("Loading exchange rates")
                         .accessibilityHint("Please wait while current exchange rates are being fetched")
                         .accessibilityAddTraits(.updatesFrequently)
-                } else if let error = calculatorViewModel.errorMessage {
-                    CalculatorErrorView(errorMessage: error)
+                case let .failed(error, _):
+                    CalculatorErrorView(errorMessage: error.message)
                         .accessibilityLabel("Error loading exchange rates")
-                        .accessibilityValue("Error: \(error)")
+                        .accessibilityValue("Error: \(error.message)")
                         .accessibilityHint("Exchange rates could not be loaded")
-                } else {
+                case .loaded:
                     mainContentView()
                 }
             }
@@ -58,22 +59,22 @@ struct CalculatorView: View {
                 calculatorViewModel.consumePendingConversion()
             }
         }
-        .sheet(isPresented: bindableViewModel.showCurrencyPicker) {
+        .sheet(item: bindableViewModel.destination) { destination in
             CurrencyPickerView(
-                selectedCurrency: calculatorViewModel.isSelectingFromCurrency ? bindableViewModel.baseCurrency : bindableViewModel.targetCurrency,
+                selectedCurrency: destination == .basePicker ? bindableViewModel.baseCurrency : bindableViewModel.targetCurrency,
                 exchangeRates: calculatorViewModel.availableRates
             )
         }
     }
 
-    func mainContentView() -> some View {
+    private func mainContentView() -> some View {
         VStack(spacing: 12) {
             CurrencyDisplayView()
                 .layoutPriority(1)
 
             RateInfoView()
 
-            NumberPadView(inputValue: bindableViewModel.inputAmountString)
+            NumberPadView()
                 .layoutPriority(2)
         }
         .safeAreaPadding()

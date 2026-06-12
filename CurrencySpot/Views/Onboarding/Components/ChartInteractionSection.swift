@@ -95,25 +95,17 @@ struct ChartInteractionSection: View {
                         y: .value("Rate", selectedDataPoint.rate)
                     )
                     .symbol {
-                        ZStack {
-                            Circle()
-                                .fill(Color(.systemBackground))
-                                .frame(width: 14, height: 14)
-
-                            Circle()
-                                .fill(Color.accentColor)
-                                .frame(width: 10, height: 10)
-                        }
+                        ChartPointMarker(color: .accentColor, outerSize: 14, innerSize: 10)
                     }
                 }
             }
             .chartXAxis(.hidden)
             .chartYAxis(.hidden)
             .chartYScale(domain: SampleChartData.chartYDomain)
-            .overlay(
+            .overlay {
                 animatedFingerOverlay(in: geometry)
                     .allowsHitTesting(false)
-            )
+            }
         }
         .frame(height: 180)
         .padding(.top, 80)

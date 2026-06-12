@@ -140,7 +140,8 @@ struct TrendDataUpdateTests {
     func trendConversionNonUSDBase() async {
         let viewModel = Self.makeFixtureBackedViewModel()
         await viewModel.initializeTrendData()
-        viewModel.baseCurrency = "EUR"
+        // Base changes flow through configure() (the navigation/intent pathway).
+        viewModel.configure(base: "EUR", target: viewModel.targetCurrency)
 
         guard let trend = viewModel.getTrendData(for: "GBP") else {
             Issue.record("Expected a GBP trend when base is EUR")
@@ -163,7 +164,8 @@ struct TrendDataUpdateTests {
     func trendConversionUSDInversion() async {
         let viewModel = Self.makeFixtureBackedViewModel()
         await viewModel.initializeTrendData()
-        viewModel.baseCurrency = "EUR"
+        // Base changes flow through configure() (the navigation/intent pathway).
+        viewModel.configure(base: "EUR", target: viewModel.targetCurrency)
 
         let usd = viewModel.getTrendData(for: "USD")
         guard let usd else {

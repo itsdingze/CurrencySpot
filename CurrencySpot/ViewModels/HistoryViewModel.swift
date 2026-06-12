@@ -13,10 +13,24 @@ import SwiftUI
 @Observable
 @MainActor
 final class HistoryViewModel {
-    // MARK: - Properties
+    // MARK: - Chart State
 
-    /// Currently displayed chart data points (filtered and sampled)
-    private(set) var displayedChartDataPoints: [ChartDataPoint] = []
+    /// Lifecycle of the displayed chart series. `.loading` keeps the previous
+    /// points so the chart never blanks during a range or currency change.
+    private(set) var chartData: Loadable<[ChartDataPoint]> = .idle
+
+    /// Currently displayed chart data points (filtered and sampled).
+    var displayedChartDataPoints: [ChartDataPoint] {
+        chartData.value ?? []
+    }
+
+    /// Statistics for the displayed points, recomputed only when they change
+    /// (previously recomputed per access, up to 9x per render).
+    private(set) var chartStatistics: ChartStatistics
+
+    /// Debounced loading indicator over the chart: appears only when a load
+    /// outlasts the debounce, and stays for a minimum duration so it never flickers.
+    private(set) var showLoadingOverlay = false
 
     /// Cache for date range calculation to avoid redundant operations
     private var _cachedDateRange: DateRange?
@@ -26,49 +40,39 @@ final class HistoryViewModel {
 
     /// Base currency (left side of conversion). Stays String at the UI edge;
     /// follows the calculator's selection via the shared rates store.
-    var baseCurrency = "USD" {
-        didSet {
-            if oldValue != baseCurrency, !isApplyingConfiguration {
-                loadDataForCurrentConfiguration()
-            }
-        }
-    }
+    private(set) var baseCurrency = "USD"
 
     /// Target currency (right side of conversion)
-    var targetCurrency = "EUR" {
-        didSet {
-            if oldValue != targetCurrency, !isApplyingConfiguration {
-                loadDataForCurrentConfiguration()
-            }
-        }
-    }
+    private(set) var targetCurrency = "EUR"
 
     /// Selected time range for historical data display
-    var selectedTimeRange: TimeRange = .threeMonths {
-        didSet {
-            if oldValue != selectedTimeRange {
-                // Clear date range cache when time range changes
-                _cachedDateRange = nil
-                _cachedTimeRange = nil
-                if !isApplyingConfiguration {
-                    loadDataForCurrentConfiguration()
-                }
-            }
-        }
-    }
+    private(set) var selectedTimeRange: TimeRange = .threeMonths
 
     // MARK: UI State Properties
-
-    /// Loading state for UI feedback
-    private(set) var isLoading = false
-
-    /// Error message for display in UI
-    private(set) var errorMessage: String?
 
     /// Toggle states for chart elements
     var showAverageLine = false
     var showHighestPoint = false
     var showLowestPoint = false
+
+    /// First-visit chart onboarding sheet (set after a short delay on entry).
+    var isChartOnboardingPresented = false
+
+    // MARK: Currency List State
+
+    /// Cached filter/sort result for the currency list, recomputed when the
+    /// search text, sort option, or shared rates change — not per body pass.
+    private(set) var displayedCurrencies: [CurrencyListEntry] = []
+
+    var searchText = "" {
+        didSet {
+            if oldValue != searchText {
+                updateDisplayedCurrencies()
+            }
+        }
+    }
+
+    private(set) var sortOption: CurrencySortOption = .nameAZ
 
     // MARK: - Trend Data Storage
 
@@ -89,18 +93,18 @@ final class HistoryViewModel {
     /// App-wide state (network reachability, error handling)
     private let appState: AppState
 
+    private let clock: ClockService
     private let logger: LoggerService
 
     /// Current async task for data fetching (for cancellation)
     private var fetchTask: Task<Void, Never>?
 
+    /// Drives the debounced show/hide of the loading overlay.
+    private var loadingOverlayTask: Task<Void, Never>?
+
     /// Monotonically increasing load generation. Only the task carrying the latest
     /// generation may publish state, clear `fetchTask`, or end the loading indicator.
     private var loadGeneration = 0
-
-    /// Suppresses the per-property didSet reloads while a navigation reconfiguration sets several
-    /// properties at once, so one configuration triggers a single load instead of one per property.
-    private var isApplyingConfiguration = false
 
     // MARK: - Initialization
 
@@ -112,6 +116,7 @@ final class HistoryViewModel {
         chartDataPreparationUseCase: ChartDataPreparationUseCase,
         trendDataUseCase: TrendDataUseCase,
         appState: AppState = .shared,
+        clock: ClockService = ContinuousClockService(),
         logger: LoggerService = OSLogLoggerService()
     ) {
         self.ratesStore = ratesStore
@@ -120,41 +125,80 @@ final class HistoryViewModel {
         self.chartDataPreparationUseCase = chartDataPreparationUseCase
         self.trendDataUseCase = trendDataUseCase
         self.appState = appState
+        self.clock = clock
         self.logger = logger
 
+        chartStatistics = chartDataPreparationUseCase.calculateStatistics(from: [])
         baseCurrency = ratesStore.baseCurrency
-        observeSharedBaseCurrency()
+        updateDisplayedCurrencies()
+        observeSharedRates()
     }
 
-    // MARK: - Shared Base Currency Sync
+    // MARK: - Shared Rates Sync
 
-    /// Follows the calculator's base selection through the shared store, replacing
-    /// the previous view-driven onAppear/onChange syncing.
-    private func observeSharedBaseCurrency() {
+    /// Follows the calculator's base selection and published rates through the
+    /// shared store, replacing the previous view-driven onAppear/onChange syncing.
+    private func observeSharedRates() {
         withObservationTracking {
             _ = ratesStore.baseCurrency
+            _ = ratesStore.rates
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                let newValue = ratesStore.baseCurrency
-                if baseCurrency != newValue {
-                    baseCurrency = newValue
-                }
-                observeSharedBaseCurrency()
+                sharedRatesChanged()
+                observeSharedRates()
             }
         }
     }
 
+    private func sharedRatesChanged() {
+        updateDisplayedCurrencies()
+
+        let newBase = ratesStore.baseCurrency
+        if baseCurrency != newBase {
+            baseCurrency = newBase
+            loadDataForCurrentConfiguration()
+        }
+    }
+
+    // MARK: - Intents
+
+    /// Switches the displayed time range and reloads once.
+    func selectTimeRange(_ timeRange: TimeRange) {
+        guard timeRange != selectedTimeRange else { return }
+        selectedTimeRange = timeRange
+        invalidateDateRangeCache()
+        loadDataForCurrentConfiguration()
+    }
+
+    /// Switches the currency-list sort order and recomputes the cached list.
+    func selectSortOption(_ option: CurrencySortOption) {
+        guard option != sortOption else { return }
+        sortOption = option
+        updateDisplayedCurrencies()
+    }
+
+    /// List-row tap: targets the picked currency against the shared base and
+    /// reloads exactly once.
+    func openHistory(for currencyCode: String) {
+        configure(base: ratesStore.baseCurrency, target: currencyCode)
+    }
+
+    /// Presents the chart onboarding sheet after a short delay on first entry.
+    /// Cancellation (leaving the screen within the delay) suppresses it.
+    func presentChartOnboardingIfNeeded(hasSeenChartOnboarding: Bool) async {
+        guard !hasSeenChartOnboarding else { return }
+        try? await clock.sleep(for: .seconds(0.5))
+        guard !Task.isCancelled else { return }
+        isChartOnboardingPresented = true
+    }
+
     // MARK: - Public Interface
 
-    /// Applies a new currency pair and reloads exactly once. Navigation uses this so that setting the
-    /// base and target currencies does not trigger a per-property load on top of the reset's load.
+    /// Applies a new currency pair and reloads exactly once.
     func configure(base: String, target: String) {
-        isApplyingConfiguration = true
         baseCurrency = base
         targetCurrency = target
-        isApplyingConfiguration = false
-
         resetDisplayedDataAndTimeRange()
     }
 
@@ -163,16 +207,11 @@ final class HistoryViewModel {
         // Cancel any existing fetch task to prevent race conditions
         fetchTask?.cancel()
         fetchTask = nil
-        isLoading = false
 
         // Reset data and UI state
-        displayedChartDataPoints = []
-        // Reset the time range without triggering its didSet load; the single load happens below.
-        isApplyingConfiguration = true
+        publishChart(.idle)
         selectedTimeRange = .threeMonths
-        isApplyingConfiguration = false
-        _cachedDateRange = nil
-        _cachedTimeRange = nil
+        invalidateDateRangeCache()
         showAverageLine = false
         showHighestPoint = false
         showLowestPoint = false
@@ -184,9 +223,8 @@ final class HistoryViewModel {
     /// Resets published state after the cross-cutting clear (ClearAllDataUseCase
     /// wipes the repository, including caches, before signalling this).
     func clearAllData() {
-        displayedChartDataPoints = []
+        publishChart(.idle)
         trendData = []
-        errorMessage = nil
     }
 
     // MARK: - Data Loading
@@ -218,13 +256,11 @@ final class HistoryViewModel {
         guard generation == loadGeneration, !Task.isCancelled else { return }
 
         guard let currency = CurrencyCode(targetCurrency) else {
-            displayedChartDataPoints = []
-            errorMessage = "No historical data available for this currency"
+            publishChart(.failed(.dataValidationError("No historical data available for this currency"), previous: nil))
             return
         }
 
-        isLoading = true
-        errorMessage = nil
+        publishChart(.loading(previous: chartData.value))
 
         let dateRange = calculateDateRange()
 
@@ -241,21 +277,11 @@ final class HistoryViewModel {
                 // Update UI with new data (pass the same dateRange used for fetching)
                 let dataPoints = await preparedChartDataPoints(for: currency, dateRange: dateRange)
                 guard generation == loadGeneration, !Task.isCancelled else { return }
-                displayedChartDataPoints = dataPoints
-
-                // Clear error if we successfully got data
-                errorMessage = nil
+                publishChart(.loaded(dataPoints))
             } else {
                 // No data available, but don't treat as error
                 logger.infoPrivate("No historical data available for \(currency)", category: .viewModel)
-                displayedChartDataPoints = []
-
-                // Set a user-friendly message
-                if !appState.networkMonitor.isConnected {
-                    errorMessage = "Offline - Historical data unavailable"
-                } else {
-                    errorMessage = "No historical data available for this currency"
-                }
+                publishChart(.loaded([]))
             }
 
             // Update trends if new data was fetched
@@ -269,15 +295,14 @@ final class HistoryViewModel {
                 trendData = trends
             }
 
-            // Clear task reference before setting loading to false to prevent race conditions
             fetchTask = nil
-            isLoading = false
 
         } catch is CancellationError {
             logger.debug("Fetch cancelled", category: .viewModel)
             guard generation == loadGeneration else { return }
             fetchTask = nil
-            isLoading = false
+            // End the loading phase without discarding what is on screen.
+            publishChart(.loaded(chartData.value ?? []))
         } catch {
             logger.error("Load failed: \(error.localizedDescription)", category: .viewModel)
 
@@ -293,26 +318,86 @@ final class HistoryViewModel {
                 logger.info("Using cached data as fallback", category: .viewModel)
                 let dataPoints = await preparedChartDataPoints(for: currency, dateRange: dateRange)
                 guard generation == loadGeneration, !Task.isCancelled else { return }
-                displayedChartDataPoints = dataPoints
-                errorMessage = "Using cached data (offline)"
+                publishChart(.loaded(dataPoints))
             } else {
-                // No cached data available
-                displayedChartDataPoints = []
-
-                // Use centralized error handling for consistency
-                if let appError = AppError.from(error) {
-                    errorMessage = appError.message
-                    appState.errorHandler.handle(appError)
-                } else {
-                    // Handle unexpected errors
-                    let genericError = AppError.networkError("Failed to load historical data")
-                    errorMessage = genericError.message
-                    appState.errorHandler.handle(genericError)
-                }
+                // No cached data available - use centralized error handling
+                let appError = AppError.from(error) ?? AppError.networkError("Failed to load historical data")
+                appState.errorHandler.handle(appError)
+                publishChart(.failed(appError, previous: nil))
             }
 
             fetchTask = nil
-            isLoading = false
+        }
+    }
+
+    // MARK: - Chart Publishing
+
+    /// Single funnel for chart-state changes: keeps the cached statistics in
+    /// sync and drives the debounced loading overlay on phase transitions.
+    private func publishChart(_ newState: Loadable<[ChartDataPoint]>) {
+        let wasLoading = chartData.isLoading
+        chartData = newState
+        chartStatistics = chartDataPreparationUseCase.calculateStatistics(from: newState.value ?? [])
+
+        if wasLoading != newState.isLoading {
+            loadingPhaseChanged(isLoading: newState.isLoading)
+        }
+    }
+
+    /// Debounce/minimum-duration state machine for the chart loading overlay,
+    /// previously inlined in ChartSection with raw `Task.sleep`.
+    private func loadingPhaseChanged(isLoading: Bool) {
+        loadingOverlayTask?.cancel()
+
+        if isLoading {
+            loadingOverlayTask = Task {
+                try? await clock.sleep(for: .seconds(0.05))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showLoadingOverlay = true
+                }
+            }
+        } else if showLoadingOverlay {
+            loadingOverlayTask = Task {
+                try? await clock.sleep(for: .seconds(0.3))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showLoadingOverlay = false
+                }
+            }
+        } else {
+            showLoadingOverlay = false
+        }
+    }
+
+    // MARK: - Currency List
+
+    private func updateDisplayedCurrencies() {
+        let base = ratesStore.baseCurrency
+        let rates = ratesStore.rates
+        let baseRate = rates.first { $0.currencyCode.rawValue == base }?.rate ?? 1.0
+
+        var entries = rates
+            .filter { $0.currencyCode.rawValue != base }
+            .map { rate in
+                CurrencyListEntry(
+                    code: rate.currencyCode.rawValue,
+                    name: CurrencyUtilities.shared.name(for: rate.currencyCode.rawValue),
+                    rate: rate.rate / baseRate
+                )
+            }
+
+        if !searchText.isEmpty {
+            entries = entries.filter { entry in
+                entry.code.localizedStandardContains(searchText) ||
+                    entry.name.localizedStandardContains(searchText)
+            }
+        }
+
+        displayedCurrencies = switch sortOption {
+        case .nameAZ: entries.sorted { $0.name < $1.name }
+        case .rateHighToLow: entries.sorted { $0.rate > $1.rate }
+        case .rateLowToHigh: entries.sorted { $0.rate < $1.rate }
         }
     }
 
@@ -340,6 +425,11 @@ final class HistoryViewModel {
     }
 
     // MARK: - Date Range Calculations
+
+    private func invalidateDateRangeCache() {
+        _cachedDateRange = nil
+        _cachedTimeRange = nil
+    }
 
     /// Calculates the date range based on selected time range with caching
     private func calculateDateRange() -> DateRange {
@@ -395,11 +485,6 @@ final class HistoryViewModel {
     }
 
     // MARK: - Computed Properties (Statistics)
-
-    /// Statistics calculated from current chart data
-    private var chartStatistics: ChartStatistics {
-        chartDataPreparationUseCase.calculateStatistics(from: displayedChartDataPoints)
-    }
 
     /// Current exchange rate (most recent data point)
     var currentRate: Double {

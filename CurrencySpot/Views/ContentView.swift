@@ -11,7 +11,6 @@ struct ContentView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel
     @Environment(SettingsViewModel.self) private var settingsViewModel
     @Environment(AppState.self) private var appState
-    @State private var showOnBoarding = false
 
     var body: some View {
         @Bindable var appState = appState
@@ -54,40 +53,43 @@ struct ContentView: View {
             .accessibilityInputLabels(["Settings", "Preferences", "Configuration"])
         }
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-        .alert(isPresented: Bindable(appState.errorHandler).showingError) {
-            errorAlert
+        .alert(
+            "Error: \(appState.errorHandler.currentError?.title ?? "")",
+            isPresented: errorAlertPresented,
+            presenting: appState.errorHandler.currentError
+        ) { _ in
+            Button("OK", action: appState.errorHandler.dismiss)
+        } message: { error in
+            Text("Error details: \(error.message)")
         }
         .onAppear {
-            if !settingsViewModel.hasSeenOnboarding {
-                showOnBoarding = true
-            }
+            settingsViewModel.presentOnboardingIfNeeded()
         }
-        .sheet(isPresented: $showOnBoarding) {
-            CurrencySpotOnboarding(showOnBoarding: $showOnBoarding)
+        .sheet(isPresented: onboardingPresented) {
+            CurrencySpotOnboarding()
                 .onDisappear {
-                    settingsViewModel.hasSeenOnboarding = true
+                    settingsViewModel.completeOnboarding()
                 }
         }
     }
 
-    // MARK: - Private Views
+    // MARK: - Presentation Bindings
 
-    private var errorAlert: Alert {
-        if let error = appState.errorHandler.currentError {
-            Alert(
-                title: Text("Error: \(error.title)"),
-                message: Text("Error details: \(error.message)"),
-                dismissButton: .default(Text("OK")) {
+    /// `currentError` is the single source of truth; system dismissal of the
+    /// alert routes through the handler's `dismiss()`.
+    private var errorAlertPresented: Binding<Bool> {
+        Binding(
+            get: { appState.errorHandler.currentError != nil },
+            set: { isActive in
+                if !isActive {
                     appState.errorHandler.dismiss()
                 }
-            )
-        } else {
-            Alert(
-                title: Text("Unknown error occurred"),
-                message: Text("Error details: An unknown error occurred"),
-                dismissButton: .default(Text("OK"))
-            )
-        }
+            }
+        )
+    }
+
+    private var onboardingPresented: Binding<Bool> {
+        Bindable(settingsViewModel).destination.isPresenting(.onboarding)
     }
 }
 

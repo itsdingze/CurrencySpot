@@ -5,6 +5,7 @@
 //  Created by Dingze Yu on 4/19/25.
 //
 
+import IdentifiedCollections
 import SwiftUI
 
 // MARK: - Supporting Types
@@ -50,6 +51,60 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
 @Observable
 @MainActor
 final class SettingsViewModel {
+    // MARK: - Navigation State
+
+    /// Mutually exclusive presentations driven by Settings (and the app's
+    /// first-launch onboarding, which this ViewModel owns via `hasSeenOnboarding`).
+    enum Destination: Equatable {
+        case alert(SettingsAlert)
+        case accentColorPicker
+        case onboarding
+    }
+
+    /// Destructive-action confirmations in Settings.
+    enum SettingsAlert: Identifiable {
+        case clearCachedData
+        case resetPreferences
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .clearCachedData: "Clear Cached Data"
+            case .resetPreferences: "Reset Preferences"
+            }
+        }
+
+        var message: String {
+            switch self {
+            case .clearCachedData:
+                "This will remove all cached exchange rates and historical data. You'll need to fetch new data when you next use the app."
+            case .resetPreferences:
+                "This will reset all settings to their default values. Your cached data will not be affected."
+            }
+        }
+
+        var confirmTitle: String {
+            switch self {
+            case .clearCachedData: "Clear"
+            case .resetPreferences: "Reset"
+            }
+        }
+    }
+
+    var destination: Destination?
+
+    /// The alert payload when `destination` is an alert (modern alert API shape).
+    var pendingAlert: SettingsAlert? {
+        if case let .alert(alert) = destination { return alert }
+        return nil
+    }
+
+    /// Transient confirmation toast, auto-dismissed after 2 seconds.
+    private(set) var toast: ToastData?
+
+    private var toastDismissTask: Task<Void, Never>?
+
     // MARK: - Appearance Properties
 
     var accentColor: AccentColorOption {
@@ -86,7 +141,9 @@ final class SettingsViewModel {
         }
     }
 
-    var favoriteCurrencies: [String] {
+    /// Keyed by the codes themselves so mutation is ID-based; the list is also
+    /// reordered positionally (drag handles), which IdentifiedArray supports.
+    private(set) var favoriteCurrencies: IdentifiedArray<String, String> {
         didSet {
             if oldValue != favoriteCurrencies {
                 saveSettings()
@@ -117,6 +174,7 @@ final class SettingsViewModel {
     private let userDefaults: UserDefaults
     private let clearAllDataUseCase: ClearAllDataUseCase
     private let appState: AppState
+    private let clock: ClockService
     private let logger: LoggerService
 
     // MARK: - Constants
@@ -139,11 +197,13 @@ final class SettingsViewModel {
         clearAllDataUseCase: ClearAllDataUseCase,
         appState: AppState = .shared,
         userDefaults: UserDefaults = .standard,
+        clock: ClockService = ContinuousClockService(),
         logger: LoggerService = OSLogLoggerService()
     ) {
         self.clearAllDataUseCase = clearAllDataUseCase
         self.appState = appState
         self.userDefaults = userDefaults
+        self.clock = clock
         self.logger = logger
 
         accentColor = userDefaults.string(forKey: UserDefaultsKeys.accentColor)
@@ -154,9 +214,79 @@ final class SettingsViewModel {
 
         defaultBaseCurrency = userDefaults.string(forKey: UserDefaultsKeys.defaultBaseCurrency) ?? DefaultValues.baseCurrency
         defaultTargetCurrency = userDefaults.string(forKey: UserDefaultsKeys.defaultTargetCurrency) ?? DefaultValues.targetCurrency
-        favoriteCurrencies = userDefaults.stringArray(forKey: UserDefaultsKeys.favoriteCurrencies) ?? DefaultValues.favoriteCurrencies
+        favoriteCurrencies = Self.identifiedCurrencies(
+            userDefaults.stringArray(forKey: UserDefaultsKeys.favoriteCurrencies) ?? DefaultValues.favoriteCurrencies
+        )
         hasSeenOnboarding = userDefaults.bool(forKey: UserDefaultsKeys.hasSeenOnboarding)
         hasSeenChartOnboarding = userDefaults.bool(forKey: UserDefaultsKeys.hasSeenChartOnboarding)
+    }
+
+    /// Builds the favorites collection dropping duplicates (old persisted data
+    /// may contain them; `init(uniqueElements:)` would trap instead).
+    private static func identifiedCurrencies(_ codes: [String]) -> IdentifiedArray<String, String> {
+        var array = IdentifiedArray<String, String>(id: \.self)
+        for code in codes {
+            array.append(code)
+        }
+        return array
+    }
+
+    // MARK: - Presentation Intents
+
+    func clearCachedDataTapped() {
+        destination = .alert(.clearCachedData)
+    }
+
+    func resetPreferencesTapped() {
+        destination = .alert(.resetPreferences)
+    }
+
+    func accentColorTapped() {
+        destination = .accentColorPicker
+    }
+
+    /// Confirms the presented destructive alert and shows the matching toast.
+    func confirmAlert(_ alert: SettingsAlert) {
+        switch alert {
+        case .clearCachedData:
+            Task {
+                await clearCachedData()
+                showToast(.cacheCleared)
+            }
+        case .resetPreferences:
+            resetSettingsToDefault()
+            showToast(.preferencesReset)
+        }
+    }
+
+    private func showToast(_ type: ToastType) {
+        toast = ToastData(type: type)
+
+        toastDismissTask?.cancel()
+        toastDismissTask = Task { [clock] in
+            try? await clock.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            toast = nil
+        }
+    }
+
+    // MARK: - Onboarding Intents
+
+    /// First-launch onboarding, presented from the app root.
+    func presentOnboardingIfNeeded() {
+        guard !hasSeenOnboarding else { return }
+        destination = .onboarding
+    }
+
+    func dismissOnboarding() {
+        if destination == .onboarding {
+            destination = nil
+        }
+    }
+
+    /// Marks onboarding as seen once its sheet leaves the screen.
+    func completeOnboarding() {
+        hasSeenOnboarding = true
     }
 
     // MARK: - Public Settings Methods
@@ -167,7 +297,7 @@ final class SettingsViewModel {
         userDefaults.set(appearanceMode.rawValue, forKey: UserDefaultsKeys.appearanceMode)
         userDefaults.set(defaultBaseCurrency, forKey: UserDefaultsKeys.defaultBaseCurrency)
         userDefaults.set(defaultTargetCurrency, forKey: UserDefaultsKeys.defaultTargetCurrency)
-        userDefaults.set(favoriteCurrencies, forKey: UserDefaultsKeys.favoriteCurrencies)
+        userDefaults.set(favoriteCurrencies.elements, forKey: UserDefaultsKeys.favoriteCurrencies)
         userDefaults.set(hasSeenOnboarding, forKey: UserDefaultsKeys.hasSeenOnboarding)
         userDefaults.set(hasSeenChartOnboarding, forKey: UserDefaultsKeys.hasSeenChartOnboarding)
     }
@@ -178,7 +308,7 @@ final class SettingsViewModel {
         appearanceMode = DefaultValues.appearanceMode
         defaultBaseCurrency = DefaultValues.baseCurrency
         defaultTargetCurrency = DefaultValues.targetCurrency
-        favoriteCurrencies = DefaultValues.favoriteCurrencies
+        favoriteCurrencies = Self.identifiedCurrencies(DefaultValues.favoriteCurrencies)
         hasSeenOnboarding = DefaultValues.hasSeenOnboarding
         hasSeenChartOnboarding = DefaultValues.hasSeenChartOnboarding
 
@@ -213,14 +343,11 @@ final class SettingsViewModel {
         // Validate currency code
         guard CurrencyUtilities.shared.isValidCode(currency) else { return false }
 
-        // Check if already in favorites - use more efficient contains check
-        guard !favoriteCurrencies.contains(currency) else { return false }
-
-        // Add to favorites
-        favoriteCurrencies.append(currency)
-        return true
+        // append(_:) is a no-op when the ID is already present.
+        let (inserted, _) = favoriteCurrencies.append(currency)
+        return inserted
     }
-    
+
     /// Move currencies within the favorites list
     /// - Parameters:
     ///   - from: The offsets to move from
@@ -234,8 +361,6 @@ final class SettingsViewModel {
     /// - Returns: True if the currency was removed, false if it wasn't in favorites
     @discardableResult
     func removeFromFavorites(_ currency: String) -> Bool {
-        let initialCount = favoriteCurrencies.count
-        favoriteCurrencies.removeAll { $0 == currency }
-        return favoriteCurrencies.count < initialCount
+        favoriteCurrencies.remove(id: currency) != nil
     }
 }

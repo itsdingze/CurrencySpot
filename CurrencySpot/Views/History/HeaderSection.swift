@@ -8,8 +8,7 @@
 import SwiftUI
 
 struct HeaderSection: View {
-    @Environment(HistoryViewModel.self) var historyViewModel: HistoryViewModel
-    @Environment(CalculatorViewModel.self) var calculatorViewModel: CalculatorViewModel
+    @Environment(HistoryViewModel.self) private var historyViewModel: HistoryViewModel
     @Binding var isChartSelectionActive: Bool
 
     var body: some View {
@@ -17,7 +16,8 @@ struct HeaderSection: View {
             currentRateView
 
             TimeRangePicker(
-                selectedTimeRange: Bindable(historyViewModel).selectedTimeRange
+                selectedTimeRange: historyViewModel.selectedTimeRange,
+                onSelect: historyViewModel.selectTimeRange
             )
             .opacity(isChartSelectionActive ? 0 : 1)
         }
@@ -107,14 +107,15 @@ struct HeaderSection: View {
 // MARK: - Time Range Picker
 
 struct TimeRangePicker: View {
-    @Binding var selectedTimeRange: TimeRange
+    let selectedTimeRange: TimeRange
+    let onSelect: (TimeRange) -> Void
     @Namespace private var animation
 
     var body: some View {
         HStack(spacing: 0) {
             ForEach(TimeRange.allCases, id: \.self) { timeRange in
                 Button(action: {
-                    selectedTimeRange = timeRange
+                    onSelect(timeRange)
                 }) {
                     Text(timeRange.rawValue)
                         .font(.system(.headline, design: .rounded, weight: selectedTimeRange == timeRange ? .semibold : .regular))

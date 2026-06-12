@@ -49,18 +49,9 @@ struct CurrencyPairControl: View {
                 Text(caption)
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(Color.textSecondary)
-                
-                // This applies the same width to all buttons because font is not monospaced.
-                ZStack(alignment: .center) {
-                    Text("WWI")
-                        .font(.system(.headline, design: .rounded, weight: .bold))
-                        .foregroundStyle(.clear)
-                    
-                    Text(code)
-                        .font(.system(.headline, design: .rounded, weight: .bold))
-                        .foregroundStyle(Color.textPrimary)
-                        .contentTransition(.numericText())
-                }
+
+                FixedWidthCurrencyLabel(code: code)
+                    .foregroundStyle(Color.textPrimary)
             }
         }
         .padding(.horizontal, 8)

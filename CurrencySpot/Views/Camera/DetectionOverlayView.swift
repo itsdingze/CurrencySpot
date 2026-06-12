@@ -186,7 +186,7 @@ private struct ConvertedPlate: View {
             .padding(.vertical, 2)
             .frame(minWidth: boxSize.width + 8, minHeight: boxSize.height + 6)
             .background(.ultraThinMaterial, in: .rect(cornerRadius: cornerRadius))
-            .overlay(RoundedRectangle(cornerRadius: cornerRadius).stroke(.white.opacity(0.25), lineWidth: 0.5))
+            .overlay { RoundedRectangle(cornerRadius: cornerRadius).stroke(.white.opacity(0.25), lineWidth: 0.5) }
             .shadow(color: .black.opacity(dimmed ? 0 : 0.15), radius: 3, y: 1)
             .accessibilityLabel("Converted price \(amount.formatted(.currency(code: currencyCode)))")
     }

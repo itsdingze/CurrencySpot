@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FavoriteCurrenciesView: View {
-    @Environment(SettingsViewModel.self) var viewModel: SettingsViewModel
+    @Environment(SettingsViewModel.self) private var viewModel: SettingsViewModel
     @State private var showingAddSheet = false
     @State private var editMode: EditMode = .inactive
 
@@ -38,7 +38,7 @@ struct FavoriteCurrenciesView: View {
         }
         .navigationTitle("Favorite Currencies")
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
                     showingAddSheet = true
                 }) {
@@ -46,7 +46,7 @@ struct FavoriteCurrenciesView: View {
                 }
             }
 
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
                 EditButton()
             }
         }
@@ -58,12 +58,12 @@ struct FavoriteCurrenciesView: View {
 }
 
 struct AddCurrencyView: View {
-    @Environment(SettingsViewModel.self) var viewModel: SettingsViewModel
+    @Environment(SettingsViewModel.self) private var viewModel: SettingsViewModel
     @Binding var isPresented: Bool
-    @Environment(CalculatorViewModel.self) var calculatorViewModel: CalculatorViewModel
+    @Environment(CalculatorViewModel.self) private var calculatorViewModel: CalculatorViewModel
     @State private var searchText = ""
 
-    var filteredCurrencies: [ExchangeRateDataValue] {
+    private var filteredCurrencies: [ExchangeRateDataValue] {
         let favorites = viewModel.favoriteCurrencies
 
         let available = calculatorViewModel.availableRates.filter { !favorites.contains($0.currencyCode.rawValue) }
@@ -72,8 +72,8 @@ struct AddCurrencyView: View {
             return available.sorted { $0.currencyCode < $1.currencyCode }
         } else {
             return available.filter { currency in
-                currency.currencyCode.rawValue.localizedCaseInsensitiveContains(searchText) ||
-                    CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue).localizedCaseInsensitiveContains(searchText)
+                currency.currencyCode.rawValue.localizedStandardContains(searchText) ||
+                    CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue).localizedStandardContains(searchText)
             }
         }
     }
@@ -81,55 +81,27 @@ struct AddCurrencyView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                // Search bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
-
-                    TextField("Search currency code or name", text: $searchText)
-                        .disableAutocorrection(true)
-
-                    if !searchText.isEmpty {
-                        Button(action: {
-                            searchText = ""
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                .padding(10)
-                .background(Color.tertiaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(.horizontal)
+                SearchField(prompt: "Search currency code or name", text: $searchText)
+                    .padding(.horizontal)
 
                 List {
                     ForEach(filteredCurrencies, id: \.currencyCode) { currency in
-                        Button(action: {
-                            viewModel.addToFavorites(currency.currencyCode.rawValue)
-                            isPresented = false
-                        }) {
-                            HStack {
-                                Text(currency.currencyCode.rawValue)
-                                    .font(.system(.headline, design: .rounded))
-                                    .fontWeight(.medium)
-
-                                Spacer()
-
-                                Text(CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue))
-                                    .font(.system(.subheadline, design: .rounded))
-                                    .foregroundStyle(.secondary)
+                        CurrencyRowButton(
+                            code: currency.currencyCode.rawValue,
+                            name: CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue),
+                            action: {
+                                viewModel.addToFavorites(currency.currencyCode.rawValue)
+                                isPresented = false
                             }
-                            .padding(.vertical, 4)
-                        }
+                        )
                     }
                 }
                 .listStyle(.plain)
             }
             .navigationTitle("Add Currency")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") {
                         isPresented = false
                     }

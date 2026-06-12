@@ -207,36 +207,21 @@ struct ChartOnboardingView: View {
     }
 
     private func runStagedAnimations() async {
-        await executeAnimationAfterDelay(0.55) {
+        await delayedAnimation(0.55) {
             shouldAnimateTitle = true
         }
         guard !Task.isCancelled else { return }
 
-        await executeAnimationAfterDelay(0.2) {
+        await delayedAnimation(0.2) {
             shouldAnimateContent = true
         }
         guard !Task.isCancelled else { return }
 
-        await executeAnimationAfterDelay(0.2) {
+        await delayedAnimation(0.2) {
             shouldAnimateFooter = true
         }
     }
 
-    private func executeAnimationAfterDelay(_ delay: Double, action: @escaping () -> Void) async {
-        guard delay > 0 else {
-            withAnimation(.smooth) { action() }
-            return
-        }
-
-        do {
-            try await Task.sleep(for: .seconds(delay))
-        } catch {
-            return
-        }
-        withAnimation(.smooth) {
-            action()
-        }
-    }
 }
 
 #Preview {

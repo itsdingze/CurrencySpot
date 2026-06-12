@@ -50,12 +50,10 @@ struct CurrencyDisplayView: View {
     // MARK: - Private Methods
 
     private func selectSourceCurrency() {
-        calculatorViewModel.isSelectingFromCurrency = true
-        calculatorViewModel.showCurrencyPicker = true
+        calculatorViewModel.destination = .basePicker
     }
 
     private func selectTargetCurrency() {
-        calculatorViewModel.isSelectingFromCurrency = false
-        calculatorViewModel.showCurrencyPicker = true
+        calculatorViewModel.destination = .targetPicker
     }
 }

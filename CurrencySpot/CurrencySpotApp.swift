@@ -22,7 +22,7 @@ struct CurrencySpotApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .accentColor(dependencyContainer.settingsViewModel.accentColor.color)
+                .tint(dependencyContainer.settingsViewModel.accentColor.color)
                 .preferredColorScheme(getPreferredColorScheme())
                 .withDependencyContainer(dependencyContainer)
                 .task {

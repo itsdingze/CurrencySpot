@@ -8,11 +8,9 @@
 import SwiftUI
 
 struct CurrencyHistoryView: View {
-    @Environment(HistoryViewModel.self) var viewModel: HistoryViewModel
-    @Environment(CalculatorViewModel.self) var calculatorViewModel: CalculatorViewModel
-    @Environment(SettingsViewModel.self) var settingsViewModel: SettingsViewModel
+    @Environment(HistoryViewModel.self) private var viewModel: HistoryViewModel
+    @Environment(SettingsViewModel.self) private var settingsViewModel: SettingsViewModel
     @State private var isChartSelectionActive: Bool = false
-    @State private var showChartOnboarding = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -30,14 +28,14 @@ struct CurrencyHistoryView: View {
         }
         .environment(viewModel)
         .safeAreaPadding()
-        .sheet(isPresented: $showChartOnboarding) {
-            ChartOnboardingView(showOnboarding: $showChartOnboarding)
+        .sheet(isPresented: Bindable(viewModel).isChartOnboardingPresented) {
+            ChartOnboardingView(showOnboarding: Bindable(viewModel).isChartOnboardingPresented)
         }
         .task {
             // Show chart onboarding the first time the user enters the chart view.
-            guard !settingsViewModel.hasSeenChartOnboarding else { return }
-            do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
-            showChartOnboarding = true
+            await viewModel.presentChartOnboardingIfNeeded(
+                hasSeenChartOnboarding: settingsViewModel.hasSeenChartOnboarding
+            )
         }
     }
 

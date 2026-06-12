@@ -4,7 +4,6 @@ import SwiftUI
 
 struct AccentColorPickerSheet: View {
     @Environment(SettingsViewModel.self) private var settingsViewModel: SettingsViewModel
-    @State private var showingColorSheet = false
 
     private let colorButtonSize: CGFloat = 24
     private let rainbowColors: [Color] = [.red, .orange, .yellow, .green, .blue, .indigo, .purple, .red]
@@ -15,7 +14,7 @@ struct AccentColorPickerSheet: View {
             Spacer()
             colorPreviewButton
         }
-        .sheet(isPresented: $showingColorSheet) {
+        .sheet(isPresented: Bindable(settingsViewModel).destination.isPresenting(.accentColorPicker)) {
             if #available(iOS 26, *){
                 DynamicSheet(animation: .snappy) {
                     ColorCustomizationSheet(
@@ -52,7 +51,7 @@ struct AccentColorPickerSheet: View {
 
     @ViewBuilder
     private var colorPreviewButton: some View {
-        Button(action: { showingColorSheet = true }) {
+        Button(action: settingsViewModel.accentColorTapped) {
             Circle()
                 .fill(settingsViewModel.accentColor.color)
                 .frame(width: colorButtonSize, height: colorButtonSize)
@@ -105,7 +104,7 @@ struct ColorCustomizationSheet: View {
                 }
                 .padding()
                 .navigationTitle("Accent Color")
-                .navigationBarTitleDisplayMode(.inline)
+                .toolbarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") { dismiss() }

@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct CalculatorErrorView: View {
-    @Environment(CalculatorViewModel.self) var calculatorViewModel: CalculatorViewModel
-    @Environment(AppState.self) var appState: AppState
+    @Environment(CalculatorViewModel.self) private var calculatorViewModel: CalculatorViewModel
+    @Environment(AppState.self) private var appState: AppState
     var errorMessage: String?
 
     var body: some View {

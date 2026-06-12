@@ -10,23 +10,23 @@ import SwiftUI
 struct CurrencyPickerView: View {
     @Binding var selectedCurrency: String
     var exchangeRates: [ExchangeRateDataValue] // ← Updated to use value type
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
 
-    var favoriteCurrencies: [String] {
+    private var favoriteCurrencies: [String] {
         if let favorites = UserDefaults.standard.stringArray(forKey: UserDefaultsKeys.favoriteCurrencies) {
             return favorites
         }
         return ["USD", "EUR", "GBP", "JPY", "CNY", "CAD", "AUD"]
     }
 
-    var filteredCurrencies: [ExchangeRateDataValue] {
+    private var filteredCurrencies: [ExchangeRateDataValue] {
         if searchText.isEmpty {
             exchangeRates.sorted { $0.currencyCode < $1.currencyCode }
         } else {
             exchangeRates.filter { currency in
-                currency.currencyCode.rawValue.localizedCaseInsensitiveContains(searchText) ||
-                    CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue).localizedCaseInsensitiveContains(searchText)
+                currency.currencyCode.rawValue.localizedStandardContains(searchText) ||
+                    CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue).localizedStandardContains(searchText)
             }
         }
     }
@@ -34,34 +34,9 @@ struct CurrencyPickerView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                // Custom search bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(Color.textSecondary)
-
-                    TextField("Search currency code or name", text: $searchText)
-                        .disableAutocorrection(true)
-                        .accessibilityLabel("Search currencies")
-                        .accessibilityHint("Enter currency code or name to filter the list")
-                        .accessibilityInputLabels(["Search", "Filter", "Find currency"])
-
-                    if !searchText.isEmpty {
-                        Button(action: {
-                            searchText = ""
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(Color.textSecondary)
-                        }
-                        .accessibilityLabel("Clear search")
-                        .accessibilityHint("Clears the search text")
-                        .accessibilityInputLabels(["Clear", "Reset search"])
-                    }
-                }
-                .padding(10)
-                .background(Color.tertiaryBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(.horizontal)
-                .padding(.top, 8)
+                SearchField(prompt: "Search currency code or name", text: $searchText)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
 
                 // Quick access to common currencies
                 if searchText.isEmpty {
@@ -96,29 +71,15 @@ struct CurrencyPickerView: View {
 
                 List {
                     ForEach(filteredCurrencies, id: \.currencyCode) { currency in
-                        Button(action: {
-                            selectedCurrency = currency.currencyCode.rawValue
-                            dismiss()
-                        }) {
-                            HStack {
-                                Text(currency.currencyCode.rawValue)
-                                    .font(.system(.headline, design: .rounded))
-                                    .fontWeight(.medium)
-
-                                Spacer()
-
-                                Text(CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue))
-                                    .font(.system(.subheadline, design: .rounded))
-                                    .foregroundStyle(Color.textSecondary)
-
-                                if selectedCurrency == currency.currencyCode.rawValue {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(Color.accentColor)
-                                        .accessibilityHidden(true)
-                                }
+                        CurrencyRowButton(
+                            code: currency.currencyCode.rawValue,
+                            name: CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue),
+                            isSelected: selectedCurrency == currency.currencyCode.rawValue,
+                            action: {
+                                selectedCurrency = currency.currencyCode.rawValue
+                                dismiss()
                             }
-                            .padding(.vertical, 4)
-                        }
+                        )
                         .accessibilityLabel("\(currency.currencyCode.rawValue), \(CurrencyUtilities.shared.name(for: currency.currencyCode.rawValue))")
                         .accessibilityHint("Selects \(currency.currencyCode.rawValue) as currency")
                         .accessibilityValue(currency.rate.toStringMax4Decimals)
@@ -129,9 +90,9 @@ struct CurrencyPickerView: View {
                 .listStyle(.plain)
             }
             .navigationTitle("Select Currency")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
                         .accessibilityLabel("Done selecting currency")
                         .accessibilityHint("Closes the currency selection screen")

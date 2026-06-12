@@ -17,13 +17,13 @@ struct FeatureRow: View {
             Image(systemName: "circle")
                 .opacity(0)
                 .frame(width: 40)
-                .overlay(
+                .overlay {
                     Image(systemName: symbol)
                         .font(.title)
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 45)
                         .accessibilityHidden(true)
-                )
+                }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)

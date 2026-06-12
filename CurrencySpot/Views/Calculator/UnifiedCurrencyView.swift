@@ -157,16 +157,7 @@ struct UnifiedCurrencyView: View {
     private var currencyButton: some View {
         Button(action: onPress) {
             HStack {
-                // This applies the same width to all buttons because font is not monospaced.
-                ZStack(alignment: .center) {
-                    Text("WWI")
-                        .font(.system(.headline, design: .rounded, weight: .bold))
-                        .foregroundStyle(.clear)
-
-                    Text(currencyCode)
-                        .font(.system(.headline, design: .rounded, weight: .bold))
-                        .contentTransition(.numericText())
-                }
+                FixedWidthCurrencyLabel(code: currencyCode)
 
                 Image(systemName: "chevron.down")
                     .font(.system(.caption, design: .rounded))

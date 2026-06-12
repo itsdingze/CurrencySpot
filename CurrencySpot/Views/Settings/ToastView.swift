@@ -24,11 +24,7 @@ struct ToastView: View {
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.secondaryBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(lineWidth: 2)
-                        .fill(Color.background)
-                )
+                .stroke(Color.background, lineWidth: 2)
         )
         .frame(maxHeight: .infinity, alignment: .top)
     }

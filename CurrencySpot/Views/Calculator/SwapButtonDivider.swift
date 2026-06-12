@@ -69,7 +69,7 @@ struct SwapButtonDivider: View {
     private func performSwap() {
         withAnimation(.bouncy(duration: flipDuration)) {
             isFlipped.toggle()
-            swap(&viewModel.baseCurrency, &viewModel.targetCurrency)
+            viewModel.swapCurrencies()
         }
     }
 }

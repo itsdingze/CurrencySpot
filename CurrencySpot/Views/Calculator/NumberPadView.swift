@@ -89,8 +89,7 @@ private enum NumberPadButton: Identifiable, Equatable {
 }
 
 struct NumberPadView: View {
-    @Binding var inputValue: String
-    let maxInputLength: Int = 15
+    @Environment(CalculatorViewModel.self) private var calculatorViewModel
 
     @State private var buttonPressed = false
     @State private var maxLengthReached = false
@@ -109,9 +108,9 @@ struct NumberPadView: View {
 
     var body: some View {
         VStack(spacing: rowSpacing) {
-            ForEach(Array(buttonLayout.enumerated()), id: \.offset) { _, row in
+            ForEach(buttonLayout.indices, id: \.self) { rowIndex in
                 HStack(spacing: buttonSpacing) {
-                    ForEach(row) { button in
+                    ForEach(buttonLayout[rowIndex]) { button in
                         numberPadButton(button)
                     }
                 }
@@ -147,39 +146,22 @@ struct NumberPadView: View {
 
     // MARK: - Private Methods
 
+    /// Digit-entry rules live on the ViewModel; the view only triggers the
+    /// haptic matching the outcome.
     private func buttonTapped(_ button: NumberPadButton) {
         switch button {
         case let .number(value):
-            handleNumberInput(value)
+            if calculatorViewModel.appendDigit(value) {
+                buttonPressed.toggle()
+            } else {
+                maxLengthReached.toggle()
+            }
         case .clear:
-            handleClear()
+            clearPressed.toggle()
+            calculatorViewModel.clearInput()
         case .delete:
-            handleDelete()
-        }
-    }
-
-    private func handleNumberInput(_ value: String) {
-        guard inputValue.count < maxInputLength || inputValue == "0" else {
-            maxLengthReached.toggle()
-            return
-        }
-
-        buttonPressed.toggle()
-        inputValue = inputValue == "0" ? value : inputValue + value
-    }
-
-    private func handleClear() {
-        clearPressed.toggle()
-        inputValue = "0"
-    }
-
-    private func handleDelete() {
-        deletePressed.toggle()
-
-        if inputValue.count > 1 {
-            inputValue = String(inputValue.dropLast())
-        } else {
-            inputValue = "0"
+            deletePressed.toggle()
+            calculatorViewModel.deleteLastDigit()
         }
     }
 }

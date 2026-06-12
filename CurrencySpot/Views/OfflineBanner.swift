@@ -31,11 +31,7 @@ struct OfflineBanner: View {
                     .scaleEffect(0.8)
                     .accessibilityLabel("Retrying connection")
             } else {
-                Button(action: {
-                    withAnimation(.snappy) {
-                        refreshAction()
-                    }
-                }) {
+                Button(action: refreshAction) {
                     Image(systemName: "arrow.clockwise")
                         .foregroundStyle(Color.accentColor)
                 }

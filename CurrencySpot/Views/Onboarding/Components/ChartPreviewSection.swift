@@ -55,13 +55,7 @@ struct ChartPreviewSection: View {
                         ZStack {
                             RippleEffect(isActive: showHighest, color: .green)
 
-                            Circle()
-                                .fill(Color(.systemBackground))
-                                .frame(width: 8, height: 8)
-
-                            Circle()
-                                .fill(Color.green)
-                                .frame(width: 7, height: 7)
+                            ChartPointMarker(color: .green, outerSize: 8, innerSize: 7)
                         }
                         .opacity(showHighest ? 1.0 : 0.0)
                         .animation(.smooth(duration: 0.3), value: showHighest)
@@ -77,13 +71,7 @@ struct ChartPreviewSection: View {
                         ZStack {
                             RippleEffect(isActive: showLowest, color: .red)
 
-                            Circle()
-                                .fill(Color(.systemBackground))
-                                .frame(width: 8, height: 8)
-
-                            Circle()
-                                .fill(Color.red)
-                                .frame(width: 7, height: 7)
+                            ChartPointMarker(color: .red, outerSize: 8, innerSize: 7)
                         }
                         .opacity(showLowest ? 1.0 : 0.0)
                         .animation(.smooth(duration: 0.3), value: showLowest)
