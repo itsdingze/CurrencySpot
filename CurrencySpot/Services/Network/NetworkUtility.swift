@@ -20,6 +20,7 @@ nonisolated enum NetworkUtility {
     ///   - endpoint: Identifier for retry tracking (defaults to URL path)
     ///   - retryManager: Retry state tracker; production shares one instance so the
     ///     calculator's retry indicator reflects network-layer attempts
+    ///   - clock: Suspension seam so retry backoff is controllable under test
     /// - Returns: Decoded response object of the specified type
     /// - Throws: AppError for network, HTTP, or decoding failures after all retries exhausted
     @concurrent
@@ -28,7 +29,8 @@ nonisolated enum NetworkUtility {
         urlSession: URLSession,
         responseType: T.Type,
         endpoint: String? = nil,
-        retryManager: RetryManager = .shared
+        retryManager: RetryManager = .shared,
+        clock: ClockService = ContinuousClockService()
     ) async throws -> T {
         let endpointKey = endpoint ?? url.path
         // Static context: no DI seam reaches here, so a local live logger is used.
@@ -62,7 +64,7 @@ nonisolated enum NetworkUtility {
 
             // Wait for the calculated delay with cancellation handling
             do {
-                try await Task.sleep(for: .seconds(retryInfo.delay))
+                try await clock.sleep(for: .seconds(retryInfo.delay))
             } catch is CancellationError {
                 // Task was cancelled - reset retry state and rethrow
                 await retryManager.reset(for: endpointKey)
@@ -114,14 +116,22 @@ nonisolated enum NetworkUtility {
     /// - Returns: Decoded response object of the specified type
     /// - Throws: AppError for network, HTTP, or decoding failures
     @concurrent
-    static func performRequest<T: Codable & Sendable>(
+    private static func performRequest<T: Codable & Sendable>(
         url: URL,
         urlSession: URLSession,
         responseType _: T.Type
     ) async throws -> T {
-        // URLError and CancellationError must propagate unchanged so retry
-        // classification and the cancellation branches upstream keep working.
-        let (data, response) = try await urlSession.data(from: url)
+        // URLError must propagate unchanged so retry classification keeps
+        // working — except .cancelled, which URLSession throws in place of
+        // CancellationError when the surrounding task is cancelled; mapping
+        // it makes the upstream cancellation branches reachable.
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await urlSession.data(from: url)
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            throw CancellationError()
+        }
 
         // Check for HTTP errors
         if let httpResponse = response as? HTTPURLResponse {

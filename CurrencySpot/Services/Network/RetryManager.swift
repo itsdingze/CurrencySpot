@@ -149,6 +149,12 @@ actor RetryManager {
         }
     }
 
+    /// Consistent (attempt, maxAttempts, canRetry) triple read under a single
+    /// isolation hop, so UI state never mixes two different actor snapshots.
+    func snapshot(for endpoint: String) -> (attempt: Int, maxAttempts: Int, canRetry: Bool) {
+        (getCurrentAttempt(for: endpoint), configuration.maxAttempts, canRetry(for: endpoint))
+    }
+
     /// Resets retry state for an endpoint (useful when network reconnects)
     /// - Parameter endpoint: The endpoint identifier
     func reset(for endpoint: String) {

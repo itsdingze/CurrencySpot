@@ -45,7 +45,7 @@ struct FixedDateProvider: DateProvider {
 }
 
 /// ClockService that returns immediately, so dismiss delays and backoffs are instant.
-struct ImmediateClock: ClockService {
+nonisolated struct ImmediateClock: ClockService {
     func sleep(for _: Duration) async throws {}
 }
 
