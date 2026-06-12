@@ -71,6 +71,35 @@ struct DataMigrationTests {
         #expect(store.checkedAt == nil)
     }
 
+    @Test("the blob-schema step purges historical rows even when the v2 step already ran")
+    func blobMigrationPurgesHistoricalRows() throws {
+        let container = try Self.makeContainer()
+        let defaults = Self.makeDefaults()
+        // Simulate a device that migrated to v2 long ago but predates the blob schema.
+        defaults.set(true, forKey: "DidMigrateToFrankfurterV2")
+
+        let context = container.mainContext
+        context.insert(try HistoricalRateData(dateString: "2025-03-15", rates: ["EUR": 1.21]))
+        try context.save()
+        let store = UserDefaultsHistoricalSyncStore(defaults: defaults)
+        store.record(
+            from: Date(timeIntervalSince1970: 1),
+            through: Date(timeIntervalSince1970: 2),
+            at: Date(timeIntervalSince1970: 3)
+        )
+
+        DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
+
+        #expect(try context.fetch(FetchDescriptor<HistoricalRateData>()).isEmpty)
+        #expect(store.from == nil)
+
+        // A second run leaves freshly written blob rows intact.
+        context.insert(try HistoricalRateData(dateString: "2025-03-16", rates: ["EUR": 1.22]))
+        try context.save()
+        DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
+        #expect(try context.fetch(FetchDescriptor<HistoricalRateData>()).count == 1)
+    }
+
     @Test("does nothing once migration has already run")
     func skipsWhenAlreadyMigrated() throws {
         let container = try Self.makeContainer()

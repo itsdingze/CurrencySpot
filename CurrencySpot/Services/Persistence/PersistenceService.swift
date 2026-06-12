@@ -23,9 +23,6 @@ nonisolated protocol PersistenceService: Sendable {
     /// Loads exchange rates from persistent storage
     func loadExchangeRates() async throws -> [ExchangeRate]
 
-    /// Loads historical rates containing the given currency within a date range
-    func loadHistoricalRates(currency: String, from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot]
-
     /// Loads all historical rates (every currency) within a date range
     func loadHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot]
 
@@ -108,49 +105,33 @@ actor SwiftDataPersistenceService: PersistenceService {
         }
     }
 
-    /// Saves historical exchange rates to SwiftData.
-    /// This version properly handles incremental saves without deleting existing data
+    /// Saves historical exchange rates to SwiftData as one blob row per date.
+    /// This version properly handles incremental saves without deleting existing data.
     ///
     /// - Parameter rates: A dictionary mapping Date strings to currency rates
     func saveHistoricalExchangeRates(_ rates: [String: [String: Double]]) async throws {
         guard !rates.isEmpty else { return }
 
         try modelContext.transaction {
-            // First, fetch existing dates to avoid duplicates
-            let descriptor = FetchDescriptor<HistoricalRateData>()
-            let existingData = try modelContext.fetch(descriptor)
-            let existingDates = Set(existingData.map { TimeZoneManager.formatForAPI($0.date) })
+            // Dedupe against existing rows, scoped to the incoming window rather than
+            // the whole table (which grows with every year of accumulated history).
+            let incomingDates = rates.keys.compactMap(TimeZoneManager.parseAPIDate)
+            guard let windowStart = incomingDates.min(), let windowEnd = incomingDates.max() else { return }
+            let descriptor = FetchDescriptor<HistoricalRateData>(
+                predicate: #Predicate { $0.date >= windowStart && $0.date <= windowEnd }
+            )
+            let existingDates = Set(try modelContext.fetch(descriptor).map { TimeZoneManager.formatForAPI($0.date) })
 
-            // Only process dates we don't already have
-            let newRates = rates.filter { !existingDates.contains($0.key) }
-
-            var newRateData: [HistoricalRateData] = []
-            for (date, currencyRates) in newRates {
-                let rateDataPoints = currencyRates.map { currency, rate in
-                    HistoricalRateDataPoint(
-                        currencyCode: currency,
-                        rate: rate
-                    )
-                }
-
-                guard !rateDataPoints.isEmpty else { continue }
+            for (date, currencyRates) in rates where !existingDates.contains(date) {
+                guard !currencyRates.isEmpty else { continue }
 
                 do {
-                    let historicalRateData = try HistoricalRateData(
-                        dateString: date,
-                        rates: rateDataPoints
-                    )
-
-                    newRateData.append(historicalRateData)
+                    modelContext.insert(try HistoricalRateData(dateString: date, rates: currencyRates))
                 } catch {
                     // Skip invalid dates - log but don't fail the entire operation
                     logger.warning("Skipping invalid date: \(date) - \(error)", category: .persistence)
                     continue
                 }
-            }
-
-            for rateData in newRateData {
-                modelContext.insert(rateData)
             }
 
             try modelContext.save()
@@ -171,96 +152,28 @@ actor SwiftDataPersistenceService: PersistenceService {
         return try swiftDataObjects.map { try $0.toDomain() }
     }
 
-    /// Loads historical rates containing the given currency within a date range.
-    func loadHistoricalRates(currency: String, from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
-        // For large date ranges (> 1 year), process in chunks to prevent UI freezing
-        let daysDifference = Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
-
-        if daysDifference > 365 {
-            return try loadHistoricalRatesInChunks(
-                currency: currency,
-                startDate: startDate,
-                endDate: endDate
-            )
-        } else {
-            return try loadHistoricalRatesDirectly(
-                currency: currency,
-                startDate: startDate,
-                endDate: endDate
-            )
-        }
-    }
-
     /// Loads all historical rates (every currency) within a date range.
+    /// One blob row per date makes even a five-year window a few thousand small
+    /// fetch+decode operations, so no chunking or per-currency filtering is needed.
     func loadHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
-        // USD rows carry every currency's rate, so the USD path is the all-currency load.
-        try await loadHistoricalRates(currency: CurrencyCode.usd.rawValue, from: startDate, to: endDate)
-    }
-
-    /// Direct loading for small date ranges (< 1 year).
-    /// Synchronous on the model actor: no suspension may occur while live @Model
-    /// objects are held, or a concurrent clearAllData/save could delete them mid-iteration.
-    private func loadHistoricalRatesDirectly(
-        currency: String,
-        startDate: Date,
-        endDate: Date
-    ) throws -> [HistoricalRateSnapshot] {
-        // Special handling for USD - load all data in the date range since USD is the base currency
-        let predicate: Predicate<HistoricalRateData>
-        if currency == CurrencyCode.usd.rawValue {
-            predicate = #Predicate<HistoricalRateData> { data in
-                data.date >= startDate && data.date <= endDate
-            }
-        } else {
-            predicate = #Predicate<HistoricalRateData> { data in
-                data.date >= startDate &&
-                    data.date <= endDate &&
-                    data.rates.contains { rate in rate.currencyCode == currency }
-            }
-        }
-
-        var descriptor = FetchDescriptor<HistoricalRateData>(
-            predicate: predicate,
+        let descriptor = FetchDescriptor<HistoricalRateData>(
+            predicate: #Predicate { $0.date >= startDate && $0.date <= endDate },
             sortBy: [SortDescriptor(\.date)]
         )
-        descriptor.relationshipKeyPathsForPrefetching = [\.rates]
 
         let swiftDataObjects = try modelContext.fetch(descriptor)
-        return try swiftDataObjects.map { try $0.toDomain() }
-    }
-
-    /// Chunked loading for large date ranges (> 1 year).
-    /// Each chunk is fetched and snapshotted into value types synchronously, so no
-    /// managed objects are held across a suspension point.
-    private func loadHistoricalRatesInChunks(
-        currency: String,
-        startDate: Date,
-        endDate: Date
-    ) throws -> [HistoricalRateSnapshot] {
-        var allResults: [HistoricalRateSnapshot] = []
-        let chunkSize = 365 // Process 1 year at a time
-
-        var currentStart = startDate
-        while currentStart < endDate {
-            try Task.checkCancellation()
-
-            let currentEnd = min(
-                Calendar.current.date(byAdding: .day, value: chunkSize, to: currentStart) ?? endDate,
-                endDate
-            )
-
-            let chunkResults = try loadHistoricalRatesDirectly(
-                currency: currency,
-                startDate: currentStart,
-                endDate: currentEnd
-            )
-
-            allResults.append(contentsOf: chunkResults)
-
-            currentStart = Calendar.current.date(byAdding: .day, value: 1, to: currentEnd) ?? endDate
+        do {
+            return try swiftDataObjects.map { try $0.toDomain() }
+        } catch {
+            // Purge undecodable rows before rethrowing: the date-keyed save dedupe
+            // would otherwise skip those dates forever, leaving the fallback fetch
+            // to refetch the window on every open without ever repairing it.
+            let broken = swiftDataObjects.filter { (try? $0.toDomain()) == nil }
+            broken.forEach { modelContext.delete($0) }
+            try? modelContext.save()
+            logger.warning("Purged \(broken.count) undecodable historical rows", category: .persistence)
+            throw error
         }
-
-        return allResults.sorted { $0.date < $1.date }
     }
 
     // MARK: - Date Management Methods

@@ -42,17 +42,39 @@ struct HistoricalRateDataTests {
 
     @Test("SwiftData model rejects invalid dates and parses valid ones")
     func swiftDataModelHandlesInvalidDates() throws {
-        let rates = [HistoricalRateDataPoint(currencyCode: "EUR", rate: 1.21)]
-
         let error = try #require(throws: AppError.self) {
-            try HistoricalRateData(dateString: "invalid-date", rates: rates)
+            try HistoricalRateData(dateString: "invalid-date", rates: ["EUR": 1.21])
         }
         guard case .dataValidationError = error else {
             Issue.record("Expected .dataValidationError, got \(error)")
             return
         }
 
-        let validData = try HistoricalRateData(dateString: "2025-03-15", rates: rates)
+        let validData = try HistoricalRateData(dateString: "2025-03-15", rates: ["EUR": 1.21])
         assertIsMarch15CET(validData.date)
+    }
+
+    @Test("rates round-trip through the blob into validated domain points")
+    func blobRoundTripsToDomain() throws {
+        let model = try HistoricalRateData(dateString: "2025-03-15", rates: ["EUR": 1.21, "GBP": 0.85])
+
+        let snapshot = try model.toDomain()
+
+        assertIsMarch15CET(snapshot.date)
+        #expect(snapshot.rates.count == 2)
+        #expect(snapshot.rates.first { $0.currencyCode == "EUR" }?.rate == 1.21)
+        #expect(snapshot.rates.first { $0.currencyCode == "GBP" }?.rate == 0.85)
+    }
+
+    @Test("a corrupt blob fails loudly instead of yielding an empty day")
+    func corruptBlobThrows() throws {
+        let model = HistoricalRateData(
+            date: TimeZoneManager.parseAPIDate("2025-03-15")!,
+            ratesData: Data("not json".utf8)
+        )
+
+        #expect(throws: (any Error).self) {
+            _ = try model.toDomain()
+        }
     }
 }

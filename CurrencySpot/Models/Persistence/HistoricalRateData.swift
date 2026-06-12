@@ -9,34 +9,35 @@ import Foundation
 import SwiftData
 
 @Model
-nonisolated final class HistoricalRateDataPoint {
-    var currencyCode: String
-    var rate: Double
-    var historicalData: HistoricalRateData?
+nonisolated final class HistoricalRateData {
+    @Attribute(.unique) var date: Date
 
-    init(currencyCode: String, rate: Double) {
-        self.currencyCode = currencyCode
-        self.rate = rate
+    /// All currencies' USD-normalized rates for the date, JSON-encoded `[String: Double]`.
+    ///
+    /// One blob per day instead of per-currency child rows: every reader materializes
+    /// whole days anyway, and the row-per-currency shape made a year ~60k managed
+    /// objects — multi-second loads and saves for data that is only ever used as one
+    /// dictionary per date. The default value keeps lightweight migration of pre-blob
+    /// stores possible; `DataMigration` purges those rows.
+    var ratesData: Data = Data()
+
+    init(date: Date, ratesData: Data) {
+        self.date = date
+        self.ratesData = ratesData
     }
 }
 
-@Model
-nonisolated final class HistoricalRateData {
-    @Attribute(.unique) var date: Date
-    @Relationship(deleteRule: .cascade, inverse: \HistoricalRateDataPoint.historicalData)
-    var rates: [HistoricalRateDataPoint] = []
-
-    init(date: Date, rates: [HistoricalRateDataPoint]) {
-        self.date = date
-        self.rates = rates
+nonisolated extension HistoricalRateData {
+    convenience init(date: Date, rates: [String: Double]) throws {
+        self.init(date: date, ratesData: try JSONEncoder().encode(rates))
     }
 
     // Convenience initializer for API date strings
-    convenience init(dateString: String, rates: [HistoricalRateDataPoint]) throws {
+    convenience init(dateString: String, rates: [String: Double]) throws {
         guard let date = TimeZoneManager.parseAPIDate(dateString) else {
             throw AppError.dataValidationError("Invalid date string: \(dateString)")
         }
-        self.init(date: date, rates: rates)
+        try self.init(date: date, rates: rates)
     }
 }
 
@@ -45,10 +46,11 @@ nonisolated final class HistoricalRateData {
 nonisolated extension HistoricalRateData {
     /// Validates stored codes at the persistence → domain boundary.
     func toDomain() throws -> HistoricalRateSnapshot {
-        HistoricalRateSnapshot(
+        let rates = try JSONDecoder().decode([String: Double].self, from: ratesData)
+        return HistoricalRateSnapshot(
             date: date,
             rates: try rates.map {
-                HistoricalRatePoint(currencyCode: try CurrencyCode(validating: $0.currencyCode), rate: $0.rate)
+                HistoricalRatePoint(currencyCode: try CurrencyCode(validating: $0.key), rate: $0.value)
             }
         )
     }
