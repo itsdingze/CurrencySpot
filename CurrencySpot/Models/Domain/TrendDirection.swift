@@ -3,7 +3,7 @@
 //  CurrencySpot
 //
 
-import SwiftUI
+import Foundation
 
 nonisolated enum TrendDirection: Sendable {
     case up
@@ -20,14 +20,6 @@ nonisolated enum TrendDirection: Sendable {
             self = .up
         } else {
             self = .down
-        }
-    }
-
-    var color: Color {
-        switch self {
-        case .up: .success
-        case .down: .failure
-        case .stable: .warning
         }
     }
 

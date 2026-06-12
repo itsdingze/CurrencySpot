@@ -9,15 +9,14 @@ import SwiftUI
 
 struct CurrencyPickerView: View {
     @Binding var selectedCurrency: String
-    var exchangeRates: [ExchangeRate] // ← Updated to use value type
+    var exchangeRates: [ExchangeRate]
     @Environment(\.dismiss) private var dismiss
+    @Environment(SettingsViewModel.self) private var settingsViewModel
     @State private var searchText = ""
 
+    /// Sourced from SettingsViewModel, the single owner of the favorites list.
     private var favoriteCurrencies: [String] {
-        if let favorites = UserDefaults.standard.stringArray(forKey: UserDefaultsKeys.favoriteCurrencies) {
-            return favorites
-        }
-        return ["USD", "EUR", "GBP", "JPY", "CNY", "CAD", "AUD"]
+        settingsViewModel.favoriteCurrencies.elements
     }
 
     private var filteredCurrencies: [ExchangeRate] {
@@ -95,6 +94,8 @@ struct CurrencyPickerView: View {
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     @Previewable @State var selectedCurrency = "USD"
 
@@ -104,4 +105,6 @@ struct CurrencyPickerView: View {
             exchangeRates: MockExchangeRates.getCurrencyRates()
         )
     }
+    .withDependencyContainer(DependencyContainer.preview())
 }
+#endif
