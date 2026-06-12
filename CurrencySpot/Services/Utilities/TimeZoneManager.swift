@@ -63,11 +63,19 @@ nonisolated enum TimeZoneManager {
         return date
     }
 
-    static func formatForAPI(_ date: Date) -> String {
+    /// Cached: the historical merge and persistence paths call this once per
+    /// row, and DateFormatter allocation dominates them. Safe to share —
+    /// NSDateFormatter is documented thread-safe since iOS 7 and this
+    /// instance is never mutated after initialization.
+    private static let apiFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = cetTimeZone
-        return formatter.string(from: date)
+        return formatter
+    }()
+
+    static func formatForAPI(_ date: Date) -> String {
+        apiFormatter.string(from: date)
     }
 
     // MARK: - UI Display Methods (Local Timezone)
