@@ -104,6 +104,8 @@ struct CameraControlsBar: View {
     }
 }
 
+// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
+#if DEBUG
 #Preview {
     let container = DependencyContainer.preview()
 
@@ -113,3 +115,4 @@ struct CameraControlsBar: View {
     }
     .withDependencyContainer(container)
 }
+#endif
