@@ -108,6 +108,29 @@ struct ViewModelTests {
             #expect(viewModel.chartData == .idle)
         }
 
+        @Test("chartSeriesID changes only when a new series' points land, not at selection time", .timeLimit(.minutes(1)))
+        func chartSeriesIDFollowsThePoints() async {
+            await viewModel.loadCurrentConfigurationAndWait()
+            let initialSeries = viewModel.chartSeriesID
+            #expect(initialSeries.range == .threeMonths)
+
+            // Re-keying at selection time would let the old points' dates match
+            // the incoming dataset and break the chart's crossfade animation.
+            viewModel.selectTimeRange(.oneMonth)
+            #expect(viewModel.chartSeriesID == initialSeries)
+
+            await ViewModelTests.waitUntil {
+                if case .loaded = viewModel.chartData { return viewModel.chartSeriesID != initialSeries }
+                return false
+            }
+            #expect(viewModel.chartSeriesID.range == .oneMonth)
+
+            // A reload of the same configuration keeps the series identity,
+            // so refreshed points morph in place instead of crossfading.
+            await viewModel.loadCurrentConfigurationAndWait()
+            #expect(viewModel.chartSeriesID.range == .oneMonth)
+        }
+
         @Test("openHistory targets the picked currency against the shared base and resets the range", .timeLimit(.minutes(1)))
         func openHistoryConfiguresPair() async {
             viewModel.openHistory(for: "GBP")

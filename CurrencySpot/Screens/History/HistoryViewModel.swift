@@ -47,6 +47,21 @@ final class HistoryViewModel {
     /// Selected time range for historical data display
     private(set) var selectedTimeRange: TimeRange = .threeMonths
 
+    /// The series the published chart points answer for. Part of each mark's
+    /// identity, so a currency or range switch never matches marks across
+    /// datasets — the chart crossfades whole series through the animating
+    /// scales — while a same-series refresh keeps date identity and morphs
+    /// in place. Updated atomically with the points in `publishChart`:
+    /// deriving it from `selectedTimeRange` directly would re-key the OLD
+    /// points the moment the user taps a range, and overlapping dates would
+    /// match again when the new data lands.
+    private(set) var chartSeriesID = ChartSeriesID(currency: "", range: .threeMonths)
+
+    nonisolated struct ChartSeriesID: Hashable, Sendable {
+        let currency: String
+        let range: TimeRange
+    }
+
     // MARK: UI State Properties
 
     /// Toggle states for chart elements
@@ -336,6 +351,9 @@ final class HistoryViewModel {
     private func publishChart(_ newState: Loadable<[ChartDataPoint]>) {
         let wasLoading = chartData.isLoading
         chartData = newState
+        if case .loaded = newState {
+            chartSeriesID = ChartSeriesID(currency: targetCurrency, range: selectedTimeRange)
+        }
         chartStatistics = chartDataPreparationUseCase.calculateStatistics(from: newState.value ?? [])
 
         if wasLoading != newState.isLoading {

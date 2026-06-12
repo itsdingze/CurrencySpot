@@ -41,6 +41,27 @@ struct CurrencyChart: View {
         }
     }
 
+    /// Line/area marks keyed by (series, date): marks never match across a
+    /// currency or range switch, so Charts crossfades the whole old and new
+    /// series through the animating scales instead of morphing shared dates
+    /// in place and leaving the rest to fade without movement.
+    private struct SeriesPoint: Identifiable {
+        struct ID: Hashable {
+            let series: HistoryViewModel.ChartSeriesID
+            let date: Date
+        }
+
+        let id: ID
+        let point: ChartDataPoint
+    }
+
+    private var seriesPoints: [SeriesPoint] {
+        let series = viewModel.chartSeriesID
+        return viewModel.displayedChartDataPoints.map {
+            SeriesPoint(id: SeriesPoint.ID(series: series, date: $0.date), point: $0)
+        }
+    }
+
     // Find highest and lowest points
     private var highestPoint: ChartDataPoint? {
         viewModel.displayedChartDataPoints.max { $0.rate < $1.rate }
@@ -67,7 +88,9 @@ struct CurrencyChart: View {
                     .zIndex(-1)
             }
 
-            ForEach(viewModel.displayedChartDataPoints) { dataPoint in
+            ForEach(seriesPoints) { seriesPoint in
+                let dataPoint = seriesPoint.point
+
                 AreaMark(
                     x: .value("Date", dataPoint.date, unit: .day),
                     yStart: .value("Rate", isChartReady ? dataPoint.rate : viewModel.lowestRate),
