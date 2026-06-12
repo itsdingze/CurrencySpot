@@ -188,7 +188,7 @@ final class CalculatorViewModel {
         inputAmountString = pending.amountInput
     }
 
-    /// Clears all data when cache is cleared from settings
+    /// Clears published state when Settings' "Refresh All Data" wipes the store
     func clearAllData() {
         publish(rates: [], lastUpdated: nil, isUsingMockData: false)
         loadState = .loaded([])

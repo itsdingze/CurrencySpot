@@ -36,9 +36,9 @@ struct SettingsViewModelTests {
         #expect(viewModel.destination == nil)
         #expect(viewModel.pendingAlert == nil)
 
-        viewModel.clearCachedDataTapped()
-        #expect(viewModel.destination == .alert(.clearCachedData))
-        #expect(viewModel.pendingAlert == .clearCachedData)
+        viewModel.refreshAllDataTapped()
+        #expect(viewModel.destination == .alert(.refreshAllData))
+        #expect(viewModel.pendingAlert == .refreshAllData)
 
         viewModel.resetPreferencesTapped()
         #expect(viewModel.destination == .alert(.resetPreferences))
@@ -52,6 +52,34 @@ struct SettingsViewModelTests {
     func accentColorDestination() {
         viewModel.accentColorTapped()
         #expect(viewModel.destination == .accentColorPicker)
+    }
+
+    @Test("offline Refresh All Data refuses to wipe and shows no refresh toast")
+    func offlineRefreshRefusesToWipe() async {
+        final class SpyClearing: DataClearing {
+            private(set) var clearCallCount = 0
+            func clearAllData() async throws { clearCallCount += 1 }
+        }
+
+        let spy = SpyClearing()
+        let monitor = NetworkMonitor(monitorsPathUpdates: false)
+        monitor.isConnected = false
+        let suiteName = "SettingsViewModelTests.offline.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+        defaults.removePersistentDomain(forName: suiteName)
+        let offlineViewModel = SettingsViewModel(
+            clearAllDataUseCase: ClearAllDataUseCase(repository: spy),
+            appState: AppState(networkMonitor: monitor),
+            userDefaults: defaults,
+            clock: ImmediateClock()
+        )
+
+        offlineViewModel.confirmAlert(.refreshAllData)
+
+        // Refresh promises a download; offline it must refuse rather than destroy
+        // data it cannot replace. The refusal path is synchronous.
+        #expect(spy.clearCallCount == 0)
+        #expect(offlineViewModel.toast == nil)
     }
 
     // MARK: Onboarding

@@ -164,6 +164,21 @@ final class DependencyContainer {
         clearAllDataUseCase.registerResetHandler { [historyViewModel] in
             historyViewModel.clearAllData()
         }
+        // A wipe is recovery, not data-lessness: rebuild immediately so the app never
+        // sits dead until the next launch. Doomed pre-wipe fetches leave the registry
+        // first, then rates — the currency list and sparkline rows derive from them —
+        // then any chart left on screen, then the same tiered history warm-up the app
+        // runs at launch. Unstructured on purpose: the settings interaction must not
+        // block on a multi-MB re-download.
+        clearAllDataUseCase.registerResetHandler { [dataOrchestrationUseCase, calculatorViewModel, historyViewModel] in
+            dataOrchestrationUseCase.dropInFlightFetches()
+            await calculatorViewModel.checkIfShouldFetch()
+            Task {
+                historyViewModel.loadDataForCurrentConfiguration()
+                await historyViewModel.initializeTrendData()
+                await historyViewModel.prefetchHistoricalWindow()
+            }
+        }
     }
 
     // MARK: - Bootstrap

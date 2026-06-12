@@ -138,13 +138,13 @@ struct SettingsView: View {
     private var dataManagementSection: some View {
         Section {
             settingsActionButton(
-                icon: "trash.circle.fill",
-                title: "Clear Cached Data",
-                action: settingsViewModel.clearCachedDataTapped
+                icon: "arrow.clockwise.circle.fill",
+                title: "Refresh All Data",
+                action: settingsViewModel.refreshAllDataTapped
             )
-            .accessibilityLabel("Clear cached data")
-            .accessibilityHint("Removes all cached exchange rates and historical data")
-            .accessibilityInputLabels(["Clear cache", "Delete cached data"])
+            .accessibilityLabel("Refresh all data")
+            .accessibilityHint("Erases all stored exchange rates and historical data, then downloads fresh data")
+            .accessibilityInputLabels(["Refresh data", "Refresh all data"])
 
             settingsActionButton(
                 icon: "arrow.triangle.2.circlepath.circle.fill",

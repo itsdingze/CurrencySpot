@@ -62,30 +62,30 @@ final class SettingsViewModel {
 
     /// Destructive-action confirmations in Settings.
     nonisolated enum SettingsAlert: Identifiable {
-        case clearCachedData
+        case refreshAllData
         case resetPreferences
 
         var id: Self { self }
 
         var title: String {
             switch self {
-            case .clearCachedData: "Clear Cached Data"
+            case .refreshAllData: "Refresh All Data"
             case .resetPreferences: "Reset Preferences"
             }
         }
 
         var message: String {
             switch self {
-            case .clearCachedData:
-                "This will remove all cached exchange rates and historical data. You'll need to fetch new data when you next use the app."
+            case .refreshAllData:
+                "This will erase all locally stored exchange rates and historical data, then download fresh data from the network."
             case .resetPreferences:
-                "This will reset all settings to their default values. Your cached data will not be affected."
+                "This will reset all settings to their default values. Your stored data will not be affected."
             }
         }
 
         var confirmTitle: String {
             switch self {
-            case .clearCachedData: "Clear"
+            case .refreshAllData: "Refresh"
             case .resetPreferences: "Reset"
             }
         }
@@ -232,8 +232,8 @@ final class SettingsViewModel {
 
     // MARK: - Presentation Intents
 
-    func clearCachedDataTapped() {
-        destination = .alert(.clearCachedData)
+    func refreshAllDataTapped() {
+        destination = .alert(.refreshAllData)
     }
 
     func resetPreferencesTapped() {
@@ -247,10 +247,17 @@ final class SettingsViewModel {
     /// Confirms the presented destructive alert and shows the matching toast.
     func confirmAlert(_ alert: SettingsAlert) {
         switch alert {
-        case .clearCachedData:
+        case .refreshAllData:
+            // Refresh promises a re-download; offline it would only destroy data
+            // and silently swap in mock rates. Refuse instead of wiping.
+            guard appState.networkMonitor.isConnected else {
+                appState.errorHandler.handle(AppError.noInternetConnection)
+                return
+            }
             Task {
-                await clearCachedData()
-                showToast(.cacheCleared)
+                if await refreshAllData() {
+                    showToast(.dataRefreshing)
+                }
             }
         case .resetPreferences:
             resetSettingsToDefault()
@@ -316,19 +323,25 @@ final class SettingsViewModel {
 
     // MARK: - Data Management Methods
 
-    /// Clear all cached exchange rate data. The use case wipes the repository and
-    /// signals each feature's reset; Settings holds no sibling-ViewModel references.
-    func clearCachedData() async {
+    /// Wipes all locally stored exchange rate data and rebuilds it. The use case
+    /// wipes the repository, signals each feature's reset, and kicks the same tiered
+    /// warm-up the app runs at launch; Settings holds no sibling-ViewModel references.
+    /// - Returns: true when the wipe succeeded — the caller's toast must not claim a
+    ///   refresh that never started.
+    @discardableResult
+    func refreshAllData() async -> Bool {
         do {
             try await clearAllDataUseCase.execute()
-            logger.info("Cache cleared successfully", category: .viewModel)
+            logger.info("Data wipe complete; refresh started", category: .viewModel)
+            return true
         } catch {
-            logger.error("Failed to clear cached data: \(error)", category: .viewModel)
+            logger.error("Failed to refresh data: \(error)", category: .viewModel)
 
             // Use centralized error handler for user feedback
             if let appError = AppError.from(error) {
                 appState.errorHandler.handle(appError)
             }
+            return false
         }
     }
 
