@@ -19,12 +19,15 @@ enum UserDefaultsKeys {
     
     // MARK: - Appearance Settings
     
-    static let accentColor = "AccentColor"
+    static let accentColor = "SelectedAccentColor"
     static let appearanceMode = "AppearanceMode"
     
     // MARK: - Network & Data Settings
     
     static let lastFetchDate = "LastFetchDateKey"
+    static let historicalSyncFrom = "HistoricalSyncFromDate"
+    static let historicalSyncThrough = "HistoricalSyncThroughDate"
+    static let historicalSyncCheckedAt = "HistoricalSyncCheckedAt"
     
     // MARK: - Onboarding
     

@@ -9,21 +9,28 @@ import Foundation
 
 // MARK: - DataOrchestrationUseCase
 
-/// Use case responsible for orchestrating data loading from cache, SwiftData, and API
-/// Extracted from HistoryViewModel to separate concerns
+/// Use case responsible for orchestrating historical data loading: gap detection,
+/// fetch decisions, and merging. Cache mechanics live behind HistoricalRateRepository.
 final class DataOrchestrationUseCase {
     // MARK: - Dependencies
 
-    private let service: ExchangeRateService
+    private let repository: HistoricalRateRepository
     private let historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase
-    private let cacheService: CacheService
+    private let dateProvider: DateProvider
+    private let logger: LoggerService
 
     // MARK: - Initialization
 
-    init(service: ExchangeRateService, historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase, cacheService: CacheService) {
-        self.service = service
+    init(
+        repository: HistoricalRateRepository,
+        historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase,
+        dateProvider: DateProvider = SystemDateProvider(),
+        logger: LoggerService = OSLogLoggerService()
+    ) {
+        self.repository = repository
         self.historicalDataAnalysisUseCase = historicalDataAnalysisUseCase
-        self.cacheService = cacheService
+        self.dateProvider = dateProvider
+        self.logger = logger
     }
 
     // MARK: - Public Interface
@@ -31,11 +38,11 @@ final class DataOrchestrationUseCase {
     /// Loads historical data for the specified currency and date range
     /// Returns the loaded data points and whether any new data was actually fetched from API
     func loadHistoricalData(
-        for currency: String,
+        for currency: CurrencyCode,
         dateRange: DateRange
-    ) async throws -> (dataPoints: [HistoricalRateDataValue], newDataFetched: Bool, fetchedRanges: [DateRange]) {
-        // Step 1: Check our in-memory cache first
-        let cachedData = await cacheService.getCachedHistoricalData(for: currency) ?? []
+    ) async throws -> (dataPoints: [HistoricalRateSnapshot], newDataFetched: Bool, fetchedRanges: [DateRange]) {
+        // Step 1: Check the in-memory cache first
+        let cachedData = await repository.cachedHistoricalRates(for: currency)
         let cache = cachedData.isEmpty ? nil : CurrencyCache(data: cachedData)
 
         let missingRanges: [DateRange]
@@ -45,20 +52,20 @@ final class DataOrchestrationUseCase {
                 cache: cache
             )
         } catch {
-            AppLogger.warning("Error calculating missing ranges: \(error.localizedDescription)", category: .useCase)
+            logger.warning("Error calculating missing ranges: \(error.localizedDescription)", category: .useCase)
             // If we can't calculate missing ranges, return what we have in cache
             return (dataPoints: cachedData, newDataFetched: false, fetchedRanges: [])
         }
 
         if missingRanges.isEmpty {
             // Cache covers everything we need
-            AppLogger.infoPrivate("Cache hit: Using complete cached data for \(currency)", category: .cache)
+            logger.infoPrivate("Cache hit: Using complete cached data for \(currency)", category: .cache)
             let cachedData = cache?.data ?? []
             return (dataPoints: cachedData, newDataFetched: false, fetchedRanges: [])
         }
 
         // Step 2: Look at SwiftData and fetch missing data
-        var newDataPoints: [HistoricalRateDataValue] = []
+        var newDataPoints: [HistoricalRateSnapshot] = []
         var actuallyFetchedRanges: [DateRange] = []
 
         for missingRange in missingRanges {
@@ -68,7 +75,7 @@ final class DataOrchestrationUseCase {
                 if shouldFetch {
                     // Try to fetch the missing data from API
                     do {
-                        try await service.fetchAndSaveHistoricalRates(
+                        try await repository.fetchAndSaveHistoricalRates(
                             from: missingRange.start,
                             to: missingRange.end
                         )
@@ -79,26 +86,25 @@ final class DataOrchestrationUseCase {
                         historicalDataAnalysisUseCase.recordSync(
                             from: missingRange.start,
                             through: missingRange.end,
-                            now: Date()
+                            now: dateProvider.now()
                         )
-                        AppLogger.info("Fetched new data from API for range: \(TimeZoneManager.formatForAPI(missingRange.start)) to \(TimeZoneManager.formatForAPI(missingRange.end))", category: .network)
+                        logger.info("Fetched new data from API for range: \(TimeZoneManager.formatForAPI(missingRange.start)) to \(TimeZoneManager.formatForAPI(missingRange.end))", category: .network)
                     } catch {
-                        AppLogger.warning("Failed to fetch from API: \(error.localizedDescription)", category: .network)
+                        logger.warning("Failed to fetch from API: \(error.localizedDescription)", category: .network)
                         // Continue with what we have
                     }
                 } else {
-                    AppLogger.debug("Loading existing data from SwiftData for range: \(TimeZoneManager.formatForAPI(missingRange.start)) to \(TimeZoneManager.formatForAPI(missingRange.end))", category: .persistence)
+                    logger.debug("Loading existing data from SwiftData for range: \(TimeZoneManager.formatForAPI(missingRange.start)) to \(TimeZoneManager.formatForAPI(missingRange.end))", category: .persistence)
                 }
 
                 // Load it from SwiftData (whether newly fetched or existing)
-                let rangeData = try await service.loadHistoricalRatesForCurrency(
-                    currency: currency,
-                    startDate: TimeZoneManager.formatForAPI(missingRange.start),
-                    endDate: TimeZoneManager.formatForAPI(missingRange.end)
+                let rangeData = try await repository.loadHistoricalRates(
+                    for: currency,
+                    in: missingRange
                 )
                 newDataPoints.append(contentsOf: rangeData)
             } catch {
-                AppLogger.warning("Error loading data for range: \(error.localizedDescription)", category: .useCase)
+                logger.warning("Error loading data for range: \(error.localizedDescription)", category: .useCase)
                 // Continue with next range
             }
         }
@@ -107,28 +113,21 @@ final class DataOrchestrationUseCase {
         let existingCachedData = cache?.data ?? []
         let mergedData = historicalDataAnalysisUseCase.mergeHistoricalData(existing: existingCachedData, new: newDataPoints)
 
-        // Update the cache service
-        await cacheService.cacheHistoricalData(mergedData, for: currency)
+        await repository.replaceCachedHistoricalRates(mergedData, for: currency)
 
-        AppLogger.infoPrivate("Cache updated: Loaded \(newDataPoints.count) new points for \(currency)", category: .cache)
+        logger.infoPrivate("Cache updated: Loaded \(newDataPoints.count) new points for \(currency)", category: .cache)
 
         return (dataPoints: mergedData, newDataFetched: !actuallyFetchedRanges.isEmpty, fetchedRanges: actuallyFetchedRanges)
     }
 
     /// Gets cached data for a specific currency within the given date range
-    func getCachedData(for currency: String, dateRange: DateRange) async -> [HistoricalRateDataValue] {
-        guard let cachedData = await cacheService.getCachedHistoricalData(for: currency) else { return [] }
+    func getCachedData(for currency: CurrencyCode, dateRange: DateRange) async -> [HistoricalRateSnapshot] {
+        let cachedData = await repository.cachedHistoricalRates(for: currency)
 
         // Filter cached data by current time range
         return cachedData.filter { entry in
-            let date = entry.date
-            return date >= dateRange.start && date <= dateRange.end
+            entry.date >= dateRange.start && entry.date <= dateRange.end
         }
-    }
-
-    /// Clears all cached data
-    func clearAllCache() async {
-        await cacheService.clearCache()
     }
 
     /// Determines if we should fetch missing data by comparing SwiftData's stored date range
@@ -136,14 +135,14 @@ final class DataOrchestrationUseCase {
     /// AND there are actual business days in the gap.
     private func shouldFetchMissingData(for missingRange: DateRange) async throws -> Bool {
         // Get both earliest and latest dates in single batch
-        guard let earliestStoredDate = try await service.getEarliestStoredDate(),
-              let latestStoredDate = try await service.getLatestStoredDate()
+        guard let earliestStoredDate = try await repository.earliestStoredDate(),
+              let latestStoredDate = try await repository.latestStoredDate()
         else {
             // No stored data - fetch unless the coverage watermark says we already checked it
             return historicalDataAnalysisUseCase.shouldFetchGap(
                 gapStart: missingRange.start,
                 gapEnd: missingRange.end,
-                now: Date()
+                now: dateProvider.now()
             )
         }
 
@@ -182,7 +181,7 @@ final class DataOrchestrationUseCase {
         return historicalDataAnalysisUseCase.shouldFetchGap(
             gapStart: gapStart,
             gapEnd: gapEnd,
-            now: Date()
+            now: dateProvider.now()
         )
     }
 }
