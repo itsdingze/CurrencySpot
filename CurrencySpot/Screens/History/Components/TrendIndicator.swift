@@ -31,7 +31,7 @@ struct TrendIndicator: View {
         .background(
             RoundedRectangle(cornerRadius: .badgeRadius)
                 .fill(direction.color.opacity(0.12))
-                .stroke(direction.color.opacity(0.1), lineWidth: 1)
+                .strokeBorder(direction.color.opacity(0.05), lineWidth: 1)
         )
     }
 }

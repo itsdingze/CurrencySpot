@@ -98,7 +98,7 @@ struct ColorCustomizationSheet: View {
     private var header: some View {
         ZStack {
             Text("Accent Color")
-                .font(.appTitle2)
+                .font(.appTitle3)
                 .frame(maxWidth: .infinity)
                 .accessibilityAddTraits(.isHeader)
 
@@ -109,7 +109,7 @@ struct ColorCustomizationSheet: View {
                     dismiss()
                 } label: {
                     Image(systemName: "xmark")
-                        .controlIconStyle()
+                        .controlIconStyle(size: .closeIconSize, padding: .closeIconPadding)
                         .adaptiveGlassBackground(in: .circle, isInteractive: true)
                 }
                 .buttonStyle(.plain)

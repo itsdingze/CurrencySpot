@@ -133,8 +133,10 @@ struct NumberPadView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .foregroundStyle(button.foregroundColor)
-        .background(button.backgroundColor)
-        .clipShape(Capsule())
+        .adaptiveGlassBackground(in: Capsule(), isInteractive: true, tint: button.backgroundColor) {
+            Capsule()
+                .fill(button.backgroundColor)
+        }
         .accessibilityLabel(button.accessibilityLabel)
         .accessibilityHint(button.accessibilityHint)
         .accessibilityInputLabels(button.accessibilityInputLabels)

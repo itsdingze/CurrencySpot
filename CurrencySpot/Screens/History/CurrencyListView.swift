@@ -42,14 +42,17 @@ struct CurrencyListView: View {
         SearchField(prompt: "Search currencies", text: Bindable(historyViewModel).searchText)
             .padding(.horizontal)
             .padding(.top, .hairlineGap)
+            .zIndex(1)
     }
 
     private var currenciesList: some View {
         List {
-            ForEach(historyViewModel.displayedCurrencies) { entry in
+            let currencies = historyViewModel.displayedCurrencies
+            ForEach(Array(currencies.enumerated()), id: \.element.id) { index, entry in
                 Button(action: { navigateToCurrency(entry.code) }) {
                     CurrencyRow(entry: entry)
                 }
+                .hideOuterListSeparators(at: index, of: currencies.count)
             }
         }
         .listStyle(.plain)

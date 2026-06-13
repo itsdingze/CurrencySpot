@@ -79,8 +79,7 @@ struct ChartOnboardingView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 320)
-        .clipped()
+        .frame(minHeight: 320)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(currentOnboardingPage == 0 ? "Interactive chart demonstration" : "Chart touch interaction demonstration")
         .accessibilityHint(currentOnboardingPage == 0 ? "Shows how statistics can toggle chart indicators" : "Demonstrates how to touch and drag on charts to explore data points")

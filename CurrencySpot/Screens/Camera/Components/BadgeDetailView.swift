@@ -25,7 +25,7 @@ struct BadgeDetailView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "xmark")
-                        .controlIconStyle()
+                        .controlIconStyle(size: .closeIconSize, padding: .closeIconPadding)
                         .adaptiveGlassBackground(in: .circle, isInteractive: true)
                 }
                 .buttonStyle(.plain)

@@ -24,10 +24,10 @@ struct NavigationHeader: View {
 
     private var backButton: some View {
         Button(action: onBack) {
-            Image(systemName: "chevron.left")
-                .font(.appSubheadline.weight(.medium))
-                .foregroundStyle(.primary)
+            Image(systemName: "arrow.left")
+                .font(.headline)
         }
+        .buttonStyle(.plain)
         .opacity(currentPage > 0 ? 1 : 0)
         .disabled(currentPage == 0)
         .accessibilityLabel("Go back")

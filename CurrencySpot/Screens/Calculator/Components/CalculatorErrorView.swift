@@ -34,9 +34,11 @@ struct CalculatorErrorView: View {
                     calculatorViewModel.retryFetch()
                 }
                 .padding(.fieldPadding)
-                .background(Color.accentColor)
                 .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: .cardRadius))
+                .adaptiveGlassBackground(in: .rect(cornerRadius: .cardRadius), isInteractive: true, tint: .accentColor) {
+                    RoundedRectangle(cornerRadius: .cardRadius)
+                        .fill(Color.accentColor)
+                }
                 .accessibilityLabel("Retry loading exchange rates")
                 .accessibilityHint("Attempts to fetch exchange rates from server again")
                 .accessibilityInputLabels(["Retry", "Try again", "Reload"])
@@ -45,9 +47,11 @@ struct CalculatorErrorView: View {
                     calculatorViewModel.useMockData()
                 }
                 .padding(.fieldPadding)
-                .background(Color.accentColor)
                 .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: .cardRadius))
+                .adaptiveGlassBackground(in: .rect(cornerRadius: .cardRadius), isInteractive: true, tint: .accentColor) {
+                    RoundedRectangle(cornerRadius: .cardRadius)
+                        .fill(Color.accentColor)
+                }
                 .accessibilityLabel("Use sample data")
                 .accessibilityHint("Loads sample exchange rates for testing purposes")
                 .accessibilityInputLabels(["Mock data", "Sample data", "Demo mode"])

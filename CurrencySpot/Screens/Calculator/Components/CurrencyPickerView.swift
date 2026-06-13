@@ -58,11 +58,14 @@ struct CurrencyPickerView: View {
                     }
                     .padding(.horizontal)
                 }
+                .scrollClipDisabled()
                 .padding(.vertical, .tightGap)
+                .zIndex(1)
             }
 
             List {
-                ForEach(filteredCurrencies, id: \.currencyCode) { currency in
+                let currencies = filteredCurrencies
+                ForEach(Array(currencies.enumerated()), id: \.element.currencyCode) { index, currency in
                     CurrencyRowButton(
                         code: currency.currencyCode.rawValue,
                         name: CurrencyUtilities.name(for: currency.currencyCode.rawValue),
@@ -77,6 +80,7 @@ struct CurrencyPickerView: View {
                     .accessibilityValue(currency.rate.toStringMax4Decimals)
                     .accessibilityInputLabels([currency.currencyCode.rawValue, CurrencyUtilities.name(for: currency.currencyCode.rawValue)])
                     .accessibilityAddTraits(selectedCurrency == currency.currencyCode.rawValue ? [.isButton, .isSelected] : .isButton)
+                    .hideOuterListSeparators(at: index, of: currencies.count)
                 }
             }
             .listStyle(.plain)

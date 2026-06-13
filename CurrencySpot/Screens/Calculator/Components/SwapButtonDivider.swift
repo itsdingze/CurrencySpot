@@ -12,7 +12,10 @@ struct SwapButtonDivider: View {
     @State private var isFlipped = false
 
     private let dividerHeight: CGFloat = 2
-    private let buttonSize: CGFloat = 40
+    /// Mirrors the swap button's glass circle (icon frame + padding on each side,
+    /// Dynamic Type aware) so the divider can be cut to exactly its footprint.
+    @ScaledMetric(relativeTo: .headline) private var iconSize: CGFloat = .controlIconSize
+    private var buttonDiameter: CGFloat { iconSize + 2 * .controlIconPadding }
 
     var body: some View {
         ZStack {
@@ -28,6 +31,15 @@ struct SwapButtonDivider: View {
         Rectangle()
             .fill(Color.background)
             .frame(height: dividerHeight)
+            .mask {
+                Rectangle()
+                    .overlay {
+                        Circle()
+                            .frame(width: buttonDiameter, height: buttonDiameter)
+                            .blendMode(.destinationOut)
+                    }
+                    .compositingGroup()
+            }
     }
 
     @ViewBuilder

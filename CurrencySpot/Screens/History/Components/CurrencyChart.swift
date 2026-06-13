@@ -163,7 +163,7 @@ struct CurrencyChart: View {
                         }
                         .fontDesign(.rounded)
                         .padding(.chipPadding)
-                        .background(RoundedRectangle(cornerRadius: .badgeRadius).fill(chartColor).opacity(0.2))
+                        .background(chartColor.opacity(0.2), in: .rect(cornerRadius: .badgeRadius))
                     }
 
                 PointMark(

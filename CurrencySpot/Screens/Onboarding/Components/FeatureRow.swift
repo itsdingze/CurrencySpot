@@ -11,19 +11,16 @@ struct FeatureRow: View {
     let symbol: String
     let title: String
     let subtitle: String
+    @ScaledMetric(relativeTo: .headline) private var size: CGFloat = 32
 
     var body: some View {
-        HStack(alignment: .center, spacing: .elementGap) {
-            Image(systemName: "circle")
-                .opacity(0)
-                .frame(width: 40)
-                .overlay {
-                    Image(systemName: symbol)
-                        .font(.title)
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 45)
-                        .accessibilityHidden(true)
-                }
+        HStack(alignment: .center, spacing: .sectionGap) {
+            Image(systemName: symbol)
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+                .foregroundStyle(Color.accentColor)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: .tightGap) {
                 Text(title)

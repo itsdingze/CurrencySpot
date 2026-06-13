@@ -32,14 +32,25 @@ struct CurrencyChipButtonStyle: ButtonStyle {
     let isSelected: Bool
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        chip(configuration.label)
+            .opacity(configuration.isPressed ? 0.75 : 1)
+    }
+
+    @ViewBuilder
+    private func chip(_ label: Configuration.Label) -> some View {
+        let styled = label
             .font(.appHeadline.weight(.medium))
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
-            .background(isSelected ? Color.accentColor : Color.clear)
             .foregroundStyle(isSelected ? Color.white : Color.textPrimary)
-            .clipShape(RoundedRectangle(cornerRadius: .cardRadius))
-            .opacity(configuration.isPressed ? 0.75 : 1)
+        if isSelected {
+            styled.adaptiveGlassBackground(in: .rect(cornerRadius: .cardRadius), tint: .accentColor) {
+                RoundedRectangle(cornerRadius: .cardRadius)
+                    .fill(Color.accentColor)
+            }
+        } else {
+            styled
+        }
     }
 }
 
@@ -53,17 +64,23 @@ struct CurrencyCodeButtonStyle: ButtonStyle {
     var stroke: Color = .clear
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, .chipPadding)
-            .padding(.vertical, fill == nil ? 0 : .chipPadding)
-            .background {
-                if let fill {
+        chip(configuration.label)
+            .opacity(configuration.isPressed ? 0.6 : 1)
+    }
+
+    @ViewBuilder
+    private func chip(_ label: Configuration.Label) -> some View {
+        if let fill {
+            label
+                .padding(.chipPadding)
+                .adaptiveGlassBackground(in: .rect(cornerRadius: .cardRadius), isInteractive: true, tint: fill) {
                     RoundedRectangle(cornerRadius: .cardRadius)
                         .fill(fill)
                         .stroke(stroke, lineWidth: 1)
                 }
-            }
-            .opacity(configuration.isPressed ? 0.75 : 1)
+        } else {
+            label.padding(.horizontal, .chipPadding)
+        }
     }
 }
 
@@ -83,12 +100,15 @@ struct SegmentedTabButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .background {
                 if isSelected {
-                    RoundedRectangle(cornerRadius: .cardRadius)
-                        .fill(Color.selectionFill)
+                    Color.clear
+                        .adaptiveGlassBackground(in: .rect(cornerRadius: .cardRadius), isInteractive: true, tint: .selectionFill) {
+                            RoundedRectangle(cornerRadius: .cardRadius)
+                                .fill(Color.selectionFill)
+                        }
                         .matchedGeometryEffect(id: "selectedSegment", in: namespace)
                 }
             }
-            .animation(.appSelect, value: isSelected)
+            .animation(.bouncy, value: isSelected)
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 }

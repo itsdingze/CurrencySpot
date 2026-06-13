@@ -33,8 +33,10 @@ struct SearchField: View {
             }
         }
         .padding(.fieldPadding)
-        .background(Color.tertiaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: .cardRadius))
+        .adaptiveGlassBackground(in: .capsule, isInteractive: true) {
+            RoundedRectangle(cornerRadius: .cardRadius)
+                .fill(Color.tertiaryBackground)
+        }
     }
 
     private func clearText() {

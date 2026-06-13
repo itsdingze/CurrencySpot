@@ -31,6 +31,9 @@ nonisolated extension CGFloat {
     static let fieldPadding: CGFloat = 12
     /// Inset around an SF Symbol inside a circular control button.
     static let controlIconPadding: CGFloat = 12
+    /// Inset around a compact close-button glyph; its larger padding pairs with
+    /// `closeIconSize` to keep the same 44pt tap target as a standard control icon.
+    static let closeIconPadding: CGFloat = 14
     /// Card and popover interiors.
     static let cardPadding: CGFloat = 16
     /// Horizontal inset of full-width banners and camera overlays.
@@ -55,6 +58,9 @@ nonisolated extension CGFloat {
 
     /// Glyph size of an SF Symbol inside a control button.
     static let controlIconSize: CGFloat = 20
+    /// Smaller glyph for a compact close/dismiss button; its larger padding keeps
+    /// the 44pt tap target a standard control icon has.
+    static let closeIconSize: CGFloat = 16
     /// Height of the main history chart and its placeholders.
     static let chartHeight: CGFloat = 260
 }

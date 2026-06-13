@@ -25,6 +25,10 @@ struct FavoriteCurrenciesView: View {
                         .font(.appSubheadline)
                         .foregroundStyle(.secondary)
                 }
+                .hideOuterListSeparators(
+                    isFirst: currency == viewModel.favoriteCurrencies.first,
+                    isLast: currency == viewModel.favoriteCurrencies.last
+                )
             }
             .onDelete { indexSet in
                 let currenciesToRemove = indexSet.map { viewModel.favoriteCurrencies[$0] }
@@ -35,7 +39,9 @@ struct FavoriteCurrenciesView: View {
                 viewModel.saveSettings()
             }
         }
+        .listStyle(.plain)
         .navigationTitle("Favorite Currencies")
+        .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Add currency", systemImage: "plus") {
@@ -76,13 +82,15 @@ struct AddCurrencyView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        let currencies = filteredCurrencies
+        return NavigationStack {
             VStack {
                 SearchField(prompt: "Search currency code or name", text: $searchText)
                     .padding(.horizontal)
+                    .zIndex(1)
 
                 List {
-                    ForEach(filteredCurrencies, id: \.currencyCode) { currency in
+                    ForEach(Array(currencies.enumerated()), id: \.element.currencyCode) { index, currency in
                         CurrencyRowButton(
                             code: currency.currencyCode.rawValue,
                             name: CurrencyUtilities.name(for: currency.currencyCode.rawValue),
@@ -91,6 +99,7 @@ struct AddCurrencyView: View {
                                 isPresented = false
                             }
                         )
+                        .hideOuterListSeparators(at: index, of: currencies.count)
                     }
                 }
                 .listStyle(.plain)

@@ -85,7 +85,7 @@ struct ChartInteractionSection: View {
                             }
                             .font(.appSubheadline)
                             .padding(.chipPadding)
-                            .background(RoundedRectangle(cornerRadius: .badgeRadius).fill(Color.selectionFill))
+                            .background(Color.selectionFill, in: .rect(cornerRadius: .badgeRadius))
                         }
 
                     PointMark(
