@@ -18,6 +18,7 @@ final class DataOrchestrationUseCase {
     private let historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase
     private let dateProvider: DateProvider
     private let logger: LoggerService
+    private let clock: ClockService
 
     // MARK: - Initialization
 
@@ -25,12 +26,14 @@ final class DataOrchestrationUseCase {
         repository: HistoricalRateRepository,
         historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase,
         dateProvider: DateProvider = SystemDateProvider(),
-        logger: LoggerService = OSLogLoggerService()
+        logger: LoggerService = OSLogLoggerService(),
+        clock: ClockService = ContinuousClockService()
     ) {
         self.repository = repository
         self.historicalDataAnalysisUseCase = historicalDataAnalysisUseCase
         self.dateProvider = dateProvider
         self.logger = logger
+        self.clock = clock
     }
 
     // MARK: - Single-Flight Fetch
@@ -57,6 +60,14 @@ final class DataOrchestrationUseCase {
     func dropInFlightFetches() {
         fetchGeneration += 1
         inFlightFetches.removeAll()
+        // The backfill belongs to the doomed pre-wipe world too: a post-wipe warm-up
+        // joining it would silently skip its archive tier. Cancel it, forget it, and
+        // start the new world with a fresh retry budget.
+        backfillGeneration += 1
+        backfillTask?.cancel()
+        backfillTask = nil
+        backfillRetriesRemaining = Self.backfillRetryBudget
+        backfillExhausted = false
     }
 
     /// Fetches a range, joining a covering in-flight fetch when one exists. A covering
@@ -153,7 +164,12 @@ final class DataOrchestrationUseCase {
         }
 
         // Backfill hasn't landed (or the read failed): bridge with a transient
-        // pair-scoped fetch.
+        // pair-scoped fetch — and heal in the background so the session stops
+        // degrading instead of bridging until the next launch. Unstructured so the
+        // user's chart load never waits; single-flight and the bounded retry
+        // budget keep repeat kicks cheap.
+        Task { await backfillArchive() }
+
         let pair = Array(Set([currency, base]).subtracting([CurrencyCode.usd]))
         guard !pair.isEmpty else {
             // USD against USD is 1.0 by definition; synthesize the day grid instead
@@ -281,37 +297,131 @@ final class DataOrchestrationUseCase {
 
     /// In-flight archive backfill; concurrent callers (launch warm-up overlapping a
     /// user-initiated refresh) join it instead of starting a second multi-MB download.
-    private var backfillTask: Task<Void, Never>?
+    private var backfillTask: Task<Bool, Never>?
+
+    /// Half a year per request: a cold origin generates a multi-year series at
+    /// ~15 KB/s (~90s for four years), far beyond the session's 30s resource
+    /// timeout, while a six-month slice arrives in ~10s. Chunking also makes the
+    /// backfill resumable — every landed chunk records coverage the next run skips.
+    private static let archiveChunkDays = 183
+
+    /// The CDN edge finishes pulling a slow series from origin roughly 90 seconds
+    /// after a failed cold attempt and caches it for a day, so one late re-run
+    /// nearly guarantees cache hits where fast backoff retries cannot.
+    private static let backfillRetryDelay: Duration = .seconds(90)
+
+    /// Delayed re-runs allowed per session (and per post-wipe world); bounded so a
+    /// persistently offline session doesn't poll forever.
+    private static let backfillRetryBudget = 2
+    private var backfillRetriesRemaining = backfillRetryBudget
+
+    /// Set once the retry budget is spent on failures: bridge kicks then stop
+    /// re-running full chunk sweeps on every 5Y tap. Reset by the next wipe/launch.
+    private var backfillExhausted = false
+
+    /// Bumped by `dropInFlightFetches` so a doomed pre-wipe backfill can neither
+    /// clobber a fresh run's registration nor burn the reset retry budget.
+    private var backfillGeneration = 0
 
     /// Backfills the five-year archive into persistence without touching the resident
-    /// in-memory series. Runs after the resident warm-up; once its watermark records,
-    /// every archive view reads from the blob store in milliseconds. Best-effort: a
-    /// failure just leaves archive views on the transient-fetch bridge.
+    /// in-memory series. Once its watermark records, every archive view reads from
+    /// the blob store in milliseconds. An incomplete run schedules one delayed
+    /// re-run; until coverage lands, archive views stay on the transient-fetch bridge.
     func backfillArchive() async {
         if let backfillTask {
-            await backfillTask.value
+            _ = await backfillTask.value
             return
         }
+        guard !backfillExhausted else { return }
+
+        let generation = backfillGeneration
         let task = Task { await runArchiveBackfill() }
         backfillTask = task
-        defer { backfillTask = nil }
-        await task.value
+        defer {
+            if generation == backfillGeneration {
+                backfillTask = nil
+            }
+        }
+        if await task.value == false, generation == backfillGeneration {
+            if backfillRetriesRemaining > 0 {
+                scheduleBackfillRetry()
+            } else {
+                backfillExhausted = true
+                logger.warning("Backfill retry budget exhausted; archive views bridge until the next launch or refresh", category: .network)
+            }
+        }
     }
 
-    private func runArchiveBackfill() async {
+    /// One late re-run, timed for the CDN's warm-up rather than a network blip.
+    /// Unstructured on purpose: it must outlive the warm-up that spawned it.
+    private func scheduleBackfillRetry() {
+        backfillRetriesRemaining -= 1
+        logger.info("Archive backfill re-run scheduled (\(backfillRetriesRemaining) retries remaining)", category: .network)
+        Task {
+            try? await clock.sleep(for: Self.backfillRetryDelay)
+            await backfillArchive()
+        }
+    }
+
+    /// - Returns: true when the archive needs no further work (covered, repaired,
+    ///   or fully fetched with coverage committed); false when a re-run is needed.
+    private func runArchiveBackfill() async -> Bool {
+        // A bridge kick can race the resident warm-up: wait for registered fetches
+        // (results discarded — nothing merges resident-ward here) and their deferred
+        // persists, so the gap below anchors at stored data instead of re-downloading
+        // the resident year.
+        for fetch in Array(inFlightFetches.values) {
+            _ = try? await fetch.value
+        }
+        await repository.waitForPendingHistoricalWrites()
+
         let archiveRange = historicalDataAnalysisUseCase.calculateDateRange(for: .fiveYears)
         do {
             guard let gap = try await fetchableGap(for: archiveRange) else {
                 await repairCoverageIfUnderClaiming(for: archiveRange)
-                return
+                return true
             }
+
             // Fetch-to-disk, deliberately OUTSIDE the in-flight registry: a resident
             // load joining a multi-year fetch would flood the resident series, and
             // mapping ~300k snapshots only to discard them is wasted work.
-            try await repository.fetchAndPersistHistoricalRates(from: gap.start, to: gap.end)
+            //
+            // Newest-first so every chunk lands adjacent to existing coverage and
+            // the watermark grows contiguously; a failure below leaves the landed
+            // chunks recorded for the re-run to skip.
+            let calendar = TimeZoneManager.cetCalendar
+            var chunkEnd = gap.end
+            while chunkEnd >= gap.start {
+                let chunkStart = Swift.max(
+                    gap.start,
+                    calendar.date(byAdding: .day, value: -(Self.archiveChunkDays - 1), to: chunkEnd) ?? gap.start
+                )
+                try await repository.fetchAndPersistHistoricalRates(from: chunkStart, to: chunkEnd)
+
+                // The persist is deferred: confirm it committed (its coverage record
+                // landed) before anchoring the next chunk past it. Persisting older
+                // chunks beyond a silently failed save would leave an interior hole
+                // that the re-run's coverage repair would then claim as covered —
+                // permanently, since stored bounds would span the hole.
+                await repository.waitForPendingHistoricalWrites()
+                guard historicalDataAnalysisUseCase.isRangeCovered(DateRange(start: chunkStart, end: chunkEnd)) else {
+                    logger.warning("Archive chunk's persist did not land; aborting this run", category: .persistence)
+                    return false
+                }
+
+                guard let nextEnd = calendar.date(byAdding: .day, value: -1, to: chunkStart) else { break }
+                chunkEnd = nextEnd
+            }
+
+            guard historicalDataAnalysisUseCase.isRangeCovered(archiveRange) else {
+                logger.warning("Archive backfill fetched but coverage did not land; re-run needed", category: .network)
+                return false
+            }
             logger.info("Archive backfill complete: \(TimeZoneManager.formatForAPI(gap.start)) to \(TimeZoneManager.formatForAPI(gap.end))", category: .network)
+            return true
         } catch {
             logger.warning("Archive backfill did not complete: \(error.localizedDescription)", category: .network)
+            return false
         }
     }
 

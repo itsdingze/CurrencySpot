@@ -174,6 +174,7 @@ final class MockHistoricalRateRepository: HistoricalRateRepository {
 
     func waitForPendingHistoricalWrites() async {
         waitForPendingWritesCallCount += 1
+        drainPendingPersists()
     }
 
     /// Returned by transient pair-scoped fetches.
@@ -189,13 +190,46 @@ final class MockHistoricalRateRepository: HistoricalRateRepository {
     }
 
     private(set) var fetchAndPersistCalls: [(from: Date, to: Date)] = []
+    /// 1-based call index whose FETCH throws — simulates a dead network chunk.
+    var fetchAndPersistFailAtCall: Int?
+    /// 1-based persist index whose deferred SAVE silently fails — the fetch succeeds
+    /// but no coverage records and no bounds grow, mirroring the coordinator's
+    /// swallowed save failures.
+    var persistFailAtCall: Int?
+    /// Mimics the coordinator's persist-then-record contract: a successful
+    /// fetch-and-persist records its range here, letting tests assert coverage.
+    var syncStoreForPersist: MockHistoricalSyncStore?
+
+    private var pendingPersists: [(from: Date, to: Date)] = []
+    private var persistDrainCount = 0
 
     func fetchAndPersistHistoricalRates(from startDate: Date, to endDate: Date) async throws {
+        // Like production: by the time a new fetch runs, earlier deferred saves on
+        // the serial chain have settled.
+        drainPendingPersists()
         fetchAndPersistCalls.append((from: startDate, to: endDate))
         await fetchBarrier?()
-        if shouldThrowErrorOnFetch {
+        if shouldThrowErrorOnFetch || fetchAndPersistCalls.count == fetchAndPersistFailAtCall {
             throw errorToThrow
         }
+        // The persist is DEFERRED, exactly like the coordinator's: it commits on the
+        // next fetch or when the caller awaits the write barrier — making the
+        // orchestrator's commit-verification ordering load-bearing in tests.
+        pendingPersists.append((from: startDate, to: endDate))
+    }
+
+    private func drainPendingPersists() {
+        for persist in pendingPersists {
+            persistDrainCount += 1
+            // A silently failed save: no record, no bounds growth.
+            if persistDrainCount == persistFailAtCall { continue }
+            if let syncStoreForPersist {
+                syncStoreForPersist.record(from: persist.from, through: persist.to, at: persist.to)
+                earliestStoredDateResult = Swift.min(earliestStoredDateResult ?? persist.from, persist.from)
+                latestStoredDateResult = Swift.max(latestStoredDateResult ?? persist.to, persist.to)
+            }
+        }
+        pendingPersists.removeAll()
     }
 
     func loadHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {

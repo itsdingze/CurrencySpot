@@ -103,7 +103,11 @@ nonisolated final class FrankfurterAPI: Sendable {
             url: url,
             urlSession: urlSession,
             responseType: [FrankfurterV2Rate].self,
-            endpoint: "historical-rates-range",
+            // Per-range-and-quotes key: retry exhaustion is tracked per endpoint for
+            // the whole session, and a shared key would let one failed archive chunk
+            // strip retry protection from every later historical fetch. Quotes are
+            // sorted because callers build them from a Set.
+            endpoint: "historical-rates-range-\(startDateString)-\(endDateString)\(quotes.isEmpty ? "" : "-" + quotes.sorted().joined(separator: "-"))",
             retryManager: retryManager
         )
         return try FrankfurterV2Mapper.historical(from: entries, base: baseCurrency)

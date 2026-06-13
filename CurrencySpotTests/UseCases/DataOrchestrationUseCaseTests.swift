@@ -37,7 +37,8 @@ struct DataOrchestrationUseCaseTests {
                 syncStore: syncStore,
                 dateProvider: FixedDateProvider(baseDate)
             ),
-            dateProvider: FixedDateProvider(baseDate)
+            dateProvider: FixedDateProvider(baseDate),
+            clock: ImmediateClock()
         )
     }
 
@@ -434,27 +435,133 @@ struct DataOrchestrationUseCaseTests {
 
     // MARK: - backfillArchive Tests
 
-    @Test("backfillArchive fetches the archive gap straight to disk, never touching the resident series")
-    func backfillArchive_fetchesGapOnly() async throws {
+    @Test("backfillArchive fetches the archive gap in adjacent half-year chunks, newest first")
+    func backfillArchive_fetchesGapInChunks() async throws {
         let repository = MockHistoricalRateRepository()
         // The resident warm-up already stored and recorded the year.
         repository.earliestStoredDateResult = Self.day(-365)
         repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-365), through: Self.day(0), checkedAt: Self.day(0))
+        repository.syncStoreForPersist = syncStore
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        // Cold origins generate multi-year series slower than the 30s resource
+        // timeout allows; half-year slices stay comfortably inside it. The gap
+        // [day(-1827), day(-365)] is 1463 days -> 8 chunks.
+        let calls = repository.fetchAndPersistCalls
+        #expect(calls.count == 8)
+        // Newest-first, anchored at the stored edge, tiling without gaps…
+        #expect(calls.first?.to == Self.day(-365))
+        for (older, newer) in zip(calls.dropFirst(), calls) {
+            #expect(older.to == Self.calendar.date(byAdding: .day, value: -1, to: newer.from))
+        }
+        // …reaching the archive start, with no chunk wider than the slice size.
+        #expect(calls.last?.from == Self.archiveRange.start)
+        for call in calls {
+            let days = Self.calendar.dateComponents([.day], from: call.from, to: call.to).day ?? .max
+            #expect(days < 183)
+        }
+        // Coverage landed, so no delayed re-run was needed.
+        #expect(syncStore.from == Self.archiveRange.start)
+        // Persist-only path: nothing touches the resident series.
+        #expect(repository.fetchHistoricalRatesCallCount == 0)
+        #expect(repository.mergeCachedCallCount == 0)
+        #expect(repository.cachedData.isEmpty)
+        #expect(repository.waitForPendingWritesCallCount >= 1)
+    }
+
+    @Test("a failed chunk stops the run and the delayed re-run resumes from where it left off", .timeLimit(.minutes(1)))
+    func backfillArchive_failedChunkResumes() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-365), through: Self.day(0), checkedAt: Self.day(0))
+        repository.syncStoreForPersist = syncStore
+        repository.fetchAndPersistFailAtCall = 3 // the third chunk's fetch dies
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        // First run: 2 chunks landed and recorded, chunk 3 failed, no skipping
+        // ahead. The (immediate-clock) re-run recomputes the gap from coverage and
+        // fetches only the remaining 1097 days -> 6 chunks. 3 + 6 = 9 total.
+        while repository.fetchAndPersistCalls.count < 9 {
+            await Task.yield()
+        }
+        #expect(repository.fetchAndPersistCalls.count == 9)
+        #expect(syncStore.from == Self.archiveRange.start) // archive fully covered
+    }
+
+    @Test("a chunk whose deferred save fails aborts the run; the re-run refetches instead of repairing over the hole", .timeLimit(.minutes(1)))
+    func backfillArchive_failedPersistAbortsAndResumes() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-365), through: Self.day(0), checkedAt: Self.day(0))
+        repository.syncStoreForPersist = syncStore
+        repository.persistFailAtCall = 3 // the third chunk's deferred SAVE dies silently
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        // The run must stop at the unlanded chunk — fetching older chunks past a
+        // silent save failure would let stored bounds span a hole that the
+        // coverage repair then claims as covered, permanently.
+        while repository.fetchAndPersistCalls.count < 9 {
+            await Task.yield()
+        }
+        #expect(repository.fetchAndPersistCalls.count == 9) // 3 + the re-run's 6
+        #expect(syncStore.from == Self.archiveRange.start) // re-fetched, not repaired over
+    }
+
+    @Test("delayed re-runs are bounded, not an infinite poll", .timeLimit(.minutes(1)))
+    func backfillArchive_retriesAreBounded() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(0)
+        repository.shouldThrowErrorOnFetch = true // persistently failing (e.g. offline)
         let syncStore = MockHistoricalSyncStore(from: Self.day(-365), through: Self.day(0), checkedAt: Self.day(0))
 
         let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
 
         await useCase.backfillArchive()
 
-        // Only the un-stored older years are fetched, anchored at the stored edge,
-        // through the persist-only path (no snapshots, no joinable registry entry).
-        let call = try #require(repository.fetchAndPersistCalls.first)
-        #expect(call.from == Self.archiveRange.start)
-        #expect(call.to == Self.day(-365))
-        #expect(repository.fetchAndPersistCalls.count == 1)
-        #expect(repository.fetchHistoricalRatesCallCount == 0)
-        #expect(repository.mergeCachedCallCount == 0)
-        #expect(repository.cachedData.isEmpty)
+        // Initial run + 2 budgeted re-runs, each dying on its first chunk.
+        while repository.fetchAndPersistCalls.count < 3 {
+            await Task.yield()
+        }
+        for _ in 0 ..< 50 {
+            await Task.yield()
+        }
+        #expect(repository.fetchAndPersistCalls.count == 3)
+    }
+
+    @Test("an archive view on the transient bridge kicks the backfill in the background", .timeLimit(.minutes(1)))
+    func archiveBridge_kicksBackgroundBackfill() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.transientDataToReturn = Self.createTestHistoricalData(dates: [Self.day(-1000)])
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-365), through: Self.day(0), checkedAt: Self.day(0))
+        repository.syncStoreForPersist = syncStore
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        let result = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+
+        // The user's view got its bridge data immediately…
+        #expect(result.dataPoints == repository.transientDataToReturn)
+        // …and the session heals itself: the backfill runs behind it until the
+        // archive is fully covered.
+        while repository.fetchAndPersistCalls.count < 8 {
+            await Task.yield()
+        }
+        #expect(syncStore.from == Self.archiveRange.start)
     }
 
     @Test("backfillArchive is a no-op once the watermark covers the archive")
@@ -487,12 +594,16 @@ struct DataOrchestrationUseCaseTests {
         }
         repository.fetchBarrier = { for await _ in gate {} }
 
-        let useCase = Self.makeUseCase(repository: repository)
+        let syncStore = MockHistoricalSyncStore()
+        repository.syncStoreForPersist = syncStore
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
 
         async let backfill: Void = useCase.backfillArchive()
         async let resident = useCase.loadHistoricalData(for: "EUR", dateRange: Self.testDateRange)
 
-        while repository.fetchAndPersistCalls.isEmpty || repository.fetchHistoricalRatesCalls.isEmpty {
+        // The backfill now drains in-flight resident fetches before chunking, so it
+        // won't touch the network until the resident fetch is released.
+        while repository.fetchHistoricalRatesCalls.isEmpty {
             await Task.yield()
         }
         releaseFetches()
@@ -620,6 +731,7 @@ struct DataOrchestrationUseCaseTests {
             releaseFetches = { continuation.finish() }
         }
         repository.fetchBarrier = { for await _ in gate {} }
+        repository.syncStoreForPersist = syncStore
 
         let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
 
@@ -635,7 +747,8 @@ struct DataOrchestrationUseCaseTests {
         releaseFetches()
         _ = await (first, second)
 
-        #expect(repository.fetchAndPersistCalls.count == 1)
+        // One run's worth of chunks (the gap is 8 of them) — not two runs'.
+        #expect(repository.fetchAndPersistCalls.count == 8)
     }
 
     @Test("a USD/USD archive view renders the synthesized flat series, not 'no data'")

@@ -107,7 +107,8 @@ final class DependencyContainer {
             repository: dataCoordinator,
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dateProvider: dateProvider,
-            logger: logger
+            logger: logger,
+            clock: clockService
         )
 
         chartDataPreparationUseCase = ChartDataPreparationUseCase(
