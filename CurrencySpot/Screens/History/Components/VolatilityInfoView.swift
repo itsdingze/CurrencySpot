@@ -22,10 +22,11 @@ struct VolatilityInfoView: View {
                     dismiss()
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.appTitle2)
-                        .foregroundStyle(.secondary.opacity(0.6))
+//                        .controlIconStyle()
+                        .foregroundStyle(.secondary)
                         .symbolRenderingMode(.hierarchical)
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel("Close volatility information")
                 .accessibilityHint("Closes the volatility explanation")
                 .accessibilityInputLabels(["Close", "Dismiss", "Done"])

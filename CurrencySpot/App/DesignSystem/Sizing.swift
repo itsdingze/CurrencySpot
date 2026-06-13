@@ -29,6 +29,8 @@ nonisolated extension CGFloat {
     static let chipPadding: CGFloat = 8
     /// Search fields, toasts, inline error buttons.
     static let fieldPadding: CGFloat = 12
+    /// Inset around an SF Symbol inside a circular control button.
+    static let controlIconPadding: CGFloat = 12
     /// Card and popover interiors.
     static let cardPadding: CGFloat = 16
     /// Horizontal inset of full-width banners and camera overlays.
@@ -51,6 +53,8 @@ nonisolated extension CGFloat {
 
     // MARK: Fixed layout
 
+    /// Glyph size of an SF Symbol inside a control button.
+    static let controlIconSize: CGFloat = 20
     /// Height of the main history chart and its placeholders.
     static let chartHeight: CGFloat = 260
 }

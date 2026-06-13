@@ -23,7 +23,6 @@ struct CurrencyListView: View {
                 CurrencyHistoryView()
             }
             .toolbar {
-                leadingToolbarItems
                 trailingToolbarItems
             }
         }
@@ -56,16 +55,6 @@ struct CurrencyListView: View {
         .listStyle(.plain)
     }
 
-    private var leadingToolbarItems: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            // iOS 26 renders the large title via the navigation bar; older versions need an explicit title.
-            if #unavailable(iOS 26) {
-                Text("History")
-                    .font(.appLargeTitle)
-            }
-        }
-    }
-
     private var trailingToolbarItems: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
@@ -80,17 +69,9 @@ struct CurrencyListView: View {
                     }
                 }
             } label: {
-                if #available(iOS 26, *) {
-                    Label("Sort", systemImage: "arrow.up.arrow.down")
-                        .foregroundStyle(Color.accentColor)
-                } else {
-                    Label("Sort", systemImage: "arrow.up.arrow.down.circle.fill")
-                        .font(.appTitle2)
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(Color.accentColor, Color.tertiaryBackground)
-                }
+                Label("Sort", systemImage: "arrow.up.arrow.down")
+                    .foregroundStyle(Color.accentColor)
             }
-            .labelStyle(.iconOnly)
         }
     }
 }

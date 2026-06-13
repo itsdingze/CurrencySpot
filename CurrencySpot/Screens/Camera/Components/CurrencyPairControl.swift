@@ -12,7 +12,7 @@ struct CurrencyPairControl: View {
     @State private var isFlipped = false
 
     var body: some View {
-        HStack(spacing: .sectionGap) {
+        HStack(spacing: .elementGap) {
             currencyButton(
                 code: viewModel.baseCurrency,
                 caption: "From",
@@ -66,7 +66,7 @@ struct CurrencyPairControl: View {
             }
         } label: {
             Image(systemName: "arrow.trianglehead.swap")
-                .font(.appHeadline)
+                .controlIconStyle()
                 .foregroundStyle(Color.accentColor)
                 .rotationEffect(.degrees(90))
                 .rotation3DEffect(

@@ -33,34 +33,19 @@ struct SwapButtonDivider: View {
     @ViewBuilder
     private var swapButton: some View {
         Button(action: performSwap) {
-            ZStack {
-                buttonBackground
-                swapIcon
-            }
+            Image(systemName: "arrow.trianglehead.swap")
+                .controlIconStyle()
+                .rotation3DEffect(
+                    .degrees(isFlipped ? 180 : 0),
+                    axis: (x: 1, y: 0, z: 0)
+                )
+                .adaptiveGlassBackground(in: .circle, isInteractive: true)
         }
-        .background(Color.secondaryBackground)
         .accessibilityIdentifier("SwapButtonDivider")
         .accessibilityLabel("Swap currencies")
         .accessibilityHint("Swaps the source and target currencies")
         .accessibilityInputLabels(["Swap", "Switch", "Exchange", "Flip currencies"])
         .accessibilityAddTraits(.isButton)
-    }
-
-    @ViewBuilder
-    private var buttonBackground: some View {
-        Circle()
-            .fill(Color.background)
-            .frame(width: buttonSize, height: buttonSize)
-    }
-
-    @ViewBuilder
-    private var swapIcon: some View {
-        Image(systemName: "arrow.trianglehead.swap")
-            .font(.appHeadline)
-            .rotation3DEffect(
-                .degrees(isFlipped ? 180 : 0),
-                axis: (x: 1, y: 0, z: 0)
-            )
     }
 
     // MARK: - Private Methods

@@ -104,14 +104,15 @@ struct ColorCustomizationSheet: View {
 
             HStack {
                 Spacer()
-
+                
                 Button {
                     dismiss()
                 } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title)
-                        .foregroundStyle(Color.gray, Color.closeButtonBackdrop)
+                    Image(systemName: "xmark")
+                        .controlIconStyle()
+                        .adaptiveGlassBackground(in: .circle, isInteractive: true)
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel("Close")
             }
         }
