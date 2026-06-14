@@ -16,5 +16,5 @@ nonisolated extension Animation {
     /// Loading-overlay fades.
     static let appQuickFade = Animation.easeInOut(duration: 0.2)
     /// Detection plates tracking the live camera frame.
-    static let appTrack = Animation.easeOut(duration: 0.15)
+    static let appTrack = Animation.easeInOut(duration: 0.07)
 }
