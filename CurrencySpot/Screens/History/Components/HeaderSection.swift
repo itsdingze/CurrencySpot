@@ -260,14 +260,14 @@ struct TimeRangePicker: View {
 
                 let firstTouch = dragOffset == nil
                 if !firstTouch, abs(value.translation.width) > 2, !isDragging {
-                    withAnimation(.bouncy) { isDragging = true } // lift once moving
+                    withAnimation(.appFlip) { isDragging = true } // lift once moving
                 }
                 snappedIndex = snapsOn ? nearest : nil
 
                 // One spring, every frame: a velocity-preserving re-target can
                 // never tear down an in-flight animation the way a bare write
                 // does, so the box always eases toward the target — no teleport.
-                withAnimation(.bouncy) { dragOffset = target }
+                withAnimation(.appFlip) { dragOffset = target }
             }
             .onEnded { value in
                 commit(at: value.location.x)

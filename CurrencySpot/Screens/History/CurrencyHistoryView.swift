@@ -22,8 +22,6 @@ struct CurrencyHistoryView: View {
 
             StatisticsSection()
 
-            footerSection
-
             Spacer()
         }
         .environment(viewModel)
@@ -37,17 +35,6 @@ struct CurrencyHistoryView: View {
                 hasSeenChartOnboarding: settingsViewModel.hasSeenChartOnboarding
             )
         }
-    }
-
-    // MARK: - Private Views
-
-    private var footerSection: some View {
-        HStack {
-            Text("Exchange rates aggregated from central banks worldwide")
-                .font(.appCaption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
