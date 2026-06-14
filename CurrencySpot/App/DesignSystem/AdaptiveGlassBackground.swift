@@ -88,6 +88,19 @@ extension View {
         }
     }
 
+    /// Solid-tint convenience: Liquid Glass on iOS 26+, with `tint` filling
+    /// `shape` as the pre-iOS-26 fallback instead of `.regularMaterial`. For
+    /// controls whose active state is a flat accent fill matching the glass tint.
+    nonisolated func adaptiveGlassBackground(
+        in shape: some Shape,
+        isInteractive: Bool = false,
+        tintedFallback tint: Color
+    ) -> some View {
+        adaptiveGlassBackground(in: shape, isInteractive: isInteractive, tint: tint) {
+            shape.fill(tint)
+        }
+    }
+
     /// Same as above, but supplies a custom pre-iOS-26 background — drawn exactly
     /// as given (NOT clipped to `shape`), so it defines its own shape. Pass a
     /// `RoundedRectangle`, `Capsule`, gradient, image, etc.

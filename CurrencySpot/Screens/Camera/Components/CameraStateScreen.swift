@@ -39,7 +39,6 @@ struct CameraStateScreen: View {
 
                 Button(action: action) {
                     Text(buttonTitle)
-                        .padding(.horizontal, .chipPadding)
                 }
                 .buttonStyle(.primaryAction)
                 .accessibilityHint(buttonHint)

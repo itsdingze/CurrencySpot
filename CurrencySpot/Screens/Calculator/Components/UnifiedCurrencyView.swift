@@ -164,7 +164,7 @@ struct UnifiedCurrencyView: View {
                     .bold()
             }
         }
-        .buttonStyle(CurrencyCodeButtonStyle(fill: type.backgroundColor, stroke: type.strokeColor))
+        .buttonStyle(.currencyCode(fill: type.backgroundColor, stroke: type.strokeColor))
         .foregroundStyle(type.buttonColor)
         .accessibilityLabel(accessibilityButtonLabel)
         .accessibilityHint(accessibilityButtonHint)

@@ -35,6 +35,7 @@ struct CurrencyPickerView: View {
             SearchField(prompt: "Search currency code or name", text: $searchText)
                 .padding(.horizontal)
                 .padding(.top, .tightGap)
+                .zIndex(1)
 
             // Quick access to common currencies
             if searchText.isEmpty {
@@ -48,7 +49,7 @@ struct CurrencyPickerView: View {
                                 }) {
                                     Text(currency)
                                 }
-                                .buttonStyle(CurrencyChipButtonStyle(isSelected: selectedCurrency == currency))
+                                .buttonStyle(.currencyChip(isSelected: selectedCurrency == currency))
                                 .accessibilityLabel("\(currency), \(CurrencyUtilities.name(for: currency))")
                                 .accessibilityHint("Selects \(currency) as currency")
                                 .accessibilityInputLabels([currency, CurrencyUtilities.name(for: currency)])

@@ -52,7 +52,7 @@ struct CurrencyPairControl: View {
                     .foregroundStyle(Color.textPrimary)
             }
         }
-        .buttonStyle(CurrencyCodeButtonStyle())
+        .buttonStyle(.currencyCode())
         .accessibilityLabel(accessibilityLabel)
         .accessibilityValue(code)
         .accessibilityHint("Opens the currency picker")
