@@ -28,6 +28,9 @@ struct SettingsView: View {
         .navigationDestination(for: SettingsRoute.self) { route in
             destinationView(for: route)
         }
+        .navigationDestination(for: Acknowledgement.self) { acknowledgement in
+            LicenseDetailView(acknowledgement: acknowledgement)
+        }
         .alert(
             settingsViewModel.pendingAlert?.title ?? "",
             isPresented: isAlertPresented,
@@ -73,6 +76,8 @@ struct SettingsView: View {
             )
         case .favoriteCurrencies:
             FavoriteCurrenciesView()
+        case .acknowledgements:
+            AcknowledgementsView()
         }
     }
 
@@ -195,6 +200,19 @@ struct SettingsView: View {
                 .accessibilityHint("Opens privacy policy in your web browser")
                 .accessibilityInputLabels(["Privacy", "Privacy policy"])
             }
+
+            NavigationLink(value: SettingsRoute.acknowledgements) {
+                Label(title: {
+                    Text("Acknowledgements")
+                }, icon: {
+                    Image(systemName: "document.circle.fill")
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(Color.white, Color.blue)
+                })
+            }
+            .accessibilityLabel("Acknowledgements")
+            .accessibilityHint("Shows open-source licenses for bundled software")
+            .accessibilityInputLabels(["Acknowledgements", "Licenses", "Open source"])
         }
     }
 

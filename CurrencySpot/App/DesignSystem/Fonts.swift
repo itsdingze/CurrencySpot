@@ -18,6 +18,10 @@ nonisolated extension Font {
     static let appFootnote = Font.system(.footnote, design: .rounded)
     static let appCaption = Font.system(.caption, design: .rounded)
 
+    /// Monospaced footnote for verbatim blocks where alignment matters — license
+    /// texts, code. The one place the rounded ramp gives way to a fixed pitch.
+    static let appMonospaced = Font.system(.footnote, design: .monospaced)
+
     /// Oversized symbol leading the camera permission screens.
     static let heroIcon = Font.system(size: 56, weight: .medium)
 }
