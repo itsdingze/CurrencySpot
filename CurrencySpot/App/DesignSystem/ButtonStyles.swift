@@ -16,6 +16,7 @@ struct PrimaryActionButtonStyle: ButtonStyle {
             .foregroundStyle(Color.white)
             .padding(.controlIconPadding)
             .adaptiveGlassBackground(in: .rect(cornerRadius: .containerRadius), isInteractive: true, tintedFallback: .accentColor)
+            .contentShape(.rect)
             .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
@@ -33,6 +34,7 @@ struct CurrencyChipButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         chip(configuration.label)
+            .contentShape(.rect)
             .opacity(configuration.isPressed ? 0.75 : 1)
     }
 
@@ -68,6 +70,7 @@ struct CurrencyCodeButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         chip(configuration.label)
+            .contentShape(.rect)
             .opacity(configuration.isPressed ? 0.6 : 1)
     }
 
