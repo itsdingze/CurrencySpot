@@ -73,12 +73,15 @@ struct DetectionOverlayView: View {
                 currencyCode: targetCurrency,
                 boxSize: item.bounds.size
             )
+            // Measure the visible plate, before the tap-target inflation below,
+            // so collision/dimming tracks what the user sees touching — not the
+            // 44pt hit area, which would dim plates that have a visible gap.
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { plateSizes[item.id] = $0 }
             // Tiny price tags still get a comfortable tap target.
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { plateSizes[item.id] = $0 }
         .position(x: item.bounds.midX, y: item.bounds.midY)
         .opacity(opacity(forDepth: depth))
         .zIndex(zIndex(forDepth: depth, plateCount: plateCount))
@@ -156,7 +159,7 @@ private struct DetectionOutline: View {
         Button {
             onTap(item.id)
         } label: {
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: ConvertedPlateMetrics.cornerRadius(forBoxHeight: item.bounds.height))
                 .stroke(.white, lineWidth: 2)
                 .frame(width: item.bounds.width + 8, height: item.bounds.height + 6)
                 .contentShape(.rect)
@@ -185,13 +188,13 @@ private struct ConvertedPlate: View {
             .frame(minWidth: boxSize.width + 8, minHeight: boxSize.height + 6)
             // Solid fill, not a material: a backdrop blur over the live camera
             // re-samples every frame and flickers white at 120 Hz on ProMotion.
-            .background(.black.opacity(0.9), in: .rect(cornerRadius: cornerRadius))
+            .background(.black.mix(with: .white, by: 0.15).opacity(0.9), in: .rect(cornerRadius: cornerRadius))
             .overlay { RoundedRectangle(cornerRadius: cornerRadius).stroke(.white.opacity(0.25), lineWidth: 0.5) }
             .accessibilityLabel("Converted price \(amount.formatted(.currency(code: currencyCode)))")
     }
 
     private var cornerRadius: CGFloat {
-        min(8, boxSize.height * 0.25)
+        ConvertedPlateMetrics.cornerRadius(forBoxHeight: boxSize.height)
     }
 }
 
