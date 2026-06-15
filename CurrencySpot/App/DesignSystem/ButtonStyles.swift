@@ -5,6 +5,10 @@
 
 import SwiftUI
 
+/// How far a button dims while pressed, shared by every style so press
+/// feedback is uniform across the app.
+private let pressedOpacity = 0.7
+
 // MARK: - Primary action
 
 /// The app's primary call-to-action: accent-tinted Liquid Glass on iOS 26+,
@@ -17,7 +21,7 @@ struct PrimaryActionButtonStyle: ButtonStyle {
             .padding(.controlIconPadding)
             .adaptiveGlassBackground(in: .rect(cornerRadius: .containerRadius), isInteractive: true, tintedFallback: .accentColor)
             .contentShape(.rect)
-            .opacity(configuration.isPressed ? 0.85 : 1)
+            .opacity(configuration.isPressed ? pressedOpacity : 1)
     }
 }
 
@@ -35,7 +39,7 @@ struct CurrencyChipButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         chip(configuration.label)
             .contentShape(.rect)
-            .opacity(configuration.isPressed ? 0.75 : 1)
+            .opacity(configuration.isPressed ? pressedOpacity : 1)
     }
 
     @ViewBuilder
@@ -71,7 +75,7 @@ struct CurrencyCodeButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         chip(configuration.label)
             .contentShape(.rect)
-            .opacity(configuration.isPressed ? 0.6 : 1)
+            .opacity(configuration.isPressed ? pressedOpacity : 1)
     }
 
     @ViewBuilder
