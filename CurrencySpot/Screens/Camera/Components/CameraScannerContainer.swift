@@ -10,6 +10,7 @@ import SwiftUI
 struct CameraScannerContainer: View {
     @Environment(CameraViewModel.self) private var viewModel
     @Environment(AppState.self) private var appState
+    @Environment(SettingsViewModel.self) private var settingsViewModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var scannerProxy = DataScannerProxy()
 
@@ -32,20 +33,31 @@ struct CameraScannerContainer: View {
                     onItemsChanged: { viewModel.updateLiveRecognizedItems($0) },
                     onItemTapped: { viewModel.toggleConversion(for: $0) }
                 )
+                // Hidden but still mounted (keeps the capture session alive) so
+                // zooming out reveals black, not the live feed.
+                .opacity(viewModel.frozenImage == nil ? 1 : 0)
                 #else
                 Color.black
                 #endif
 
                 if let frozenImage = viewModel.frozenImage {
-                    StillFrameView(image: frozenImage)
+                    // Still + overlay zoom together inside the scroll view so
+                    // plates stay aligned. Hosting in UIKit drops the SwiftUI
+                    // environment, so re-inject what the content reads; the id
+                    // resets the zoom when a new still arrives.
+                    ZoomableScrollView {
+                        ZStack {
+                            StillFrameView(image: frozenImage)
+                            detectionOverlay
+                        }
+                        .environment(viewModel)
+                        .accentColor(settingsViewModel.accentColor.color)
+                        .environment(\.colorScheme, .dark)
+                    }
+                    .id(ObjectIdentifier(frozenImage))
+                } else {
+                    detectionOverlay
                 }
-
-                DetectionOverlayView(
-                    items: viewModel.detectedItems.elements,
-                    targetCurrency: viewModel.targetCurrency,
-                    onOutlineTap: { viewModel.toggleConversion(for: $0) },
-                    onPlateTap: { viewModel.showBadgeDetail(for: $0) }
-                )
             }
             .clipShape(.rect(cornerRadius: .previewRadius))
             // Controls anchor to the feed's own edges, not the safe area,
@@ -93,6 +105,17 @@ struct CameraScannerContainer: View {
             currencyPicker(for: destination)
                 .preferredColorScheme(.dark)
         }
+    }
+
+    /// The price plates and tappable outlines, shared by the live feed and the
+    /// frozen-still viewer.
+    private var detectionOverlay: some View {
+        DetectionOverlayView(
+            items: viewModel.detectedItems.elements,
+            targetCurrency: viewModel.targetCurrency,
+            onOutlineTap: { viewModel.toggleConversion(for: $0) },
+            onPlateTap: { viewModel.showBadgeDetail(for: $0) }
+        )
     }
 
     @ViewBuilder
