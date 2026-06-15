@@ -71,8 +71,7 @@ struct DetectionOverlayView: View {
             ConvertedPlate(
                 amount: item.conversion.converted,
                 currencyCode: targetCurrency,
-                boxSize: item.bounds.size,
-                dimmed: depth > 0
+                boxSize: item.bounds.size
             )
             // Tiny price tags still get a comfortable tap target.
             .frame(minWidth: 44, minHeight: 44)
@@ -158,7 +157,7 @@ private struct DetectionOutline: View {
             onTap(item.id)
         } label: {
             RoundedRectangle(cornerRadius: 4)
-                .stroke(.white.opacity(0.6), lineWidth: 1.5)
+                .stroke(.white, lineWidth: 2)
                 .frame(width: item.bounds.width + 8, height: item.bounds.height + 6)
                 .contentShape(.rect)
         }
@@ -174,8 +173,6 @@ private struct ConvertedPlate: View {
     let currencyCode: String
     /// Detected box being covered; drives font size and minimum plate size.
     let boxSize: CGSize
-    /// Dimmed plates drop their shadow so the front plate reads as on top.
-    let dimmed: Bool
 
     var body: some View {
         Text(amount, format: .currency(code: currencyCode))
@@ -186,9 +183,10 @@ private struct ConvertedPlate: View {
             .padding(.horizontal, .badgePaddingHorizontal)
             .padding(.vertical, .badgePaddingVertical)
             .frame(minWidth: boxSize.width + 8, minHeight: boxSize.height + 6)
-            .background(.ultraThinMaterial, in: .rect(cornerRadius: cornerRadius))
+            // Solid fill, not a material: a backdrop blur over the live camera
+            // re-samples every frame and flickers white at 120 Hz on ProMotion.
+            .background(.black.opacity(0.9), in: .rect(cornerRadius: cornerRadius))
             .overlay { RoundedRectangle(cornerRadius: cornerRadius).stroke(.white.opacity(0.25), lineWidth: 0.5) }
-            .shadow(color: .black.opacity(dimmed ? 0 : 0.15), radius: 3, y: 1)
             .accessibilityLabel("Converted price \(amount.formatted(.currency(code: currencyCode)))")
     }
 
