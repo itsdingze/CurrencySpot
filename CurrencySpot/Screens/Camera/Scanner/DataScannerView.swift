@@ -17,10 +17,10 @@ struct DataScannerView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> ScannerHostController {
         let scanner = DataScannerViewController(
             recognizedDataTypes: [.text()],
-            // .fast over .balanced: .balanced waits for stable frames and adds
-            // seconds of latency. Price-tag text is large, and the freeze path
-            // covers the high-accuracy case with the still-image recognizer.
-            qualityLevel: .fast,
+            // .balanced over .fast: steadier frames give more reliable live
+            // price reads, worth the extra latency; the freeze path still covers
+            // the high-accuracy case with the still-image recognizer.
+            qualityLevel: .balanced,
             recognizesMultipleItems: true,
             isHighFrameRateTrackingEnabled: true,
             isPinchToZoomEnabled: true,
