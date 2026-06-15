@@ -37,6 +37,9 @@ struct PriceClassifier {
             return PriceClassification(amount: amount, isPrice: true)
         }
         guard !Self.isNoise(match.range, token: token, in: transcript) else { return nil }
+        // Conservative: a separator-less bare number is ambiguous (count, year,
+        // room number), so it stays an outline. A marker — inline, or a split
+        // neighbor resolved by CurrencyMarkerResolver — is what makes it a price.
         let isPriceShaped = token.contains(",") || token.contains(".")
         return PriceClassification(amount: amount, isPrice: isPriceShaped)
     }
@@ -90,6 +93,16 @@ struct PriceClassifier {
 
     private static let cjkCurrencyMarkers = Set("円元원")
     private static let isoCurrencyCodes = Set(Locale.commonISOCurrencyCodes)
+
+    /// A transcript whose visible characters are all currency symbols or CJK
+    /// markers — a "¥" or "円" that OCR split off its number. Deliberately
+    /// excludes bare ISO-code words: a standalone all-caps token like "ALL",
+    /// "TOP", or "TRY" is too easily ordinary sign text to trust as a marker.
+    static func isStandaloneCurrencyMarker(_ transcript: String) -> Bool {
+        let visible = transcript.filter { !$0.isWhitespace }
+        guard !visible.isEmpty else { return false }
+        return visible.allSatisfy { currencySymbols.contains($0) || cjkCurrencyMarkers.contains($0) }
+    }
 
     private static func containsCurrencyMarker(_ transcript: String) -> Bool {
         if transcript.contains(where: { currencySymbols.contains($0) || cjkCurrencyMarkers.contains($0) }) {

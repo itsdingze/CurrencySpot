@@ -72,6 +72,10 @@ final class CameraViewModel {
     /// Auto-detected prices whose badge the user dismissed by tapping the outline.
     private var suppressedPrices: Set<UUID> = []
 
+    /// Promotes a bare number to a price when OCR split its currency marker
+    /// ("680" + "円", "¥" + "680") into a separate item beside it.
+    private let markerResolver = CurrencyMarkerResolver(maxGap: 1.0, minLineOverlap: 0.4)
+
     // MARK: - Dependencies
 
     private let appState: AppState
@@ -213,6 +217,7 @@ final class CameraViewModel {
 
     func updateRecognizedItems(_ items: [RecognizedTextItem]) {
         recognizedItems = items
+        let markerAdjacent = markerResolver.numbersAdjacentToMarker(in: items)
         var foundRawPrice = false
         detectedItems = IdentifiedArray(uniqueElements: items.compactMap { item in
             scanConversionUseCase.evaluate(
@@ -221,12 +226,14 @@ final class CameraViewModel {
                 targetCurrency: targetCurrency,
                 exchangeRates: ratesStore.rates
             ).map { conversion in
-                foundRawPrice = foundRawPrice || conversion.isPrice
+                // A marker OCR split into a neighboring item promotes the number.
+                let marked = markerAdjacent.contains(item.id) ? conversion.asPrice : conversion
+                foundRawPrice = foundRawPrice || marked.isPrice
                 return DetectedItem(
                     id: item.id,
                     transcript: item.transcript,
                     bounds: item.bounds,
-                    conversion: effectiveConversion(conversion, for: item.id)
+                    conversion: effectiveConversion(marked, for: item.id)
                 )
             }
         })

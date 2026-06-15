@@ -120,6 +120,63 @@ struct CameraViewModelTests {
         ])
     }
 
+    /// OCR splits "680円" into "680" and "円"; the adjacent marker promotes the
+    /// otherwise-unmarked number to a price.
+    @Test func aNumberBesideAStandaloneMarkerBecomesAPrice() {
+        let viewModel = Self.makeScanningViewModel()
+        let priceID = UUID()
+        viewModel.updateRecognizedItems([
+            RecognizedTextItem(id: priceID, transcript: "680", bounds: CGRect(x: 0, y: 0, width: 40, height: 20)),
+            RecognizedTextItem(id: UUID(), transcript: "円", bounds: CGRect(x: 44, y: 0, width: 18, height: 20)),
+        ])
+        #expect(viewModel.detectedItems[id: priceID]?.conversion.isPrice == true)
+    }
+
+    /// The same bare number with no marker beside it stays an outline.
+    @Test func aBareNumberWithoutAMarkerStaysAnOutline() {
+        let viewModel = Self.makeScanningViewModel()
+        let id = UUID()
+        viewModel.updateRecognizedItems([
+            RecognizedTextItem(id: id, transcript: "680", bounds: CGRect(x: 0, y: 0, width: 40, height: 20)),
+        ])
+        #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == false)
+    }
+
+    /// A marker-promoted price drives the status capsule, and dismissing the only
+    /// such badge must not flip the capsule back to "not found".
+    @Test func aMarkerPromotedPriceCountsAsFoundEvenAfterDismissal() {
+        let viewModel = Self.makeScanningViewModel()
+        let priceID = UUID()
+        let items = [
+            RecognizedTextItem(id: priceID, transcript: "680", bounds: CGRect(x: 0, y: 0, width: 40, height: 20)),
+            RecognizedTextItem(id: UUID(), transcript: "円", bounds: CGRect(x: 44, y: 0, width: 18, height: 20)),
+        ]
+        viewModel.updateRecognizedItems(items)
+        #expect(viewModel.hasPrices == true)
+
+        viewModel.toggleConversion(for: priceID)
+
+        #expect(viewModel.detectedItems[id: priceID]?.conversion.isPrice == false)
+        #expect(viewModel.hasPrices == true)
+    }
+
+    /// Dismissing a marker-promoted price sticks across frames: re-feeding the
+    /// same number-and-marker pair keeps it an outline.
+    @Test func dismissingAMarkerPromotedPriceSurvivesTheNextFrame() {
+        let viewModel = Self.makeScanningViewModel()
+        let priceID = UUID()
+        let items = [
+            RecognizedTextItem(id: priceID, transcript: "680", bounds: CGRect(x: 0, y: 0, width: 40, height: 20)),
+            RecognizedTextItem(id: UUID(), transcript: "円", bounds: CGRect(x: 44, y: 0, width: 18, height: 20)),
+        ]
+        viewModel.updateRecognizedItems(items)
+        viewModel.toggleConversion(for: priceID)
+
+        viewModel.updateRecognizedItems(items)
+
+        #expect(viewModel.detectedItems[id: priceID]?.conversion.isPrice == false)
+    }
+
     @Test func changingCurrencyPairReconvertsVisibleItems() {
         let viewModel = Self.makeScanningViewModel()
         viewModel.updateRecognizedItems([

@@ -56,12 +56,6 @@ struct PriceClassifierTests {
         #expect(classifier.classify(transcript) == nil)
     }
 
-    /// Six bare digits is still a plausible price (e.g. 150000 IDR) — keep the outline.
-    @Test func sixDigitBareIntegerKeepsItsOutline() {
-        let result = classifier.classify("150000")
-        #expect(result == PriceClassification(amount: 150000, isPrice: false))
-    }
-
     @Test(arguments: ["SN12345", "REF2024", "A1234"])
     func letterGluedIdentifiersAreFilteredOut(transcript: String) {
         #expect(classifier.classify(transcript) == nil)
@@ -78,11 +72,13 @@ struct PriceClassifierTests {
         #expect(result == PriceClassification(amount: 1234567, isPrice: true))
     }
 
-    /// Deliberately conservative: an unformatted bare integer keeps the outline only;
-    /// tap-to-convert is the user override.
-    @Test func bareUnformattedIntegerIsNotAPrice() {
-        let result = classifier.classify("1200")
-        #expect(result == PriceClassification(amount: 1200, isPrice: false))
+    /// Conservative: a bare integer with no separator and no marker stays an
+    /// outline. A split-off marker beside it (handled by CurrencyMarkerResolver),
+    /// not magnitude, is what makes "680円" a price.
+    @Test(arguments: ["8", "80", "680", "1200", "150000"])
+    func bareUnmarkedIntegerIsNotAPrice(transcript: String) {
+        let result = classifier.classify(transcript)
+        #expect(result == PriceClassification(amount: Decimal(string: transcript)!, isPrice: false))
     }
 
     @Test(arguments: ["Open daily", "MENU", ""])
