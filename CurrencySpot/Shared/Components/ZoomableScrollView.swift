@@ -20,20 +20,24 @@ struct ZoomableScrollView<Content: View>: UIViewControllerRepresentable {
         self.content = content()
     }
 
-    func makeUIViewController(context: Context) -> ZoomableScrollViewController<Content> {
-        ZoomableScrollViewController(rootView: content)
+    func makeUIViewController(context: Context) -> ZoomableScrollViewController {
+        ZoomableScrollViewController(rootView: AnyView(content))
     }
 
-    func updateUIViewController(_ controller: ZoomableScrollViewController<Content>, context: Context) {
-        controller.update(rootView: content)
+    func updateUIViewController(_ controller: ZoomableScrollViewController, context: Context) {
+        controller.update(rootView: AnyView(content))
     }
 }
 
-final class ZoomableScrollViewController<Content: View>: UIViewController, UIScrollViewDelegate, UIGestureRecognizerDelegate {
+// Content is erased to AnyView so this controller is concrete, not generic. A
+// generic version crashes the Swift 6.3 Release optimizer (EarlyPerfInliner) on
+// the synthesized deinit, which breaks `archive` while Debug/simulator builds
+// (-Onone, which skips that pass) compile fine.
+final class ZoomableScrollViewController: UIViewController, UIScrollViewDelegate, UIGestureRecognizerDelegate {
     private let scrollView = UIScrollView()
-    private let hosting: UIHostingController<Content>
+    private let hosting: UIHostingController<AnyView>
 
-    init(rootView: Content) {
+    init(rootView: AnyView) {
         hosting = UIHostingController(rootView: rootView)
         super.init(nibName: nil, bundle: nil)
     }
@@ -83,7 +87,7 @@ final class ZoomableScrollViewController<Content: View>: UIViewController, UIScr
         scrollView.contentSize = scrollView.bounds.size
     }
 
-    func update(rootView: Content) {
+    func update(rootView: AnyView) {
         hosting.rootView = rootView
     }
 
