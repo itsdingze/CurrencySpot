@@ -163,7 +163,10 @@ struct SettingsView: View {
     }
 
     private var aboutSection: some View {
-        Section(header: Text("About")) {
+        Section(
+            header: Text("About"),
+            footer: Text("Exchange rates are aggregated from central banks worldwide.")
+        ) {
             LabeledContent {
                 Text(Bundle.main.appVersionWithBuild)
                     .foregroundStyle(.secondary)
