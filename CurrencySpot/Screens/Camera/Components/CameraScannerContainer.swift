@@ -131,15 +131,8 @@ struct CameraScannerContainer: View {
                 CurrencyPickerView(selectedCurrency: $viewModel.targetCurrency, exchangeRates: viewModel.availableRates)
             }
         case let .badgeDetail(snapshot):
-            // Same height-fitting sheet as the accent color picker.
-            if #available(iOS 26, *) {
-                DynamicSheet(animation: .appSelect) {
-                    badgeDetail(for: snapshot)
-                }
-            } else {
-                badgeDetail(for: snapshot)
-                    .presentationDetents([.height(320)])
-            }
+            badgeDetail(for: snapshot)
+                .presentationDetents([.fraction(0.4)])
         }
     }
 

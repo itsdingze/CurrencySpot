@@ -15,19 +15,10 @@ struct AccentColorPickerSheet: View {
             colorPreviewButton
         }
         .sheet(isPresented: Bindable(settingsViewModel).destination.isPresenting(.accentColorPicker)) {
-            if #available(iOS 26, *) {
-                DynamicSheet(animation: .appSelect) {
-                    ColorCustomizationSheet(
-                        selectedColor: Bindable(settingsViewModel).accentColor
-                    )
-                }
-            } else {
                 ColorCustomizationSheet(
                     selectedColor: Bindable(settingsViewModel).accentColor
                 )
                 .presentationDetents([.fraction(0.25)])
-                .presentationCornerRadius(.previewRadius)
-            }
         }
     }
 
@@ -66,54 +57,43 @@ struct ColorCustomizationSheet: View {
     @Binding var selectedColor: AccentColorOption
     @Environment(\.dismiss) private var dismiss
 
+    /// The selection shown while the sheet is open. Taps update only this, so
+    /// each tap stays a purely local change and the swatch animates cleanly; the
+    /// app-global `selectedColor` (which re-tints the whole app) is written once
+    /// on dismiss, in `body`'s `.onDisappear`. nil until the first tap, then leads.
+    @State private var displaySelection: AccentColorOption?
+
     private let gridColumns = Array(repeating: GridItem(.flexible()), count: 4)
     private let gridSpacing: CGFloat = 24
     private let contentSpacing: CGFloat = 32
     private let colorButtonSize: CGFloat = 40
 
     var body: some View {
-        if #available(iOS 26, *) {
+        sheetContent
+            // Apply the picked accent once, as the sheet closes (Done or swipe).
+            // Writing it on every tap re-tints the whole app mid-interaction and
+            // snaps the swatch animation; committing on dismiss keeps each tap a
+            // purely local change.
+            .onDisappear {
+                if let displaySelection, displaySelection != selectedColor {
+                    selectedColor = displaySelection
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var sheetContent: some View {
+        NavigationStack {
             VStack(spacing: contentSpacing) {
-                header
                 colorSelectionGrid
             }
             .padding()
-        } else {
-            NavigationStack {
-                VStack(spacing: contentSpacing) {
-                    colorSelectionGrid
+            .navigationTitle("Accent Color")
+            .toolbarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
                 }
-                .padding()
-                .navigationTitle("Accent Color")
-                .toolbarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") { dismiss() }
-                    }
-                }
-            }
-        }
-    }
-
-    private var header: some View {
-        ZStack {
-            Text("Accent Color")
-                .font(.appTitle3)
-                .frame(maxWidth: .infinity)
-                .accessibilityAddTraits(.isHeader)
-
-            HStack {
-                Spacer()
-                
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .controlIconStyle(size: .closeIconSize, padding: .closeIconPadding)
-                        .adaptiveGlassBackground(in: .circle, isInteractive: true)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Close")
             }
         }
     }
@@ -131,7 +111,7 @@ struct ColorCustomizationSheet: View {
 
     @ViewBuilder
     private func colorGridItem(for colorOption: AccentColorOption) -> some View {
-        let isSelected = selectedColor == colorOption
+        let isSelected = (displaySelection ?? selectedColor) == colorOption
 
         Button(action: { selectColor(colorOption) }) {
             Circle()
@@ -154,9 +134,10 @@ struct ColorCustomizationSheet: View {
     // MARK: - Private Methods
 
     private func selectColor(_ colorOption: AccentColorOption) {
-        withAnimation(.appSelect) {
-            selectedColor = colorOption
-        }
+        // Local only — the single `.animation(value: isSelected)` drives the
+        // scale. The app-global accent is committed on dismiss (see body), so a
+        // tap never triggers an app-wide re-tint that would swamp the animation.
+        displaySelection = colorOption
     }
 }
 
