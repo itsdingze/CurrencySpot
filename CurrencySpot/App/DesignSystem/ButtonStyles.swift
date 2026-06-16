@@ -29,6 +29,56 @@ extension ButtonStyle where Self == PrimaryActionButtonStyle {
     static var primaryAction: PrimaryActionButtonStyle { PrimaryActionButtonStyle() }
 }
 
+// MARK: - Control button
+
+/// A circular icon control: a fixed `controlButtonSize` (Dynamic-Type-scaled) tap
+/// target wearing the app's Liquid Glass circle and shared press dim. The label
+/// supplies only the SF Symbol and its color; the style sizes the glyph to
+/// `.appHeadline` so every control matches regardless of the surrounding font.
+/// Pass `glass: false` for a chrome-free variant (e.g. an inline swap control).
+struct ControlButtonStyle: ButtonStyle {
+    var glass = true
+
+    func makeBody(configuration: Configuration) -> some View {
+        // The chrome lives in a View, not here: @ScaledMetric only tracks Dynamic
+        // Type inside a view context, not in the ButtonStyle struct itself.
+        ControlButtonChrome(glass: glass, isPressed: configuration.isPressed) {
+            configuration.label
+        }
+    }
+}
+
+extension ButtonStyle where Self == ControlButtonStyle {
+    static var controlButton: ControlButtonStyle { ControlButtonStyle() }
+    static func controlButton(glass: Bool) -> ControlButtonStyle { ControlButtonStyle(glass: glass) }
+}
+
+private struct ControlButtonChrome<Label: View>: View {
+    let glass: Bool
+    let isPressed: Bool
+    @ViewBuilder var label: Label
+
+    @ScaledMetric(relativeTo: .headline) private var size: CGFloat = .controlButtonSize
+
+    var body: some View {
+        box
+            .contentShape(.rect)
+            .opacity(isPressed ? pressedOpacity : 1)
+    }
+
+    @ViewBuilder
+    private var box: some View {
+        let framed = label
+            .font(.appHeadline)
+            .frame(width: size, height: size)
+        if glass {
+            framed.adaptiveGlassBackground(in: .circle, isInteractive: true)
+        } else {
+            framed
+        }
+    }
+}
+
 // MARK: - Currency chip
 
 /// Quick-access currency chips in the picker's horizontal rail. The accent

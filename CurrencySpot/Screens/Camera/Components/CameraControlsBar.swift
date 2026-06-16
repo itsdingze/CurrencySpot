@@ -82,21 +82,18 @@ struct CameraControlsBar: View {
             viewModel.toggleTorch()
         } label: {
             Image(systemName: viewModel.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                .controlIconStyle()
                 .foregroundStyle(viewModel.isTorchOn ? Color.accentColor : .primary)
-                .adaptiveGlassBackground(in: .circle, isInteractive: true)
         }
+        .buttonStyle(.controlButton)
         .accessibilityLabel(viewModel.isTorchOn ? "Turn flashlight off" : "Turn flashlight on")
     }
 
     private var photoImportButton: some View {
         PhotosPicker(selection: $pickedPhoto, matching: .images) {
             Image(systemName: "photo.on.rectangle")
-                .controlIconStyle()
                 .foregroundStyle(.primary)
-                .adaptiveGlassBackground(in: .circle, isInteractive: true)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.controlButton)
         .accessibilityLabel("Import photo")
         .accessibilityHint("Pick an image from your library to convert its prices")
     }

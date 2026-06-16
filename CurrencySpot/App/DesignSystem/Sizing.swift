@@ -56,8 +56,10 @@ nonisolated extension CGFloat {
 
     // MARK: Fixed layout
 
-    /// Glyph size of an SF Symbol inside a control button.
-    static let controlIconSize: CGFloat = 20
+    /// Diameter of a circular icon-control tap target (and its glass circle).
+    /// `ControlButtonStyle` scales from here with Dynamic Type relative to
+    /// `.headline`, matching its `.appHeadline` glyph.
+    static let controlButtonSize: CGFloat = 44
     /// Smaller glyph for a compact close/dismiss button; its larger padding keeps
     /// the 44pt tap target a standard control icon has.
     static let closeIconSize: CGFloat = 16

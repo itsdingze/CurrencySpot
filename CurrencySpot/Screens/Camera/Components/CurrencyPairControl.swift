@@ -66,7 +66,6 @@ struct CurrencyPairControl: View {
             }
         } label: {
             Image(systemName: "arrow.trianglehead.swap")
-                .controlIconStyle()
                 .foregroundStyle(Color.accentColor)
                 .rotationEffect(.degrees(90))
                 .rotation3DEffect(
@@ -74,6 +73,7 @@ struct CurrencyPairControl: View {
                     axis: (x: 0, y: 1, z: 0)
                 )
         }
+        .buttonStyle(.controlButton(glass: false))
         .accessibilityLabel("Swap currencies")
         .accessibilityHint("Swaps the price tag and converted currencies")
     }

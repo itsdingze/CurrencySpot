@@ -12,10 +12,9 @@ struct SwapButtonDivider: View {
     @State private var isFlipped = false
 
     private let dividerHeight: CGFloat = 2
-    /// Mirrors the swap button's glass circle (icon frame + padding on each side,
-    /// Dynamic Type aware) so the divider can be cut to exactly its footprint.
-    @ScaledMetric(relativeTo: .headline) private var iconSize: CGFloat = .controlIconSize
-    private var buttonDiameter: CGFloat { iconSize + 2 * .controlIconPadding }
+    /// Mirrors `ControlButtonStyle`'s scaled diameter so the divider is cut to
+    /// exactly the swap button's footprint.
+    @ScaledMetric(relativeTo: .headline) private var buttonDiameter: CGFloat = .controlButtonSize
 
     var body: some View {
         ZStack {
@@ -46,13 +45,13 @@ struct SwapButtonDivider: View {
     private var swapButton: some View {
         Button(action: performSwap) {
             Image(systemName: "arrow.trianglehead.swap")
-                .controlIconStyle()
+                .foregroundStyle(Color.accentColor)
                 .rotation3DEffect(
                     .degrees(isFlipped ? 180 : 0),
                     axis: (x: 1, y: 0, z: 0)
                 )
-                .adaptiveGlassBackground(in: .circle, isInteractive: true)
         }
+        .buttonStyle(.controlButton)
         .accessibilityIdentifier("SwapButtonDivider")
         .accessibilityLabel("Swap currencies")
         .accessibilityHint("Swaps the source and target currencies")
