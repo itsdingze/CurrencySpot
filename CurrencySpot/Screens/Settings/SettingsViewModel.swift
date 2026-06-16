@@ -25,9 +25,9 @@ enum AccentColorOption: String, CaseIterable, Identifiable {
 
     var color: Color {
         switch self {
-        case .pink: .pink
+        case .pink: .pink.mix(with: .purple, by: 0.22)
         case .orange: .orange
-        case .yellow: .yellow
+        case .yellow: .yellow.mix(with: .orange, by: 0.2)
         case .green: .green
         case .mint: .mint
         case .cyan: .cyan
