@@ -176,8 +176,9 @@ private struct MockStatCard: View {
     let color: Color?
     let action: () -> Void
 
+    @ViewBuilder
     var body: some View {
-        Button(action: action) {
+        let card = Button(action: action) {
             VStack(alignment: .leading, spacing: .hairlineGap) {
                 HStack(spacing: .hairlineGap) {
                     Text(label)
@@ -208,8 +209,12 @@ private struct MockStatCard: View {
         .buttonStyle(PlainButtonStyle())
         .disabled(color == nil)
         .accessibilityLabel("\(label): \(value)")
-        .accessibilityHint(color != nil ? (isToggled ? "Tap to hide \(label.lowercased()) indicator on chart" : "Tap to show \(label.lowercased()) indicator on chart") : "")
-        .accessibilityAddTraits(color != nil ? .isButton : [])
+
+        if color != nil {
+            card.accessibilityHint(isToggled ? "Tap to hide \(label.lowercased()) indicator on chart" : "Tap to show \(label.lowercased()) indicator on chart")
+        } else {
+            card
+        }
     }
 }
 

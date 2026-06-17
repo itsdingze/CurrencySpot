@@ -70,7 +70,6 @@ struct ChartSection: View {
         .frame(maxWidth: .infinity, maxHeight: .chartHeight)
         .background(Color.chartPlaceholder, in: .rect(cornerRadius: .cardRadius))
         .accessibilityLabel("Loading chart data")
-        .accessibilityHint("Please wait while historical exchange rate data is being loaded")
         .accessibilityAddTraits(.updatesFrequently)
     }
 
@@ -80,7 +79,6 @@ struct ChartSection: View {
             .frame(maxWidth: .infinity, maxHeight: .chartHeight)
             .background(Color.chartPlaceholder, in: .rect(cornerRadius: .cardRadius))
             .accessibilityLabel("Chart data not available")
-            .accessibilityHint("Historical exchange rate data is not available for the selected currency pair")
     }
 }
 

@@ -55,7 +55,6 @@ struct CurrencyPairControl: View {
         .buttonStyle(.currencyCode())
         .accessibilityLabel(accessibilityLabel)
         .accessibilityValue(code)
-        .accessibilityHint("Opens the currency picker")
     }
 
     private var swapButton: some View {
@@ -75,7 +74,6 @@ struct CurrencyPairControl: View {
         }
         .buttonStyle(.controlButton(glass: false))
         .accessibilityLabel("Swap currencies")
-        .accessibilityHint("Swaps the price tag and converted currencies")
     }
 }
 

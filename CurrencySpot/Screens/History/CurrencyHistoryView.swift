@@ -12,6 +12,11 @@ struct CurrencyHistoryView: View {
     @Environment(SettingsViewModel.self) private var settingsViewModel: SettingsViewModel
     @State private var isChartSelectionActive: Bool = false
 
+    private var chartIsLoaded: Bool {
+        if case .loaded = viewModel.chartData { return true }
+        return false
+    }
+
     var body: some View {
         VStack(spacing: .sectionGap) {
             HeaderSection(
@@ -26,6 +31,14 @@ struct CurrencyHistoryView: View {
         }
         .environment(viewModel)
         .safeAreaPadding()
+        .onChange(of: chartIsLoaded) { _, loaded in
+            if loaded {
+                let message = viewModel.displayedChartDataPoints.isEmpty
+                    ? "No historical data available for this currency"
+                    : "Exchange rate chart loaded"
+                AccessibilityNotification.Announcement(message).post()
+            }
+        }
         .sheet(isPresented: Bindable(viewModel).isChartOnboardingPresented) {
             ChartOnboardingView(showOnboarding: Bindable(viewModel).isChartOnboardingPresented)
         }

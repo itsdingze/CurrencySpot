@@ -28,8 +28,6 @@ struct VolatilityInfoView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Close volatility information")
-                .accessibilityHint("Closes the volatility explanation")
-                .accessibilityInputLabels(["Close", "Dismiss", "Done"])
             }
 
             // Content

@@ -10,6 +10,7 @@ import SwiftUI
 struct ChartOnboardingView: View {
     @Binding var showOnboarding: Bool
     @Environment(SettingsViewModel.self) private var settingsViewModel
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @State private var currentOnboardingPage = 0
     @State private var shouldAnimateTitle = false
     @State private var shouldAnimateContent = false
@@ -25,9 +26,12 @@ struct ChartOnboardingView: View {
         }
         .safeAreaPadding(.horizontal, .onboardingInset)
         .interactiveDismissDisabled()
-        .allowsHitTesting(shouldAnimateFooter)
+        .allowsHitTesting(shouldAnimateFooter || voiceOverEnabled)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Chart features onboarding")
+        .onChange(of: currentOnboardingPage) {
+            AccessibilityNotification.Announcement("Page \(currentOnboardingPage + 1) of \(totalPages)").post()
+        }
         .task(id: currentOnboardingPage) {
             // Page changes restart this task automatically, cancelling the
             // previous staged run so animations cannot stack or outlive dismissal.
@@ -81,8 +85,6 @@ struct ChartOnboardingView: View {
         .frame(maxWidth: .infinity)
         .frame(minHeight: 320)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(currentOnboardingPage == 0 ? "Interactive chart demonstration" : "Chart touch interaction demonstration")
-        .accessibilityHint(currentOnboardingPage == 0 ? "Shows how statistics can toggle chart indicators" : "Demonstrates how to touch and drag on charts to explore data points")
     }
 
     private var titleSection: some View {
@@ -160,8 +162,6 @@ struct ChartOnboardingView: View {
         .padding(.bottom, .tightGap)
         .blurSlide(shouldAnimateFooter)
         .accessibilityLabel(continueAccessibilityLabel)
-        .accessibilityHint(continueAccessibilityHint)
-        .accessibilityInputLabels(continueAccessibilityInputLabels)
     }
 
     private var continueButtonLabel: some View {
@@ -171,14 +171,6 @@ struct ChartOnboardingView: View {
 
     private var continueAccessibilityLabel: String {
         currentOnboardingPage == totalPages - 1 ? "Finish onboarding" : "Continue to next page"
-    }
-
-    private var continueAccessibilityHint: String {
-        currentOnboardingPage == totalPages - 1 ? "Finishes chart onboarding and returns to main app" : "Continues to the next onboarding page"
-    }
-
-    private var continueAccessibilityInputLabels: [String] {
-        currentOnboardingPage == totalPages - 1 ? ["Finish", "Done", "Let's start", "Complete"] : ["Continue", "Next"]
     }
 
     private func handleContinueAction() {

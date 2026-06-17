@@ -19,8 +19,6 @@ struct ContentView: View {
                     .toolbarBackground(.visible, for: .tabBar)
             }
             .accessibilityLabel("Currency Converter")
-            .accessibilityHint("Convert between different currencies")
-            .accessibilityInputLabels(["Convert", "Calculator", "Exchange"])
 
             if CameraScanAvailability.isSupported {
                 Tab("Camera", systemImage: "camera.viewfinder", value: AppTab.camera) {
@@ -29,8 +27,6 @@ struct ContentView: View {
                         .toolbarColorScheme(.dark, for: .tabBar)
                 }
                 .accessibilityLabel("Camera Price Converter")
-                .accessibilityHint("Point the camera at prices to see them converted")
-                .accessibilityInputLabels(["Camera", "Scan", "Scanner"])
             }
 
             Tab("History", systemImage: "chart.line.uptrend.xyaxis", value: AppTab.history) {
@@ -38,8 +34,6 @@ struct ContentView: View {
                     .toolbarBackground(.visible, for: .tabBar)
             }
             .accessibilityLabel("Exchange Rate History")
-            .accessibilityHint("View historical exchange rate charts and trends")
-            .accessibilityInputLabels(["History", "Charts", "Trends"])
 
             Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
                 NavigationStack {
@@ -48,8 +42,6 @@ struct ContentView: View {
                 .toolbarBackground(.visible, for: .tabBar)
             }
             .accessibilityLabel("Settings and Preferences")
-            .accessibilityHint("Configure app settings and default currencies")
-            .accessibilityInputLabels(["Settings", "Preferences", "Configuration"])
         }
         .alert(
             "Error: \(appState.errorHandler.currentError?.title ?? "")",

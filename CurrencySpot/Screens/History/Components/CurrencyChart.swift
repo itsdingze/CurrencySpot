@@ -9,6 +9,7 @@ import SwiftUI
 struct CurrencyChart: View {
     @Environment(HistoryViewModel.self) private var viewModel: HistoryViewModel
     @State private var rawSelectedDate: Date?
+    @State private var axSelectionIndex: Int?
     @Binding var isChartSelectionActive: Bool
 
     @State private var animationPhase: AnimationPhase = .pending
@@ -198,8 +199,9 @@ struct CurrencyChart: View {
         .accessibilityLabel(chartAccessibilityLabel)
         .accessibilityValue(chartAccessibilityValue)
         .accessibilityHint(chartAccessibilityHint)
-        .accessibilityInputLabels(["Chart", "Graph", "Exchange rate chart", "Historical data"])
-        .accessibilityAddTraits(.allowsDirectInteraction)
+        .accessibilityAdjustableAction { direction in
+            adjustSelection(direction)
+        }
         .onChange(of: rawSelectedDate) { _, newValue in
             isChartSelectionActive = newValue != nil
         }
@@ -223,6 +225,12 @@ struct CurrencyChart: View {
 
     private var chartAccessibilityValue: String {
         let dataPoints = viewModel.displayedChartDataPoints
+
+        if let index = axSelectionIndex, dataPoints.indices.contains(index) {
+            let point = dataPoints[index]
+            return "\(point.date.chartDisplay) , \(point.rate.toStringMax4Decimals)"
+        }
+
         guard !dataPoints.isEmpty else { return "No data available" }
 
         let dateRange = "\(dataPoints.first?.date.chartDisplay ?? "") to \(dataPoints.last?.date.chartDisplay ?? "")"
@@ -233,11 +241,28 @@ struct CurrencyChart: View {
     }
 
     private var chartAccessibilityHint: String {
-        if rawSelectedDate != nil {
-            "Double tap to deselect data point. Swipe left or right to navigate between data points"
-        } else {
-            "Double tap to select a data point. Use audio graphs for detailed exploration"
+        "Swipe up or down to move between data points"
+    }
+
+    /// Moves the VoiceOver-selected data point one step within bounds and mirrors
+    /// it onto `rawSelectedDate` so the visual annotation tracks the cursor.
+    private func adjustSelection(_ direction: AccessibilityAdjustmentDirection) {
+        let dataPoints = viewModel.displayedChartDataPoints
+        guard !dataPoints.isEmpty else { return }
+
+        let current = axSelectionIndex ?? dataPoints.count - 1
+        let next: Int
+        switch direction {
+        case .increment:
+            next = min(current + 1, dataPoints.count - 1)
+        case .decrement:
+            next = max(current - 1, 0)
+        @unknown default:
+            next = current
         }
+
+        axSelectionIndex = next
+        rawSelectedDate = dataPoints[next].date
     }
 }
 

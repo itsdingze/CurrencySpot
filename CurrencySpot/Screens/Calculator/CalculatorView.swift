@@ -11,8 +11,20 @@ struct CalculatorView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel
     @Environment(AppState.self) private var appState
 
+    @AccessibilityFocusState private var focusResult: Bool
+
     private var bindableViewModel: Bindable<CalculatorViewModel> {
         Bindable(calculatorViewModel)
+    }
+
+    private var ratesAreLoaded: Bool {
+        if case .loaded = calculatorViewModel.loadState { return true }
+        return false
+    }
+
+    private var ratesDidFail: Bool {
+        if case .failed = calculatorViewModel.loadState { return true }
+        return false
     }
 
     var body: some View {
@@ -31,14 +43,8 @@ struct CalculatorView: View {
                 switch calculatorViewModel.loadState {
                 case .idle, .loading:
                     ProgressView("Loading exchange rates...")
-                        .accessibilityLabel("Loading exchange rates")
-                        .accessibilityHint("Please wait while current exchange rates are being fetched")
-                        .accessibilityAddTraits(.updatesFrequently)
                 case let .failed(error, _):
                     CalculatorErrorView(errorMessage: error.message)
-                        .accessibilityLabel("Error loading exchange rates")
-                        .accessibilityValue("Error: \(error.message)")
-                        .accessibilityHint("Exchange rates could not be loaded")
                 case .loaded:
                     mainContentView()
                 }
@@ -47,12 +53,23 @@ struct CalculatorView: View {
         .task {
             await calculatorViewModel.checkIfShouldFetch()
         }
+        .onChange(of: ratesAreLoaded) { _, loaded in
+            if loaded {
+                AccessibilityNotification.Announcement("Exchange rates loaded").post()
+            }
+        }
+        .onChange(of: ratesDidFail) { _, failed in
+            if failed {
+                AccessibilityNotification.Announcement("Couldn't load exchange rates. Retry or use sample data.").post()
+            }
+        }
         .onAppear {
             calculatorViewModel.consumePendingConversion()
         }
         .onChange(of: appState.pendingConversion) { _, newValue in
             if newValue != nil {
                 calculatorViewModel.consumePendingConversion()
+                focusResult = true
             }
         }
         .sheet(item: bindableViewModel.destination) { destination in
@@ -71,6 +88,7 @@ struct CalculatorView: View {
     private func mainContentView() -> some View {
         VStack(spacing: .elementGap) {
             CurrencyDisplayView()
+                .accessibilityFocused($focusResult)
                 .layoutPriority(1)
 
             RateInfoView()

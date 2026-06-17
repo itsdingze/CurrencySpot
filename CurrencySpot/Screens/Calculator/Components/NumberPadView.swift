@@ -65,27 +65,6 @@ private enum NumberPadButton: Identifiable, Equatable {
         }
     }
 
-    var accessibilityHint: String {
-        switch self {
-        case let .number(value):
-            "Adds \(value) to the amount"
-        case .clear:
-            "Clears the entire amount"
-        case .delete:
-            "Removes the last entered digit"
-        }
-    }
-
-    var accessibilityInputLabels: [String] {
-        switch self {
-        case let .number(value):
-            [value, "Number \(value)", "\(value) key"]
-        case .clear:
-            ["Clear", "C", "Clear all", "Reset"]
-        case .delete:
-            ["Delete", "Backspace", "Remove"]
-        }
-    }
 }
 
 struct NumberPadView: View {
@@ -120,7 +99,6 @@ struct NumberPadView: View {
         .sensoryFeedback(.decrease, trigger: deletePressed)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Number pad")
-        .accessibilityHint("Use to enter the amount to convert")
     }
 
     // MARK: - Private Views
@@ -138,9 +116,6 @@ struct NumberPadView: View {
                 .fill(button.backgroundColor)
         }
         .accessibilityLabel(button.accessibilityLabel)
-        .accessibilityHint(button.accessibilityHint)
-        .accessibilityInputLabels(button.accessibilityInputLabels)
-        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Private Methods

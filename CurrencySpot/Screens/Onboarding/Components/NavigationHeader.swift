@@ -31,7 +31,6 @@ struct NavigationHeader: View {
         .opacity(currentPage > 0 ? 1 : 0)
         .disabled(currentPage == 0)
         .accessibilityLabel("Go back")
-        .accessibilityHint("Returns to the previous onboarding page")
     }
 
     private var progressIndicator: some View {
@@ -45,7 +44,6 @@ struct NavigationHeader: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Page \(currentPage + 1) of \(totalPages)")
-        .accessibilityHint("Progress indicator showing current onboarding page")
     }
 
     private var skipButton: some View {
@@ -53,7 +51,6 @@ struct NavigationHeader: View {
             .font(.appSubheadline.weight(.medium))
             .foregroundStyle(.primary)
             .accessibilityLabel("Skip onboarding")
-            .accessibilityHint("Skips chart feature tutorial and returns to main app")
     }
 }
 

@@ -21,7 +21,6 @@ struct AcknowledgementsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .accessibilityHint("Opens the full license text")
             .hideOuterListSeparators(
                 isFirst: acknowledgement == Acknowledgement.bundled.first,
                 isLast: acknowledgement == Acknowledgement.bundled.last

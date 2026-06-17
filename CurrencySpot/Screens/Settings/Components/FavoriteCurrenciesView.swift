@@ -113,6 +113,9 @@ struct AddCurrencyView: View {
                     }
                 }
             }
+            .onChange(of: currencies.count) { _, count in
+                AccessibilityNotification.Announcement("\(count) currencies found").post()
+            }
         }
     }
 }

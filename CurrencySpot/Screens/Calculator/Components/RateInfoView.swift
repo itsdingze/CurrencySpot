@@ -38,8 +38,6 @@ struct RateInfoView: View {
         Text(formattedConversionRate)
             .font(.appCaption)
             .foregroundStyle(Color.textSecondary)
-            .accessibilityLabel("Current exchange rate: \(formattedConversionRate)")
-            .accessibilityAddTraits(.updatesFrequently)
     }
 
     @ViewBuilder
@@ -47,7 +45,6 @@ struct RateInfoView: View {
         Text(viewModel.formattedLastUpdated)
             .font(.appCaption)
             .foregroundStyle(Color.textSecondary)
-            .accessibilityLabel("Exchange rates last updated: \(viewModel.formattedLastUpdated)")
     }
 
     // MARK: - Private Properties

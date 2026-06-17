@@ -15,12 +15,11 @@ struct SearchField: View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(Color.textSecondary)
+                .accessibilityHidden(true)
 
             TextField(prompt, text: $text)
                 .autocorrectionDisabled()
                 .accessibilityLabel("Search currencies")
-                .accessibilityHint("Enter currency code or name to filter the list")
-                .accessibilityInputLabels(["Search", "Filter", "Find currency"])
 
             if !text.isEmpty {
                 Button(action: clearText) {
@@ -28,8 +27,6 @@ struct SearchField: View {
                         .foregroundStyle(Color.textSecondary)
                 }
                 .accessibilityLabel("Clear search")
-                .accessibilityHint("Clears the search text")
-                .accessibilityInputLabels(["Clear", "Reset search"])
             }
         }
         .padding(.fieldPadding)

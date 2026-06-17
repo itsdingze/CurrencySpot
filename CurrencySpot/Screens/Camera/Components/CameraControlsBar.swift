@@ -59,9 +59,13 @@ struct CameraControlsBar: View {
             }
         }
         .accessibilityLabel(viewModel.frozenImage == nil ? "Freeze frame" : "Resume camera")
-        .accessibilityHint(viewModel.frozenImage == nil
-            ? "Pauses the camera so you can read badges without holding the phone steady"
-            : "Returns to the live camera feed")
+        .accessibilityShowsLargeContentViewer {
+            if viewModel.frozenImage == nil {
+                Label("Freeze frame", systemImage: "circle.fill")
+            } else {
+                Label("Resume camera", systemImage: "xmark")
+            }
+        }
     }
 
     @ViewBuilder
@@ -85,7 +89,12 @@ struct CameraControlsBar: View {
                 .foregroundStyle(viewModel.isTorchOn ? Color.accentColor : .primary)
         }
         .buttonStyle(.controlButton)
-        .accessibilityLabel(viewModel.isTorchOn ? "Turn flashlight off" : "Turn flashlight on")
+        .accessibilityLabel("Flashlight")
+        .accessibilityValue(viewModel.isTorchOn ? "On" : "Off")
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityShowsLargeContentViewer {
+            Label("Flashlight", systemImage: viewModel.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+        }
     }
 
     private var photoImportButton: some View {
@@ -95,7 +104,9 @@ struct CameraControlsBar: View {
         }
         .buttonStyle(.controlButton)
         .accessibilityLabel("Import photo")
-        .accessibilityHint("Pick an image from your library to convert its prices")
+        .accessibilityShowsLargeContentViewer {
+            Label("Import photo", systemImage: "photo.on.rectangle")
+        }
     }
 }
 

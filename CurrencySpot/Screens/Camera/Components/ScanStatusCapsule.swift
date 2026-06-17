@@ -47,6 +47,13 @@ struct ScanStatusCapsule: View {
             guard !Task.isCancelled else { return }
             hintElapsed = true
         }
+        // The visual nudge appears silently; speak it once when it elapses so
+        // VoiceOver users get the same prompt to aim at a price tag.
+        .onChange(of: phase == .pointHint) { _, showing in
+            if showing {
+                AccessibilityNotification.Announcement("Point the camera at a price tag.").post()
+            }
+        }
     }
 
     /// Live with nothing found yet — the only state that runs the hint timer.

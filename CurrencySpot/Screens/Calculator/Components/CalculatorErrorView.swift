@@ -40,8 +40,6 @@ struct CalculatorErrorView: View {
                         .fill(Color.accentColor)
                 }
                 .accessibilityLabel("Retry loading exchange rates")
-                .accessibilityHint("Attempts to fetch exchange rates from server again")
-                .accessibilityInputLabels(["Retry", "Try again", "Reload"])
             } else {
                 Button("Use Mock Data") {
                     calculatorViewModel.useMockData()
@@ -53,20 +51,16 @@ struct CalculatorErrorView: View {
                         .fill(Color.accentColor)
                 }
                 .accessibilityLabel("Use sample data")
-                .accessibilityHint("Loads sample exchange rates for testing purposes")
-                .accessibilityInputLabels(["Mock data", "Sample data", "Demo mode"])
 
                 Text("Note: Mock data is not accurate for real conversions")
                     .font(.appCaption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Color.textSecondary)
-                    .accessibilityLabel("Warning: Sample data is not accurate for real currency conversions")
             }
         }
         .padding()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Error loading exchange rates")
-        .accessibilityValue(errorMessage ?? "An unexpected error occurred")
     }
 }
 

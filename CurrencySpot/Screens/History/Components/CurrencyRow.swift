@@ -29,6 +29,7 @@ struct CurrencyRow: View {
 
             if let trend = trendData {
                 MiniChart(trend: trend)
+                    .accessibilityHidden(true)
             }
 
             VStack(alignment: .trailing, spacing: .hairlineGap) {
@@ -44,6 +45,17 @@ struct CurrencyRow: View {
             }
             .frame(minWidth: 108, alignment: .trailing)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel(trend: trendData))
+    }
+
+    private func accessibilityLabel(trend: Trend?) -> String {
+        let rate = "1 \(historyViewModel.baseCurrency) equals \(entry.rate.toStringMax4Decimals) \(entry.code)"
+        var parts = ["\(entry.code), \(entry.name)", rate]
+        if let trend {
+            parts.append("\(trend.direction.description) \(abs(trend.weeklyChange).formatted(.number.precision(.fractionLength(2)))) percent")
+        }
+        return parts.joined(separator: ", ")
     }
 }
 

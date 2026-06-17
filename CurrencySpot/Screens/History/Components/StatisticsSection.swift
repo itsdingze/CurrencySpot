@@ -83,12 +83,11 @@ struct StatisticsSection: View {
 
     @ViewBuilder
     private func statCard(label: String, value: String, isToggled: Bool = false, indicatorColor: Color? = nil) -> some View {
-        VStack(alignment: .leading, spacing: .hairlineGap) {
+        let card = VStack(alignment: .leading, spacing: .hairlineGap) {
             HStack(spacing: .hairlineGap) {
                 Text(label)
                     .font(.appSubheadline)
                     .foregroundStyle(.secondary)
-                    .accessibilityAddTraits(.isHeader)
 
                 if let color = indicatorColor {
                     Circle()
@@ -106,20 +105,14 @@ struct StatisticsSection: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label): \(value)")
-        .accessibilityValue(accessibilityValueFor(label: label, value: value))
-        .accessibilityHint(indicatorColor != nil ? "Tap to \(isToggled ? "hide" : "show") \(label.lowercased()) indicator on chart" : "")
-    }
 
-    private func accessibilityValueFor(label: String, value: String) -> String {
-        switch label.lowercased() {
-        case "highest":
-            "Highest exchange rate in the period: \(value)"
-        case "lowest":
-            "Lowest exchange rate in the period: \(value)"
-        case "average":
-            "Average exchange rate in the period: \(value)"
-        default:
-            value
+        // Tapping a stat card toggles its marker on the chart — not obvious from the label, so it earns a hint.
+        if indicatorColor != nil {
+            card.accessibilityHint(isToggled
+                ? "Hides the \(label.lowercased()) marker on the chart"
+                : "Shows the \(label.lowercased()) marker on the chart")
+        } else {
+            card
         }
     }
 
@@ -133,7 +126,6 @@ struct StatisticsSection: View {
                     Text(label)
                         .font(.appSubheadline)
                         .foregroundStyle(.secondary)
-                        .accessibilityAddTraits(.isHeader)
 
                     Image(systemName: "info.circle")
                         .font(.appCaption)
@@ -143,8 +135,6 @@ struct StatisticsSection: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Volatility information")
-            .accessibilityHint("Shows explanation of volatility measurement")
-            .accessibilityInputLabels(["Volatility info", "What is volatility"])
 
             Text(value)
                 .font(.appSubheadline.weight(.medium))
@@ -154,7 +144,6 @@ struct StatisticsSection: View {
         .padding(.chipPadding)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Volatility: \(value)")
-        .accessibilityValue("Exchange rate volatility level: \(value)")
         .popover(isPresented: $showVolatilityInfo) {
             VolatilityInfoView()
                 .presentationCompactAdaptation(.popover)

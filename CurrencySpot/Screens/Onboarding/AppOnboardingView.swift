@@ -40,6 +40,8 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
         self.onContinue = onContinue
     }
 
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+
     @State private var animateIcon: Bool = false
     @State private var animateTitle: Bool = false
     @State private var animatedCardIDs: Set<String> = []
@@ -75,17 +77,13 @@ struct AppOnboardingView<Icon: View, Footer: View>: View {
                 .buttonStyle(.primaryAction)
                 .padding(.bottom, .tightGap)
                 .accessibilityLabel("Continue to app")
-                .accessibilityHint("Finishes onboarding and opens the main app")
-                .accessibilityInputLabels(["Continue", "Get started", "Finish", "Next"])
             }
             .blurSlide(animateFooter)
         }
         .safeAreaPadding(.horizontal, .onboardingInset)
         .interactiveDismissDisabled()
-        .allowsHitTesting(animateFooter)
+        .allowsHitTesting(animateFooter || voiceOverEnabled)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Welcome to CurrencySpot")
-        .accessibilityHint("Learn about app features and get started")
         .task {
             guard !animateIcon else { return }
 
@@ -152,6 +150,7 @@ struct CurrencySpotOnboarding: View {
                             .stroke(Color.gray.opacity(0.2), lineWidth: 1.5)
                     }
                     .padding(.top, .onboardingGap)
+                    .accessibilityHidden(true)
             },
             cards: [
                 OnBoardingCard(

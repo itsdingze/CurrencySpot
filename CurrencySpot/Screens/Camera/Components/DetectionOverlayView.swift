@@ -13,6 +13,10 @@ import SwiftUI
 struct DetectionOverlayView: View {
     let items: [DetectedItem]
     let targetCurrency: String
+    /// Live feed (true) vs frozen still (false). Live plates ride churning
+    /// coordinates, so they're hidden from VoiceOver in favor of one
+    /// aggregated element; the frozen still's fixed plates stay focusable.
+    let isLive: Bool
     /// Outline tap: pin a converted plate onto a number the classifier skipped.
     let onOutlineTap: (UUID) -> Void
     /// Plate tap: open the conversion detail.
@@ -61,11 +65,22 @@ struct DetectionOverlayView: View {
         .animation(.appTrack, value: items)
         .animation(.appTrack, value: promotions)
         .onChange(of: items) { _, _ in syncRevealPromotion() }
+        // Live: the per-plate elements are hidden (they ride churning
+        // coordinates VoiceOver can't hold focus on); expose one stable summary
+        // instead. The frozen still keeps its focusable per-plate labels.
+        .overlay {
+            if isLive && !priceItems.isEmpty {
+                Color.clear
+                    .accessibilityElement()
+                    .accessibilityLabel("\(priceItems.count) prices detected. Double-tap the shutter to freeze and review.")
+            }
+        }
     }
 
+    @ViewBuilder
     private func plate(for item: DetectedItem, depth: Int?, plateCount: Int) -> some View {
         let depth = depth ?? 0
-        return Button {
+        let button = Button {
             handlePlateTap(item.id, depth: depth)
         } label: {
             ConvertedPlate(
@@ -85,9 +100,16 @@ struct DetectionOverlayView: View {
         .position(x: item.bounds.midX, y: item.bounds.midY)
         .opacity(opacity(forDepth: depth))
         .zIndex(zIndex(forDepth: depth, plateCount: plateCount))
-        .accessibilityHint(depth > 0
-            ? "Brings this conversion to the front"
-            : "Shows the conversion detail")
+        // Live plates churn through coordinates VoiceOver can't track; hide
+        // them and let the aggregated overlay element speak for them instead.
+        .accessibilityHidden(isLive)
+        // A dimmed plate's tap promotes it to the front instead of opening
+        // the detail, so only that branch carries a hint.
+        if depth > 0 {
+            button.accessibilityHint("Brings this conversion to the front")
+        } else {
+            button.accessibilityHint("Opens conversion details")
+        }
     }
 
     private func handlePlateTap(_ id: UUID, depth: Int) {
@@ -166,7 +188,8 @@ private struct DetectionOutline: View {
         }
         .buttonStyle(.plain)
         .position(x: item.bounds.midX, y: item.bounds.midY)
-        .accessibilityLabel("Convert \(item.transcript)")
+        .accessibilityLabel("Number \(item.transcript)")
+        .accessibilityHint("Convert this number")
     }
 }
 
@@ -191,6 +214,7 @@ private struct ConvertedPlate: View {
             .background(.black.mix(with: .white, by: 0.15).opacity(0.9), in: .rect(cornerRadius: cornerRadius))
             .overlay { RoundedRectangle(cornerRadius: cornerRadius).stroke(.white.opacity(0.25), lineWidth: 0.5) }
             .accessibilityLabel("Converted price \(amount.formatted(.currency(code: currencyCode)))")
+            .accessibilityAddTraits(.updatesFrequently)
     }
 
     private var cornerRadius: CGFloat {
@@ -231,6 +255,7 @@ private struct ConvertedPlate: View {
                 ),
             ],
             targetCurrency: "USD",
+            isLive: false,
             onOutlineTap: { _ in },
             onPlateTap: { _ in }
         )

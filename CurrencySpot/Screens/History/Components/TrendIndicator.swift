@@ -18,6 +18,7 @@ struct TrendIndicator: View {
                 .overlay {
                     Image(systemName: direction.systemImage)
                 }
+                .accessibilityHidden(true)
 
             Text(abs(change).formatted(.number.precision(.fractionLength(2))) + "%")
                 .lineLimit(1)
@@ -33,6 +34,8 @@ struct TrendIndicator: View {
                 .fill(direction.color.opacity(0.12))
                 .strokeBorder(direction.color.opacity(0.05), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(direction.description) \(abs(change).formatted(.number.precision(.fractionLength(2)))) percent")
     }
 }
 

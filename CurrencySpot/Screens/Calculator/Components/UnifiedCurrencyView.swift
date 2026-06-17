@@ -77,33 +77,6 @@ struct UnifiedCurrencyView: View {
             titleView
             contentRow
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityContainerLabel)
-        .accessibilityValue(accessibilityContainerValue)
-        .accessibilityHint(accessibilityContainerHint)
-    }
-
-    private var accessibilityContainerLabel: String {
-        switch type {
-        case .source:
-            "Source currency conversion"
-        case .converted:
-            "Target currency conversion"
-        }
-    }
-
-    private var accessibilityContainerValue: String {
-        let currencyName = CurrencyUtilities.name(for: currencyCode)
-        return "\(amount) \(currencyName)"
-    }
-
-    private var accessibilityContainerHint: String {
-        switch type {
-        case .source:
-            "Double tap to select source currency"
-        case .converted:
-            "Double tap to select target currency"
-        }
     }
 
     // MARK: - Private Views
@@ -114,7 +87,6 @@ struct UnifiedCurrencyView: View {
             .font(.appHeadline.weight(.medium))
             .foregroundStyle(type.titleColor)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityAddTraits(.isHeader)
     }
 
     @ViewBuilder
@@ -167,10 +139,8 @@ struct UnifiedCurrencyView: View {
         .buttonStyle(.currencyCode(fill: type.backgroundColor, stroke: type.strokeColor))
         .foregroundStyle(type.buttonColor)
         .accessibilityLabel(accessibilityButtonLabel)
-        .accessibilityHint(accessibilityButtonHint)
         .accessibilityValue(accessibilityButtonValue)
         .accessibilityInputLabels(accessibilityInputLabels)
-        .accessibilityAddTraits(.isButton)
     }
 
     private var accessibilityButtonLabel: String {
@@ -182,10 +152,6 @@ struct UnifiedCurrencyView: View {
         }
     }
 
-    private var accessibilityButtonHint: String {
-        "Opens currency selection"
-    }
-
     private var accessibilityButtonValue: String {
         let currencyName = CurrencyUtilities.name(for: currencyCode)
         return "Currently selected: \(currencyName), \(currencyCode)"
@@ -193,12 +159,7 @@ struct UnifiedCurrencyView: View {
 
     private var accessibilityInputLabels: [String] {
         let currencyName = CurrencyUtilities.name(for: currencyCode)
-        switch type {
-        case .source:
-            return ["From currency", "Source currency", currencyCode, currencyName]
-        case .converted:
-            return ["To currency", "Target currency", currencyCode, currencyName]
-        }
+        return [currencyCode, currencyName]
     }
 }
 

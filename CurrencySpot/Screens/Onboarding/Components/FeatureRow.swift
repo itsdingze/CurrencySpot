@@ -26,7 +26,6 @@ struct FeatureRow: View {
                 Text(title)
                     .font(.appHeadline)
                     .lineLimit(1)
-                    .accessibilityAddTraits(.isHeader)
 
                 Text(subtitle)
                     .font(.appSubheadline)
@@ -35,7 +34,6 @@ struct FeatureRow: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title): \(subtitle)")
     }
 }
 

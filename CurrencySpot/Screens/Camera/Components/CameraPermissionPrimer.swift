@@ -15,7 +15,6 @@ struct CameraPermissionPrimer: View {
             title: "Convert Prices with Your Camera",
             message: "Point your camera at a price tag or menu and see every price in your currency.",
             buttonTitle: "Get Started",
-            buttonHint: "Continues to the camera",
             action: { Task { await requestAccess() } }
         )
     }

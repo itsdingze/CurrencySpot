@@ -181,7 +181,9 @@ struct TimeRangePicker: View {
             .accessibilityRepresentation {
                 Picker("Time range", selection: timeRangeBinding) {
                     ForEach(timeRanges, id: \.self) { timeRange in
-                        Text(timeRange.displayName).tag(timeRange)
+                        Text(timeRange.displayName)
+                            .tag(timeRange)
+                            .accessibilityInputLabels(timeRange.accessibilityInputLabels)
                     }
                 }
                 .pickerStyle(.segmented)

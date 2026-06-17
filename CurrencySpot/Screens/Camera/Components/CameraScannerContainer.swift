@@ -48,7 +48,7 @@ struct CameraScannerContainer: View {
                     ZoomableScrollView {
                         ZStack {
                             StillFrameView(image: frozenImage)
-                            detectionOverlay
+                            detectionOverlay(isLive: false)
                         }
                         .environment(viewModel)
                         .accentColor(settingsViewModel.accentColor.color)
@@ -56,7 +56,7 @@ struct CameraScannerContainer: View {
                     }
                     .id(ObjectIdentifier(frozenImage))
                 } else {
-                    detectionOverlay
+                    detectionOverlay(isLive: true)
                 }
             }
             .clipShape(.rect(cornerRadius: .previewRadius))
@@ -81,6 +81,27 @@ struct CameraScannerContainer: View {
         }
         .onChange(of: viewModel.availableRates) {
             viewModel.refreshConversions()
+        }
+        // Fires once when a frozen frame's recognition surfaces prices — a
+        // discrete capture, not the continuous live feed (which keeps
+        // frozenImage nil), so VoiceOver isn't spammed every detection tick.
+        .onChange(of: viewModel.frozenImage != nil && viewModel.hasPrices) { _, detected in
+            if detected {
+                AccessibilityNotification.Announcement("Prices detected. Swipe to explore.").post()
+            }
+        }
+        // Live feed surfaced its first price: VoiceOver can't see the churning
+        // plates, so steer the user to the swipe/freeze actions instead.
+        .onChange(of: viewModel.frozenImage == nil && viewModel.hasPrices) { _, detected in
+            if detected {
+                AccessibilityNotification.Announcement("Price detected. Swipe right to hear the conversion, or tap the shutter to freeze and review.").post()
+            }
+        }
+        // A frozen frame's recognition finished with nothing to convert.
+        .onChange(of: viewModel.frozenImage != nil && !viewModel.isRecognizingStill && !viewModel.hasPrices) { _, empty in
+            if empty {
+                AccessibilityNotification.Announcement("No prices found. Tap Resume camera to try again.").post()
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
@@ -108,11 +129,13 @@ struct CameraScannerContainer: View {
     }
 
     /// The price plates and tappable outlines, shared by the live feed and the
-    /// frozen-still viewer.
-    private var detectionOverlay: some View {
+    /// frozen-still viewer. `isLive` swaps the live plates' per-element
+    /// VoiceOver focus for one aggregated summary.
+    private func detectionOverlay(isLive: Bool) -> some View {
         DetectionOverlayView(
             items: viewModel.detectedItems.elements,
             targetCurrency: viewModel.targetCurrency,
+            isLive: isLive,
             onOutlineTap: { viewModel.toggleConversion(for: $0) },
             onPlateTap: { viewModel.showBadgeDetail(for: $0) }
         )

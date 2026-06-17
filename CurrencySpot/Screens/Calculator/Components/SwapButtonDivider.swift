@@ -54,9 +54,6 @@ struct SwapButtonDivider: View {
         .buttonStyle(.controlButton)
         .accessibilityIdentifier("SwapButtonDivider")
         .accessibilityLabel("Swap currencies")
-        .accessibilityHint("Swaps the source and target currencies")
-        .accessibilityInputLabels(["Swap", "Switch", "Exchange", "Flip currencies"])
-        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: - Private Methods
@@ -65,6 +62,7 @@ struct SwapButtonDivider: View {
         withAnimation(.appFlip) {
             isFlipped.toggle()
             viewModel.swapCurrencies()
+            AccessibilityNotification.Announcement("Swapped. \(viewModel.baseCurrency) to \(viewModel.targetCurrency)").post()
         }
     }
 }

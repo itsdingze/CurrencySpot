@@ -36,14 +36,14 @@ struct OfflineBanner: View {
                         .foregroundStyle(Color.accentColor)
                 }
                 .accessibilityLabel("Refresh exchange rates")
-                .accessibilityHint("Attempts to fetch latest exchange rates from server")
-                .accessibilityInputLabels(["Refresh", "Update", "Retry"])
             }
         }
         .padding(.horizontal, .screenInset)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityLabelText)
-        .accessibilityHint(accessibilityHintText)
+        .onAppear {
+            AccessibilityNotification.Announcement("Offline. Showing saved exchange rates.").post()
+        }
     }
 
     // MARK: - Computed Properties
@@ -89,17 +89,6 @@ struct OfflineBanner: View {
             "Connection failed: Using cached data"
         case .none:
             isUsingMockData ? "Offline mode: Using mock data" : "Offline mode: Using cached data"
-        }
-    }
-
-    private var accessibilityHintText: String {
-        switch retryState {
-        case .retrying:
-            "App is attempting to reconnect to server"
-        case .exhausted:
-            "Connection attempts failed, using stored data. Tap refresh to try again"
-        case .none:
-            "App is currently offline and using stored data"
         }
     }
 }

@@ -12,7 +12,7 @@ struct CameraStateScreen: View {
     let title: LocalizedStringKey
     let message: LocalizedStringKey
     let buttonTitle: LocalizedStringKey
-    let buttonHint: LocalizedStringKey
+    var buttonHint: LocalizedStringKey? = nil
     let action: () -> Void
 
     var body: some View {
@@ -37,11 +37,7 @@ struct CameraStateScreen: View {
                         .multilineTextAlignment(.center)
                 }
 
-                Button(action: action) {
-                    Text(buttonTitle)
-                }
-                .buttonStyle(.primaryAction)
-                .accessibilityHint(buttonHint)
+                actionButton
             }
 
             Spacer()
@@ -49,6 +45,17 @@ struct CameraStateScreen: View {
         .safeAreaPadding(.horizontal, .onboardingInset)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.background.ignoresSafeArea())
+    }
+
+    @ViewBuilder
+    private var actionButton: some View {
+        let button = Button(action: action) { Text(buttonTitle) }
+            .buttonStyle(.primaryAction)
+        if let buttonHint {
+            button.accessibilityHint(buttonHint)
+        } else {
+            button
+        }
     }
 }
 
@@ -58,7 +65,6 @@ struct CameraStateScreen: View {
         title: "Convert Prices with Your Camera",
         message: "Point your camera at a price tag or menu and see every price in your currency.",
         buttonTitle: "Get Started",
-        buttonHint: "Continues to the camera",
         action: {}
     )
 }

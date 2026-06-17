@@ -51,8 +51,6 @@ struct CurrencyPickerView: View {
                                 }
                                 .buttonStyle(.currencyChip(isSelected: selectedCurrency == currency))
                                 .accessibilityLabel("\(currency), \(CurrencyUtilities.name(for: currency))")
-                                .accessibilityHint("Selects \(currency) as currency")
-                                .accessibilityInputLabels([currency, CurrencyUtilities.name(for: currency)])
                                 .accessibilityAddTraits(selectedCurrency == currency ? [.isButton, .isSelected] : .isButton)
                             }
                         }
@@ -77,9 +75,7 @@ struct CurrencyPickerView: View {
                         }
                     )
                     .accessibilityLabel("\(currency.currencyCode.rawValue), \(CurrencyUtilities.name(for: currency.currencyCode.rawValue))")
-                    .accessibilityHint("Selects \(currency.currencyCode.rawValue) as currency")
                     .accessibilityValue(currency.rate.toStringMax4Decimals)
-                    .accessibilityInputLabels([currency.currencyCode.rawValue, CurrencyUtilities.name(for: currency.currencyCode.rawValue)])
                     .accessibilityAddTraits(selectedCurrency == currency.currencyCode.rawValue ? [.isButton, .isSelected] : .isButton)
                     .hideOuterListSeparators(at: index, of: currencies.count)
                 }
@@ -91,9 +87,6 @@ struct CurrencyPickerView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Done") { dismiss() }
-                    .accessibilityLabel("Done selecting currency")
-                    .accessibilityHint("Closes the currency selection screen")
-                    .accessibilityInputLabels(["Done", "Finish", "Close"])
             }
         }
     }

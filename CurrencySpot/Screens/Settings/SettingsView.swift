@@ -44,6 +44,11 @@ struct SettingsView: View {
             Text(alert.message)
         }
         .overlay { toastOverlay }
+        .onChange(of: settingsViewModel.toast?.id) { _, newID in
+            if newID != nil {
+                AccessibilityNotification.Announcement(settingsViewModel.toast?.message ?? "").post()
+            }
+        }
     }
 
     /// Bool projection of the alert destination for the modern alert API;
@@ -101,9 +106,6 @@ struct SettingsView: View {
                         .symbolRenderingMode(.multicolor)
                 })
             }
-            .accessibilityLabel("Color scheme preference")
-            .accessibilityHint("Changes the app's appearance between light, dark, or system mode")
-            .accessibilityInputLabels(["Color scheme", "Appearance", "Theme"])
         }
     }
 
@@ -119,7 +121,6 @@ struct SettingsView: View {
                 currentValue: settingsViewModel.defaultBaseCurrency,
                 route: .defaultBaseCurrency
             )
-            .accessibilityHint("Set the default source currency for conversions")
 
             currencyNavigationLink(
                 title: "Default Target Currency",
@@ -128,15 +129,11 @@ struct SettingsView: View {
                 currentValue: settingsViewModel.defaultTargetCurrency,
                 route: .defaultTargetCurrency
             )
-            .accessibilityHint("Set the default target currency for conversions")
 
             NavigationLink(value: SettingsRoute.favoriteCurrencies) {
                 Label("Favorite Currencies", systemImage: "star.circle.fill")
                     .symbolRenderingMode(.multicolor)
             }
-            .accessibilityLabel("Manage favorite currencies")
-            .accessibilityHint("Customize which currencies appear in the quick selection")
-            .accessibilityInputLabels(["Favorites", "Favorite currencies", "Currency favorites"])
         }
     }
 
@@ -147,18 +144,14 @@ struct SettingsView: View {
                 title: "Refresh All Data",
                 action: settingsViewModel.refreshAllDataTapped
             )
-            .accessibilityLabel("Refresh all data")
             .accessibilityHint("Erases all stored exchange rates and historical data, then downloads fresh data")
-            .accessibilityInputLabels(["Refresh data", "Refresh all data"])
 
             settingsActionButton(
                 icon: "arrow.triangle.2.circlepath.circle.fill",
                 title: "Reset All Preferences",
                 action: settingsViewModel.resetPreferencesTapped
             )
-            .accessibilityLabel("Reset all preferences")
             .accessibilityHint("Resets all settings to their default values")
-            .accessibilityInputLabels(["Reset settings", "Restore defaults"])
         }
     }
 
@@ -199,9 +192,7 @@ struct SettingsView: View {
                     }
                 }
                 .tint(.primary)
-                .accessibilityLabel("Privacy Policy")
                 .accessibilityHint("Opens privacy policy in your web browser")
-                .accessibilityInputLabels(["Privacy", "Privacy policy"])
             }
 
             NavigationLink(value: SettingsRoute.acknowledgements) {
@@ -213,9 +204,6 @@ struct SettingsView: View {
                         .foregroundStyle(Color.white, Color.blue)
                 })
             }
-            .accessibilityLabel("Acknowledgements")
-            .accessibilityHint("Shows open-source licenses for bundled software")
-            .accessibilityInputLabels(["Acknowledgements", "Licenses", "Open source"])
         }
     }
 
