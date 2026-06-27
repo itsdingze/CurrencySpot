@@ -16,6 +16,8 @@ enum UserDefaultsKeys {
     static let defaultBaseCurrency = "DefaultBaseCurrency"
     static let defaultTargetCurrency = "DefaultTargetCurrency"
     static let favoriteCurrencies = "FavoriteCurrencies"
+
+    static let historyWatchlist = "HistoryWatchlist"
     
     // MARK: - Appearance Settings
     

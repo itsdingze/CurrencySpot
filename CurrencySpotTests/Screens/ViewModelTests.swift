@@ -14,12 +14,17 @@ import Testing
 struct ViewModelTests {
     // Builds a HistoryViewModel backed entirely by MockExchangeRateService so trend
     // data is the deterministic MockExchangeRates.trendData fixture and no network runs.
-    private static func makeHistoryViewModel(ratesStore: ExchangeRatesStore? = nil) -> HistoryViewModel {
+    private static func makeHistoryViewModel(
+        ratesStore: ExchangeRatesStore? = nil,
+        watchlist: WatchlistStore? = nil
+    ) -> HistoryViewModel {
         let ratesStore = ratesStore ?? ExchangeRatesStore()
+        let watchlist = watchlist ?? makeWatchlist()
         let service = MockExchangeRateService()
         let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
         return HistoryViewModel(
             ratesStore: ratesStore,
+            watchlist: watchlist,
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: DataOrchestrationUseCase(
                 repository: service,
@@ -33,6 +38,15 @@ struct ViewModelTests {
             appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
             clock: ImmediateClock()
         )
+    }
+
+    /// An isolated, in-memory watchlist (never touches `.standard`), seeded with
+    /// an explicit set so list expectations are deterministic.
+    private static func makeWatchlist(seed: [String] = CurrencyDefaults.favoriteCurrencies) -> WatchlistStore {
+        let suiteName = "ViewModelTests.watchlist.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+        defaults.removePersistentDomain(forName: suiteName)
+        return WatchlistStore(userDefaults: defaults, seed: seed)
     }
 
     /// Yields the main actor until `condition` holds; tests guard hangs with `.timeLimit`.
@@ -122,6 +136,7 @@ struct ViewModelTests {
             let analysis = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
             let viewModel = HistoryViewModel(
                 ratesStore: ExchangeRatesStore(),
+                watchlist: ViewModelTests.makeWatchlist(),
                 historicalDataAnalysisUseCase: analysis,
                 dataOrchestrationUseCase: DataOrchestrationUseCase(
                     repository: repository,
@@ -156,6 +171,7 @@ struct ViewModelTests {
             let analysis = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
             let viewModel = HistoryViewModel(
                 ratesStore: ExchangeRatesStore(),
+                watchlist: ViewModelTests.makeWatchlist(),
                 historicalDataAnalysisUseCase: analysis,
                 dataOrchestrationUseCase: DataOrchestrationUseCase(
                     repository: repository,
@@ -230,10 +246,150 @@ struct ViewModelTests {
             #expect(viewModel.isChartOnboardingPresented == true)
         }
 
-        @Test("displayedCurrencies excludes the base, adjusts rates, and reacts to search and sort", .timeLimit(.minutes(1)))
-        func displayedCurrenciesFilterAndSort() async {
+        @Test("watchlist view shows only watchlisted currencies, excludes the base, and honors sort", .timeLimit(.minutes(1)))
+        func watchlistDisplayAndSort() async {
             let store = ExchangeRatesStore()
-            let viewModel = ViewModelTests.makeHistoryViewModel(ratesStore: store)
+            // Manual order GBP, EUR; CHF deliberately left off the watchlist.
+            let watchlist = ViewModelTests.makeWatchlist(seed: ["GBP", "EUR"])
+            let viewModel = ViewModelTests.makeHistoryViewModel(ratesStore: store, watchlist: watchlist)
+
+            store.update(
+                rates: [
+                    ExchangeRate(currencyCode: "USD", rate: 1.0),
+                    ExchangeRate(currencyCode: "EUR", rate: 0.8),
+                    ExchangeRate(currencyCode: "GBP", rate: 0.5),
+                    ExchangeRate(currencyCode: "CHF", rate: 0.9),
+                ],
+                lastUpdated: nil,
+                isUsingMockData: false
+            )
+            // Observation delivery hops through the main actor's queue.
+            await ViewModelTests.waitUntil { viewModel.displayedCurrencies.count == 2 }
+
+            // Only watchlisted currencies (EUR, GBP); base USD excluded; CHF absent.
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP", "EUR"]) // manual order
+            #expect(viewModel.displayedCurrencies.first?.rate == 0.5) // GBP: 0.5 / 1.0
+
+            viewModel.selectSortOption(.symbol)
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP"])
+
+            viewModel.selectSortOption(.name) // "British Pound" < "Euro"
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP", "EUR"])
+
+            viewModel.selectSortOption(.manual) // back to the stored drag order
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP", "EUR"])
+        }
+
+        @Test("searching exposes the full catalog with watchlist membership", .timeLimit(.minutes(1)))
+        func searchShowsFullCatalog() async {
+            let store = ExchangeRatesStore()
+            let watchlist = ViewModelTests.makeWatchlist(seed: ["EUR"])
+            let viewModel = ViewModelTests.makeHistoryViewModel(ratesStore: store, watchlist: watchlist)
+
+            store.update(
+                rates: [
+                    ExchangeRate(currencyCode: "USD", rate: 1.0),
+                    ExchangeRate(currencyCode: "EUR", rate: 0.8),
+                    ExchangeRate(currencyCode: "CHF", rate: 0.9),
+                ],
+                lastUpdated: nil,
+                isUsingMockData: false
+            )
+            await ViewModelTests.waitUntil { viewModel.displayedCurrencies.count == 1 }
+
+            // Watchlist view: only EUR.
+            #expect(viewModel.isSearching == false)
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR"])
+
+            // Search reaches CHF, which is not on the watchlist.
+            viewModel.searchText = "CHF"
+            #expect(viewModel.isSearching == true)
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["CHF"])
+            #expect(viewModel.isInWatchlist("CHF") == false)
+            #expect(viewModel.isInWatchlist("EUR") == true)
+        }
+
+        @Test("toggling a search result adds then removes it from the watchlist", .timeLimit(.minutes(1)))
+        func toggleFromSearch() async {
+            let store = ExchangeRatesStore()
+            let watchlist = ViewModelTests.makeWatchlist(seed: ["EUR"])
+            let viewModel = ViewModelTests.makeHistoryViewModel(ratesStore: store, watchlist: watchlist)
+
+            store.update(
+                rates: [
+                    ExchangeRate(currencyCode: "USD", rate: 1.0),
+                    ExchangeRate(currencyCode: "EUR", rate: 0.8),
+                    ExchangeRate(currencyCode: "CHF", rate: 0.9),
+                ],
+                lastUpdated: nil,
+                isUsingMockData: false
+            )
+            await ViewModelTests.waitUntil { viewModel.displayedCurrencies.count == 1 }
+
+            viewModel.toggleWatchlist("CHF")
+            #expect(viewModel.isInWatchlist("CHF") == true)
+            // Manual order keeps the new addition last.
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "CHF"])
+
+            viewModel.toggleWatchlist("CHF")
+            #expect(viewModel.isInWatchlist("CHF") == false)
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR"])
+        }
+
+        @Test("removeFromWatchlist(atOffsets:) deletes the row at the displayed offset", .timeLimit(.minutes(1)))
+        func removeAtOffsets() async {
+            let store = ExchangeRatesStore()
+            let watchlist = ViewModelTests.makeWatchlist(seed: ["EUR", "GBP", "JPY"])
+            let viewModel = ViewModelTests.makeHistoryViewModel(ratesStore: store, watchlist: watchlist)
+
+            store.update(
+                rates: [
+                    ExchangeRate(currencyCode: "USD", rate: 1.0),
+                    ExchangeRate(currencyCode: "EUR", rate: 0.8),
+                    ExchangeRate(currencyCode: "GBP", rate: 0.5),
+                    ExchangeRate(currencyCode: "JPY", rate: 150),
+                ],
+                lastUpdated: nil,
+                isUsingMockData: false
+            )
+            await ViewModelTests.waitUntil { viewModel.displayedCurrencies.count == 3 }
+
+            // Displayed manual order [EUR, GBP, JPY]; swipe-delete offset 1 (GBP).
+            viewModel.removeFromWatchlist(atOffsets: IndexSet(integer: 1))
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "JPY"])
+            #expect(viewModel.isInWatchlist("GBP") == false)
+        }
+
+        @Test("moveWatchlist reorders by displayed offset while the hidden base stays put", .timeLimit(.minutes(1)))
+        func moveReorders() async {
+            let store = ExchangeRatesStore()
+            // USD is watchlisted but hidden (it's the base).
+            let watchlist = ViewModelTests.makeWatchlist(seed: ["USD", "EUR", "GBP", "JPY"])
+            let viewModel = ViewModelTests.makeHistoryViewModel(ratesStore: store, watchlist: watchlist)
+
+            store.update(
+                rates: [
+                    ExchangeRate(currencyCode: "USD", rate: 1.0),
+                    ExchangeRate(currencyCode: "EUR", rate: 0.8),
+                    ExchangeRate(currencyCode: "GBP", rate: 0.5),
+                    ExchangeRate(currencyCode: "JPY", rate: 150),
+                ],
+                lastUpdated: nil,
+                isUsingMockData: false
+            )
+            await ViewModelTests.waitUntil { viewModel.displayedCurrencies.count == 3 }
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP", "JPY"])
+
+            // Drag JPY (displayed offset 2) to the front.
+            viewModel.moveWatchlist(fromOffsets: IndexSet(integer: 2), toOffset: 0)
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["JPY", "EUR", "GBP"])
+        }
+
+        @Test("Percentage and Price Change sorts surface the biggest weekly gainer first", .timeLimit(.minutes(1)))
+        func changeSorts() async {
+            let store = ExchangeRatesStore()
+            let watchlist = ViewModelTests.makeWatchlist(seed: ["GBP", "EUR"]) // manual: GBP, EUR
+            let viewModel = ViewModelTests.makeHistoryViewModel(ratesStore: store, watchlist: watchlist)
 
             store.update(
                 rates: [
@@ -244,24 +400,17 @@ struct ViewModelTests {
                 lastUpdated: nil,
                 isUsingMockData: false
             )
-            // Observation delivery hops through the main actor's queue.
+            // Fixture trends: EUR +0.1%, GBP -0.5% (USD base passthrough).
+            await viewModel.initializeTrendData()
             await ViewModelTests.waitUntil { viewModel.displayedCurrencies.count == 2 }
 
-            // Base (USD) excluded; default sort is name A-Z ("British Pound" < "Euro").
-            #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP", "EUR"])
-            #expect(viewModel.displayedCurrencies.first?.rate == 0.5) // 0.5 / 1.0
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP", "EUR"]) // manual
 
-            viewModel.selectSortOption(.rateHighToLow)
+            viewModel.selectSortOption(.percentChange)
             #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP"])
 
-            viewModel.selectSortOption(.rateLowToHigh)
-            #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP", "EUR"])
-
-            viewModel.searchText = "euro"
-            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR"])
-
-            viewModel.searchText = ""
-            #expect(viewModel.displayedCurrencies.count == 2)
+            viewModel.selectSortOption(.priceChange)
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP"])
         }
 
         @Test("Follows the calculator's base currency through the shared rates store")

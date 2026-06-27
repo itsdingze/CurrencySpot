@@ -10,21 +10,20 @@ import SwiftUI
 /// navigation stack (destinations registered in `SettingsView`).
 struct AcknowledgementsView: View {
     var body: some View {
-        List(Acknowledgement.bundled) { acknowledgement in
-            NavigationLink(value: acknowledgement) {
-                VStack(alignment: .leading, spacing: .hairlineGap) {
-                    Text(acknowledgement.name)
-                        .font(.appHeadline)
+        List {
+            ForEach(Acknowledgement.bundled) { acknowledgement in
+                NavigationLink(value: acknowledgement) {
+                    VStack(alignment: .leading, spacing: .hairlineGap) {
+                        Text(acknowledgement.name)
+                            .font(.appHeadline)
 
-                    Text(acknowledgement.licenseName)
-                        .font(.appSubheadline)
-                        .foregroundStyle(.secondary)
+                        Text(acknowledgement.licenseName)
+                            .font(.appSubheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
-            .hideOuterListSeparators(
-                isFirst: acknowledgement == Acknowledgement.bundled.first,
-                isLast: acknowledgement == Acknowledgement.bundled.last
-            )
+            .listSectionSeparator(.hidden)
         }
         .listStyle(.plain)
         .navigationTitle("Acknowledgements")

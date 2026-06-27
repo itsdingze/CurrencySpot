@@ -58,6 +58,7 @@ final class DependencyContainer {
     // MARK: - Shared State and ViewModels
 
     let ratesStore: ExchangeRatesStore
+    let watchlistStore: WatchlistStore
     let calculatorViewModel: CalculatorViewModel
     let historyViewModel: HistoryViewModel
     let settingsViewModel: SettingsViewModel
@@ -126,6 +127,9 @@ final class DependencyContainer {
         refreshAllDataUseCase = RefreshAllDataUseCase(repository: dataCoordinator)
 
         ratesStore = ExchangeRatesStore()
+        // Seeds from the user's Settings favorites (or the default set) the first
+        // time, then persists and edits independently.
+        watchlistStore = WatchlistStore()
 
         calculatorViewModel = CalculatorViewModel(
             repository: dataCoordinator,
@@ -136,6 +140,7 @@ final class DependencyContainer {
 
         historyViewModel = HistoryViewModel(
             ratesStore: ratesStore,
+            watchlist: watchlistStore,
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: dataOrchestrationUseCase,
             chartDataPreparationUseCase: chartDataPreparationUseCase,

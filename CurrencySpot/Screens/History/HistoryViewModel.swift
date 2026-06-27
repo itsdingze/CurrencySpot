@@ -86,17 +86,35 @@ final class HistoryViewModel {
         }
     }
 
-    private(set) var sortOption: CurrencySortOption = .nameAZ
+    private(set) var sortOption: CurrencySortOption = .manual
+
+    private(set) var trendDisplayMode: TrendDisplayMode = .percentChange
+
+    /// True while the search field has text: the list shows the full currency
+    /// catalog with add/remove toggles instead of the watchlist.
+    var isSearching: Bool { !searchText.isEmpty }
+
+    /// Whether the watchlist itself holds nothing — drives the empty state,
+    /// distinct from "no rows because rates haven't loaded yet."
+    var isWatchlistEmpty: Bool { watchlist.codes.isEmpty }
 
     // MARK: - Trend Data Storage
 
-    /// In-memory storage for trend data (converted to value types)
-    private(set) var trendData: [Trend] = []
+    /// In-memory storage for trend data (converted to value types). Recomputes
+    /// the displayed list so the Price/Percentage Change sorts re-rank once trends
+    /// arrive after the rows were first built.
+    private(set) var trendData: [Trend] = [] {
+        didSet { updateDisplayedCurrencies() }
+    }
 
     // MARK: Dependencies
 
     /// Shared read-only snapshot of the calculator's current rates and base selection.
     private let ratesStore: ExchangeRatesStore
+
+    /// The History tab's persisted watchlist — its own list, seeded once from the
+    /// Settings favorites then edited independently.
+    private let watchlist: WatchlistStore
 
     /// Use cases for business logic
     private let dataOrchestrationUseCase: DataOrchestrationUseCase
@@ -125,6 +143,7 @@ final class HistoryViewModel {
     /// Initializes the HistoryViewModel with dependency injection
     init(
         ratesStore: ExchangeRatesStore,
+        watchlist: WatchlistStore,
         historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase,
         dataOrchestrationUseCase: DataOrchestrationUseCase,
         chartDataPreparationUseCase: ChartDataPreparationUseCase,
@@ -134,6 +153,7 @@ final class HistoryViewModel {
         logger: LoggerService = OSLogLoggerService()
     ) {
         self.ratesStore = ratesStore
+        self.watchlist = watchlist
         self.historicalDataAnalysisUseCase = historicalDataAnalysisUseCase
         self.dataOrchestrationUseCase = dataOrchestrationUseCase
         self.chartDataPreparationUseCase = chartDataPreparationUseCase
@@ -189,6 +209,55 @@ final class HistoryViewModel {
     func selectSortOption(_ option: CurrencySortOption) {
         guard option != sortOption else { return }
         sortOption = option
+        updateDisplayedCurrencies()
+    }
+
+    /// Switches what the trend badge shows. Rows re-render from the observed
+    /// property; the list order is unaffected, so no recompute is needed.
+    func selectTrendDisplayMode(_ mode: TrendDisplayMode) {
+        guard mode != trendDisplayMode else { return }
+        trendDisplayMode = mode
+    }
+
+    /// The trend badge's text for a row under the current display mode: the weekly
+    /// percentage, or the absolute weekly change in the base-adjusted rate.
+    func trendDisplayValue(rate: Double, weeklyChange: Double) -> String {
+        switch trendDisplayMode {
+        case .percentChange:
+            abs(weeklyChange).formatted(.number.precision(.fractionLength(2))) + "%"
+        case .priceChange:
+            abs(rate * weeklyChange / 100).toStringMax4Decimals
+        }
+    }
+
+    // MARK: Watchlist Intents
+
+    /// Whether `code` is on the watchlist — drives the search-row toggle icon.
+    func isInWatchlist(_ code: String) -> Bool {
+        watchlist.contains(code)
+    }
+
+    /// Search-row toggle: add the currency if absent, remove it if present.
+    func toggleWatchlist(_ code: String) {
+        watchlist.toggle(code)
+        updateDisplayedCurrencies()
+    }
+
+    /// Swipe-to-delete in the watchlist view. Offsets index into the displayed
+    /// (base-excluded) rows, so resolve them to codes before removing.
+    func removeFromWatchlist(atOffsets offsets: IndexSet) {
+        let codes = offsets.map { displayedCurrencies[$0].code }
+        codes.forEach { watchlist.remove($0) }
+        updateDisplayedCurrencies()
+    }
+
+    /// Drag-to-reorder in the watchlist view (Manual sort only). Offsets index
+    /// into the displayed rows; the store reconciles them against any hidden
+    /// codes (the base currency) so the manual order survives.
+    func moveWatchlist(fromOffsets offsets: IndexSet, toOffset destination: Int) {
+        var order = displayedCurrencies.map(\.code)
+        order.move(fromOffsets: offsets, toOffset: destination)
+        watchlist.reorder(displayedOrder: order)
         updateDisplayedCurrencies()
     }
 
@@ -405,7 +474,8 @@ final class HistoryViewModel {
         let rates = ratesStore.rates
         let baseRate = rates.first { $0.currencyCode.rawValue == base }?.rate ?? 1.0
 
-        var entries = rates
+        // Every available currency except the base, with its base-adjusted rate.
+        let catalog = rates
             .filter { $0.currencyCode.rawValue != base }
             .map { rate in
                 CurrencyListEntry(
@@ -415,18 +485,51 @@ final class HistoryViewModel {
                 )
             }
 
-        if !searchText.isEmpty {
-            entries = entries.filter { entry in
-                entry.code.localizedStandardContains(searchText) ||
-                    entry.name.localizedStandardContains(searchText)
-            }
+        if isSearching {
+            // Search spans the full catalog (each row carries an add/remove
+            // toggle), ordered by name so results read predictably.
+            displayedCurrencies = catalog
+                .filter { entry in
+                    entry.code.localizedStandardContains(searchText) ||
+                        entry.name.localizedStandardContains(searchText)
+                }
+                .sorted { $0.name < $1.name }
+            return
         }
 
-        displayedCurrencies = switch sortOption {
-        case .nameAZ: entries.sorted { $0.name < $1.name }
-        case .rateHighToLow: entries.sorted { $0.rate > $1.rate }
-        case .rateLowToHigh: entries.sorted { $0.rate < $1.rate }
+        // Watchlist view: only watchlisted currencies, in the chosen order.
+        let watchlisted = catalog.filter { watchlist.contains($0.code) }
+        displayedCurrencies = sortedForDisplay(watchlisted)
+    }
+
+    /// Orders watchlisted entries per `sortOption`. Manual restores the stored
+    /// drag order; change-based sorts surface the biggest movers first.
+    private func sortedForDisplay(_ entries: [CurrencyListEntry]) -> [CurrencyListEntry] {
+        switch sortOption {
+        case .manual:
+            let position = Dictionary(
+                uniqueKeysWithValues: watchlist.codes.elements.enumerated().map { ($1, $0) }
+            )
+            return entries.sorted { (position[$0.code] ?? .max) < (position[$1.code] ?? .max) }
+        case .symbol:
+            return entries.sorted { $0.code < $1.code }
+        case .name:
+            return entries.sorted { $0.name < $1.name }
+        case .percentChange:
+            return entries.sorted { weeklyChange(for: $0.code) > weeklyChange(for: $1.code) }
+        case .priceChange:
+            return entries.sorted { priceChange(for: $0) > priceChange(for: $1) }
         }
+    }
+
+    /// Weekly percentage change for a currency, base-adjusted (0 when unknown).
+    private func weeklyChange(for code: String) -> Double {
+        getTrendData(for: code)?.weeklyChange ?? 0
+    }
+
+    /// Absolute weekly change in the base-adjusted rate, derived from the percentage.
+    private func priceChange(for entry: CurrencyListEntry) -> Double {
+        entry.rate * weeklyChange(for: entry.code) / 100
     }
 
     // MARK: - Prefetch

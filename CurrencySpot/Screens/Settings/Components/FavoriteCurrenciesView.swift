@@ -25,10 +25,9 @@ struct FavoriteCurrenciesView: View {
                         .font(.appSubheadline)
                         .foregroundStyle(.secondary)
                 }
-                .hideOuterListSeparators(
-                    isFirst: currency == viewModel.favoriteCurrencies.first,
-                    isLast: currency == viewModel.favoriteCurrencies.last
-                )
+                .padding(.vertical, .elementGap)
+                .padding(.horizontal, .cardPadding)
+                .rowSeparator(isLast: currency == viewModel.favoriteCurrencies.last)
             }
             .onDelete { indexSet in
                 let currenciesToRemove = indexSet.map { viewModel.favoriteCurrencies[$0] }
@@ -90,7 +89,7 @@ struct AddCurrencyView: View {
                     .zIndex(1)
 
                 List {
-                    ForEach(Array(currencies.enumerated()), id: \.element.currencyCode) { index, currency in
+                    ForEach(currencies, id: \.currencyCode) { currency in
                         CurrencyRowButton(
                             code: currency.currencyCode.rawValue,
                             name: CurrencyUtilities.name(for: currency.currencyCode.rawValue),
@@ -99,8 +98,8 @@ struct AddCurrencyView: View {
                                 isPresented = false
                             }
                         )
-                        .hideOuterListSeparators(at: index, of: currencies.count)
                     }
+                    .listSectionSeparator(.hidden)
                 }
                 .listStyle(.plain)
             }

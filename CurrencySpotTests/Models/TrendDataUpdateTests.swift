@@ -201,8 +201,10 @@ struct TrendDataUpdateTests {
     private static func makeFixtureBackedViewModel() -> HistoryViewModel {
         let service = MockExchangeRateService()
         let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: MockHistoricalSyncStore())
+        let watchlistDefaults = UserDefaults(suiteName: "TrendDataUpdateTests.\(UUID().uuidString)") ?? .standard
         return HistoryViewModel(
             ratesStore: ExchangeRatesStore(),
+            watchlist: WatchlistStore(userDefaults: watchlistDefaults, seed: CurrencyDefaults.favoriteCurrencies),
             historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
             dataOrchestrationUseCase: DataOrchestrationUseCase(
                 repository: service,

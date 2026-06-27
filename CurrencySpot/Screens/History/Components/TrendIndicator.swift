@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct TrendIndicator: View {
-    let change: Double
+    /// Pre-formatted display text (e.g. "1.23%" or "0.0123"); the caller chooses
+    /// percentage vs price so this view only renders.
+    let value: String
     let direction: TrendDirection
 
     var body: some View {
@@ -20,7 +22,7 @@ struct TrendIndicator: View {
                 }
                 .accessibilityHidden(true)
 
-            Text(abs(change).formatted(.number.precision(.fractionLength(2))) + "%")
+            Text(value)
                 .lineLimit(1)
                 .monospacedDigit()
         }
@@ -35,15 +37,15 @@ struct TrendIndicator: View {
                 .strokeBorder(direction.color.opacity(0.05), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(direction.description) \(abs(change).formatted(.number.precision(.fractionLength(2)))) percent")
+        .accessibilityLabel("\(direction.description) \(value)")
     }
 }
 
 #Preview {
     VStack(spacing: 10) {
-        TrendIndicator(change: 0.28, direction: .down)
-        TrendIndicator(change: 0.32, direction: .up)
-        TrendIndicator(change: 0.00, direction: .stable)
+        TrendIndicator(value: "0.28%", direction: .down)
+        TrendIndicator(value: "0.32%", direction: .up)
+        TrendIndicator(value: "0.00%", direction: .stable)
     }
     .padding()
 }

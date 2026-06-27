@@ -53,6 +53,7 @@
 
             return HistoryViewModel(
                 ratesStore: ExchangeRatesStore(),
+                watchlist: WatchlistStore(),
                 historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
                 dataOrchestrationUseCase: dataOrchestrationUseCase,
                 chartDataPreparationUseCase: chartDataPreparationUseCase,
@@ -156,6 +157,7 @@
 
             return HistoryViewModel(
                 ratesStore: ExchangeRatesStore(),
+                watchlist: WatchlistStore(),
                 historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
                 dataOrchestrationUseCase: DataOrchestrationUseCase(
                     repository: StalledHistoricalRateRepository(),
