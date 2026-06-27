@@ -184,7 +184,7 @@ final class SettingsViewModel {
         static let appearanceMode: AppearanceMode = .system
         static let baseCurrency = "USD"
         static let targetCurrency = "EUR"
-        static let favoriteCurrencies = ["USD", "EUR", "GBP", "JPY", "CNY", "CAD", "AUD"]
+        static let favoriteCurrencies = CurrencyDefaults.favoriteCurrencies
         static let hasSeenOnboarding = false
         static let hasSeenChartOnboarding = false
     }
