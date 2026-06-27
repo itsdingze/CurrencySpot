@@ -83,28 +83,28 @@ struct AddCurrencyView: View {
     var body: some View {
         let currencies = filteredCurrencies
         return NavigationStack {
-            VStack {
-                SearchField(prompt: "Search currency code or name", text: $searchText)
-                    .padding(.horizontal)
-                    .zIndex(1)
-
-                List {
-                    ForEach(currencies, id: \.currencyCode) { currency in
-                        CurrencyRowButton(
-                            code: currency.currencyCode.rawValue,
-                            name: CurrencyUtilities.name(for: currency.currencyCode.rawValue),
-                            action: {
-                                viewModel.addToFavorites(currency.currencyCode.rawValue)
-                                isPresented = false
-                            }
-                        )
-                    }
-                    .listSectionSeparator(.hidden)
+            List {
+                ForEach(currencies, id: \.currencyCode) { currency in
+                    CurrencyRowButton(
+                        code: currency.currencyCode.rawValue,
+                        name: CurrencyUtilities.name(for: currency.currencyCode.rawValue),
+                        action: {
+                            viewModel.addToFavorites(currency.currencyCode.rawValue)
+                            isPresented = false
+                        }
+                    )
                 }
-                .listStyle(.plain)
+                .listSectionSeparator(.hidden)
             }
+            .listStyle(.plain)
             .navigationTitle("Add Currency")
             .toolbarTitleDisplayMode(.inline)
+            .searchable(
+                text: $searchText,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Search currency code or name"
+            )
+            .autocorrectionDisabled()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") {

@@ -16,12 +16,15 @@ struct CurrencyListView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            VStack(spacing: .elementGap) {
-                searchBar
-                content
-            }
+            content
             .navigationTitle("History")
             .toolbarTitleDisplayMode(.inlineLarge)
+            .searchable(
+                text: Bindable(historyViewModel).searchText,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Search currencies"
+            )
+            .autocorrectionDisabled()
             .navigationDestination(for: String.self) { _ in
                 CurrencyHistoryView()
             }
@@ -49,13 +52,6 @@ struct CurrencyListView: View {
     }
 
     // MARK: - View Components
-
-    private var searchBar: some View {
-        SearchField(prompt: "Search currencies", text: Bindable(historyViewModel).searchText)
-            .padding(.horizontal)
-            .padding(.top, .hairlineGap)
-            .zIndex(1)
-    }
 
     @ViewBuilder
     private var content: some View {

@@ -32,11 +32,6 @@ struct CurrencyPickerView: View {
 
     var body: some View {
         VStack {
-            SearchField(prompt: "Search currency code or name", text: $searchText)
-                .padding(.horizontal)
-                .padding(.top, .tightGap)
-                .zIndex(1)
-
             // Quick access to common currencies
             if searchText.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -83,6 +78,12 @@ struct CurrencyPickerView: View {
         }
         .navigationTitle("Select Currency")
         .toolbarTitleDisplayMode(.inline)
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search currency code or name"
+        )
+        .autocorrectionDisabled()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Done") { dismiss() }
