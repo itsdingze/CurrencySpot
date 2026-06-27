@@ -81,6 +81,8 @@ struct SettingsView: View {
             )
         case .favoriteCurrencies:
             FavoriteCurrenciesView()
+        case .about:
+            AboutView()
         case .acknowledgements:
             AcknowledgementsView()
         }
@@ -156,52 +158,13 @@ struct SettingsView: View {
     }
 
     private var aboutSection: some View {
-        Section(
-            header: Text("About"),
-            footer: Text("Exchange rates are aggregated from central banks worldwide.")
-        ) {
-            LabeledContent {
-                Text(Bundle.main.appVersionWithBuild)
-                    .foregroundStyle(.secondary)
-            } label: {
+        Section {
+            NavigationLink(value: SettingsRoute.about) {
                 Label(title: {
-                    Text("Version")
+                    Text("About")
                 }, icon: {
                     Image(systemName: "info.circle.fill")
                         .symbolRenderingMode(.multicolor)
-                })
-            }
-
-            if let privacyPolicyURL = URL(string: "https://currencyspot.vercel.app/privacy") {
-                Link(destination: privacyPolicyURL) {
-                    HStack {
-                        Label(title: {
-                            Text("Privacy Policy")
-                        }, icon: {
-                            Image(systemName: "lock.circle.fill")
-                                .symbolRenderingMode(.palette)
-                                .foregroundStyle(Color.white, Color.blue)
-                        })
-
-                        Spacer()
-
-                        Image(systemName: "arrow.up.right")
-                            .font(.appCaption)
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true)
-                    }
-                }
-                .tint(.primary)
-                .accessibilityHint("Opens privacy policy in your web browser")
-            }
-
-            NavigationLink(value: SettingsRoute.acknowledgements) {
-                Label(title: {
-                    Text("Acknowledgements")
-                }, icon: {
-                    Image(systemName: "document.circle.fill")
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(Color.white, Color.blue)
                 })
             }
         }

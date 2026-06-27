@@ -65,4 +65,6 @@ nonisolated extension CGFloat {
     static let closeIconSize: CGFloat = 16
     /// Height of the main history chart and its placeholders.
     static let chartHeight: CGFloat = 260
+    /// App-icon artwork in the About header.
+    static let appIconSize: CGFloat = 64
 }

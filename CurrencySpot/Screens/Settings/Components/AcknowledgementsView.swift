@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Settings → About → Acknowledgements: the bundled third-party packages.
+/// Settings → About → Open Source Licenses: the bundled third-party packages.
 /// Each row pushes to the full, verbatim license text via the shared Settings
 /// navigation stack (destinations registered in `SettingsView`).
 struct AcknowledgementsView: View {
@@ -26,7 +26,7 @@ struct AcknowledgementsView: View {
             .listSectionSeparator(.hidden)
         }
         .listStyle(.plain)
-        .navigationTitle("Acknowledgements")
+        .navigationTitle("Open Source Licenses")
         .toolbarTitleDisplayMode(.inline)
     }
 }

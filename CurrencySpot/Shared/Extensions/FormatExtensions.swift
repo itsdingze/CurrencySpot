@@ -10,6 +10,13 @@ import Foundation
 // MARK: - Bundle Extensions
 
 extension Bundle {
+    /// Returns the user-facing app name from Info.plist
+    var appName: String {
+        infoDictionary?["CFBundleDisplayName"] as? String
+            ?? infoDictionary?["CFBundleName"] as? String
+            ?? "CurrencySpot"
+    }
+
     /// Returns the app version from Info.plist
     var appVersion: String {
         infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
