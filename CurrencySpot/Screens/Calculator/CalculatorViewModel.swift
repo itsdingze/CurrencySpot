@@ -52,10 +52,32 @@ final class CalculatorViewModel {
     /// `ExchangeRatesStore`; this tracks the async phase the UI renders.
     private(set) var loadState: Loadable<[ExchangeRate]> = .idle
 
-    var retryState: RetryState = .none
+    /// True when the rates on screen are saved rates kept after a live refresh failed
+    /// (as opposed to simply being offline, or up to date). Drives the "couldn't update"
+    /// banner; reset the moment a fetch succeeds.
+    private(set) var lastRefreshFailed = false
 
     var lastUpdated: Date? { ratesStore.lastUpdated }
     var isUsingMockData: Bool { ratesStore.isUsingMockData }
+
+    /// Single source of truth for the status strip above the calculator, derived so it
+    /// can never disagree with the load phase: while a refresh runs over existing rates
+    /// it reads `.updating`; with nothing to show it is `.hidden` and the screen itself
+    /// (spinner or error view) carries the state.
+    var rateBanner: RateBanner {
+        if loadState.isLoading, loadState.value?.isEmpty == false { return .updating }
+        guard loadState.value?.isEmpty == false else { return .hidden }
+        if isUsingMockData { return .sample }
+        if !appState.networkMonitor.isConnected { return .offlineSaved }
+        if lastRefreshFailed { return .updateFailed }
+        return .hidden
+    }
+
+    /// Retry is offered only when we're online and the last refresh failed. Offline,
+    /// reconnecting refreshes automatically, so there's nothing to retry.
+    var canRetryRates: Bool {
+        appState.networkMonitor.isConnected && lastRefreshFailed
+    }
 
     // MARK: - Private Properties
 
@@ -65,8 +87,6 @@ final class CalculatorViewModel {
     private let logger: LoggerService
     private var fetchTask: Task<Void, Never>?
     private var fetchGeneration = 0
-    private let retryManager: RetryManager
-    private let exchangeRatesEndpoint = "exchange-rates-latest"
 
     // Cross-rate table for O(1) currency lookups
     private var rateTable: RateTable = .empty
@@ -81,13 +101,11 @@ final class CalculatorViewModel {
         ratesStore: ExchangeRatesStore,
         appState: AppState = .shared,
         userDefaults: UserDefaults = .standard,
-        retryManager: RetryManager = .shared,
         logger: LoggerService = OSLogLoggerService()
     ) {
         self.repository = repository
         self.ratesStore = ratesStore
         self.appState = appState
-        self.retryManager = retryManager
         self.logger = logger
 
         // Load user preferences for default currencies
@@ -178,6 +196,23 @@ final class CalculatorViewModel {
         startFetchTask()
     }
 
+    /// Connectivity was restored. Pulls fresh rates unless we already have current, live
+    /// ones — so the offline / sample / "couldn't update" banner clears on its own, and a
+    /// no-rates error screen advances to the loading view automatically.
+    func handleReconnect() async {
+        guard fetchTask == nil else { return }
+        // Nothing real on screen, or showing sample / saved-after-failed-refresh rates:
+        // pull fresh ones now.
+        if loadState.value == nil || isUsingMockData || lastRefreshFailed {
+            startFetchTask()
+            return
+        }
+        // Otherwise we already have real saved rates — only refetch if they've gone stale.
+        if await repository.shouldRefreshRates() {
+            startFetchTask()
+        }
+    }
+
     /// Applies a pending conversion request (e.g. from the camera's "open in
     /// converter") and consumes it so it cannot re-apply.
     func consumePendingConversion() {
@@ -192,7 +227,7 @@ final class CalculatorViewModel {
     func clearAllData() {
         publish(rates: [], lastUpdated: nil, isUsingMockData: false)
         loadState = .loaded([])
-        retryState = .none
+        lastRefreshFailed = false
     }
 
     /// Single place that assigns `fetchTask`, so a finishing task can only clear
@@ -213,65 +248,50 @@ final class CalculatorViewModel {
     /// Fetches fresh exchange rate data through the repository, which owns all
     /// post-fetch bookkeeping (persist, cache, last-fetch stamp).
     func fetchExchangeRates() async {
+        // Note: don't clear isUsingMockData here. If this refresh fails and we fall back
+        // to the rates already on screen, sample rates must stay flagged as sample rather
+        // than be mislabeled "saved rates". A successful fetch publishes the real flag.
         loadState = .loading(previous: loadState.value)
-        publish(rates: availableRates, lastUpdated: lastUpdated, isUsingMockData: false)
-        await updateRetryState()
 
         do {
             let rates = try await repository.fetchExchangeRates()
             publish(rates: rates, lastUpdated: repository.lastFetchDate(), isUsingMockData: false)
-
-            // Reset retry state on success
-            retryState = .none
+            lastRefreshFailed = false
             loadState = .loaded(rates)
 
         } catch {
-            // Update retry state based on current attempt
-            await updateRetryState()
-
-            // A nil AppError means cancellation — nothing to surface.
-            let fetchError = AppError.from(error)
-            if let fetchError {
-                appState.errorHandler.handle(fetchError)
-            }
-
-            // Try to load from cache as fallback; if that also fails (online),
-            // the fetch error is what surfaces.
-            await loadExchangeRates(surfacing: fetchError, reportCacheError: false)
+            // Live fetch failed. Fall back to saved rates; loadExchangeRates decides
+            // between showing them under a "couldn't update" banner or, if there are
+            // none, surfacing the error screen. A nil AppError means cancellation.
+            await loadExchangeRates(surfacing: AppError.from(error))
         }
     }
 
-    /// Loads exchange rate data from local cache.
-    /// - Parameters:
-    ///   - pendingError: A prior fetch error that should surface if the cache
-    ///     cannot provide a fallback (the fetch-failure path).
-    ///   - reportCacheError: Whether a cache failure itself is surfaced
-    ///     (the cache-first path).
-    private func loadExchangeRates(surfacing pendingError: AppError? = nil, reportCacheError: Bool = true) async {
+    /// Loads current rates from local storage (cache, then persistence).
+    ///
+    /// - Parameter pendingError: the fetch error that drove us here, when this is the
+    ///   fallback after a failed live refresh. If saved rates load, its presence marks
+    ///   them as "couldn't update"; if they don't, it's what the error screen shows.
+    ///   Sample rates are never substituted automatically — that's an explicit choice on
+    ///   the error screen (`useMockData`).
+    private func loadExchangeRates(surfacing pendingError: AppError? = nil) async {
         do {
             let rates = try await repository.loadExchangeRates()
             publish(rates: rates, lastUpdated: repository.lastFetchDate(), isUsingMockData: false)
+            lastRefreshFailed = (pendingError != nil)
             loadState = .loaded(rates)
 
         } catch {
-            let cacheError = AppError.from(error)
-            if reportCacheError, let cacheError {
-                appState.errorHandler.handle(cacheError)
-            }
-
-            if appState.networkMonitor.isConnected {
-                // Online but no usable data: keep the error state. Calling back into
-                // a fetch here would re-enter the pipeline that just failed (and
-                // previously self-deadlocked awaiting its own fetchTask).
-                if let surfacedError = pendingError ?? (reportCacheError ? cacheError : nil) {
-                    loadState = .failed(surfacedError, previous: loadState.value)
-                } else {
-                    // Cancellation: end the loading phase without an error.
-                    loadState = .loaded(availableRates)
-                }
+            // No saved rates to fall back to. Keep whatever is already on screen if we
+            // have it; otherwise surface the error screen so the user can retry or
+            // switch to sample rates.
+            if let shown = loadState.value {
+                lastRefreshFailed = true
+                loadState = .loaded(shown)
+            } else if let surfaced = pendingError ?? AppError.from(error) {
+                loadState = .failed(surfaced, previous: nil)
             } else {
-                // Offline with no SwiftData - use mock data as fallback
-                useMockData()
+                loadState = .loaded([]) // cancellation: nothing to surface
             }
         }
     }
@@ -296,20 +316,5 @@ final class CalculatorViewModel {
     /// Rates-only update preserving the store's other fields (setter/tests path).
     private func publishRates(_ rates: [ExchangeRate]) {
         publish(rates: rates, lastUpdated: ratesStore.lastUpdated, isUsingMockData: ratesStore.isUsingMockData)
-    }
-
-    // MARK: - Retry State Management
-
-    /// Updates the retry state based on the current retry manager state
-    private func updateRetryState() async {
-        let snapshot = await retryManager.snapshot(for: exchangeRatesEndpoint)
-
-        if snapshot.attempt > 0, snapshot.canRetry {
-            retryState = .retrying(attempt: snapshot.attempt, maxAttempts: snapshot.maxAttempts)
-        } else if snapshot.attempt > 0 {
-            retryState = .exhausted
-        } else {
-            retryState = .none
-        }
     }
 }

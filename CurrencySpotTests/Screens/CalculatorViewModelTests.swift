@@ -245,6 +245,8 @@ struct CalculatorViewModelTests {
         #expect(viewModel.availableRates.first?.rate == 0.88)
         #expect(viewModel.loadState == .loaded([ExchangeRate(currencyCode: "EUR", rate: 0.88)]))
         #expect(viewModel.isUsingMockData == false)
+        // Fresh real rates while online → no status banner.
+        #expect(viewModel.rateBanner == .hidden)
     }
 
     @Test("a failing fetch falls back to cached data", .timeLimit(.minutes(1)))
@@ -264,10 +266,14 @@ struct CalculatorViewModelTests {
         #expect(viewModel.isUsingMockData == false)
         // The cache fallback succeeded, so the lifecycle ends loaded, not failed.
         #expect(viewModel.loadState == .loaded([ExchangeRate(currencyCode: "GBP", rate: 0.75)]))
+        // Online + saved rates shown after a failed refresh → the "couldn't update" banner.
+        #expect(viewModel.lastRefreshFailed == true)
+        #expect(viewModel.rateBanner == .updateFailed)
+        #expect(viewModel.canRetryRates == true)
     }
 
-    @Test("offline with no cached data falls back to mock data")
-    func offlineWithoutCacheUsesMockData() async throws {
+    @Test("offline with no saved rates shows the error state instead of auto-loading sample rates")
+    func offlineWithoutCacheShowsErrorState() async throws {
         let viewModel = try makeViewModel()
         repository.shouldRefreshRatesResult = true
         appState.networkMonitor.isConnected = false
@@ -276,13 +282,79 @@ struct CalculatorViewModelTests {
         await viewModel.checkIfShouldFetch()
 
         #expect(repository.fetchExchangeRatesCallCount == 0)
-        #expect(viewModel.isUsingMockData == true)
-        #expect(viewModel.availableRates.count == MockExchangeRates.rates.count)
-        guard case let .loaded(rates) = viewModel.loadState else {
-            Issue.record("expected .loaded mock data, got \(viewModel.loadState)")
+        // No silent sample-rate substitution: the user opts in on the error screen.
+        #expect(viewModel.isUsingMockData == false)
+        #expect(viewModel.availableRates.isEmpty)
+        guard case .failed = viewModel.loadState else {
+            Issue.record("expected .failed, got \(viewModel.loadState)")
             return
         }
-        #expect(rates.count == MockExchangeRates.rates.count)
+        // Nothing on screen → the error view carries the state, not the banner.
+        #expect(viewModel.rateBanner == .hidden)
+    }
+
+    @Test("useMockData switches to sample rates and raises the sample banner")
+    func useMockDataShowsSampleRates() throws {
+        let viewModel = try makeViewModel()
+
+        viewModel.useMockData()
+
+        #expect(viewModel.isUsingMockData == true)
+        #expect(viewModel.availableRates.count == MockExchangeRates.rates.count)
+        #expect(viewModel.rateBanner == .sample)
+        guard case .loaded = viewModel.loadState else {
+            Issue.record("expected .loaded sample rates, got \(viewModel.loadState)")
+            return
+        }
+    }
+
+    @Test("offline with saved rates shows them under the offline banner", .timeLimit(.minutes(1)))
+    func offlineWithCacheShowsOfflineBanner() async throws {
+        let viewModel = try makeViewModel()
+        repository.shouldRefreshRatesResult = true
+        appState.networkMonitor.isConnected = false
+        repository.loadExchangeRatesResult = .success([ExchangeRate(currencyCode: "EUR", rate: 0.91)])
+
+        await viewModel.checkIfShouldFetch()
+        await waitUntilSettled(viewModel)
+
+        #expect(repository.fetchExchangeRatesCallCount == 0)
+        #expect(viewModel.isUsingMockData == false)
+        #expect(viewModel.rateBanner == .offlineSaved)
+        // Offline → nothing to retry.
+        #expect(viewModel.canRetryRates == false)
+    }
+
+    @Test("offline sample rates offer no retry")
+    func offlineSampleHasNoRetry() throws {
+        let viewModel = try makeViewModel()
+        appState.networkMonitor.isConnected = false
+
+        viewModel.useMockData()
+
+        #expect(viewModel.rateBanner == .sample)
+        #expect(viewModel.canRetryRates == false)
+    }
+
+    @Test("online sample rates kept after a failed refresh stay sample and offer retry", .timeLimit(.minutes(1)))
+    func onlineSampleAfterFailedRefreshStaysSampleWithRetry() async throws {
+        let viewModel = try makeViewModel()
+        viewModel.useMockData()
+        try #require(viewModel.rateBanner == .sample)
+
+        // Online, but refreshing for real rates fails with no cache to fall back to.
+        appState.networkMonitor.isConnected = true
+        repository.fetchExchangeRatesResult = .failure(.networkError("down"))
+        repository.loadExchangeRatesResult = .failure(.noCachedData)
+        viewModel.retryFetch()
+        // Pre-retry state is already terminal (.loaded mock); wait for the fetch to run.
+        await waitUntil { repository.fetchExchangeRatesCallCount == 1 }
+        await waitUntilSettled(viewModel)
+
+        // Still sample rates (not mislabeled "saved"), and retry is offered since online.
+        #expect(viewModel.isUsingMockData == true)
+        #expect(viewModel.rateBanner == .sample)
+        #expect(viewModel.canRetryRates == true)
     }
 
     @Test(
@@ -308,6 +380,71 @@ struct CalculatorViewModelTests {
         #expect(error == .networkError("stubbed fetch failure"))
         #expect(viewModel.availableRates.isEmpty)
         #expect(viewModel.isUsingMockData == false)
+    }
+
+    // MARK: Reconnect
+
+    @Test("handleReconnect fetches when there are no rates to show", .timeLimit(.minutes(1)))
+    func reconnectFetchesWhenNoRates() async throws {
+        let viewModel = try makeViewModel()
+        // Land in the no-rates error state: offline with an empty cache.
+        appState.networkMonitor.isConnected = false
+        repository.shouldRefreshRatesResult = true
+        repository.loadExchangeRatesResult = .failure(.noCachedData)
+        await viewModel.checkIfShouldFetch()
+        guard case .failed = viewModel.loadState else {
+            Issue.record("precondition: expected .failed, got \(viewModel.loadState)")
+            return
+        }
+
+        // Connectivity returns and a fetch now succeeds.
+        appState.networkMonitor.isConnected = true
+        repository.fetchExchangeRatesResult = .success([ExchangeRate(currencyCode: "USD", rate: 1.0)])
+        await viewModel.handleReconnect()
+        // The pre-reconnect state is already terminal (.failed), so wait for the newly
+        // scheduled fetch to run before settling.
+        await waitUntil { repository.fetchExchangeRatesCallCount == 1 }
+        await waitUntilSettled(viewModel)
+
+        #expect(repository.fetchExchangeRatesCallCount == 1)
+        guard case .loaded = viewModel.loadState else {
+            Issue.record("expected .loaded after reconnect, got \(viewModel.loadState)")
+            return
+        }
+    }
+
+    @Test("handleReconnect refreshes stale saved rates", .timeLimit(.minutes(1)))
+    func reconnectRefreshesStaleRates() async throws {
+        let viewModel = try makeViewModel()
+        // Showing saved rates loaded without a fetch (fresh enough at load time).
+        appState.networkMonitor.isConnected = true
+        repository.shouldRefreshRatesResult = false
+        repository.loadExchangeRatesResult = .success([ExchangeRate(currencyCode: "EUR", rate: 0.9)])
+        await viewModel.checkIfShouldFetch()
+        try #require(viewModel.loadState.value?.isEmpty == false)
+
+        // They've since gone stale; reconnecting pulls fresh ones.
+        repository.shouldRefreshRatesResult = true
+        repository.fetchExchangeRatesResult = .success([ExchangeRate(currencyCode: "EUR", rate: 0.95)])
+        await viewModel.handleReconnect()
+        // Pre-reconnect state is already terminal (.loaded); wait for the refresh fetch.
+        await waitUntil { repository.fetchExchangeRatesCallCount == 1 }
+        await waitUntilSettled(viewModel)
+
+        #expect(repository.fetchExchangeRatesCallCount == 1)
+    }
+
+    @Test("handleReconnect does nothing when current rates are already fresh")
+    func reconnectSkipsWhenFresh() async throws {
+        let viewModel = try makeViewModel()
+        appState.networkMonitor.isConnected = true
+        repository.shouldRefreshRatesResult = false
+        repository.loadExchangeRatesResult = .success([ExchangeRate(currencyCode: "EUR", rate: 0.9)])
+        await viewModel.checkIfShouldFetch()
+
+        await viewModel.handleReconnect()
+
+        #expect(repository.fetchExchangeRatesCallCount == 0)
     }
 
     // MARK: Pending conversion
@@ -354,10 +491,9 @@ struct CalculatorViewModelTests {
         #expect(viewModel.lastUpdated == nil)
         #expect(viewModel.loadState == .loaded([]))
         #expect(viewModel.isUsingMockData == false)
-        guard case .none = viewModel.retryState else {
-            Issue.record("retryState should be .none after clearAllData, got \(viewModel.retryState)")
-            return
-        }
+        #expect(viewModel.lastRefreshFailed == false)
+        // Empty rates carry no status banner.
+        #expect(viewModel.rateBanner == .hidden)
     }
 
     // MARK: Input intents

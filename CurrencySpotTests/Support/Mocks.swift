@@ -109,6 +109,9 @@ final class MockExchangeRateRepository: ExchangeRateRepository {
     }
 
     func fetchExchangeRates() async throws -> [ExchangeRate] {
+        // Model the async I/O boundary so callers reliably observe the in-flight
+        // `.loading` phase instead of racing a no-suspension return.
+        await Task.yield()
         fetchExchangeRatesCallCount += 1
         let rates = try fetchExchangeRatesResult.get()
         stampedFetchDate = Date()

@@ -75,41 +75,31 @@ extension DataCoordinator: ExchangeRateRepository {
     }
 
     /// Fetches the latest rates and coordinates storage across layers.
+    ///
+    /// Throws on network failure rather than silently substituting saved rates: deciding
+    /// whether to keep showing saved rates (and how to signal that) belongs to the caller.
+    /// A failed fetch therefore never advances the last-fetch stamp, so stale rates can't
+    /// read as freshly updated and the freshness TTL can't suppress the next live refresh.
     func fetchExchangeRates() async throws -> [ExchangeRate] {
+        let response = try await networkService.fetchExchangeRates()
+
+        var updatedRates = response.rates
+        updatedRates[response.base] = 1.0
+        let domainRates = Self.domainRates(from: updatedRates)
+
+        // Store in cache and persistence concurrently with error handling
+        async let cacheOperation: Void = cacheService.cacheExchangeRates(domainRates)
+        async let persistOperation: Void = persistenceService.saveExchangeRates(updatedRates)
+
+        // Attempt to store but don't fail if storage fails
         do {
-            let response = try await networkService.fetchExchangeRates()
-
-            var updatedRates = response.rates
-            updatedRates[response.base] = 1.0
-            let domainRates = Self.domainRates(from: updatedRates)
-
-            // Store in cache and persistence concurrently with error handling
-            async let cacheOperation: Void = cacheService.cacheExchangeRates(domainRates)
-            async let persistOperation: Void = persistenceService.saveExchangeRates(updatedRates)
-
-            // Attempt to store but don't fail if storage fails
-            do {
-                _ = try await (cacheOperation, persistOperation)
-            } catch {
-                logger.warning("Failed to store fetched rates: \(error.localizedDescription)", category: .data)
-            }
-
-            networkService.updateLastFetchDate(dateProvider.now())
-            return domainRates
+            _ = try await (cacheOperation, persistOperation)
         } catch {
-            // Network failed, try fallback to cached/persisted data
-            logger.error("Network fetch failed: \(error.localizedDescription), attempting fallback", category: .network)
-
-            if let cachedRates = await loadFallbackRates() {
-                // The fetch date was previously stamped even for this synthetic success
-                // (by the ViewModel); the stamp stays to preserve user-visible freshness.
-                networkService.updateLastFetchDate(dateProvider.now())
-                return cachedRates
-            }
-
-            // If all fallbacks fail, throw the original error
-            throw error
+            logger.warning("Failed to store fetched rates: \(error.localizedDescription)", category: .data)
         }
+
+        networkService.updateLastFetchDate(dateProvider.now())
+        return domainRates
     }
 
     /// Loads exchange rates with cache-first strategy and a network last resort.
@@ -139,30 +129,6 @@ extension DataCoordinator: ExchangeRateRepository {
             logger.warning("Network fetch also failed: \(error.localizedDescription)", category: .network)
             throw error
         }
-    }
-
-    /// Helper method to load fallback rates from cache or persistence
-    private func loadFallbackRates() async -> [ExchangeRate]? {
-        // Try cache first
-        if let cachedRates = await cacheService.getCachedExchangeRates(), !cachedRates.isEmpty {
-            logger.info("Using cached rates as fallback", category: .cache)
-            return cachedRates
-        }
-
-        // Try persistence
-        do {
-            let persistedRates = try await persistenceService.loadExchangeRates()
-            if !persistedRates.isEmpty {
-                logger.info("Using persisted rates as fallback", category: .persistence)
-                // Update cache with persisted data
-                await cacheService.cacheExchangeRates(persistedRates)
-                return persistedRates
-            }
-        } catch {
-            logger.warning("Failed to load persisted rates: \(error.localizedDescription)", category: .persistence)
-        }
-
-        return nil
     }
 }
 

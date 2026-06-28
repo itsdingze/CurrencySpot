@@ -10,7 +10,8 @@ import SwiftUI
 struct CalculatorErrorView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel: CalculatorViewModel
     @Environment(AppState.self) private var appState: AppState
-    var errorMessage: String?
+
+    private var isConnected: Bool { appState.networkMonitor.isConnected }
 
     var body: some View {
         VStack(spacing: .elementGap) {
@@ -24,35 +25,24 @@ struct CalculatorErrorView: View {
                 .foregroundStyle(Color.textPrimary)
                 .accessibilityAddTraits(.isHeader)
 
-            Text(errorMessage ?? "An unexpected error occurred. Please try again.")
+            Text(message)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.textSecondary)
                 .padding(.horizontal)
 
-            if appState.networkMonitor.isConnected {
-                Button("Retry Connection") {
-                    calculatorViewModel.retryFetch()
-                }
-                .padding(.fieldPadding)
-                .foregroundStyle(.white)
-                .adaptiveGlassBackground(in: .rect(cornerRadius: .cardRadius), isInteractive: true, tint: .accentColor) {
-                    RoundedRectangle(cornerRadius: .cardRadius)
-                        .fill(Color.accentColor)
-                }
-                .accessibilityLabel("Retry loading exchange rates")
+            // Online: retrying is the useful action. Offline: a retry would just fail, so
+            // the only real choice is opting into sample rates — and connectivity
+            // returning restarts the load automatically.
+            if isConnected {
+                Button("Try Again") { calculatorViewModel.retryFetch() }
+                    .buttonStyle(.primaryAction)
+                    .accessibilityLabel("Try loading exchange rates again")
             } else {
-                Button("Use Mock Data") {
-                    calculatorViewModel.useMockData()
-                }
-                .padding(.fieldPadding)
-                .foregroundStyle(.white)
-                .adaptiveGlassBackground(in: .rect(cornerRadius: .cardRadius), isInteractive: true, tint: .accentColor) {
-                    RoundedRectangle(cornerRadius: .cardRadius)
-                        .fill(Color.accentColor)
-                }
-                .accessibilityLabel("Use sample data")
+                Button("Use Sample Rates") { calculatorViewModel.useMockData() }
+                    .buttonStyle(.primaryAction)
+                    .accessibilityLabel("Use sample rates")
 
-                Text("Note: Mock data is not accurate for real conversions")
+                Text("Sample rates are made up, not real exchange rates.")
                     .font(.appCaption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(Color.textSecondary)
@@ -60,7 +50,13 @@ struct CalculatorErrorView: View {
         }
         .padding()
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Error loading exchange rates")
+        .accessibilityLabel("Couldn't load exchange rates")
+    }
+
+    private var message: String {
+        isConnected
+            ? "Something went wrong loading the latest rates. Please try again."
+            : "You're offline and there are no saved rates yet. Connect to the internet to get the latest rates."
     }
 }
 
@@ -70,7 +66,7 @@ struct CalculatorErrorView: View {
     @Previewable @State var appState = AppState.shared
     let container = DependencyContainer.preview()
 
-    CalculatorErrorView(errorMessage: "123wqiehqwoiehjqwoiehqowiehoqioaisjdoiajwdiojqoiejqowejq")
+    CalculatorErrorView()
         .withDependencyContainer(container)
         .environment(appState)
 }

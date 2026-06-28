@@ -32,26 +32,34 @@ struct CalculatorView: View {
             Color.background.ignoresSafeArea()
 
             VStack(spacing: .elementGap) {
-                if !appState.networkMonitor.isConnected, calculatorViewModel.lastUpdated != nil {
-                    OfflineBanner(
-                        refreshAction: calculatorViewModel.retryFetch,
-                        isUsingMockData: calculatorViewModel.isUsingMockData,
-                        retryState: calculatorViewModel.retryState
+                if calculatorViewModel.rateBanner != .hidden {
+                    RateStatusBanner(
+                        status: calculatorViewModel.rateBanner,
+                        showsRetry: calculatorViewModel.canRetryRates,
+                        refreshAction: calculatorViewModel.retryFetch
                     )
                 }
 
                 switch calculatorViewModel.loadState {
-                case .idle, .loading:
-                    ProgressView("Loading exchange rates...")
-                case let .failed(error, _):
-                    CalculatorErrorView(errorMessage: error.message)
-                case .loaded:
+                case .idle, .loading(previous: nil):
+                    // First load — nothing to show yet.
+                    ProgressView("Loading exchange rates…")
+                case .loaded, .loading(previous: .some):
+                    // Saved rates stay on screen while a refresh runs; the banner reads
+                    // "Updating…" rather than blanking to a spinner.
                     mainContentView()
+                case .failed:
+                    CalculatorErrorView()
                 }
             }
         }
         .task {
             await calculatorViewModel.checkIfShouldFetch()
+        }
+        .onChange(of: appState.networkMonitor.isConnected) { _, isConnected in
+            if isConnected {
+                Task { await calculatorViewModel.handleReconnect() }
+            }
         }
         .onChange(of: ratesAreLoaded) { _, loaded in
             if loaded {
@@ -60,7 +68,7 @@ struct CalculatorView: View {
         }
         .onChange(of: ratesDidFail) { _, failed in
             if failed {
-                AccessibilityNotification.Announcement("Couldn't load exchange rates. Retry or use sample data.").post()
+                AccessibilityNotification.Announcement("Couldn't load exchange rates. Try again or use sample rates.").post()
             }
         }
         .onAppear {

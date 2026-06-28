@@ -144,6 +144,23 @@ struct ExchangeRateServiceTests {
         #expect(service.lastFetchDate() != nil)
     }
 
+    @Test("fetchExchangeRates throws on network failure instead of silently substituting saved rates")
+    func fetchThrowsOnNetworkFailureWithoutSilentFallback() async throws {
+        // Saved rates exist locally...
+        try await persistence.saveExchangeRates(["EUR": 0.9])
+        // ...but the live fetch fails.
+        networkService.exchangeRatesResult = .failure(AppError.networkError("server down"))
+
+        // The repository surfaces the failure; it must not relabel saved rates as a fresh
+        // fetch (the ViewModel owns deciding whether to show saved rates and how).
+        await #expect(throws: AppError.self) {
+            _ = try await service.fetchExchangeRates()
+        }
+        // A failed fetch must not advance the freshness stamp, or stale rates would read
+        // as "just updated" and the TTL would suppress the next live refresh.
+        #expect(service.lastFetchDate() == nil)
+    }
+
     @Test("Get earliest stored date returns correct date")
     func getEarliestStoredDateReturnsCorrectDate() async throws {
         // Multiple dates in random order
