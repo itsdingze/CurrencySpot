@@ -1,5 +1,5 @@
 //
-//  View+ListSeparators.swift
+//  ListSeparatorModifiers.swift
 //  CurrencySpot
 //
 

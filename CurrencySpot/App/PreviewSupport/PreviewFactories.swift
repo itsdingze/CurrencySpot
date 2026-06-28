@@ -1,5 +1,5 @@
 //
-//  PreviewSupport.swift
+//  PreviewFactories.swift
 //  CurrencySpot
 //
 //  Preview-only factories, compiled out of release builds.

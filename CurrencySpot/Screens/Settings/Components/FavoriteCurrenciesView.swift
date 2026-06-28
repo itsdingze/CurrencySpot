@@ -21,7 +21,7 @@ struct FavoriteCurrenciesView: View {
 
                     Spacer()
 
-                    Text(CurrencyUtilities.name(for: currency))
+                    Text(CurrencyNameLookup.name(for: currency))
                         .font(.appSubheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -75,7 +75,7 @@ struct AddCurrencyView: View {
         } else {
             return available.filter { currency in
                 currency.currencyCode.rawValue.localizedStandardContains(searchText) ||
-                    CurrencyUtilities.name(for: currency.currencyCode.rawValue).localizedStandardContains(searchText)
+                    CurrencyNameLookup.name(for: currency.currencyCode.rawValue).localizedStandardContains(searchText)
             }
         }
     }
@@ -87,7 +87,7 @@ struct AddCurrencyView: View {
                 ForEach(currencies, id: \.currencyCode) { currency in
                     CurrencyRowButton(
                         code: currency.currencyCode.rawValue,
-                        name: CurrencyUtilities.name(for: currency.currencyCode.rawValue),
+                        name: CurrencyNameLookup.name(for: currency.currencyCode.rawValue),
                         action: {
                             viewModel.addToFavorites(currency.currencyCode.rawValue)
                             isPresented = false

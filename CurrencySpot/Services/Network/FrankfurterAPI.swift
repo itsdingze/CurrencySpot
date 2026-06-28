@@ -46,9 +46,9 @@ nonisolated final class FrankfurterAPI: Sendable {
     @concurrent
     func fetchExchangeRates(baseCurrency: String = "USD") async throws -> ExchangeRatesResponse {
         let urlString = "\(baseURL)/rates?base=\(baseCurrency)"
-        let url = try NetworkUtility.createURL(from: urlString)
+        let url = try NetworkRequestRunner.createURL(from: urlString)
 
-        let entries = try await NetworkUtility.performRequestWithRetry(
+        let entries = try await NetworkRequestRunner.performRequestWithRetry(
             url: url,
             urlSession: urlSession,
             responseType: [FrankfurterV2Rate].self,
@@ -97,9 +97,9 @@ nonisolated final class FrankfurterAPI: Sendable {
         if !quotes.isEmpty {
             urlString += "&quotes=\(quotes.joined(separator: ","))"
         }
-        let url = try NetworkUtility.createURL(from: urlString)
+        let url = try NetworkRequestRunner.createURL(from: urlString)
 
-        let entries = try await NetworkUtility.performRequestWithRetry(
+        let entries = try await NetworkRequestRunner.performRequestWithRetry(
             url: url,
             urlSession: urlSession,
             responseType: [FrankfurterV2Rate].self,

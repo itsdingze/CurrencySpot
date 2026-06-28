@@ -1,5 +1,5 @@
 //
-//  NetworkUtility.swift
+//  NetworkRequestRunner.swift
 //  CurrencySpot
 //
 //  Created by Dingze Yu on 7/29/25.
@@ -7,9 +7,9 @@
 
 import Foundation
 
-/// Utility for common networking operations
-/// Provides unified HTTP error handling and JSON decoding across the app
-nonisolated enum NetworkUtility {
+/// Runs network requests with automatic retry, unified HTTP error handling,
+/// and JSON decoding across the app.
+nonisolated enum NetworkRequestRunner {
     // MARK: - Retry-Enabled Network Requests
 
     /// Performs a network request with automatic retry logic, unified error handling and JSON decoding

@@ -66,11 +66,8 @@ final class CameraViewModel {
     private var stillRecognition = StillRecognitionResult.empty
     private var stillViewportSize = CGSize.zero
 
-    /// The user's tap-to-convert overrides for numbers the classifier judged non-prices.
-    private var manualPriceOverrides: Set<UUID> = []
-
-    /// Auto-detected prices whose badge the user dismissed by tapping the outline.
-    private var suppressedPrices: Set<UUID> = []
+    /// The user's per-item badge overrides (pinned non-prices, dismissed prices).
+    private var badgeOverrides = BadgePriceOverrides()
 
     /// Promotes a bare number to a price when OCR split its currency marker
     /// ("680" + "円", "¥" + "680") into a separate item beside it.
@@ -233,7 +230,7 @@ final class CameraViewModel {
                     id: item.id,
                     transcript: item.transcript,
                     bounds: item.bounds,
-                    conversion: effectiveConversion(marked, for: item.id)
+                    conversion: badgeOverrides.effective(marked, for: item.id)
                 )
             }
         })
@@ -258,19 +255,7 @@ final class CameraViewModel {
     /// classifier skipped, or dismiss it for ones it (or the user) pinned.
     func toggleConversion(for id: UUID) {
         guard let item = detectedItems[id: id] else { return }
-        if item.conversion.isPrice {
-            if manualPriceOverrides.contains(id) {
-                manualPriceOverrides.remove(id)
-            } else {
-                suppressedPrices.insert(id)
-            }
-        } else {
-            if suppressedPrices.contains(id) {
-                suppressedPrices.remove(id)
-            } else {
-                manualPriceOverrides.insert(id)
-            }
-        }
+        badgeOverrides.toggle(id: id, isPrice: item.conversion.isPrice)
         reconvert()
     }
 
@@ -278,11 +263,7 @@ final class CameraViewModel {
     /// uncovers the original text and dismisses the sheet.
     func hideConversion(for id: UUID) {
         guard let item = detectedItems[id: id], item.conversion.isPrice else { return }
-        if manualPriceOverrides.contains(id) {
-            manualPriceOverrides.remove(id)
-        } else {
-            suppressedPrices.insert(id)
-        }
+        badgeOverrides.hide(id: id)
         destination = nil
         reconvert()
     }
@@ -344,15 +325,6 @@ final class CameraViewModel {
 
     private func reconvert() {
         updateRecognizedItems(recognizedItems)
-    }
-
-    private func effectiveConversion(
-        _ conversion: ScanConversionUseCase.ScannedConversion,
-        for id: UUID
-    ) -> ScanConversionUseCase.ScannedConversion {
-        if manualPriceOverrides.contains(id) { return conversion.asPrice }
-        if suppressedPrices.contains(id) { return conversion.asNonPrice }
-        return conversion
     }
 
     /// The plan: locale autodetection, unless the user picked manually or

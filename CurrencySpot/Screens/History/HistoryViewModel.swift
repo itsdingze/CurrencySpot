@@ -355,33 +355,7 @@ final class HistoryViewModel {
                 dateRange: dateRange
             )
             guard generation == loadGeneration, !Task.isCancelled else { return }
-
-            // Always try to update chart even with partial data
-            if !result.dataPoints.isEmpty {
-                // Chart from the returned rows: archive ranges never enter the
-                // resident series, so re-reading the cache would come up empty.
-                let dataPoints = await preparedChartDataPoints(for: currency, from: result.dataPoints, dateRange: dateRange)
-                guard generation == loadGeneration, !Task.isCancelled else { return }
-                publishChart(.loaded(dataPoints))
-            } else {
-                // No data available, but don't treat as error
-                logger.infoPrivate("No historical data available for \(currency)", category: .viewModel)
-                publishChart(.loaded([]))
-            }
-
-            // Update trends if new data was fetched
-            if result.newDataFetched {
-                logger.info("New data fetched, updating trends...", category: .viewModel)
-                // Use the actually fetched ranges, not the requested range
-                let trends = await trendDataUseCase.checkAndRecalculateTrendsIfNeeded(
-                    for: result.fetchedRanges
-                )
-                guard generation == loadGeneration, !Task.isCancelled else { return }
-                trendData = trends
-            }
-
-            fetchTask = nil
-
+            await publishLoadedResult(result, generation: generation, currency: currency, dateRange: dateRange)
         } catch is CancellationError {
             logger.debug("Fetch cancelled", category: .viewModel)
             guard generation == loadGeneration else { return }
@@ -389,31 +363,79 @@ final class HistoryViewModel {
             // End the loading phase without discarding what is on screen.
             publishChart(.loaded(chartData.value ?? []))
         } catch {
-            logger.error("Load failed: \(error.localizedDescription)", category: .viewModel)
-
-            // Try to use cached data even if the load failed — except for archive
-            // ranges: the resident series can never legitimately cover them, and
-            // falling back would render ~1Y of points as a loaded 5Y chart.
-            let cachedData = DataOrchestrationUseCase.isArchiveRange(dateRange)
-                ? []
-                : await dataOrchestrationUseCase.getCachedData(dateRange: dateRange)
-            guard generation == loadGeneration, !Task.isCancelled else { return }
-
-            if !cachedData.isEmpty {
-                // We have some cached data, use it
-                logger.info("Using cached data as fallback", category: .viewModel)
-                let dataPoints = await preparedChartDataPoints(for: currency, from: cachedData, dateRange: dateRange)
-                guard generation == loadGeneration, !Task.isCancelled else { return }
-                publishChart(.loaded(dataPoints))
-            } else {
-                // No cached data available - use centralized error handling
-                let appError = AppError.from(error) ?? AppError.networkError("Failed to load historical data")
-                appState.errorHandler.handle(appError)
-                publishChart(.failed(appError, previous: nil))
-            }
-
-            fetchTask = nil
+            await recoverFromLoadFailure(error, generation: generation, currency: currency, dateRange: dateRange)
         }
+    }
+
+    /// Publishes the chart for a completed load and refreshes trends when new data
+    /// arrived. Generation guards bail without clearing `fetchTask` so a newer load
+    /// keeps ownership; the completed path clears it once the work is done.
+    private func publishLoadedResult(
+        _ result: (dataPoints: [HistoricalRateSnapshot], newDataFetched: Bool, fetchedRanges: [DateRange]),
+        generation: Int,
+        currency: CurrencyCode,
+        dateRange: DateRange
+    ) async {
+        // Always try to update chart even with partial data
+        if !result.dataPoints.isEmpty {
+            // Chart from the returned rows: archive ranges never enter the
+            // resident series, so re-reading the cache would come up empty.
+            let dataPoints = await preparedChartDataPoints(for: currency, from: result.dataPoints, dateRange: dateRange)
+            guard generation == loadGeneration, !Task.isCancelled else { return }
+            publishChart(.loaded(dataPoints))
+        } else {
+            // No data available, but don't treat as error
+            logger.infoPrivate("No historical data available for \(currency)", category: .viewModel)
+            publishChart(.loaded([]))
+        }
+
+        // Update trends if new data was fetched
+        if result.newDataFetched {
+            logger.info("New data fetched, updating trends...", category: .viewModel)
+            // Use the actually fetched ranges, not the requested range
+            let trends = await trendDataUseCase.checkAndRecalculateTrendsIfNeeded(
+                for: result.fetchedRanges
+            )
+            guard generation == loadGeneration, !Task.isCancelled else { return }
+            trendData = trends
+        }
+
+        fetchTask = nil
+    }
+
+    /// Falls back to cached data when a load throws, or surfaces the error when no
+    /// usable cache exists. Archive ranges never fall back — the resident series
+    /// can't legitimately cover them. Mirrors the success path's `fetchTask` handling.
+    private func recoverFromLoadFailure(
+        _ error: Error,
+        generation: Int,
+        currency: CurrencyCode,
+        dateRange: DateRange
+    ) async {
+        logger.error("Load failed: \(error.localizedDescription)", category: .viewModel)
+
+        // Try to use cached data even if the load failed — except for archive
+        // ranges: the resident series can never legitimately cover them, and
+        // falling back would render ~1Y of points as a loaded 5Y chart.
+        let cachedData = DataOrchestrationUseCase.isArchiveRange(dateRange)
+            ? []
+            : await dataOrchestrationUseCase.getCachedData(dateRange: dateRange)
+        guard generation == loadGeneration, !Task.isCancelled else { return }
+
+        if !cachedData.isEmpty {
+            // We have some cached data, use it
+            logger.info("Using cached data as fallback", category: .viewModel)
+            let dataPoints = await preparedChartDataPoints(for: currency, from: cachedData, dateRange: dateRange)
+            guard generation == loadGeneration, !Task.isCancelled else { return }
+            publishChart(.loaded(dataPoints))
+        } else {
+            // No cached data available - use centralized error handling
+            let appError = AppError.from(error) ?? AppError.networkError("Failed to load historical data")
+            appState.errorHandler.handle(appError)
+            publishChart(.failed(appError, previous: nil))
+        }
+
+        fetchTask = nil
     }
 
     // MARK: - Chart Publishing
@@ -470,66 +492,21 @@ final class HistoryViewModel {
     // MARK: - Currency List
 
     private func updateDisplayedCurrencies() {
-        let base = ratesStore.baseCurrency
-        let rates = ratesStore.rates
-        let baseRate = rates.first { $0.currencyCode.rawValue == base }?.rate ?? 1.0
-
-        // Every available currency except the base, with its base-adjusted rate.
-        let catalog = rates
-            .filter { $0.currencyCode.rawValue != base }
-            .map { rate in
-                CurrencyListEntry(
-                    code: rate.currencyCode.rawValue,
-                    name: CurrencyUtilities.name(for: rate.currencyCode.rawValue),
-                    rate: rate.rate / baseRate
-                )
-            }
-
-        if isSearching {
-            // Search spans the full catalog (each row carries an add/remove
-            // toggle), ordered by name so results read predictably.
-            displayedCurrencies = catalog
-                .filter { entry in
-                    entry.code.localizedStandardContains(searchText) ||
-                        entry.name.localizedStandardContains(searchText)
-                }
-                .sorted { $0.name < $1.name }
-            return
-        }
-
-        // Watchlist view: only watchlisted currencies, in the chosen order.
-        let watchlisted = catalog.filter { watchlist.contains($0.code) }
-        displayedCurrencies = sortedForDisplay(watchlisted)
-    }
-
-    /// Orders watchlisted entries per `sortOption`. Manual restores the stored
-    /// drag order; change-based sorts surface the biggest movers first.
-    private func sortedForDisplay(_ entries: [CurrencyListEntry]) -> [CurrencyListEntry] {
-        switch sortOption {
-        case .manual:
-            let position = Dictionary(
-                uniqueKeysWithValues: watchlist.codes.elements.enumerated().map { ($1, $0) }
-            )
-            return entries.sorted { (position[$0.code] ?? .max) < (position[$1.code] ?? .max) }
-        case .symbol:
-            return entries.sorted { $0.code < $1.code }
-        case .name:
-            return entries.sorted { $0.name < $1.name }
-        case .percentChange:
-            return entries.sorted { weeklyChange(for: $0.code) > weeklyChange(for: $1.code) }
-        case .priceChange:
-            return entries.sorted { priceChange(for: $0) > priceChange(for: $1) }
-        }
+        displayedCurrencies = CurrencyListBuilder.build(
+            rates: ratesStore.rates,
+            base: ratesStore.baseCurrency,
+            isSearching: isSearching,
+            searchText: searchText,
+            isWatchlisted: { self.watchlist.contains($0) },
+            watchlistOrder: watchlist.codes.elements,
+            sortOption: sortOption,
+            weeklyChange: { self.weeklyChange(for: $0) }
+        )
     }
 
     /// Weekly percentage change for a currency, base-adjusted (0 when unknown).
     private func weeklyChange(for code: String) -> Double {
         getTrendData(for: code)?.weeklyChange ?? 0
-    }
-
-    /// Absolute weekly change in the base-adjusted rate, derived from the percentage.
-    private func priceChange(for entry: CurrencyListEntry) -> Double {
-        entry.rate * weeklyChange(for: entry.code) / 100
     }
 
     // MARK: - Prefetch
@@ -637,84 +614,4 @@ final class HistoryViewModel {
         return chartDataPreparationUseCase.sampleDataPoints(from: fullDataPoints)
     }
 
-    // MARK: - Computed Properties (Statistics)
-
-    /// Current exchange rate (most recent data point)
-    var currentRate: Double {
-        chartStatistics.currentRate
-    }
-
-    /// Highest exchange rate in the current time range
-    var highestRate: Double {
-        chartStatistics.highestRate
-    }
-
-    /// Lowest exchange rate in the current time range
-    var lowestRate: Double {
-        chartStatistics.lowestRate
-    }
-
-    /// Average exchange rate in the current time range
-    var averageRate: Double {
-        chartStatistics.averageRate
-    }
-
-    /// Price change from first to last data point
-    var priceChange: Double? {
-        chartStatistics.priceChange
-    }
-
-    /// Percentage change from first to last data point
-    var percentChange: Double? {
-        chartStatistics.percentChange
-    }
-
-    /// Trend direction based on percentage change with stable threshold
-    var trendDirection: TrendDirection {
-        chartStatistics.trendDirection
-    }
-
-    /// Volatility (annualized standard deviation of returns)
-    var volatility: Double? {
-        chartStatistics.volatility
-    }
-
-    // MARK: - Computed Properties (Formatted Display Values)
-
-    /// Formatted string for current exchange rate
-    var formattedCurrentRate: String {
-        "1 \(baseCurrency) = \(currentRate.toStringMax4Decimals) \(targetCurrency)"
-    }
-
-    /// Formatted string for highest exchange rate
-    var formattedHighestRate: String {
-        highestRate.toStringMax4Decimals
-    }
-
-    /// Formatted string for lowest exchange rate
-    var formattedLowestRate: String {
-        lowestRate.toStringMax4Decimals
-    }
-
-    /// Formatted string for average exchange rate
-    var formattedAverageRate: String {
-        averageRate.toStringMax4Decimals
-    }
-
-    /// Volatility classified into a qualitative level (nil when volatility is unavailable).
-    var volatilityLevel: VolatilityLevel? {
-        volatility.map(VolatilityLevel.init(annualizedPercent:))
-    }
-
-    /// Formatted string for volatility with interpretation
-    var formattedVolatility: String {
-        volatilityLevel?.displayName ?? "N/A"
-    }
-
-    // MARK: - Computed Properties (Chart Configuration)
-
-    /// Y-axis domain for chart display with padding
-    var chartYDomain: ClosedRange<Double> {
-        chartStatistics.chartYDomain
-    }
 }

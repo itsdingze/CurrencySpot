@@ -173,131 +173,90 @@ final class ChartDataPreparationUseCase {
     /// Pure computation over its inputs, so it is not actor-isolated.
     nonisolated func calculateStatistics(from chartData: [ChartDataPoint]) -> ChartStatistics {
         let rates = chartData.map(\.rate)
-
-        let currentRate = chartData.last?.rate ?? 0
-        let highestRate = rates.max() ?? 0
-        let lowestRate = rates.min() ?? 0
-        let averageRate = rates.isEmpty ? 0 : rates.reduce(0, +) / Double(rates.count)
-
-        // Price change from first to last data point
-        let priceChange: Double? = {
-            guard chartData.count >= 2,
-                  let firstRate = chartData.first?.rate,
-                  let lastRate = chartData.last?.rate
-            else {
-                return nil
-            }
-            return lastRate - firstRate
-        }()
-
-        // Percentage change from first to last data point
-        let percentChange: Double? = {
-            guard priceChange != nil,
-                  let firstRate = chartData.first?.rate,
-                  firstRate > 0,
-                  let lastRate = chartData.last?.rate
-            else {
-                return nil
-            }
-            return RateMath.percentChange(from: firstRate, to: lastRate)
-        }()
-
-        // Trend direction based on percentage change with stable threshold
-        let trendDirection = percentChange.map(TrendDirection.init(percentChange:)) ?? .stable
-
-        // Calculate volatility (standard deviation of daily returns)
-        let volatility: Double? = {
-            guard chartData.count > 1 else { return nil }
-
-            // Calculate daily percentage returns with validation
-            let dailyReturns = (1 ..< chartData.count).compactMap { i -> Double? in
-                let previousRate = chartData[i - 1].rate
-                let currentRate = chartData[i].rate
-
-                // Validate rates are positive and finite
-                guard previousRate > 0, currentRate.isFinite, previousRate.isFinite else { return nil }
-
-                let dailyReturn = (currentRate - previousRate) / previousRate
-
-                // Filter out extreme values that could skew volatility calculations
-                guard dailyReturn.isFinite, abs(dailyReturn) < 10.0 else { return nil }
-
-                return dailyReturn
-            }
-
-            guard !dailyReturns.isEmpty else { return nil }
-
-            // Calculate mean return with validation
-            let meanReturn = dailyReturns.reduce(0, +) / Double(dailyReturns.count)
-            guard meanReturn.isFinite else { return nil }
-
-            // Calculate variance with validation
-            let variance = dailyReturns.reduce(0) { sum, dailyReturn in
-                sum + pow(dailyReturn - meanReturn, 2)
-            } / Double(dailyReturns.count)
-
-            guard variance.isFinite, variance >= 0 else { return nil }
-
-            // Calculate standard deviation (daily volatility)
-            let dailyVolatility = sqrt(variance)
-            guard dailyVolatility.isFinite else { return nil }
-
-            // Annualize volatility (assuming 252 trading days)
-            // Convert to percentage
-            let annualizedVolatility = dailyVolatility * sqrt(252) * 100
-
-            // Final validation - return nil if result is invalid
-            return annualizedVolatility.isFinite ? annualizedVolatility : nil
-        }()
-
-        // Y-axis domain for chart display with padding
-        let chartYDomain: ClosedRange<Double> = {
-            guard !chartData.isEmpty else { return 0 ... 1 }
-
-            // Filter out invalid rates for domain calculation
-            let validRates = rates.filter { $0.isFinite && $0 > 0 }
-            guard !validRates.isEmpty else { return 0 ... 1 }
-
-            let minRate = validRates.min() ?? 0
-            let maxRate = validRates.max() ?? 1
-
-            // Add padding, but validate the results
-            let paddedMin = minRate * 0.99
-            let paddedMax = maxRate * 1.01
-
-            // Ensure valid range bounds
-            guard paddedMin.isFinite, paddedMax.isFinite, paddedMin < paddedMax else {
-                return 0 ... 1
-            }
-
-            return paddedMin ... paddedMax
-        }()
+        let priceChange = Self.priceChange(of: chartData)
+        let percentChange = Self.percentChange(of: chartData, priceChange: priceChange)
 
         return ChartStatistics(
-            currentRate: currentRate,
-            highestRate: highestRate,
-            lowestRate: lowestRate,
-            averageRate: averageRate,
+            currentRate: chartData.last?.rate ?? 0,
+            highestRate: rates.max() ?? 0,
+            lowestRate: rates.min() ?? 0,
+            averageRate: rates.isEmpty ? 0 : rates.reduce(0, +) / Double(rates.count),
             priceChange: priceChange,
             percentChange: percentChange,
-            volatility: volatility,
-            trendDirection: trendDirection,
-            chartYDomain: chartYDomain
+            volatility: Self.annualizedVolatility(of: chartData),
+            trendDirection: percentChange.map(TrendDirection.init(percentChange:)) ?? .stable,
+            chartYDomain: Self.chartYDomain(of: rates)
         )
     }
-}
 
-// MARK: - Supporting Types
+    /// Absolute change from the first to the last point; nil with fewer than two points.
+    private nonisolated static func priceChange(of chartData: [ChartDataPoint]) -> Double? {
+        guard chartData.count >= 2,
+              let firstRate = chartData.first?.rate,
+              let lastRate = chartData.last?.rate
+        else {
+            return nil
+        }
+        return lastRate - firstRate
+    }
 
-/// Statistics calculated from chart data
-struct ChartStatistics: Sendable {
-    let currentRate: Double
-    let highestRate: Double
-    let lowestRate: Double
-    let averageRate: Double
-    let priceChange: Double?
-    let percentChange: Double?
-    let volatility: Double?
-    let trendDirection: TrendDirection
-    let chartYDomain: ClosedRange<Double>
+    /// Percentage change from the first to the last point; nil when there is no price
+    /// change to compute or the first rate is non-positive.
+    private nonisolated static func percentChange(of chartData: [ChartDataPoint], priceChange: Double?) -> Double? {
+        guard priceChange != nil,
+              let firstRate = chartData.first?.rate,
+              firstRate > 0,
+              let lastRate = chartData.last?.rate
+        else {
+            return nil
+        }
+        return RateMath.percentChange(from: firstRate, to: lastRate)
+    }
+
+    /// Annualized standard deviation of daily returns, as a percentage (252 trading
+    /// days). nil with too few points, or when validation rejects the inputs/result.
+    private nonisolated static func annualizedVolatility(of chartData: [ChartDataPoint]) -> Double? {
+        guard chartData.count > 1 else { return nil }
+
+        // Daily percentage returns, dropping non-finite rates and extreme outliers.
+        let dailyReturns = (1 ..< chartData.count).compactMap { i -> Double? in
+            let previousRate = chartData[i - 1].rate
+            let currentRate = chartData[i].rate
+            guard previousRate > 0, currentRate.isFinite, previousRate.isFinite else { return nil }
+
+            let dailyReturn = (currentRate - previousRate) / previousRate
+            guard dailyReturn.isFinite, abs(dailyReturn) < 10.0 else { return nil }
+            return dailyReturn
+        }
+
+        guard !dailyReturns.isEmpty else { return nil }
+
+        let meanReturn = dailyReturns.reduce(0, +) / Double(dailyReturns.count)
+        guard meanReturn.isFinite else { return nil }
+
+        let variance = dailyReturns.reduce(0) { sum, dailyReturn in
+            sum + pow(dailyReturn - meanReturn, 2)
+        } / Double(dailyReturns.count)
+        guard variance.isFinite, variance >= 0 else { return nil }
+
+        let dailyVolatility = sqrt(variance)
+        guard dailyVolatility.isFinite else { return nil }
+
+        // Annualize (252 trading days) and convert to a percentage.
+        let annualizedVolatility = dailyVolatility * sqrt(252) * 100
+        return annualizedVolatility.isFinite ? annualizedVolatility : nil
+    }
+
+    /// Y-axis domain with 1% padding; falls back to 0...1 when no valid rates exist.
+    private nonisolated static func chartYDomain(of rates: [Double]) -> ClosedRange<Double> {
+        let validRates = rates.filter { $0.isFinite && $0 > 0 }
+        guard !validRates.isEmpty else { return 0 ... 1 }
+
+        let paddedMin = (validRates.min() ?? 0) * 0.99
+        let paddedMax = (validRates.max() ?? 1) * 1.01
+        guard paddedMin.isFinite, paddedMax.isFinite, paddedMin < paddedMax else {
+            return 0 ... 1
+        }
+        return paddedMin ... paddedMax
+    }
 }

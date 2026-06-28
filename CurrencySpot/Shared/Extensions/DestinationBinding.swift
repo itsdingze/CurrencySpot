@@ -1,5 +1,5 @@
 //
-//  Binding+Destination.swift
+//  DestinationBinding.swift
 //  CurrencySpot
 //
 

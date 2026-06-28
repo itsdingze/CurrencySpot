@@ -1,5 +1,5 @@
 //
-//  DependencyContainer+View.swift
+//  DependencyContainerInjection.swift
 //  CurrencySpot
 //
 

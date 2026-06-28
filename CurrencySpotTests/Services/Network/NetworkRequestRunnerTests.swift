@@ -1,5 +1,5 @@
 //
-//  NetworkUtilityTests.swift
+//  NetworkRequestRunnerTests.swift
 //  CurrencySpotTests
 //
 
@@ -44,15 +44,15 @@ private func makeSession(_ protocolClass: URLProtocol.Type) -> URLSession {
 
 // MARK: - Tests
 
-@Suite("NetworkUtility Tests")
-struct NetworkUtilityTests {
+@Suite("NetworkRequestRunner Tests")
+struct NetworkRequestRunnerTests {
     @Test("URLSession cancellation surfaces as CancellationError and records no retry state", .timeLimit(.minutes(1)))
     func cancellationMapsToCancellationError() async {
         let retryManager = RetryManager(jitter: { _ in 1.0 })
         let endpoint = "cancelled-endpoint"
 
         await #expect(throws: CancellationError.self) {
-            let _: [String] = try await NetworkUtility.performRequestWithRetry(
+            let _: [String] = try await NetworkRequestRunner.performRequestWithRetry(
                 url: URL(string: "https://stub.test/cancelled")!,
                 urlSession: makeSession(CancelledURLProtocol.self),
                 responseType: [String].self,
@@ -74,7 +74,7 @@ struct NetworkUtilityTests {
         let endpoint = "exhaust-endpoint"
 
         do {
-            let _: [String] = try await NetworkUtility.performRequestWithRetry(
+            let _: [String] = try await NetworkRequestRunner.performRequestWithRetry(
                 url: URL(string: "https://stub.test/server-error")!,
                 urlSession: makeSession(ServerErrorURLProtocol.self),
                 responseType: [String].self,

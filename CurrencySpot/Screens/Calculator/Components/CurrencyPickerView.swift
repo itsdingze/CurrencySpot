@@ -25,7 +25,7 @@ struct CurrencyPickerView: View {
         } else {
             exchangeRates.filter { currency in
                 currency.currencyCode.rawValue.localizedStandardContains(searchText) ||
-                    CurrencyUtilities.name(for: currency.currencyCode.rawValue).localizedStandardContains(searchText)
+                    CurrencyNameLookup.name(for: currency.currencyCode.rawValue).localizedStandardContains(searchText)
             }
         }
     }
@@ -45,7 +45,7 @@ struct CurrencyPickerView: View {
                                     Text(currency)
                                 }
                                 .buttonStyle(.currencyChip(isSelected: selectedCurrency == currency))
-                                .accessibilityLabel("\(currency), \(CurrencyUtilities.name(for: currency))")
+                                .accessibilityLabel("\(currency), \(CurrencyNameLookup.name(for: currency))")
                                 .accessibilityAddTraits(selectedCurrency == currency ? [.isButton, .isSelected] : .isButton)
                             }
                         }
@@ -61,14 +61,14 @@ struct CurrencyPickerView: View {
                 ForEach(filteredCurrencies, id: \.currencyCode) { currency in
                     CurrencyRowButton(
                         code: currency.currencyCode.rawValue,
-                        name: CurrencyUtilities.name(for: currency.currencyCode.rawValue),
+                        name: CurrencyNameLookup.name(for: currency.currencyCode.rawValue),
                         isSelected: selectedCurrency == currency.currencyCode.rawValue,
                         action: {
                             selectedCurrency = currency.currencyCode.rawValue
                             dismiss()
                         }
                     )
-                    .accessibilityLabel("\(currency.currencyCode.rawValue), \(CurrencyUtilities.name(for: currency.currencyCode.rawValue))")
+                    .accessibilityLabel("\(currency.currencyCode.rawValue), \(CurrencyNameLookup.name(for: currency.currencyCode.rawValue))")
                     .accessibilityValue(currency.rate.toStringMax4Decimals)
                     .accessibilityAddTraits(selectedCurrency == currency.currencyCode.rawValue ? [.isButton, .isSelected] : .isButton)
                 }

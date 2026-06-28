@@ -1,5 +1,5 @@
 //
-//  CurrencyUtilities.swift
+//  CurrencyNameLookup.swift
 //  CurrencySpot
 //
 //  Created by Dingze Yu on 6/22/25.
@@ -9,7 +9,7 @@ import Foundation
 
 /// Localized currency display-name lookup.
 /// MainActor (via default isolation) guards the in-memory cache; all call sites are main-actor UI code.
-enum CurrencyUtilities {
+enum CurrencyNameLookup {
     private static var currencyNameCache = [String: String]()
 
     /// Localized currency name for an ISO code, falling back to en_US, then the code itself.
