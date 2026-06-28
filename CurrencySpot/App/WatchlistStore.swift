@@ -74,6 +74,14 @@ final class WatchlistStore {
         }
     }
 
+    /// Replaces the entire watchlist with `seed` and persists it. Drives the
+    /// Settings "Reset Preferences" action, which re-seeds from the just-reset
+    /// default favorites.
+    func reset(to seed: [String]) {
+        codes = Self.identified(seed)
+        persist()
+    }
+
     /// Reorders the subset of codes named in `displayedOrder` to that order,
     /// leaving any code NOT in `displayedOrder` (e.g. the hidden base currency,
     /// or a code absent from the current rates) in its existing slot. Lets the

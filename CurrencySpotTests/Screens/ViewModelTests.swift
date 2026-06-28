@@ -413,6 +413,42 @@ struct ViewModelTests {
             #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP"])
         }
 
+        @Test("an external watchlist reset refreshes the displayed list without a rates change", .timeLimit(.minutes(1)))
+        func externalWatchlistResetRefreshesDisplayedList() async {
+            let store = ExchangeRatesStore()
+            let watchlist = ViewModelTests.makeWatchlist(seed: ["GBP", "EUR"])
+            let viewModel = ViewModelTests.makeHistoryViewModel(ratesStore: store, watchlist: watchlist)
+
+            store.update(
+                rates: [
+                    ExchangeRate(currencyCode: "USD", rate: 1.0),
+                    ExchangeRate(currencyCode: "EUR", rate: 0.8),
+                    ExchangeRate(currencyCode: "GBP", rate: 0.5),
+                    ExchangeRate(currencyCode: "JPY", rate: 150),
+                    ExchangeRate(currencyCode: "CHF", rate: 0.9),
+                ],
+                lastUpdated: nil,
+                isUsingMockData: false
+            )
+            await ViewModelTests.waitUntil { viewModel.displayedCurrencies.count == 2 }
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP", "EUR"])
+
+            // Mutating the shared store from outside the ViewModel — exactly what
+            // SettingsViewModel.resetSettingsToDefault() does — must refresh the list.
+            watchlist.reset(to: ["JPY", "CHF"])
+
+            // Observation delivery hops through the main actor; give it a bounded
+            // chance rather than hanging if the list never updates (the bug).
+            for _ in 0 ..< 100 { await Task.yield() }
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["JPY", "CHF"])
+
+            // A second external change must still propagate — proving the one-shot
+            // observation re-armed itself rather than firing only once.
+            watchlist.reset(to: ["EUR", "GBP"])
+            for _ in 0 ..< 100 { await Task.yield() }
+            #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP"])
+        }
+
         @Test("Follows the calculator's base currency through the shared rates store")
         func followsSharedBaseCurrency() async {
             let store = ExchangeRatesStore()

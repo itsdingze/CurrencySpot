@@ -152,6 +152,7 @@ final class DependencyContainer {
 
         settingsViewModel = SettingsViewModel(
             refreshAllDataUseCase: refreshAllDataUseCase,
+            watchlist: watchlistStore,
             appState: appState,
             clock: clockService,
             logger: logger

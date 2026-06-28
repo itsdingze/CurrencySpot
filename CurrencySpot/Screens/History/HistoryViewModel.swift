@@ -166,6 +166,7 @@ final class HistoryViewModel {
         baseCurrency = ratesStore.baseCurrency
         updateDisplayedCurrencies()
         observeSharedRates()
+        observeWatchlist()
     }
 
     // MARK: - Shared Rates Sync
@@ -192,6 +193,24 @@ final class HistoryViewModel {
         if baseCurrency != newBase {
             baseCurrency = newBase
             loadDataForCurrentConfiguration()
+        }
+    }
+
+    // MARK: - Watchlist Sync
+
+    /// Rebuilds the currency list whenever the shared watchlist changes from
+    /// outside this ViewModel — e.g. a Settings "Reset Preferences" re-seed. The
+    /// VM's own watchlist intents already recompute synchronously, so the list
+    /// stays snappy; this only catches mutations the VM didn't make itself.
+    private func observeWatchlist() {
+        withObservationTracking {
+            _ = watchlist.codes
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                updateDisplayedCurrencies()
+                observeWatchlist()
+            }
         }
     }
 

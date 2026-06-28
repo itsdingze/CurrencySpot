@@ -134,6 +134,7 @@ final class SettingsViewModel {
 
     private let userDefaults: UserDefaults
     private let refreshAllDataUseCase: RefreshAllDataUseCase
+    private let watchlist: WatchlistStore
     private let appState: AppState
     private let clock: ClockService
     private let logger: LoggerService
@@ -156,12 +157,14 @@ final class SettingsViewModel {
     /// `userDefaults` defaults to `.standard`; tests inject an isolated suite.
     init(
         refreshAllDataUseCase: RefreshAllDataUseCase,
+        watchlist: WatchlistStore,
         appState: AppState = .shared,
         userDefaults: UserDefaults = .standard,
         clock: ClockService = ContinuousClockService(),
         logger: LoggerService = OSLogLoggerService()
     ) {
         self.refreshAllDataUseCase = refreshAllDataUseCase
+        self.watchlist = watchlist
         self.appState = appState
         self.userDefaults = userDefaults
         self.clock = clock
@@ -281,6 +284,11 @@ final class SettingsViewModel {
         hasSeenChartOnboarding = DefaultValues.hasSeenChartOnboarding
 
         saveSettings()
+
+        // The History watchlist is persisted independently, so resetting Settings
+        // favorites won't reach it. Re-seed it from the just-reset defaults so a
+        // preferences reset returns the History tab to its out-of-box state too.
+        watchlist.reset(to: favoriteCurrencies.elements)
     }
 
     // MARK: - Data Management Methods

@@ -17,6 +17,7 @@ struct SettingsViewModelTests {
         defaults.removePersistentDomain(forName: suiteName)
         viewModel = SettingsViewModel(
             refreshAllDataUseCase: RefreshAllDataUseCase(repository: MockExchangeRateService()),
+            watchlist: WatchlistStore(userDefaults: defaults),
             appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
             userDefaults: defaults,
             clock: ImmediateClock()
@@ -69,6 +70,7 @@ struct SettingsViewModelTests {
         defaults.removePersistentDomain(forName: suiteName)
         let offlineViewModel = SettingsViewModel(
             refreshAllDataUseCase: RefreshAllDataUseCase(repository: spy),
+            watchlist: WatchlistStore(userDefaults: defaults),
             appState: AppState(networkMonitor: monitor),
             userDefaults: defaults,
             clock: ImmediateClock()
@@ -115,6 +117,28 @@ struct SettingsViewModelTests {
 
         // ImmediateClock makes the 2s dismissal resolve as soon as its task runs.
         await waitUntil { viewModel.toast == nil }
+    }
+
+    @Test("confirming a preferences reset re-seeds the History watchlist from the default favorites")
+    func resetPreferencesReseedsWatchlist() {
+        let suiteName = "SettingsViewModelTests.watchlist.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
+        defaults.removePersistentDomain(forName: suiteName)
+
+        // A watchlist the user has diverged from the defaults.
+        let watchlist = WatchlistStore(userDefaults: defaults, seed: ["CHF", "NZD"])
+        let viewModel = SettingsViewModel(
+            refreshAllDataUseCase: RefreshAllDataUseCase(repository: MockExchangeRateService()),
+            watchlist: watchlist,
+            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
+            userDefaults: defaults,
+            clock: ImmediateClock()
+        )
+
+        viewModel.confirmAlert(.resetPreferences)
+
+        #expect(watchlist.codes.elements == CurrencyDefaults.favoriteCurrencies)
+        #expect(defaults.stringArray(forKey: UserDefaultsKeys.historyWatchlist) == CurrencyDefaults.favoriteCurrencies)
     }
 
     // MARK: Favorites

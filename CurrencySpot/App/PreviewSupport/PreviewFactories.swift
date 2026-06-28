@@ -64,7 +64,10 @@
 
     extension SettingsViewModel {
         static func preview() -> SettingsViewModel {
-            SettingsViewModel(refreshAllDataUseCase: RefreshAllDataUseCase(repository: MockExchangeRateService()))
+            SettingsViewModel(
+                refreshAllDataUseCase: RefreshAllDataUseCase(repository: MockExchangeRateService()),
+                watchlist: WatchlistStore()
+            )
         }
     }
 

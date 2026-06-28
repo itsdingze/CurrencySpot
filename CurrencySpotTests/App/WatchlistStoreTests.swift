@@ -114,4 +114,16 @@ struct WatchlistStoreTests {
 
         #expect(store.codes.elements == ["USD", "JPY", "EUR", "GBP"])
     }
+
+    @Test("reset replaces the whole watchlist with the seed and persists it")
+    func reset() {
+        let defaults = makeDefaults()
+        let store = WatchlistStore(userDefaults: defaults, seed: ["EUR", "GBP"])
+        store.add("CHF")
+
+        store.reset(to: CurrencyDefaults.favoriteCurrencies)
+
+        #expect(store.codes.elements == CurrencyDefaults.favoriteCurrencies)
+        #expect(defaults.stringArray(forKey: UserDefaultsKeys.historyWatchlist) == CurrencyDefaults.favoriteCurrencies)
+    }
 }
