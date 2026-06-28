@@ -115,7 +115,7 @@ struct SettingsViewModelTests {
         #expect(viewModel.accentColor == .cyan) // default restored
         #expect(viewModel.toast?.type == .preferencesReset)
 
-        // ImmediateClock makes the 2s dismissal resolve as soon as its task runs.
+        // ImmediateClock makes the dismissal resolve as soon as its task runs.
         await waitUntil { viewModel.toast == nil }
     }
 

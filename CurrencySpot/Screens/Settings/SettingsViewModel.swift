@@ -61,7 +61,7 @@ final class SettingsViewModel {
         return nil
     }
 
-    /// Transient confirmation toast, auto-dismissed after 2 seconds.
+    /// Transient confirmation toast, auto-dismissed after 3.5 seconds.
     private(set) var toast: ToastData?
 
     private var toastDismissTask: Task<Void, Never>?
@@ -235,7 +235,7 @@ final class SettingsViewModel {
 
         toastDismissTask?.cancel()
         toastDismissTask = Task { [clock] in
-            try? await clock.sleep(for: .seconds(2))
+            try? await clock.sleep(for: .seconds(3.5))
             guard !Task.isCancelled else { return }
             toast = nil
         }
