@@ -125,45 +125,47 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
             return appError
         }
 
-        // Handle cancellation errors - don't show these to users
+        // Cancellation isn't a user-facing failure.
         if error is CancellationError {
             return nil
         }
 
-        // Handle Swift-native error types first
         switch error {
         case let decodingError as DecodingError:
             return .decodingError(decodingError.localizedDescription)
         case let urlError as URLError:
-            if urlError.code == .cancelled {
-                return nil // Don't show cancelled network requests
-            } else if urlError.code == .notConnectedToInternet {
-                return .noInternetConnection
-            } else {
-                // Handle specific URLError cases with better messages
-                switch urlError.code {
-                case .timedOut:
-                    return .networkError("Request timed out. Please try again.")
-                case .cannotFindHost:
-                    return .networkError("Cannot find server. Please check your internet connection.")
-                case .cannotConnectToHost:
-                    return .networkError("Cannot connect to server. Please try again later.")
-                case .networkConnectionLost:
-                    return .networkError("Network connection lost. Please check your connection.")
-                case .dnsLookupFailed:
-                    return .networkError("DNS lookup failed. Please check your internet connection.")
-                case .httpTooManyRedirects:
-                    return .networkError("Too many redirects. Please try again later.")
-                case .resourceUnavailable:
-                    return .networkError("Resource unavailable. Please try again later.")
-                case .badServerResponse:
-                    return .networkError("Invalid server response. Please try again.")
-                default:
-                    return .networkError("Network error: \(urlError.code.rawValue)")
-                }
-            }
+            return from(urlError: urlError)
         default:
             return .unknownError((error as NSError).localizedDescription)
+        }
+    }
+
+    /// Maps a `URLError` to a user-facing message, or nil for cancellations that
+    /// shouldn't surface.
+    private static func from(urlError: URLError) -> AppError? {
+        switch urlError.code {
+        case .cancelled:
+            return nil // Don't show cancelled network requests
+        case .notConnectedToInternet:
+            return .noInternetConnection
+        case .timedOut:
+            return .networkError("Request timed out. Please try again.")
+        case .cannotFindHost:
+            return .networkError("Cannot find server. Please check your internet connection.")
+        case .cannotConnectToHost:
+            return .networkError("Cannot connect to server. Please try again later.")
+        case .networkConnectionLost:
+            return .networkError("Network connection lost. Please check your connection.")
+        case .dnsLookupFailed:
+            return .networkError("DNS lookup failed. Please check your internet connection.")
+        case .httpTooManyRedirects:
+            return .networkError("Too many redirects. Please try again later.")
+        case .resourceUnavailable:
+            return .networkError("Resource unavailable. Please try again later.")
+        case .badServerResponse:
+            return .networkError("Invalid server response. Please try again.")
+        default:
+            return .networkError("Network error: \(urlError.code.rawValue)")
         }
     }
 }

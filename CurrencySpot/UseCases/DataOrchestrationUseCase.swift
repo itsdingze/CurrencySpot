@@ -249,7 +249,26 @@ final class DataOrchestrationUseCase {
             return (dataPoints: cachedData, newDataFetched: false, fetchedRanges: [])
         }
 
-        // Step 2: Look at SwiftData and fetch missing data
+        // Step 2: Read back each missing range, fetching only what persistence lacks.
+        let (newDataPoints, actuallyFetchedRanges) = await fetchMissingRanges(missingRanges)
+
+        // Step 3: Merge into the shared series. The merge is atomic inside the cache
+        // actor, so loads that ran concurrently with this one union their rows
+        // instead of last-writer-wins overwriting each other.
+        let mergedData = await repository.mergeCachedHistoricalRates(newDataPoints)
+
+        logger.infoPrivate("Cache updated: Loaded \(newDataPoints.count) new points for \(currency)", category: .cache)
+
+        return (dataPoints: mergedData, newDataFetched: !actuallyFetchedRanges.isEmpty, fetchedRanges: actuallyFetchedRanges)
+    }
+
+    /// Reads back each missing range, fetching only the sub-range gap persistence doesn't
+    /// already cover and joining a covering in-flight fetch when one exists. Per-range
+    /// errors are logged and skipped. Returns the union of new points and the ranges
+    /// actually fetched from the network.
+    private func fetchMissingRanges(
+        _ missingRanges: [DateRange]
+    ) async -> (points: [HistoricalRateSnapshot], fetchedRanges: [DateRange]) {
         var newDataPoints: [HistoricalRateSnapshot] = []
         var actuallyFetchedRanges: [DateRange] = []
 
@@ -285,14 +304,7 @@ final class DataOrchestrationUseCase {
             }
         }
 
-        // Step 3: Merge into the shared series. The merge is atomic inside the cache
-        // actor, so loads that ran concurrently with this one union their rows
-        // instead of last-writer-wins overwriting each other.
-        let mergedData = await repository.mergeCachedHistoricalRates(newDataPoints)
-
-        logger.infoPrivate("Cache updated: Loaded \(newDataPoints.count) new points for \(currency)", category: .cache)
-
-        return (dataPoints: mergedData, newDataFetched: !actuallyFetchedRanges.isEmpty, fetchedRanges: actuallyFetchedRanges)
+        return (newDataPoints, actuallyFetchedRanges)
     }
 
     /// In-flight archive backfill; concurrent callers (launch warm-up overlapping a
@@ -382,36 +394,7 @@ final class DataOrchestrationUseCase {
                 return true
             }
 
-            // Fetch-to-disk, deliberately OUTSIDE the in-flight registry: a resident
-            // load joining a multi-year fetch would flood the resident series, and
-            // mapping ~300k snapshots only to discard them is wasted work.
-            //
-            // Newest-first so every chunk lands adjacent to existing coverage and
-            // the watermark grows contiguously; a failure below leaves the landed
-            // chunks recorded for the re-run to skip.
-            let calendar = TimeZoneManager.cetCalendar
-            var chunkEnd = gap.end
-            while chunkEnd >= gap.start {
-                let chunkStart = Swift.max(
-                    gap.start,
-                    calendar.date(byAdding: .day, value: -(Self.archiveChunkDays - 1), to: chunkEnd) ?? gap.start
-                )
-                try await repository.fetchAndPersistHistoricalRates(from: chunkStart, to: chunkEnd)
-
-                // The persist is deferred: confirm it committed (its coverage record
-                // landed) before anchoring the next chunk past it. Persisting older
-                // chunks beyond a silently failed save would leave an interior hole
-                // that the re-run's coverage repair would then claim as covered —
-                // permanently, since stored bounds would span the hole.
-                await repository.waitForPendingHistoricalWrites()
-                guard historicalDataAnalysisUseCase.isRangeCovered(DateRange(start: chunkStart, end: chunkEnd)) else {
-                    logger.warning("Archive chunk's persist did not land; aborting this run", category: .persistence)
-                    return false
-                }
-
-                guard let nextEnd = calendar.date(byAdding: .day, value: -1, to: chunkStart) else { break }
-                chunkEnd = nextEnd
-            }
+            guard try await fetchArchiveInChunks(gap) else { return false }
 
             guard historicalDataAnalysisUseCase.isRangeCovered(archiveRange) else {
                 logger.warning("Archive backfill fetched but coverage did not land; re-run needed", category: .network)
@@ -423,6 +406,36 @@ final class DataOrchestrationUseCase {
             logger.warning("Archive backfill did not complete: \(error.localizedDescription)", category: .network)
             return false
         }
+    }
+
+    /// Fetches and persists `gap` newest-first in `archiveChunkDays` chunks, OUTSIDE the
+    /// in-flight registry (a resident load joining a multi-year fetch would flood the
+    /// resident series, and mapping ~300k snapshots only to discard them is wasted work).
+    /// Each chunk lands adjacent to existing coverage so the watermark grows contiguously;
+    /// a failed run leaves landed chunks recorded for the re-run to skip. Returns false
+    /// when a chunk's deferred persist didn't commit — anchoring the next chunk past an
+    /// uncommitted save would leave an interior hole the coverage repair could then
+    /// permanently claim as covered, since stored bounds would span it.
+    private func fetchArchiveInChunks(_ gap: DateRange) async throws -> Bool {
+        let calendar = TimeZoneManager.cetCalendar
+        var chunkEnd = gap.end
+        while chunkEnd >= gap.start {
+            let chunkStart = Swift.max(
+                gap.start,
+                calendar.date(byAdding: .day, value: -(Self.archiveChunkDays - 1), to: chunkEnd) ?? gap.start
+            )
+            try await repository.fetchAndPersistHistoricalRates(from: chunkStart, to: chunkEnd)
+
+            await repository.waitForPendingHistoricalWrites()
+            guard historicalDataAnalysisUseCase.isRangeCovered(DateRange(start: chunkStart, end: chunkEnd)) else {
+                logger.warning("Archive chunk's persist did not land; aborting this run", category: .persistence)
+                return false
+            }
+
+            guard let nextEnd = calendar.date(byAdding: .day, value: -1, to: chunkStart) else { break }
+            chunkEnd = nextEnd
+        }
+        return true
     }
 
     /// Heals a watermark that under-claims persisted rows (the store's contiguity
@@ -470,33 +483,15 @@ final class DataOrchestrationUseCase {
         }
 
         let calendar = TimeZoneManager.cetCalendar
-        let requiredStart = calendar.startOfDay(for: missingRange.start)
-        let requiredEnd = calendar.startOfDay(for: missingRange.end)
-        let storedStart = calendar.startOfDay(for: earliestStoredDate)
-        let storedEnd = calendar.startOfDay(for: latestStoredDate)
-
-        // Determine the actual gap range that needs fetching
-        let gapStart: Date
-        let gapEnd: Date
-
-        if requiredStart < storedStart, requiredEnd > storedEnd {
-            // Required range spans beyond both ends - check entire missing range
-            gapStart = requiredStart
-            gapEnd = requiredEnd
-        } else if requiredStart < storedStart {
-            // Need data before earliest stored
-            gapStart = requiredStart
-            gapEnd = storedStart
-        } else if requiredEnd > storedEnd {
-            // Need data after latest stored
-            gapStart = storedEnd
-            gapEnd = requiredEnd
-        } else {
-            // Required range is within stored range — every day we need is already persisted.
-            // This includes today once its data has landed: we deliberately don't re-poll it within
-            // the day (intraday revisions are cosmetic, and refetching the whole window would
-            // reintroduce over-fetching). The empty-today case takes the `requiredEnd > storedEnd`
-            // branch above, where shouldFetchGap's TTL governs the live-edge recheck.
+        // A nil gap means the required range is within stored range — every day we need
+        // is already persisted. This includes today once its data has landed: we
+        // deliberately don't re-poll within the day (intraday revisions are cosmetic).
+        // The empty-today case takes the after-latest-stored branch, where shouldFetchGap's
+        // TTL governs the live-edge recheck.
+        guard let gap = Self.unstoredGap(
+            required: (calendar.startOfDay(for: missingRange.start), calendar.startOfDay(for: missingRange.end)),
+            stored: (calendar.startOfDay(for: earliestStoredDate), calendar.startOfDay(for: latestStoredDate))
+        ) else {
             return nil
         }
 
@@ -504,10 +499,28 @@ final class DataOrchestrationUseCase {
         // Anchoring at the stored bounds keeps recorded ranges adjacent to existing
         // coverage, preserving the contiguous-watermark invariant.
         let shouldFetch = historicalDataAnalysisUseCase.shouldFetchGap(
-            gapStart: gapStart,
-            gapEnd: gapEnd,
+            gapStart: gap.start,
+            gapEnd: gap.end,
             now: dateProvider.now()
         )
-        return shouldFetch ? DateRange(start: gapStart, end: gapEnd) : nil
+        return shouldFetch ? DateRange(start: gap.start, end: gap.end) : nil
+    }
+
+    /// The unstored sub-range of `required` given the stored bounds, or nil when the
+    /// required range already sits within what's stored. All inputs are day-aligned;
+    /// the gap anchors at the stored edge so recorded ranges stay adjacent to coverage.
+    private static func unstoredGap(
+        required: (start: Date, end: Date),
+        stored: (start: Date, end: Date)
+    ) -> (start: Date, end: Date)? {
+        if required.start < stored.start, required.end > stored.end {
+            return (required.start, required.end) // spans beyond both stored ends
+        } else if required.start < stored.start {
+            return (required.start, stored.start) // before earliest stored
+        } else if required.end > stored.end {
+            return (stored.end, required.end) // after latest stored
+        } else {
+            return nil // fully within stored range
+        }
     }
 }

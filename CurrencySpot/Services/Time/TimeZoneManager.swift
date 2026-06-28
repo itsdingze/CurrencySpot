@@ -22,22 +22,7 @@ nonisolated enum TimeZoneManager {
     }()
 
     static func parseAPIDate(_ dateString: String) -> Date? {
-        let parts = dateString.split(separator: "-")
-        guard parts.count == 3,
-              let year = Int(parts[0]),
-              let month = Int(parts[1]),
-              let day = Int(parts[2])
-        else {
-            return nil
-        }
-
-        // Validate date components and require zero-padded format
-        guard year > 1900, year < 3000,
-              month >= 1, month <= 12,
-              day >= 1, day <= 31,
-              parts[1].count == 2, // Require zero-padded month
-              parts[2].count == 2 // Require zero-padded day
-        else {
+        guard let (year, month, day) = parseDateComponents(dateString) else {
             return nil
         }
 
@@ -65,6 +50,25 @@ nonisolated enum TimeZoneManager {
         }
 
         return date
+    }
+
+    /// Parses and range-validates a zero-padded `YYYY-MM-DD` string, rejecting any
+    /// non-numeric, out-of-range, or non-zero-padded component.
+    private static func parseDateComponents(_ dateString: String) -> (year: Int, month: Int, day: Int)? {
+        let parts = dateString.split(separator: "-")
+        guard parts.count == 3,
+              let year = Int(parts[0]),
+              let month = Int(parts[1]),
+              let day = Int(parts[2]),
+              year > 1900, year < 3000,
+              month >= 1, month <= 12,
+              day >= 1, day <= 31,
+              parts[1].count == 2, // Require zero-padded month
+              parts[2].count == 2 // Require zero-padded day
+        else {
+            return nil
+        }
+        return (year, month, day)
     }
 
     /// Fixed-format ISO 8601: Gregorian year and ASCII digits regardless of
