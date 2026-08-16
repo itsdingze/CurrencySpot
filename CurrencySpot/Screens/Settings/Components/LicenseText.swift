@@ -1,13 +1,3 @@
-//
-//  LicenseText.swift
-//  CurrencySpot
-//
-//  Verbatim upstream license texts for the dependencies listed in
-//  Acknowledgement.bundled. Embedded as source (not bundled as resources)
-//  so the notices ship inside the binary without runtime file loading.
-//  Extended string delimiters keep every byte literal.
-//
-
 nonisolated enum LicenseText {
     static let mit = #"""
 MIT License

@@ -1,31 +1,18 @@
-//
-//  NetworkService.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 7/31/25.
-//
-
 import Foundation
 
 // MARK: - NetworkService Protocol
 
 protocol NetworkService {
-    /// Determines whether new exchange rates should be fetched from the API
     func shouldFetchNewRates() async -> Bool
 
-    /// Fetches the latest exchange rates from the API
     func fetchExchangeRates() async throws -> ExchangeRatesResponse
 
-    /// Fetches historical rates for a specific date range
     func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> HistoricalRatesResponse
 
-    /// Fetches historical rates for specific quote currencies only (pair-scoped archive views)
     func fetchHistoricalRates(from startDate: Date, to endDate: Date, quotes: [String]) async throws -> HistoricalRatesResponse
 
-    /// Updates the last fetch date
     func updateLastFetchDate(_ date: Date)
 
-    /// Gets the last fetch date
     func getLastFetchDate() -> Date?
 }
 
@@ -44,9 +31,7 @@ final class FrankfurterNetworkService: NetworkService {
 
     // MARK: - Initialization
 
-    /// Defaults preserve production behavior; tests inject a stubbed API client,
-    /// an isolated `UserDefaults`, and a fixed `DateProvider` for determinism.
-    init(api: FrankfurterAPI = .shared, userDefaults: UserDefaults = .standard, dateProvider: DateProvider = SystemDateProvider()) {
+    init(api: FrankfurterAPI, userDefaults: UserDefaults = .standard, dateProvider: DateProvider = SystemDateProvider()) {
         self.api = api
         self.userDefaults = userDefaults
         self.dateProvider = dateProvider
@@ -54,31 +39,16 @@ final class FrankfurterNetworkService: NetworkService {
 
     // MARK: - Rate Fetching Check Methods
 
-    /// Determines whether new exchange rates should be fetched from the API.
-    ///
-    /// - Returns: `true` if cached rates are older than the freshness window, `false` otherwise.
     func shouldFetchNewRates() async -> Bool {
         RateRefreshPolicy.shouldRefetch(now: dateProvider.now(), lastFetch: getLastFetchDate())
     }
 
     // MARK: - Network Data Fetching Methods
 
-    /// Fetches the latest exchange rates from the Frankfurter API.
-    /// The last-fetch date is NOT stamped here — DataCoordinator owns that bookkeeping.
-    ///
-    /// - Returns: A FrankfurterResponse containing the latest exchange rates
-    /// - Throws: Any error that might occur during the API request
     func fetchExchangeRates() async throws -> ExchangeRatesResponse {
         try await api.fetchExchangeRates()
     }
 
-    /// Fetches historical rates for a specific date range
-    ///
-    /// - Parameters:
-    ///   - startDate: The start date for historical data
-    ///   - endDate: The end date for historical data
-    /// - Returns: A HistoricalRatesResponse containing the historical exchange rates
-    /// - Throws: Any error that might occur during the API request
     func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> HistoricalRatesResponse {
         try await api.fetchHistoricalRatesForRange(
             startDate: startDate,

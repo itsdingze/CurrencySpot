@@ -1,22 +1,14 @@
-//
-//  FixedWidthCurrencyLabel.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Currency code over an invisible "WWI" template so every code renders at the
-/// same width (the font is not monospaced). Shared by the calculator and camera
-/// currency buttons.
 struct FixedWidthCurrencyLabel: View {
-    let code: String
+    let code: CurrencyCode
 
     var body: some View {
         ZStack(alignment: .center) {
             Text("WWI")
                 .foregroundStyle(.clear)
 
-            Text(code)
+            Text(code.rawValue)
                 .contentTransition(.numericText())
         }
         .font(.appHeadline.bold())
@@ -25,8 +17,8 @@ struct FixedWidthCurrencyLabel: View {
 
 #Preview {
     VStack {
-        FixedWidthCurrencyLabel(code: "USD")
-        FixedWidthCurrencyLabel(code: "EUR")
+        FixedWidthCurrencyLabel(code: .usd)
+        FixedWidthCurrencyLabel(code: .eur)
     }
     .padding()
 }

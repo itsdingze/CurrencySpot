@@ -1,8 +1,3 @@
-//
-//  DataMigrationTests.swift
-//  CurrencySpotTests
-//
-
 import Foundation
 import SwiftData
 import Testing
@@ -65,7 +60,6 @@ struct DataMigrationTests {
 
         DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
 
-        // Otherwise the watermark would claim coverage over the just-purged store → blank charts.
         #expect(store.from == nil)
         #expect(store.through == nil)
         #expect(store.checkedAt == nil)
@@ -75,7 +69,6 @@ struct DataMigrationTests {
     func blobMigrationPurgesHistoricalRows() throws {
         let container = try Self.makeContainer()
         let defaults = Self.makeDefaults()
-        // Simulate a device that migrated to v2 long ago but predates the blob schema.
         defaults.set(true, forKey: "DidMigrateToFrankfurterV2")
 
         let context = container.mainContext
@@ -93,7 +86,6 @@ struct DataMigrationTests {
         #expect(try context.fetch(FetchDescriptor<HistoricalRateData>()).isEmpty)
         #expect(store.from == nil)
 
-        // A second run leaves freshly written blob rows intact.
         context.insert(try HistoricalRateData(dateString: "2025-03-16", rates: ["EUR": 1.22]))
         try context.save()
         DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
@@ -105,10 +97,8 @@ struct DataMigrationTests {
         let container = try Self.makeContainer()
         let defaults = Self.makeDefaults()
 
-        // First run marks completion.
         DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
 
-        // New data arrives post-migration; a second run must leave it intact.
         let context = container.mainContext
         context.insert(ExchangeRateData(currencyCode: "EUR", rate: 0.86))
         try context.save()

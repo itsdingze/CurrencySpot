@@ -1,10 +1,3 @@
-//
-//  RippleEffect.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 9/9/25.
-//
-
 import SwiftUI
 
 struct RippleEffect: View {
@@ -31,7 +24,6 @@ struct RippleEffect: View {
     }
 
     private func startRippleAnimation() {
-        // Cancel any in-flight fade so a re-trigger can't double-animate, and reset state.
         fadeTask?.cancel()
         scale = 1
         opacity = 0
@@ -41,7 +33,6 @@ struct RippleEffect: View {
             opacity = 1.0
         }
 
-        // Fade out happens after a brief delay, tied to the view's lifetime.
         fadeTask = Task {
             try? await Task.sleep(for: .seconds(0.2))
             guard !Task.isCancelled else { return }

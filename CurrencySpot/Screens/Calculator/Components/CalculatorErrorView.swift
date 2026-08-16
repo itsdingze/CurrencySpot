@@ -1,10 +1,3 @@
-//
-//  CalculatorErrorView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 5/4/25.
-//
-
 import SwiftUI
 
 struct CalculatorErrorView: View {
@@ -14,7 +7,7 @@ struct CalculatorErrorView: View {
     private var isConnected: Bool { appState.networkMonitor.isConnected }
 
     var body: some View {
-        VStack(spacing: .elementGap) {
+        VStack(spacing: Spacing.element) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.appLargeTitle)
                 .foregroundStyle(Color.secondaryAccent)
@@ -22,7 +15,6 @@ struct CalculatorErrorView: View {
 
             Text("Unable to Load Exchange Rates")
                 .font(.appTitle3.bold())
-                .foregroundStyle(Color.textPrimary)
                 .accessibilityAddTraits(.isHeader)
 
             Text(message)
@@ -30,15 +22,12 @@ struct CalculatorErrorView: View {
                 .foregroundStyle(Color.textSecondary)
                 .padding(.horizontal)
 
-            // Online: retrying is the useful action. Offline: a retry would just fail, so
-            // the only real choice is opting into sample rates — and connectivity
-            // returning restarts the load automatically.
             if isConnected {
                 Button("Try Again") { calculatorViewModel.retryFetch() }
                     .buttonStyle(.primaryAction)
                     .accessibilityLabel("Try loading exchange rates again")
             } else {
-                Button("Use Sample Rates") { calculatorViewModel.useMockData() }
+                Button("Use Sample Rates") { calculatorViewModel.showSampleRates() }
                     .buttonStyle(.primaryAction)
                     .accessibilityLabel("Use sample rates")
 
@@ -60,14 +49,11 @@ struct CalculatorErrorView: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
-    @Previewable @State var appState = AppState.shared
     let container = DependencyContainer.preview()
 
     CalculatorErrorView()
         .withDependencyContainer(container)
-        .environment(appState)
 }
 #endif

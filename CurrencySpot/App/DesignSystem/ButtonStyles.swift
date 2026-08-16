@@ -1,25 +1,16 @@
-//
-//  ButtonStyles.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// How far a button dims while pressed, shared by every style so press
-/// feedback is uniform across the app.
 private let pressedOpacity = 0.7
 
 // MARK: - Primary action
 
-/// The app's primary call-to-action: accent-tinted Liquid Glass on iOS 26+,
-/// falling back to an accent-filled rounded rect on earlier systems.
 struct PrimaryActionButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.appHeadline)
             .foregroundStyle(Color.white)
-            .padding(.controlIconPadding)
-            .adaptiveGlassBackground(in: .rect(cornerRadius: .containerRadius), isInteractive: true, tintedFallback: .accentColor)
+            .padding(12)
+            .adaptiveGlassBackground(in: .rect(cornerRadius: Radius.container), isInteractive: true, tintedFallback: .accentColor)
             .contentShape(.rect)
             .opacity(configuration.isPressed ? pressedOpacity : 1)
     }
@@ -31,17 +22,10 @@ extension ButtonStyle where Self == PrimaryActionButtonStyle {
 
 // MARK: - Control button
 
-/// A circular icon control: a fixed `controlButtonSize` (Dynamic-Type-scaled) tap
-/// target wearing the app's Liquid Glass circle and shared press dim. The label
-/// supplies only the SF Symbol and its color; the style sizes the glyph to
-/// `.appHeadline` so every control matches regardless of the surrounding font.
-/// Pass `glass: false` for a chrome-free variant (e.g. an inline swap control).
 struct ControlButtonStyle: ButtonStyle {
     var glass = true
 
     func makeBody(configuration: Configuration) -> some View {
-        // The chrome lives in a View, not here: @ScaledMetric only tracks Dynamic
-        // Type inside a view context, not in the ButtonStyle struct itself.
         ControlButtonChrome(glass: glass, isPressed: configuration.isPressed) {
             configuration.label
         }
@@ -53,12 +37,14 @@ extension ButtonStyle where Self == ControlButtonStyle {
     static func controlButton(glass: Bool) -> ControlButtonStyle { ControlButtonStyle(glass: glass) }
 }
 
+// The chrome lives in a View, not in the ButtonStyle: @ScaledMetric only tracks
+// Dynamic Type inside a view context.
 private struct ControlButtonChrome<Label: View>: View {
     let glass: Bool
     let isPressed: Bool
     @ViewBuilder var label: Label
 
-    @ScaledMetric(relativeTo: .headline) private var size: CGFloat = .controlButtonSize
+    @ScaledMetric(relativeTo: .headline) private var size: CGFloat = ControlMetrics.buttonSize
 
     var body: some View {
         box
@@ -79,10 +65,33 @@ private struct ControlButtonChrome<Label: View>: View {
     }
 }
 
+// MARK: - Number pad key
+
+struct NumberPadKeyButtonStyle: ButtonStyle {
+    let fill: Color
+    let foreground: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.appTitle)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .foregroundStyle(foreground)
+            .adaptiveGlassBackground(in: Capsule(), isInteractive: true, tint: fill) {
+                Capsule().fill(fill)
+            }
+            .contentShape(.rect)
+            .opacity(configuration.isPressed ? pressedOpacity : 1)
+    }
+}
+
+extension ButtonStyle where Self == NumberPadKeyButtonStyle {
+    static func numberPadKey(fill: Color, foreground: Color) -> NumberPadKeyButtonStyle {
+        NumberPadKeyButtonStyle(fill: fill, foreground: foreground)
+    }
+}
+
 // MARK: - Currency chip
 
-/// Quick-access currency chips in the picker's horizontal rail. The accent
-/// glass background appears only when selected.
 struct CurrencyChipButtonStyle: ButtonStyle {
     let isSelected: Bool
 
@@ -100,7 +109,7 @@ struct CurrencyChipButtonStyle: ButtonStyle {
             .padding(.horizontal, 12)
             .foregroundStyle(isSelected ? Color.white : Color.textPrimary)
         if isSelected {
-            styled.adaptiveGlassBackground(in: .rect(cornerRadius: .cardRadius), tintedFallback: .accentColor)
+            styled.adaptiveGlassBackground(in: .rect(cornerRadius: Radius.card), tintedFallback: .accentColor)
         } else {
             styled
         }
@@ -115,9 +124,6 @@ extension ButtonStyle where Self == CurrencyChipButtonStyle {
 
 // MARK: - Currency code
 
-/// The fixed-width currency-code buttons in the calculator and camera
-/// controls. A `fill` renders the calculator's bordered chip; the camera's
-/// glass-hosted variant stays chromeless (horizontal padding only).
 struct CurrencyCodeButtonStyle: ButtonStyle {
     var fill: Color?
     var stroke: Color = .clear
@@ -132,14 +138,14 @@ struct CurrencyCodeButtonStyle: ButtonStyle {
     private func chip(_ label: Configuration.Label) -> some View {
         if let fill {
             label
-                .padding(.chipPadding)
-                .adaptiveGlassBackground(in: .rect(cornerRadius: .cardRadius), isInteractive: true, tint: fill) {
-                    RoundedRectangle(cornerRadius: .cardRadius)
+                .padding(Spacing.chipPadding)
+                .adaptiveGlassBackground(in: .rect(cornerRadius: Radius.card), isInteractive: true, tint: fill) {
+                    RoundedRectangle(cornerRadius: Radius.card)
                         .fill(fill)
                         .stroke(stroke, lineWidth: 1)
                 }
         } else {
-            label.padding(.horizontal, .chipPadding)
+            label.padding(.horizontal, Spacing.chipPadding)
         }
     }
 }

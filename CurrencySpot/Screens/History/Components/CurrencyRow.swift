@@ -1,19 +1,10 @@
-//
-//  CurrencyRow.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// One currency in the History list: code/name, mini trend chart, and rate.
 struct CurrencyRow: View {
     let entry: CurrencyListEntry
 
-    /// Search rows drop the 7-day sparkline to stay compact; the watchlist keeps it.
     var showsTrendChart = true
 
-    /// Hides the trailing metrics (edit mode). The row keeps its height via the
-    /// zero-width copy below.
     var metricsHidden = false
 
     @Environment(HistoryViewModel.self) private var historyViewModel: HistoryViewModel
@@ -21,9 +12,9 @@ struct CurrencyRow: View {
     var body: some View {
         let trendData = historyViewModel.getTrendData(for: entry.code)
 
-        HStack(spacing: .elementGap) {
-            VStack(alignment: .leading, spacing: .hairlineGap) {
-                Text(entry.code)
+        HStack(spacing: Spacing.element) {
+            VStack(alignment: .leading, spacing: Spacing.hairline) {
+                Text(entry.code.rawValue)
                     .font(.appTitle2)
 
                 Text(entry.name)
@@ -35,9 +26,6 @@ struct CurrencyRow: View {
             Spacer()
 
             ZStack(alignment: .trailing) {
-                // Zero-width invisible copy: holds the row at full height so removing
-                // the real metrics doesn't shrink it — without reserving any width,
-                // so the code/name get the freed space instead of being squeezed.
                 metrics(trendData)
                     .frame(width: 0)
                     .clipped()
@@ -62,13 +50,13 @@ struct CurrencyRow: View {
 
     @ViewBuilder
     private func metrics(_ trendData: Trend?) -> some View {
-        HStack(spacing: .elementGap) {
+        HStack(spacing: Spacing.element) {
             if showsTrendChart, let trend = trendData {
                 MiniChart(trend: trend)
                     .accessibilityHidden(true)
             }
 
-            VStack(alignment: .trailing, spacing: .hairlineGap) {
+            VStack(alignment: .trailing, spacing: Spacing.hairline) {
                 Text(entry.rate.toStringMax4Decimals)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -87,10 +75,10 @@ struct CurrencyRow: View {
     }
 
     private func accessibilityLabel(trend: Trend?) -> String {
-        var parts = ["\(entry.code), \(entry.name)"]
+        var parts = ["\(entry.code.rawValue), \(entry.name)"]
         guard !metricsHidden else { return parts.joined(separator: ", ") }
 
-        parts.append("1 \(historyViewModel.baseCurrency) equals \(entry.rate.toStringMax4Decimals) \(entry.code)")
+        parts.append("1 \(historyViewModel.baseCurrency.rawValue) equals \(entry.rate.toStringMax4Decimals) \(entry.code.rawValue)")
         if let trend {
             let value = historyViewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange)
             parts.append("\(trend.direction.description) \(value)")
@@ -99,14 +87,13 @@ struct CurrencyRow: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     let container = DependencyContainer.preview()
 
     List {
-        CurrencyRow(entry: CurrencyListEntry(code: "EUR", name: "Euro", rate: 0.92))
-        CurrencyRow(entry: CurrencyListEntry(code: "JPY", name: "Japanese Yen", rate: 148.31))
+        CurrencyRow(entry: CurrencyListEntry(code: .eur, name: "Euro", rate: 0.92))
+        CurrencyRow(entry: CurrencyListEntry(code: .jpy, name: "Japanese Yen", rate: 148.31))
     }
     .listStyle(.plain)
     .withDependencyContainer(container)

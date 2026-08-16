@@ -1,16 +1,5 @@
-//
-//  Loadable.swift
-//  CurrencySpot
-//
-
 import Foundation
 
-/// Exhaustive model for async UI state. Replaces the `isLoading` + `errorMessage`
-/// + data triple, which allows representable-but-invalid combinations.
-///
-/// The `previous` payloads on `.loading` and `.failed` are what enable graceful
-/// degradation: a refetch shows stale data instead of blanking the screen, and a
-/// failure can fall back to the last known good value.
 nonisolated enum Loadable<T> {
     case idle
     case loading(previous: T?)
@@ -19,7 +8,6 @@ nonisolated enum Loadable<T> {
 }
 
 nonisolated extension Loadable {
-    /// The current or last known value, regardless of phase.
     var value: T? {
         switch self {
         case .idle:

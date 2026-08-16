@@ -1,12 +1,3 @@
-//
-//  RefreshAllDataRewarmTests.swift
-//  CurrencySpotTests
-//
-//  "Refresh All Data" is recovery, not data-lessness: after the wipe, the container's
-//  wiring must immediately rebuild — rates for the currency list, then the tiered
-//  history warm-up — instead of leaving the app dead until the next launch.
-//
-
 @testable import CurrencySpot
 import Foundation
 import SwiftData
@@ -29,16 +20,13 @@ struct RefreshAllDataRewarmTests {
 
         try await container.refreshAllDataUseCase.execute()
 
-        // Both rebuild paths reach the network without waiting for a relaunch.
-        while network.fetchExchangeRatesCallCount == 0 || network.fetchHistoricalRatesCalls.isEmpty {
-            await Task.yield()
+        await waitUntil {
+            network.fetchExchangeRatesCallCount > 0 && network.fetchHistoricalRatesCalls.isEmpty == false
         }
 
-        // The visible chart recovers too: the reset's .idle must not strand an open
-        // chart on an infinite spinner after the rewarm completes.
-        while true {
-            if case .loaded = container.historyViewModel.chartData { break }
-            await Task.yield()
+        await waitUntil {
+            if case .loaded = container.historyViewModel.chartData { return true }
+            return false
         }
     }
 }

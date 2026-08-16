@@ -1,24 +1,15 @@
-//
-//  DependencyContainer.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 7/30/25.
-//
-
 import Foundation
 import SwiftData
 
 // MARK: - ModelContainer Factory
 
 extension ModelContainer {
-    /// Single source of truth for the app's persisted model set.
     static let currencySpotSchema = Schema([
         ExchangeRateData.self,
         HistoricalRateData.self,
         TrendData.self,
     ])
 
-    /// The app's full schema in an in-memory store (tests, previews, fallback boot).
     static func inMemoryCurrencySpot() throws -> ModelContainer {
         let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: currencySpotSchema, configurations: configuration)
@@ -27,9 +18,6 @@ extension ModelContainer {
 
 // MARK: - DependencyContainer
 
-/// Centralized dependency injection container.
-/// Every service/repository/provider parameter has a working default; tests and
-/// previews override only what they need.
 @Observable
 final class DependencyContainer {
     // MARK: - Core Services
@@ -43,8 +31,10 @@ final class DependencyContainer {
     let dateProvider: DateProvider
     let clockService: ClockService
     let logger: LoggerService
+    let cameraPermissionService: CameraPermissionService
+    let stillTextRecognizer: StillTextRecognitionService
+    let torchService: TorchService
 
-    /// Orchestrates the services above and implements every repository protocol.
     let dataCoordinator: DataCoordinator
 
     // MARK: - Use Cases
@@ -54,6 +44,9 @@ final class DependencyContainer {
     let chartDataPreparationUseCase: ChartDataPreparationUseCase
     let trendDataUseCase: TrendDataUseCase
     let refreshAllDataUseCase: RefreshAllDataUseCase
+    let loadExchangeRatesUseCase: LoadExchangeRatesUseCase
+    let calculateConversionUseCase: CalculateConversionUseCase
+    let scanConversionUseCase: ScanConversionUseCase
 
     // MARK: - Shared State and ViewModels
 
@@ -66,28 +59,43 @@ final class DependencyContainer {
 
     // MARK: - Initialization
 
-    /// Optional-with-nil parameters exist where a default would need another
-    /// parameter (the persistence actor needs the model container).
     init(
-        modelContainer: ModelContainer,
+        modelContainer: ModelContainer? = nil,
         appState: AppState = .shared,
+        userDefaults: UserDefaults = .standard,
+        preferences: PreferencesStore = UserDefaultsPreferencesStore(),
+        retryManager: RetryManager = RetryManager(),
         networkService: NetworkService? = nil,
         persistenceService: PersistenceService? = nil,
         cacheService: CacheService = InMemoryCacheService(),
         syncStore: HistoricalSyncStore = UserDefaultsHistoricalSyncStore(),
         dateProvider: DateProvider = SystemDateProvider(),
         clockService: ClockService = ContinuousClockService(),
-        logger: LoggerService = OSLogLoggerService()
+        logger: LoggerService = OSLogLoggerService(),
+        cameraPermissionService: CameraPermissionService = AVCameraPermissionService(),
+        stillTextRecognizer: StillTextRecognitionService = StillImageTextRecognizer(),
+        torchService: TorchService = AVTorchService()
     ) {
-        self.modelContainer = modelContainer
+        let resolvedModelContainer = modelContainer ?? Self.inMemoryFallbackContainer()
+        self.modelContainer = resolvedModelContainer
         self.appState = appState
-        self.networkService = networkService ?? FrankfurterNetworkService(dateProvider: dateProvider)
-        self.persistenceService = persistenceService ?? SwiftDataPersistenceService(modelContainer: modelContainer)
+        self.networkService = networkService ?? FrankfurterNetworkService(
+            api: FrankfurterAPI(retryManager: retryManager, dateProvider: dateProvider),
+            userDefaults: userDefaults,
+            dateProvider: dateProvider
+        )
+        self.persistenceService = persistenceService ?? SwiftDataPersistenceService(
+            modelContainer: resolvedModelContainer,
+            logger: logger
+        )
         self.cacheService = cacheService
         self.syncStore = syncStore
         self.dateProvider = dateProvider
         self.clockService = clockService
         self.logger = logger
+        self.cameraPermissionService = cameraPermissionService
+        self.stillTextRecognizer = stillTextRecognizer
+        self.torchService = torchService
 
         dataCoordinator = DataCoordinator(
             networkService: self.networkService,
@@ -99,7 +107,7 @@ final class DependencyContainer {
         )
 
         historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(
-            syncStore: syncStore,
+            syncCoverage: dataCoordinator,
             dateProvider: dateProvider,
             logger: logger
         )
@@ -113,7 +121,7 @@ final class DependencyContainer {
         )
 
         chartDataPreparationUseCase = ChartDataPreparationUseCase(
-            cacheService: cacheService,
+            chartCache: dataCoordinator,
             logger: logger
         )
 
@@ -125,17 +133,22 @@ final class DependencyContainer {
         )
 
         refreshAllDataUseCase = RefreshAllDataUseCase(repository: dataCoordinator)
+        loadExchangeRatesUseCase = LoadExchangeRatesUseCase(repository: dataCoordinator)
+        calculateConversionUseCase = CalculateConversionUseCase()
+        scanConversionUseCase = ScanConversionUseCase()
 
         ratesStore = ExchangeRatesStore()
-        // Seeds from the user's Settings favorites (or the default set) the first
-        // time, then persists and edits independently.
-        watchlistStore = WatchlistStore()
+        watchlistStore = WatchlistStore(
+            userDefaults: userDefaults,
+            seed: preferences.favoriteCurrencies.elements
+        )
 
         calculatorViewModel = CalculatorViewModel(
-            repository: dataCoordinator,
+            loadExchangeRatesUseCase: loadExchangeRatesUseCase,
+            calculateConversionUseCase: calculateConversionUseCase,
             ratesStore: ratesStore,
-            appState: appState,
-            logger: logger
+            preferences: preferences,
+            appState: appState
         )
 
         historyViewModel = HistoryViewModel(
@@ -145,6 +158,8 @@ final class DependencyContainer {
             dataOrchestrationUseCase: dataOrchestrationUseCase,
             chartDataPreparationUseCase: chartDataPreparationUseCase,
             trendDataUseCase: trendDataUseCase,
+            buildCurrencyList: BuildCurrencyListUseCase(),
+            preferences: preferences,
             appState: appState,
             clock: clockService,
             logger: logger
@@ -153,6 +168,7 @@ final class DependencyContainer {
         settingsViewModel = SettingsViewModel(
             refreshAllDataUseCase: refreshAllDataUseCase,
             watchlist: watchlistStore,
+            preferences: preferences,
             appState: appState,
             clock: clockService,
             logger: logger
@@ -160,23 +176,23 @@ final class DependencyContainer {
 
         cameraViewModel = CameraViewModel(
             ratesStore: ratesStore,
-            appState: appState
+            appState: appState,
+            permissionService: cameraPermissionService,
+            scanConversionUseCase: scanConversionUseCase,
+            calculateConversionUseCase: calculateConversionUseCase,
+            stillTextRecognizer: stillTextRecognizer,
+            torchService: torchService,
+            fallbackBaseCurrency: preferences.defaultBaseCurrency,
+            defaultTargetCurrency: preferences.defaultTargetCurrency,
+            logger: logger
         )
 
-        // The cross-cutting clear resets each feature's published state after the
-        // repository wipe, without Settings holding sibling-ViewModel references.
         refreshAllDataUseCase.registerResetHandler { [calculatorViewModel] in
             calculatorViewModel.clearAllData()
         }
         refreshAllDataUseCase.registerResetHandler { [historyViewModel] in
             historyViewModel.clearAllData()
         }
-        // A wipe is recovery, not data-lessness: rebuild immediately so the app never
-        // sits dead until the next launch. Doomed pre-wipe fetches leave the registry
-        // first, then rates — the currency list and sparkline rows derive from them —
-        // then any chart left on screen, then the same tiered history warm-up the app
-        // runs at launch. Unstructured on purpose: the settings interaction must not
-        // block on a multi-MB re-download.
         refreshAllDataUseCase.registerResetHandler { [dataOrchestrationUseCase, calculatorViewModel, historyViewModel] in
             dataOrchestrationUseCase.dropInFlightFetches()
             await calculatorViewModel.checkIfShouldFetch()
@@ -190,16 +206,21 @@ final class DependencyContainer {
 
     // MARK: - Bootstrap
 
-    /// App-entry factory owning the storage fallback ladder:
-    /// persistent store → in-memory (with a user-visible warning) → empty-schema
-    /// in-memory (unrecoverable storage failure, still no fake data in release).
+    private static func inMemoryFallbackContainer() -> ModelContainer {
+        do {
+            return try ModelContainer.inMemoryCurrencySpot()
+        } catch {
+            fatalError("CurrencySpot cannot start: SwiftData is unavailable (\(error))")
+        }
+    }
+
     static func bootstrap(appState: AppState = .shared) -> DependencyContainer {
         let logger = OSLogLoggerService()
 
         #if DEBUG
             if CommandLine.arguments.contains("enable-testing") {
                 if let testContainer = try? ModelContainer.inMemoryCurrencySpot() {
-                    DataMigration.runIfNeeded(modelContainer: testContainer)
+                    DataMigration.runIfNeeded(modelContainer: testContainer, logger: logger)
                     return DependencyContainer(modelContainer: testContainer, appState: appState)
                 }
                 logger.fault("Failed to create test container; continuing with production ladder", category: .app)
@@ -211,10 +232,7 @@ final class DependencyContainer {
                 for: ModelContainer.currencySpotSchema,
                 configurations: ModelConfiguration()
             )
-            // One-time data migrations, before any view's .task can fetch. This runs
-            // synchronously on the main actor, so it completes before the ViewModels'
-            // queued fetch tasks get a chance to execute.
-            DataMigration.runIfNeeded(modelContainer: container)
+            DataMigration.runIfNeeded(modelContainer: container, logger: logger)
             return DependencyContainer(modelContainer: container, appState: appState)
         } catch {
             logger.fault("Failed to create persistent ModelContainer: \(error)", category: .app)
@@ -229,8 +247,6 @@ final class DependencyContainer {
             logger.fault("Critical error: Failed to initialize in-memory container: \(error)", category: .app)
         }
 
-        // Last resort: an empty-schema in-memory container. The app runs without
-        // storage and surfaces the failure; no mock data ships in release.
         do {
             let minimal = try ModelContainer(for: Schema([]))
             appState.errorHandler.handle(AppError.initializationFailed("App initialization failed. Running in limited mode."))

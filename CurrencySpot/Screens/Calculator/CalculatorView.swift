@@ -1,10 +1,3 @@
-//
-//  CalculatorView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 2/26/25.
-//
-
 import SwiftUI
 
 struct CalculatorView: View {
@@ -31,7 +24,7 @@ struct CalculatorView: View {
         ZStack {
             Color.background.ignoresSafeArea()
 
-            VStack(spacing: .elementGap) {
+            VStack(spacing: Spacing.element) {
                 if calculatorViewModel.rateBanner != .hidden {
                     RateStatusBanner(
                         status: calculatorViewModel.rateBanner,
@@ -42,16 +35,14 @@ struct CalculatorView: View {
 
                 switch calculatorViewModel.loadState {
                 case .idle, .loading(previous: nil):
-                    // First load — nothing to show yet.
                     ProgressView("Loading exchange rates…")
                 case .loaded, .loading(previous: .some):
-                    // Saved rates stay on screen while a refresh runs; the banner reads
-                    // "Updating…" rather than blanking to a spinner.
                     mainContentView()
                 case .failed:
                     CalculatorErrorView()
                 }
             }
+            .safeAreaPadding()
         }
         .task {
             await calculatorViewModel.checkIfShouldFetch()
@@ -87,14 +78,15 @@ struct CalculatorView: View {
             NavigationStack {
                 CurrencyPickerView(
                     selectedCurrency: destination == .basePicker ? bindableViewModel.baseCurrency : bindableViewModel.targetCurrency,
-                    exchangeRates: calculatorViewModel.availableRates
+                    exchangeRates: calculatorViewModel.availableRates,
+                    favoriteCurrencies: calculatorViewModel.favoriteCurrencies
                 )
             }
         }
     }
 
     private func mainContentView() -> some View {
-        VStack(spacing: .elementGap) {
+        VStack(spacing: Spacing.element) {
             CurrencyDisplayView()
                 .accessibilityFocused($focusResult)
                 .layoutPriority(1)
@@ -104,26 +96,24 @@ struct CalculatorView: View {
             NumberPadView()
                 .layoutPriority(2)
         }
-        .safeAreaPadding()
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview("Loaded") {
     CalculatorView()
-        .withDependencyContainer(DependencyContainer.preview())
+        .withDependencyContainer(.preview())
 }
 
 #Preview("Loading") {
     CalculatorView()
         .environment(CalculatorViewModel.preview(.stalled))
-        .withDependencyContainer(DependencyContainer.preview())
+        .withDependencyContainer(.preview())
 }
 
 #Preview("Failed") {
     CalculatorView()
         .environment(CalculatorViewModel.preview(.failing))
-        .withDependencyContainer(DependencyContainer.preview())
+        .withDependencyContainer(.preview())
 }
 #endif

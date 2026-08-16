@@ -1,15 +1,7 @@
-//
-//  ChartOnboardingView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 8/23/25.
-//
-
 import SwiftUI
 
 struct ChartOnboardingView: View {
-    @Binding var showOnboarding: Bool
-    @Environment(SettingsViewModel.self) private var settingsViewModel
+    @Environment(HistoryViewModel.self) private var viewModel
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @State private var currentOnboardingPage = 0
     @State private var shouldAnimateTitle = false
@@ -24,7 +16,7 @@ struct ChartOnboardingView: View {
             contentScrollView
             footerSection
         }
-        .safeAreaPadding(.horizontal, .onboardingInset)
+        .safeAreaPadding(.horizontal, Spacing.instructionInset)
         .interactiveDismissDisabled()
         .allowsHitTesting(shouldAnimateFooter || voiceOverEnabled)
         .accessibilityElement(children: .contain)
@@ -33,8 +25,6 @@ struct ChartOnboardingView: View {
             AccessibilityNotification.Announcement("Page \(currentOnboardingPage + 1) of \(totalPages)").post()
         }
         .task(id: currentOnboardingPage) {
-            // Page changes restart this task automatically, cancelling the
-            // previous staged run so animations cannot stack or outlive dismissal.
             await runStagedAnimations()
         }
     }
@@ -53,8 +43,7 @@ struct ChartOnboardingView: View {
             },
             onSkip: {
                 withAnimation {
-                    settingsViewModel.hasSeenChartOnboarding = true
-                    showOnboarding = false
+                    viewModel.completeChartOnboarding()
                 }
             }
         )
@@ -62,7 +51,7 @@ struct ChartOnboardingView: View {
 
     private var contentScrollView: some View {
         ScrollView(.vertical) {
-            VStack(alignment: .center, spacing: .onboardingGap) {
+            VStack(alignment: .center, spacing: Spacing.onboarding) {
                 chartSection
                 titleSection
                 featuresSection
@@ -118,7 +107,7 @@ struct ChartOnboardingView: View {
     }
 
     private var firstPageFeatures: some View {
-        VStack(alignment: .leading, spacing: .onboardingGap) {
+        VStack(alignment: .leading, spacing: Spacing.onboarding) {
             FeatureRow(
                 symbol: "hand.tap",
                 title: "Toggle Chart Elements",
@@ -134,7 +123,7 @@ struct ChartOnboardingView: View {
     }
 
     private var secondPageFeatures: some View {
-        VStack(alignment: .leading, spacing: .onboardingGap) {
+        VStack(alignment: .leading, spacing: Spacing.onboarding) {
             FeatureRow(
                 symbol: "hand.point.up.left",
                 title: "Touch to Select",
@@ -151,7 +140,7 @@ struct ChartOnboardingView: View {
 
     private var footerSection: some View {
         continueButton
-            .padding(.top, .blockGap)
+            .padding(.top, Spacing.block)
     }
 
     private var continueButton: some View {
@@ -159,7 +148,7 @@ struct ChartOnboardingView: View {
             continueButtonLabel
         }
         .buttonStyle(.primaryAction)
-        .padding(.bottom, .tightGap)
+        .padding(.bottom, Spacing.tight)
         .blurSlide(shouldAnimateFooter)
         .accessibilityLabel(continueAccessibilityLabel)
     }
@@ -175,14 +164,13 @@ struct ChartOnboardingView: View {
 
     private func handleContinueAction() {
         if currentOnboardingPage < totalPages - 1 {
-            withAnimation(.smooth) {
+            withAnimation(.appStageReveal) {
                 resetAnimations()
                 currentOnboardingPage += 1
             }
         } else {
             withAnimation {
-                settingsViewModel.hasSeenChartOnboarding = true
-                showOnboarding = false
+                viewModel.completeChartOnboarding()
             }
         }
     }
@@ -211,13 +199,11 @@ struct ChartOnboardingView: View {
 
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
-    @Previewable @State var showOnboarding = true
     let container = DependencyContainer.preview()
 
-    ChartOnboardingView(showOnboarding: $showOnboarding)
+    ChartOnboardingView()
         .withDependencyContainer(container)
 }
 #endif

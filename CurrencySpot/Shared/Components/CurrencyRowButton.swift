@@ -1,14 +1,7 @@
-//
-//  CurrencyRowButton.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// The code + name (+ optional checkmark) list cell shared by the currency
-/// pickers. Selection styling and accessibility wrappers stay at the call sites.
 struct CurrencyRowButton: View {
-    let code: String
+    let code: CurrencyCode
     let name: String
     var isSelected = false
     let action: () -> Void
@@ -16,7 +9,7 @@ struct CurrencyRowButton: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                Text(code)
+                Text(code.rawValue)
                     .font(.appHeadline.weight(.medium))
 
                 Spacer()
@@ -31,15 +24,15 @@ struct CurrencyRowButton: View {
                         .accessibilityHidden(true)
                 }
             }
-            .padding(.vertical, .hairlineGap)
+            .padding(.vertical, Spacing.hairline)
         }
     }
 }
 
 #Preview {
     List {
-        CurrencyRowButton(code: "EUR", name: "Euro", action: {})
-        CurrencyRowButton(code: "JPY", name: "Japanese Yen", isSelected: true, action: {})
+        CurrencyRowButton(code: .eur, name: "Euro", action: {})
+        CurrencyRowButton(code: .jpy, name: "Japanese Yen", isSelected: true, action: {})
     }
     .listStyle(.plain)
 }

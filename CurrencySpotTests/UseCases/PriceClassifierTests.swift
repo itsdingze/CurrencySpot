@@ -1,8 +1,3 @@
-//
-//  PriceClassifierTests.swift
-//  CurrencySpotTests
-//
-
 import Foundation
 import Testing
 @testable import CurrencySpot
@@ -66,15 +61,11 @@ struct PriceClassifierTests {
         #expect(classifier.classify(transcript) == nil)
     }
 
-    /// A currency marker overrides every noise rule.
     @Test func currencyMarkerBeatsNoiseRules() {
         let result = classifier.classify("$1234567")
         #expect(result == PriceClassification(amount: 1234567, isPrice: true))
     }
 
-    /// Conservative: a bare integer with no separator and no marker stays an
-    /// outline. A split-off marker beside it (handled by CurrencyMarkerResolver),
-    /// not magnitude, is what makes "680円" a price.
     @Test(arguments: ["8", "80", "680", "1200", "150000"])
     func bareUnmarkedIntegerIsNotAPrice(transcript: String) {
         let result = classifier.classify(transcript)

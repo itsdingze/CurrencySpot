@@ -1,15 +1,7 @@
-//
-//  CurrencyHistoryView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 3/25/25.
-//
-
 import SwiftUI
 
 struct CurrencyHistoryView: View {
     @Environment(HistoryViewModel.self) private var viewModel: HistoryViewModel
-    @Environment(SettingsViewModel.self) private var settingsViewModel: SettingsViewModel
     @State private var isChartSelectionActive: Bool = false
 
     private var chartIsLoaded: Bool {
@@ -18,7 +10,7 @@ struct CurrencyHistoryView: View {
     }
 
     var body: some View {
-        VStack(spacing: .sectionGap) {
+        VStack(spacing: Spacing.section) {
             HeaderSection(
                 isChartSelectionActive: $isChartSelectionActive
             )
@@ -29,7 +21,6 @@ struct CurrencyHistoryView: View {
 
             Spacer()
         }
-        .environment(viewModel)
         .safeAreaPadding()
         .onChange(of: chartIsLoaded) { _, loaded in
             if loaded {
@@ -39,19 +30,15 @@ struct CurrencyHistoryView: View {
                 AccessibilityNotification.Announcement(message).post()
             }
         }
-        .sheet(isPresented: Bindable(viewModel).isChartOnboardingPresented) {
-            ChartOnboardingView(showOnboarding: Bindable(viewModel).isChartOnboardingPresented)
+        .sheet(isPresented: Bindable(viewModel).destination.isPresenting(.chartOnboarding)) {
+            ChartOnboardingView()
         }
         .task {
-            // Show chart onboarding the first time the user enters the chart view.
-            await viewModel.presentChartOnboardingIfNeeded(
-                hasSeenChartOnboarding: settingsViewModel.hasSeenChartOnboarding
-            )
+            await viewModel.presentChartOnboardingIfNeeded()
         }
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     let container = DependencyContainer.preview()

@@ -1,8 +1,3 @@
-//
-//  TrendDirection.swift
-//  CurrencySpot
-//
-
 import Foundation
 
 nonisolated enum TrendDirection: Sendable {
@@ -10,7 +5,6 @@ nonisolated enum TrendDirection: Sendable {
     case down
     case stable
 
-    /// Threshold for determining stable vs trending (±0.1%)
     static let stableChangeThreshold: Double = 0.1
 
     init(percentChange: Double) {
@@ -31,7 +25,6 @@ nonisolated enum TrendDirection: Sendable {
         }
     }
 
-    /// String description for accessibility
     var description: String {
         switch self {
         case .up: "up"

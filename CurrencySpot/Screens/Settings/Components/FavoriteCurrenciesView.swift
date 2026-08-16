@@ -1,22 +1,14 @@
-//
-//  FavoriteCurrenciesView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 4/19/25.
-//
-
 import SwiftUI
 
 struct FavoriteCurrenciesView: View {
     @Environment(SettingsViewModel.self) private var viewModel: SettingsViewModel
-    @State private var showingAddSheet = false
     @State private var editMode: EditMode = .inactive
 
     var body: some View {
         List {
             ForEach(viewModel.favoriteCurrencies, id: \.self) { currency in
                 HStack {
-                    Text(currency)
+                    Text(currency.rawValue)
                         .font(.appHeadline.weight(.medium))
 
                     Spacer()
@@ -25,27 +17,19 @@ struct FavoriteCurrenciesView: View {
                         .font(.appSubheadline)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, .elementGap)
-                .padding(.horizontal, .cardPadding)
+                .padding(.vertical, Spacing.element)
+                .padding(.horizontal, Spacing.cardPadding)
                 .rowSeparator(isLast: currency == viewModel.favoriteCurrencies.last)
             }
-            .onDelete { indexSet in
-                let currenciesToRemove = indexSet.map { viewModel.favoriteCurrencies[$0] }
-                currenciesToRemove.forEach { viewModel.removeFromFavorites($0) }
-            }
-            .onMove { from, to in
-                viewModel.moveFavorites(from: from, to: to)
-                viewModel.saveSettings()
-            }
+            .onDelete { viewModel.removeFavorites(atOffsets: $0) }
+            .onMove { viewModel.moveFavorites(fromOffsets: $0, toOffset: $1) }
         }
         .listStyle(.plain)
         .navigationTitle("Favorite Currencies")
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Add currency", systemImage: "plus") {
-                    showingAddSheet = true
-                }
+                Button("Add currency", systemImage: "plus", action: viewModel.addFavoriteTapped)
             }
 
             ToolbarItem(placement: .topBarTrailing) {
@@ -53,85 +37,17 @@ struct FavoriteCurrenciesView: View {
             }
         }
         .environment(\.editMode, $editMode)
-        .sheet(isPresented: $showingAddSheet) {
-            AddCurrencyView(isPresented: $showingAddSheet)
+        .sheet(isPresented: Bindable(viewModel).destination.isPresenting(.addFavoriteCurrency)) {
+            AddCurrencyView()
         }
     }
 }
 
-struct AddCurrencyView: View {
-    @Environment(SettingsViewModel.self) private var viewModel: SettingsViewModel
-    @Binding var isPresented: Bool
-    @Environment(CalculatorViewModel.self) private var calculatorViewModel: CalculatorViewModel
-    @State private var searchText = ""
-
-    private var filteredCurrencies: [ExchangeRate] {
-        let favorites = viewModel.favoriteCurrencies
-
-        let available = calculatorViewModel.availableRates.filter { !favorites.contains($0.currencyCode.rawValue) }
-
-        if searchText.isEmpty {
-            return available.sorted { $0.currencyCode < $1.currencyCode }
-        } else {
-            return available.filter { currency in
-                currency.currencyCode.rawValue.localizedStandardContains(searchText) ||
-                    CurrencyNameLookup.name(for: currency.currencyCode.rawValue).localizedStandardContains(searchText)
-            }
-        }
-    }
-
-    var body: some View {
-        let currencies = filteredCurrencies
-        return NavigationStack {
-            List {
-                ForEach(currencies, id: \.currencyCode) { currency in
-                    CurrencyRowButton(
-                        code: currency.currencyCode.rawValue,
-                        name: CurrencyNameLookup.name(for: currency.currencyCode.rawValue),
-                        action: {
-                            viewModel.addToFavorites(currency.currencyCode.rawValue)
-                            isPresented = false
-                        }
-                    )
-                }
-                .listSectionSeparator(.hidden)
-            }
-            .listStyle(.plain)
-            .navigationTitle("Add Currency")
-            .toolbarTitleDisplayMode(.inline)
-            .searchable(
-                text: $searchText,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Search currency code or name"
-            )
-            .autocorrectionDisabled()
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Cancel") {
-                        isPresented = false
-                    }
-                }
-            }
-            .onChange(of: currencies.count) { _, count in
-                AccessibilityNotification.Announcement("\(count) currencies found").post()
-            }
-        }
-    }
-}
-
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     NavigationStack {
         FavoriteCurrenciesView()
     }
-    .withDependencyContainer(DependencyContainer.preview())
-}
-
-#Preview("AddCurrencyView") {
-    @Previewable @State var isPresented = true
-
-    AddCurrencyView(isPresented: $isPresented)
-        .withDependencyContainer(DependencyContainer.preview())
+    .withDependencyContainer(.preview())
 }
 #endif

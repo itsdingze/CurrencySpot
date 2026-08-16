@@ -1,10 +1,3 @@
-//
-//  ToastView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 5/4/25.
-//
-
 import SwiftUI
 
 struct ToastView: View {
@@ -12,7 +5,7 @@ struct ToastView: View {
     let icon: String
 
     var body: some View {
-        HStack(spacing: .elementGap) {
+        HStack(spacing: Spacing.element) {
             Image(systemName: icon)
                 .font(.appTitle3)
                 .foregroundStyle(Color.success)
@@ -20,9 +13,9 @@ struct ToastView: View {
             Text(message)
                 .font(.appHeadline)
         }
-        .padding(.fieldPadding)
+        .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: .cardRadius)
+            RoundedRectangle(cornerRadius: Radius.card)
                 .fill(Color.secondaryBackground)
                 .stroke(Color.background, lineWidth: 1)
         )

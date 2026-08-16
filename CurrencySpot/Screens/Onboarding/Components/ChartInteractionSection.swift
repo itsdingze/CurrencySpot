@@ -1,14 +1,8 @@
-//
-//  ChartInteractionSection.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 8/27/25.
-//
-
 import Charts
 import SwiftUI
 
 struct ChartInteractionSection: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedDate: Date?
     @State private var fingerAnimationState: InteractionState = .idle
     @State private var currentDataPointIndex: Int = 0
@@ -36,11 +30,21 @@ struct ChartInteractionSection: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Chart touch interaction demonstration")
-        .accessibilityHint("Watch the animated finger showing how to touch and drag on charts to explore data")
+        .accessibilityHint(interactionHint)
         .task {
             do { try await Task.sleep(for: .seconds(1.0)) } catch { return }
+            guard !reduceMotion else {
+                revealStaticSelection()
+                return
+            }
             await simulateFingerInteraction()
         }
+    }
+
+    private var interactionHint: LocalizedStringKey {
+        reduceMotion
+            ? "Shows how touching a chart reveals the rate on that day"
+            : "Watch the animated finger showing how to touch and drag on charts to explore data"
     }
 
     private var chartWithInteraction: some View {
@@ -84,8 +88,8 @@ struct ChartInteractionSection: View {
                                     .foregroundStyle(Color.accentColor)
                             }
                             .font(.appSubheadline)
-                            .padding(.chipPadding)
-                            .background(Color.selectionFill, in: .rect(cornerRadius: .badgeRadius))
+                            .padding(Spacing.chipPadding)
+                            .background(Color.selectionFill, in: .rect(cornerRadius: Radius.badge))
                         }
 
                     PointMark(
@@ -146,6 +150,16 @@ struct ChartInteractionSection: View {
         let yPosition = geometry.size.height
 
         return CGPoint(x: xPosition, y: yPosition)
+    }
+
+    private func revealStaticSelection() {
+        let dataPointIndex = 3
+        guard SampleChartData.points.indices.contains(dataPointIndex) else { return }
+        currentDataPointIndex = dataPointIndex
+        withAnimation(.appQuickFade) {
+            fingerAnimationState = .touchDown
+            selectedDate = SampleChartData.points[dataPointIndex].date
+        }
     }
 
     private func simulateFingerInteraction() async {

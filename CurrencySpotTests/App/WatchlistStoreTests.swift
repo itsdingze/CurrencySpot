@@ -1,23 +1,15 @@
-//
-//  WatchlistStoreTests.swift
-//  CurrencySpotTests
-//
-
 @testable import CurrencySpot
 import Foundation
 import Testing
 
 @Suite("WatchlistStore Tests")
 struct WatchlistStoreTests {
-    /// A fresh, isolated UserDefaults suite so tests never touch `.standard`.
     private func makeDefaults() -> UserDefaults {
         let suiteName = "WatchlistStoreTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName) ?? .standard
         defaults.removePersistentDomain(forName: suiteName)
         return defaults
     }
-
-    // MARK: Seeding
 
     @Test("seeds from the explicit seed on first launch and persists it")
     func seedsFromExplicitSeed() {
@@ -49,9 +41,9 @@ struct WatchlistStoreTests {
     func readsPersistedWatchlist() {
         let defaults = makeDefaults()
         defaults.set(["CHF"], forKey: UserDefaultsKeys.historyWatchlist)
-        defaults.set(["EUR"], forKey: UserDefaultsKeys.favoriteCurrencies) // must be ignored
+        defaults.set(["EUR"], forKey: UserDefaultsKeys.favoriteCurrencies)
 
-        let store = WatchlistStore(userDefaults: defaults, seed: ["GBP"]) // must be ignored
+        let store = WatchlistStore(userDefaults: defaults, seed: ["GBP"])
 
         #expect(store.codes.elements == ["CHF"])
     }
@@ -62,23 +54,19 @@ struct WatchlistStoreTests {
         let store = WatchlistStore(userDefaults: defaults, seed: ["EUR"])
         store.add("CHF")
 
-        // Favorites change afterwards — the watchlist must not follow.
         defaults.set(["JPY"], forKey: UserDefaultsKeys.favoriteCurrencies)
         let reopened = WatchlistStore(userDefaults: defaults)
 
         #expect(reopened.codes.elements == ["EUR", "CHF"])
     }
 
-    // MARK: Mutations
-
-    @Test("add validates, deduplicates, and persists")
+    @Test("add deduplicates and persists")
     func add() {
         let defaults = makeDefaults()
         let store = WatchlistStore(userDefaults: defaults, seed: [])
 
-        #expect(store.add("eur") == false) // invalid (lowercase)
         #expect(store.add("EUR") == true)
-        #expect(store.add("EUR") == false) // duplicate
+        #expect(store.add("EUR") == false)
         #expect(store.codes.elements == ["EUR"])
         #expect(defaults.stringArray(forKey: UserDefaultsKeys.historyWatchlist) == ["EUR"])
     }
@@ -90,7 +78,7 @@ struct WatchlistStoreTests {
         #expect(store.contains("EUR") == true)
         #expect(store.remove("EUR") == true)
         #expect(store.contains("EUR") == false)
-        #expect(store.remove("EUR") == false) // already gone
+        #expect(store.remove("EUR") == false)
         #expect(store.codes.elements == ["GBP"])
     }
 
@@ -109,7 +97,6 @@ struct WatchlistStoreTests {
     func reorder() {
         let store = WatchlistStore(userDefaults: makeDefaults(), seed: ["USD", "EUR", "GBP", "JPY"])
 
-        // USD is the hidden base; reorder only the displayed subset.
         store.reorder(displayedOrder: ["JPY", "EUR", "GBP"])
 
         #expect(store.codes.elements == ["USD", "JPY", "EUR", "GBP"])
@@ -124,6 +111,6 @@ struct WatchlistStoreTests {
         store.reset(to: CurrencyDefaults.favoriteCurrencies)
 
         #expect(store.codes.elements == CurrencyDefaults.favoriteCurrencies)
-        #expect(defaults.stringArray(forKey: UserDefaultsKeys.historyWatchlist) == CurrencyDefaults.favoriteCurrencies)
+        #expect(defaults.stringArray(forKey: UserDefaultsKeys.historyWatchlist) == CurrencyDefaults.favoriteCurrencies.map(\.rawValue))
     }
 }

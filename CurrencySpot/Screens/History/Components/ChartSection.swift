@@ -1,27 +1,20 @@
-//
-//  ChartSection.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 3/26/25.
-//
-
 import SwiftUI
 
 // MARK: - Chart Section
+
+enum ChartMetrics {
+    static let height: CGFloat = 260
+}
 
 struct ChartSection: View {
     @Environment(HistoryViewModel.self) private var viewModel: HistoryViewModel
     @Binding var isChartSelectionActive: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: .elementGap) {
+        VStack(alignment: .leading, spacing: Spacing.element) {
             ZStack {
                 chartContent
 
-                // The debounce/min-display overlay exists to avoid blinking a
-                // spinner over EXISTING points during quick range changes; a
-                // first load has no points and shows the spinner in its base
-                // placeholder immediately instead.
                 if viewModel.showLoadingOverlay, !viewModel.displayedChartDataPoints.isEmpty {
                     loadingView
                         .transition(.opacity)
@@ -32,12 +25,6 @@ struct ChartSection: View {
 
     // MARK: - Private Views
 
-    /// One stable branch for the chart across every load phase
-    /// (`displayedChartDataPoints` already falls back to the previous points
-    /// while loading, so the chart never blanks; the overlay communicates the
-    /// load). Switching over the Loadable cases here would give the chart a
-    /// new structural identity per phase change, resetting its entry-animation
-    /// state and replaying the grow effect on every range change.
     @ViewBuilder
     private var chartContent: some View {
         if viewModel.displayedChartDataPoints.isEmpty {
@@ -51,9 +38,6 @@ struct ChartSection: View {
         }
     }
 
-    /// Empty because no load has produced a result yet — distinct from a load
-    /// that completed and genuinely returned nothing. Rendering "No data
-    /// available" for this state flashed the message on every first entry.
     private var isAwaitingFirstResult: Bool {
         switch viewModel.chartData {
         case .idle, .loading: true
@@ -62,13 +46,13 @@ struct ChartSection: View {
     }
 
     private var loadingView: some View {
-        VStack(spacing: .elementGap) {
+        VStack(spacing: Spacing.element) {
             ProgressView()
                 .progressViewStyle(.circular)
         }
         .padding()
-        .frame(maxWidth: .infinity, maxHeight: .chartHeight)
-        .background(Color.chartPlaceholder, in: .rect(cornerRadius: .cardRadius))
+        .frame(maxWidth: .infinity, maxHeight: ChartMetrics.height)
+        .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
         .accessibilityLabel("Loading chart data")
         .accessibilityAddTraits(.updatesFrequently)
     }
@@ -76,20 +60,19 @@ struct ChartSection: View {
     private var noDataView: some View {
         Text("No data available")
             .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, maxHeight: .chartHeight)
-            .background(Color.chartPlaceholder, in: .rect(cornerRadius: .cardRadius))
+            .frame(maxWidth: .infinity, maxHeight: ChartMetrics.height)
+            .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
             .accessibilityLabel("Chart data not available")
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview("Loaded") {
     @Previewable @State var viewModel = HistoryViewModel.preview()
 
     ChartSection(isChartSelectionActive: .constant(false))
         .environment(viewModel)
-        .task { viewModel.openHistory(for: "EUR") }
+        .task { viewModel.openHistory(for: .eur) }
         .padding()
 }
 
@@ -98,17 +81,16 @@ struct ChartSection: View {
 
     ChartSection(isChartSelectionActive: .constant(false))
         .environment(viewModel)
-        .task { viewModel.openHistory(for: "EUR") }
+        .task { viewModel.openHistory(for: .eur) }
         .padding()
 }
 
 #Preview("Failed") {
-    @Previewable @State var viewModel = HistoryViewModel.preview()
+    @Previewable @State var viewModel = HistoryViewModel.previewFailed()
 
     ChartSection(isChartSelectionActive: .constant(false))
         .environment(viewModel)
-        // An unknown currency code is the public intent that produces `.failed`.
-        .task { viewModel.configure(base: "USD", target: "???") }
+        .task { viewModel.openHistory(for: .eur) }
         .padding()
 }
 #endif

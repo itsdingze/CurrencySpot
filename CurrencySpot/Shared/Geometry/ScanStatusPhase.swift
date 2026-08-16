@@ -1,9 +1,3 @@
-//
-//  ScanStatusPhase.swift
-//  CurrencySpot
-//
-
-/// Which status message the camera capsule shows, if any.
 enum ScanStatusPhase: Equatable {
     case hidden
     case scanning

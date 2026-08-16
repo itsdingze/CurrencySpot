@@ -1,11 +1,5 @@
-//
-//  CameraAccessDeniedView.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Full-screen state when camera access was denied. No dead camera view.
 struct CameraAccessDeniedView: View {
     @Environment(\.openURL) private var openURL
 

@@ -1,25 +1,10 @@
-//
-//  DetectionOverlayView.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Covers every detected price with an in-place converted plate, Lens-style,
-/// and outlines other numbers so they can be converted by tap.
-/// Overlapping plates are depth-graded: deeper ones dim, and tapping a dimmed
-/// plate promotes it to the front instead of opening the detail.
-/// Coordinates are in the camera view's space, provided by the scanner.
 struct DetectionOverlayView: View {
     let items: [DetectedItem]
-    let targetCurrency: String
-    /// Live feed (true) vs frozen still (false). Live plates ride churning
-    /// coordinates, so they're hidden from VoiceOver in favor of one
-    /// aggregated element; the frozen still's fixed plates stay focusable.
+    let targetCurrency: CurrencyCode
     let isLive: Bool
-    /// Outline tap: pin a converted plate onto a number the classifier skipped.
     let onOutlineTap: (UUID) -> Void
-    /// Plate tap: open the conversion detail.
     let onPlateTap: (UUID) -> Void
 
     private let resolver = BadgeClusterResolver(
@@ -27,11 +12,8 @@ struct DetectionOverlayView: View {
         verticalOverlapTolerance: 1.0 / 3.0
     )
 
-    /// Rendered plate sizes, keyed by item id, captured as each plate lays out.
     @State private var plateSizes: [UUID: CGSize] = [:]
-    /// Promotion order, most recent last. Presentation-only state.
     @State private var promotions: [UUID] = []
-    /// The last outline tapped, promoted once its plate becomes visible.
     @State private var pendingReveal: UUID?
 
     private var priceItems: [DetectedItem] {
@@ -65,9 +47,6 @@ struct DetectionOverlayView: View {
         .animation(.appTrack, value: items)
         .animation(.appTrack, value: promotions)
         .onChange(of: items) { _, _ in syncRevealPromotion() }
-        // Live: the per-plate elements are hidden (they ride churning
-        // coordinates VoiceOver can't hold focus on); expose one stable summary
-        // instead. The frozen still keeps its focusable per-plate labels.
         .overlay {
             if isLive && !priceItems.isEmpty {
                 Color.clear
@@ -88,11 +67,7 @@ struct DetectionOverlayView: View {
                 currencyCode: targetCurrency,
                 boxSize: item.bounds.size
             )
-            // Measure the visible plate, before the tap-target inflation below,
-            // so collision/dimming tracks what the user sees touching — not the
-            // 44pt hit area, which would dim plates that have a visible gap.
             .onGeometryChange(for: CGSize.self) { $0.size } action: { plateSizes[item.id] = $0 }
-            // Tiny price tags still get a comfortable tap target.
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(.rect)
         }
@@ -100,11 +75,7 @@ struct DetectionOverlayView: View {
         .position(x: item.bounds.midX, y: item.bounds.midY)
         .opacity(opacity(forDepth: depth))
         .zIndex(zIndex(forDepth: depth, plateCount: plateCount))
-        // Live plates churn through coordinates VoiceOver can't track; hide
-        // them and let the aggregated overlay element speak for them instead.
         .accessibilityHidden(isLive)
-        // A dimmed plate's tap promotes it to the front instead of opening
-        // the detail, so only that branch carries a hint.
         if depth > 0 {
             button.accessibilityHint("Brings this conversion to the front")
         } else {
@@ -125,19 +96,15 @@ struct DetectionOverlayView: View {
         onOutlineTap(id)
     }
 
-    /// Promote a plate that an outline tap just revealed, then prune stale state.
     private func syncRevealPromotion() {
         let visible = Set(priceItems.map(\.id))
         if let revealed = pendingReveal {
             if visible.contains(revealed) {
-                // Plate is now on screen: consume the pending reveal.
                 promote(revealed)
                 pendingReveal = nil
             } else if !items.contains(where: { $0.id == revealed }) {
-                // Item dropped out entirely; nothing left to reveal.
                 pendingReveal = nil
             }
-            // Otherwise keep waiting: the item exists but its plate isn't visible yet.
         }
         promotions.removeAll { !visible.contains($0) }
         plateSizes = plateSizes.filter { visible.contains($0.key) }
@@ -166,8 +133,6 @@ struct DetectionOverlayView: View {
         }
     }
 
-    /// Front plate (depth 0) sits highest; deeper plates fall behind but stay
-    /// above the outlines, which ride at the ZStack default of 0.
     private func zIndex(forDepth depth: Int, plateCount: Int) -> Double {
         Double(plateCount - depth)
     }
@@ -183,7 +148,10 @@ private struct DetectionOutline: View {
         } label: {
             RoundedRectangle(cornerRadius: ConvertedPlateMetrics.cornerRadius(forBoxHeight: item.bounds.height))
                 .stroke(.white, lineWidth: 2)
-                .frame(width: item.bounds.width + 8, height: item.bounds.height + 6)
+                .frame(
+                    width: item.bounds.width + ConvertedPlateMetrics.horizontalInflation,
+                    height: item.bounds.height + ConvertedPlateMetrics.verticalInflation
+                )
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -193,27 +161,26 @@ private struct DetectionOutline: View {
     }
 }
 
-/// The converted amount rendered over the original price, sized to match it.
 private struct ConvertedPlate: View {
     let amount: Decimal
-    let currencyCode: String
-    /// Detected box being covered; drives font size and minimum plate size.
+    let currencyCode: CurrencyCode
     let boxSize: CGSize
 
     var body: some View {
-        Text(amount, format: .currency(code: currencyCode))
+        Text(amount, format: .currency(code: currencyCode.rawValue))
             .font(.system(size: ConvertedPlateMetrics.fontSize(forBoxHeight: boxSize.height), design: .rounded).weight(.semibold))
             .lineLimit(1)
             .minimumScaleFactor(0.5)
             .foregroundStyle(Color.accentColor)
-            .padding(.horizontal, .badgePaddingHorizontal)
-            .padding(.vertical, .badgePaddingVertical)
-            .frame(minWidth: boxSize.width + 8, minHeight: boxSize.height + 6)
-            // Solid fill, not a material: a backdrop blur over the live camera
-            // re-samples every frame and flickers white at 120 Hz on ProMotion.
+            .padding(.horizontal, Spacing.badgePaddingHorizontal)
+            .padding(.vertical, Spacing.badgePaddingVertical)
+            .frame(
+                minWidth: boxSize.width + ConvertedPlateMetrics.horizontalInflation,
+                minHeight: boxSize.height + ConvertedPlateMetrics.verticalInflation
+            )
             .background(.black.mix(with: .white, by: 0.15).opacity(0.9), in: .rect(cornerRadius: cornerRadius))
             .overlay { RoundedRectangle(cornerRadius: cornerRadius).stroke(.white.opacity(0.25), lineWidth: 0.5) }
-            .accessibilityLabel("Converted price \(amount.formatted(.currency(code: currencyCode)))")
+            .accessibilityLabel("Converted price \(amount.formatted(.currency(code: currencyCode.rawValue)))")
             .accessibilityAddTraits(.updatesFrequently)
     }
 
@@ -227,8 +194,6 @@ private struct ConvertedPlate: View {
         Color(white: 0.2).ignoresSafeArea()
         DetectionOverlayView(
             items: [
-                // Two tags close enough that their plates overlap — depth-graded
-                // dimming and z-order keep them legible.
                 DetectedItem(
                     id: UUID(),
                     transcript: "¥1,200",
@@ -254,7 +219,7 @@ private struct ConvertedPlate: View {
                     conversion: .init(amount: 1200, converted: 8.08, isPrice: false)
                 ),
             ],
-            targetCurrency: "USD",
+            targetCurrency: .usd,
             isLive: false,
             onOutlineTap: { _ in },
             onPlateTap: { _ in }

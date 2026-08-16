@@ -1,10 +1,3 @@
-//
-//  UnifiedCurrencyView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 3/4/25.
-//
-
 import SwiftUI
 
 struct UnifiedCurrencyView: View {
@@ -69,11 +62,11 @@ struct UnifiedCurrencyView: View {
 
     let type: DisplayType
     let amount: String
-    let currencyCode: String
+    let currencyCode: CurrencyCode
     let onPress: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: .tightGap) {
+        VStack(alignment: .leading, spacing: Spacing.tight) {
             titleView
             contentRow
         }
@@ -154,19 +147,19 @@ struct UnifiedCurrencyView: View {
 
     private var accessibilityButtonValue: String {
         let currencyName = CurrencyNameLookup.name(for: currencyCode)
-        return "Currently selected: \(currencyName), \(currencyCode)"
+        return "Currently selected: \(currencyName), \(currencyCode.rawValue)"
     }
 
     private var accessibilityInputLabels: [String] {
         let currencyName = CurrencyNameLookup.name(for: currencyCode)
-        return [currencyCode, currencyName]
+        return [currencyCode.rawValue, currencyName]
     }
 }
 
 #Preview {
     VStack(spacing: 24) {
-        UnifiedCurrencyView(type: .source, amount: "1,234.56", currencyCode: "USD", onPress: {})
-        UnifiedCurrencyView(type: .converted, amount: "1,134.02", currencyCode: "EUR", onPress: {})
+        UnifiedCurrencyView(type: .source, amount: "1,234.56", currencyCode: .usd, onPress: {})
+        UnifiedCurrencyView(type: .converted, amount: "1,134.02", currencyCode: .eur, onPress: {})
     }
     .padding()
 }

@@ -1,10 +1,3 @@
-//
-//  ExchangeRateData.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 2/28/25.
-//
-
 import Foundation
 import SwiftData
 
@@ -22,7 +15,6 @@ nonisolated final class ExchangeRateData {
 // MARK: - Entity -> Domain Mapping
 
 nonisolated extension ExchangeRateData {
-    /// Validates the stored code at the persistence → domain boundary.
     func toDomain() throws -> ExchangeRate {
         ExchangeRate(currencyCode: try CurrencyCode(validating: currencyCode), rate: rate)
     }

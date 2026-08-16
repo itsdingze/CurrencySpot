@@ -1,13 +1,5 @@
-//
-//  ScanStatusCapsule.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Status capsule above the shutter: shows that live scanning is active,
-/// nudges the user after a few seconds without results, and reports when a
-/// frozen frame or imported photo contained no prices.
 struct ScanStatusCapsule: View {
     let isLive: Bool
     let hasPrices: Bool
@@ -25,16 +17,13 @@ struct ScanStatusCapsule: View {
     }
 
     var body: some View {
-        // The timer lives on this always-present container: attached to the
-        // conditional content it could never fire while the capsule is hidden.
         ZStack {
             if let message {
                 Text(message)
                     .font(.appSubheadline)
-                    .foregroundStyle(Color.textPrimary)
                     .modifier(Shimmer(active: phase == .scanning))
-                    .padding(.horizontal, .cardPadding)
-                    .padding(.vertical, .chipPadding)
+                    .padding(.horizontal, Spacing.cardPadding)
+                    .padding(.vertical, Spacing.chipPadding)
                     .background(.regularMaterial, in: .capsule)
                     .transition(.opacity)
             }
@@ -47,8 +36,6 @@ struct ScanStatusCapsule: View {
             guard !Task.isCancelled else { return }
             hintElapsed = true
         }
-        // The visual nudge appears silently; speak it once when it elapses so
-        // VoiceOver users get the same prompt to aim at a price tag.
         .onChange(of: phase == .pointHint) { _, showing in
             if showing {
                 AccessibilityNotification.Announcement("Point the camera at a price tag.").post()
@@ -56,7 +43,6 @@ struct ScanStatusCapsule: View {
         }
     }
 
-    /// Live with nothing found yet — the only state that runs the hint timer.
     private var isAwaitingFirstPrice: Bool { isLive && !hasPrices }
 
     private var message: LocalizedStringKey? {
@@ -69,7 +55,6 @@ struct ScanStatusCapsule: View {
     }
 }
 
-/// Sweeps a highlight band across the content to signal ongoing activity.
 private struct Shimmer: ViewModifier {
     let active: Bool
 
@@ -79,8 +64,6 @@ private struct Shimmer: ViewModifier {
     private var shimmering: Bool { active && !reduceMotion }
 
     func body(content: Content) -> some View {
-        // Only the overlay is conditional, so phase flips never tear down and
-        // recreate the content itself.
         content
             .opacity(shimmering ? 0.7 : 1)
             .overlay {

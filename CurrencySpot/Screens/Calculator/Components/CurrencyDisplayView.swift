@@ -1,24 +1,16 @@
-//
-//  CurrencyDisplayView.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
 struct CurrencyDisplayView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel: CalculatorViewModel
 
     var body: some View {
-        VStack(spacing: .tightGap) {
+        VStack(spacing: Spacing.tight) {
             sourceCurrencyView
             SwapButtonDivider()
             targetCurrencyView
         }
-        .padding(.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: .containerRadius)
-                .fill(Color.secondaryBackground)
-        )
+        .padding(Spacing.cardPadding)
+        .background(Color.secondaryBackground, in: .rect(cornerRadius: Radius.container))
     }
 
     // MARK: - Private Views
@@ -27,7 +19,7 @@ struct CurrencyDisplayView: View {
     private var sourceCurrencyView: some View {
         UnifiedCurrencyView(
             type: .source,
-            amount: calculatorViewModel.inputAmount.toString2Decimals,
+            amount: calculatorViewModel.inputAmount.formatted(.number.precision(.fractionLength(2))),
             currencyCode: calculatorViewModel.baseCurrency,
             onPress: selectSourceCurrency
         )
@@ -54,11 +46,10 @@ struct CurrencyDisplayView: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     CurrencyDisplayView()
-        .withDependencyContainer(DependencyContainer.preview())
+        .withDependencyContainer(.preview())
         .padding()
 }
 #endif

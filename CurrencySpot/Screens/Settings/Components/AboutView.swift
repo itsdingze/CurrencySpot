@@ -1,8 +1,3 @@
-//
-//  AboutView.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
 struct AboutView: View {
@@ -27,13 +22,15 @@ struct AboutView: View {
 
     // MARK: - App Header
 
+    private let iconSide: CGFloat = 64
+
     private var appHeader: some View {
-        VStack(spacing: .tightGap) {
+        VStack(spacing: Spacing.tight) {
             Image(.icon)
                 .resizable()
                 .scaledToFit()
-                .frame(width: .appIconSize, height: .appIconSize)
-                .clipShape(RoundedRectangle(cornerRadius: .containerRadius))
+                .frame(width: iconSide, height: iconSide)
+                .clipShape(.rect(cornerRadius: AppIconArtwork.cornerRadius(forSide: iconSide)))
                 .accessibilityHidden(true)
 
             Text(Bundle.main.appName)
@@ -88,7 +85,6 @@ struct AboutView: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     NavigationStack {

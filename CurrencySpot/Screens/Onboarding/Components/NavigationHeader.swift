@@ -1,10 +1,3 @@
-//
-//  NavigationHeader.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 8/27/25.
-//
-
 import SwiftUI
 
 struct NavigationHeader: View {
@@ -14,27 +7,26 @@ struct NavigationHeader: View {
     let onSkip: () -> Void
 
     var body: some View {
-        HStack(spacing: .onboardingGap) {
+        HStack(spacing: Spacing.onboarding) {
             backButton
             progressIndicator
             skipButton
         }
-        .padding(.top, .onboardingGap)
+        .padding(.top, Spacing.onboarding)
     }
 
     private var backButton: some View {
-        Button(action: onBack) {
-            Image(systemName: "arrow.left")
-                .font(.headline)
-        }
-        .buttonStyle(.plain)
-        .opacity(currentPage > 0 ? 1 : 0)
-        .disabled(currentPage == 0)
-        .accessibilityLabel("Go back")
+        Button("Go back", systemImage: "arrow.left", action: onBack)
+            .labelStyle(.iconOnly)
+            .font(.appHeadline)
+            .buttonStyle(.plain)
+            .opacity(currentPage > 0 ? 1 : 0)
+            .disabled(currentPage == 0)
+            .accessibilityHidden(currentPage == 0)
     }
 
     private var progressIndicator: some View {
-        HStack(spacing: .tightGap) {
+        HStack(spacing: Spacing.tight) {
             ForEach(0 ..< totalPages, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 2)
                     .fill(index <= currentPage ? Color.accentColor : Color.gray.opacity(0.3))
@@ -64,9 +56,7 @@ struct NavigationHeader: View {
             onBack: {
                 currentPage = max(0, currentPage - 1)
             },
-            onSkip: {
-                print("Skip tapped")
-            }
+            onSkip: {}
         )
 
         Spacer()

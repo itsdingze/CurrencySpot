@@ -1,18 +1,6 @@
-//
-//  ZoomableScrollView.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 import UIKit
 
-/// Hosts SwiftUI content inside a `UIScrollView` so it gets native, GPU-smooth
-/// pinch-zoom, simultaneous pan, and double-tap-to-zoom — the Photos-style image
-/// viewer. Interactive subviews (the price plates) keep their taps. The content
-/// fills the scroll view at rest, so it never zooms out below fit.
-///
-/// Crossing into UIKit drops the SwiftUI environment, so callers must re-inject
-/// anything the content reads (view models, tint, color scheme).
 struct ZoomableScrollView<Content: View>: UIViewControllerRepresentable {
     private let content: Content
 
@@ -67,11 +55,10 @@ final class ZoomableScrollViewController: UIViewController, UIScrollViewDelegate
         scrollView.addSubview(hosting.view)
         hosting.didMove(toParent: self)
 
-        // Native double-tap to zoom toward the tapped point. cancelsTouchesInView
-        // is off and it recognizes simultaneously, so a single tap still reaches
-        // the plate beneath with no delay.
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap))
         doubleTap.numberOfTapsRequired = 2
+        // cancelsTouchesInView is off and the recognizer fires simultaneously so a
+        // single tap still reaches the SwiftUI content underneath.
         doubleTap.cancelsTouchesInView = false
         doubleTap.delegate = self
         scrollView.addGestureRecognizer(doubleTap)
@@ -80,8 +67,6 @@ final class ZoomableScrollViewController: UIViewController, UIScrollViewDelegate
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         scrollView.frame = view.bounds
-        // At rest the content fills the scroll view; while zoomed the scroll view
-        // drives the size, so only re-fit when we're back at minimum scale.
         guard scrollView.zoomScale == scrollView.minimumZoomScale else { return }
         hosting.view.frame = CGRect(origin: .zero, size: scrollView.bounds.size)
         scrollView.contentSize = scrollView.bounds.size

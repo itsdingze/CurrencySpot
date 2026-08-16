@@ -1,22 +1,14 @@
-//
-//  TrendData.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 7/18/25.
-//
-
 import Foundation
 import SwiftData
 
 @Model
 nonisolated final class TrendData {
     @Attribute(.unique) var currencyCode: String
-    var weeklyChange: Double // % change over 7 days
+    var weeklyChange: Double
 
-    // Store as Data instead of [Double] to avoid CoreData serialization issues
+    // Stored as Data rather than [Double]: CoreData cannot serialize the array form.
     private var miniChartDataStorage: Data = Data()
 
-    // Computed property for accessing as [Double]
     var miniChartData: [Double] {
         get {
             guard !miniChartDataStorage.isEmpty,
@@ -40,7 +32,6 @@ nonisolated final class TrendData {
 // MARK: - Entity <-> Domain Mapping
 
 nonisolated extension TrendData {
-    /// Validates the stored code at the persistence → domain boundary.
     func toDomain() throws -> Trend {
         Trend(
             currencyCode: try CurrencyCode(validating: currencyCode),

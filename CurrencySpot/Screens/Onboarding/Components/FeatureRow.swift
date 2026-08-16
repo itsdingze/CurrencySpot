@@ -1,10 +1,3 @@
-//
-//  FeatureRow.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 8/27/25.
-//
-
 import SwiftUI
 
 struct FeatureRow: View {
@@ -14,7 +7,7 @@ struct FeatureRow: View {
     @ScaledMetric(relativeTo: .headline) private var size: CGFloat = 32
 
     var body: some View {
-        HStack(alignment: .center, spacing: .sectionGap) {
+        HStack(alignment: .center, spacing: Spacing.section) {
             Image(systemName: symbol)
                 .resizable()
                 .scaledToFit()
@@ -22,7 +15,7 @@ struct FeatureRow: View {
                 .foregroundStyle(Color.accentColor)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: .tightGap) {
+            VStack(alignment: .leading, spacing: Spacing.tight) {
                 Text(title)
                     .font(.appHeadline)
                     .lineLimit(1)

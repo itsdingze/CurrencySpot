@@ -1,11 +1,5 @@
-//
-//  CameraPermissionPrimer.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// One-line explanation shown before triggering the system camera prompt.
 struct CameraPermissionPrimer: View {
     let requestAccess: () async -> Void
 

@@ -1,15 +1,9 @@
-//
-//  NetworkRequestRunnerTests.swift
-//  CurrencySpotTests
-//
-
 @testable import CurrencySpot
 import Foundation
 import Testing
 
 // MARK: - Failing URLProtocols
 
-/// Fails every request the way URLSession reports a cancelled task.
 private nonisolated final class CancelledURLProtocol: URLProtocol {
     override class func canInit(with _: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -20,7 +14,6 @@ private nonisolated final class CancelledURLProtocol: URLProtocol {
     override func stopLoading() {}
 }
 
-/// Serves HTTP 500 for every request, making each attempt a retryable failure.
 private nonisolated final class ServerErrorURLProtocol: URLProtocol {
     override class func canInit(with _: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -62,7 +55,6 @@ struct NetworkRequestRunnerTests {
             )
         }
 
-        // Cancellation must not leave attempt state behind for the next request.
         let snapshot = await retryManager.snapshot(for: endpoint)
         #expect(snapshot.attempt == 0)
         #expect(snapshot.canRetry)
@@ -94,6 +86,6 @@ struct NetworkRequestRunnerTests {
         }
 
         let snapshot = await retryManager.snapshot(for: endpoint)
-        #expect(!snapshot.canRetry)
+        #expect(snapshot.canRetry == false)
     }
 }

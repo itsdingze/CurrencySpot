@@ -1,8 +1,3 @@
-//
-//  ErrorHandlerTests.swift
-//  CurrencySpotTests
-//
-
 @testable import CurrencySpot
 import Foundation
 import Testing

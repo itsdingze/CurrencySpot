@@ -1,18 +1,8 @@
-//
-//  VolatilityLevel.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 3/26/25.
-//
-
 import Foundation
 
-/// Qualitative bucket for annualized volatility (percent), driving display text and color.
-/// Computing the level from the raw value avoids matching against already-formatted strings.
 nonisolated enum VolatilityLevel: CaseIterable, Sendable {
     case veryLow, low, moderate, high, veryHigh
 
-    /// Classifies an annualized volatility percentage into a level.
     init(annualizedPercent: Double) {
         switch annualizedPercent {
         case ..<5: self = .veryLow
@@ -33,7 +23,6 @@ nonisolated enum VolatilityLevel: CaseIterable, Sendable {
         }
     }
 
-    /// Variation-range description used in the explanatory legend.
     var rangeDescription: String {
         switch self {
         case .veryLow: "< 5% variation"

@@ -1,12 +1,5 @@
-//
-//  StillFrameView.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Displays a frozen frame or imported photo and reports its geometry so the
-/// ViewModel can map recognized text into this view's coordinate space.
 struct StillFrameView: View {
     let image: UIImage
     @Environment(CameraViewModel.self) private var viewModel
@@ -17,7 +10,6 @@ struct StillFrameView: View {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
-                // The detection overlay carries the frame's semantics.
                 .accessibilityHidden(true)
         }
         .onGeometryChange(for: CGSize.self) { proxy in
@@ -31,7 +23,6 @@ struct StillFrameView: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     let image = UIGraphicsImageRenderer(size: CGSize(width: 300, height: 400)).image { context in

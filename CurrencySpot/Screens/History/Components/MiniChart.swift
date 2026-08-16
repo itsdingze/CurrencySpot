@@ -1,10 +1,3 @@
-//
-//  MiniChart.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 7/18/25.
-//
-
 import Charts
 import SwiftUI
 
@@ -113,23 +106,20 @@ struct MiniChart: View {
 
 #Preview {
     VStack(spacing: 200) {
-        // Upward trend
         MiniChart(trend: Trend(
-            currencyCode: CurrencyCode("AUD") ?? .usd,
+            currencyCode: CurrencyCode.aud,
             weeklyChange: 2.3,
             miniChartData: [1.52, 1.53, 1.54, 1.55, 1.56, 1.57, 1.55]
         ))
 
-        // Downward trend
         MiniChart(trend: Trend(
-            currencyCode: CurrencyCode("AUD") ?? .usd,
+            currencyCode: CurrencyCode.aud,
             weeklyChange: -1.2,
             miniChartData: [1.52, 1.53, 1.54, 1.55, 1.56, 1.52, 1.55]
         ))
 
-        // Stable trend
         MiniChart(trend: Trend(
-            currencyCode: CurrencyCode("AUD") ?? .usd,
+            currencyCode: CurrencyCode.aud,
             weeklyChange: 0.08,
             miniChartData: [1.52, 1.53, 1.54, 1.55, 1.56, 1.55, 1.55]
         ))

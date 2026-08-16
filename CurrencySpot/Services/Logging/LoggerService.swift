@@ -1,12 +1,6 @@
-//
-//  LoggerService.swift
-//  CurrencySpot
-//
-
 import Foundation
 import os.log
 
-/// Categories for organizing log messages
 enum LogCategory: String, Sendable {
     case network = "Network"
     case data = "DataCoordinator"
@@ -26,10 +20,6 @@ enum LogLevel: Sendable {
     case fault
 }
 
-/// Injectable logging seam. The single requirement keeps test doubles trivial;
-/// the extension provides the ergonomic per-level methods call sites use.
-/// `nonisolated`: logging is called from the persistence actor and @concurrent
-/// network code, so the seam must not be MainActor-bound.
 nonisolated protocol LoggerService: Sendable {
     func log(_ level: LogLevel, _ message: String, category: LogCategory, isPrivate: Bool)
 }
@@ -60,7 +50,6 @@ nonisolated extension LoggerService {
     }
 }
 
-/// Live implementation over `os.Logger`.
 nonisolated struct OSLogLoggerService: LoggerService {
     private static let subsystem = Bundle.main.bundleIdentifier ?? "CurrencySpot"
 

@@ -1,29 +1,22 @@
-//
-//  ScannerHostController.swift
-//  CurrencySpot
-//
-
 import UIKit
 import VisionKit
 
-/// Hosts the DataScanner and drives `startScanning()` from `viewDidAppear`.
-/// Starting any earlier (e.g. from the first representable update) throws
-/// because the scanner's view isn't in a window yet, and that silent failure
-/// left the live feed unrecognized until something retriggered scanning.
+// startScanning() must run from viewDidAppear: called earlier it throws because the
+// scanner's view is not in a window yet, and that failure is silent — the live feed
+// stays unrecognized until something retriggers scanning.
 final class ScannerHostController: UIViewController {
     let scanner: DataScannerViewController
+    private let logger: LoggerService
     var wantsScanning = true
 
-    /// Fires after every successful `startScanning()` — the moment a fresh
-    /// `recognizedItems` subscription is needed, since the previous stream
-    /// finished when scanning last stopped.
     var onScanningStarted: (() -> Void)?
 
     private var startTask: Task<Void, Never>?
     private var hasAppliedInitialZoom = false
 
-    init(scanner: DataScannerViewController) {
+    init(scanner: DataScannerViewController, logger: LoggerService = OSLogLoggerService()) {
         self.scanner = scanner
+        self.logger = logger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -53,14 +46,10 @@ final class ScannerHostController: UIViewController {
     }
 
     func syncScanning() {
-        // Called from updateUIViewController on every SwiftUI update — once
-        // per detection frame. Skip the cancel/spawn when already reconciled.
         if wantsScanning, scanner.isScanning { return }
         startTask?.cancel()
         if wantsScanning {
-            // startScanning() can throw transiently (session warming up,
-            // a capture still settling), so retry briefly instead of giving up.
-            startTask = Task { [weak self] in
+            startTask = Task { [weak self, logger] in
                 var lastError: Error?
                 for _ in 0..<10 {
                     guard let self, self.wantsScanning, !Task.isCancelled else { return }
@@ -76,7 +65,7 @@ final class ScannerHostController: UIViewController {
                         try? await Task.sleep(for: .milliseconds(300))
                     }
                 }
-                OSLogLoggerService().error(
+                logger.error(
                     "DataScanner failed to start after retries: \(String(describing: lastError))",
                     category: .ui
                 )
@@ -86,10 +75,8 @@ final class ScannerHostController: UIViewController {
         }
     }
 
-    /// The scanner defaults to a zoomed-in preview; pull it back to the
-    /// Camera app's 1x. Setting zoom before scanning starts doesn't stick,
-    /// so apply it after the first successful start — and only once, so
-    /// session restarts don't wipe out the user's pinch zoom.
+    // Zoom set before scanning starts does not stick, so this runs after the first
+    // successful start, and only once so session restarts keep the user's pinch zoom.
     private func applyInitialZoomIfNeeded() {
         guard !hasAppliedInitialZoom else { return }
         hasAppliedInitialZoom = true

@@ -1,13 +1,6 @@
-//
-//  DataScannerView.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 import VisionKit
 
-/// Wraps VisionKit's live scanner. Recognition stays on `.text()` so the app
-/// sees every number and decides for itself which ones are price candidates.
 struct DataScannerView: UIViewControllerRepresentable {
     let isScanning: Bool
     let proxy: DataScannerProxy
@@ -17,9 +10,6 @@ struct DataScannerView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> ScannerHostController {
         let scanner = DataScannerViewController(
             recognizedDataTypes: [.text()],
-            // .balanced over .fast: steadier frames give more reliable live
-            // price reads, worth the extra latency; the freeze path still covers
-            // the high-accuracy case with the still-image recognizer.
             qualityLevel: .balanced,
             recognizesMultipleItems: true,
             isHighFrameRateTrackingEnabled: true,
@@ -68,9 +58,6 @@ struct DataScannerView: UIViewControllerRepresentable {
             observationTask?.cancel()
             observationTask = Task { [weak self, weak scanner] in
                 guard let scanner else { return }
-                // The stream finishes whenever scanning stops (freeze, tab
-                // switch, backgrounding); the host re-subscribes on the next
-                // successful start, so one pass per scan session is enough.
                 for await items in scanner.recognizedItems {
                     guard let self, !Task.isCancelled else { return }
                     self.onItemsChanged(items.compactMap(RecognizedTextItem.init))
@@ -99,7 +86,6 @@ private extension RecognizedTextItem {
 }
 
 private extension CGRect {
-    /// Axis-aligned bounding box of the scanner's four-corner quad.
     init(quad: RecognizedItem.Bounds) {
         let minX = min(quad.topLeft.x, quad.topRight.x, quad.bottomLeft.x, quad.bottomRight.x)
         let maxX = max(quad.topLeft.x, quad.topRight.x, quad.bottomLeft.x, quad.bottomRight.x)

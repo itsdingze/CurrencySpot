@@ -1,20 +1,8 @@
-//
-//  DataScannerProxy.swift
-//  CurrencySpot
-//
-
 import UIKit
 
-/// Hands the hosting SwiftUI view a line to the scanner for imperative
-/// one-shot calls (photo capture).
 final class DataScannerProxy {
     weak var host: ScannerHostController?
 
-    /// Returns nil when no scanner is attached (e.g. simulator);
-    /// throws when the scanner exists but the capture fails.
-    /// `capturePhoto()` keeps the preview's zoom but returns the sensor's
-    /// full aspect ratio — center-crop to the preview's aspect so the frozen
-    /// frame is framed exactly like the live feed.
     func capturePhoto() async throws -> UIImage? {
         guard let host else { return nil }
         let photo = try await host.scanner.capturePhoto()
@@ -22,15 +10,11 @@ final class DataScannerProxy {
         return await Self.crop(photo, toAspectRatio: aspectRatio)
     }
 
-    /// Redrawing a full-resolution photo takes tens of milliseconds —
-    /// keep it off the main actor.
     @concurrent
     private nonisolated static func crop(_ photo: UIImage, toAspectRatio aspectRatio: CGFloat?) async -> UIImage {
         photo.croppedToPreview(aspectRatio: aspectRatio)
     }
 
-    /// Restarts scanning if the system tore the session down behind our back
-    /// (e.g. after backgrounding, where viewDidAppear never re-fires).
     func syncScanning() {
         host?.syncScanning()
     }
@@ -43,8 +27,6 @@ private nonisolated extension CGRect {
 }
 
 private nonisolated extension UIImage {
-    /// The region an aspect-filled preview of this image would show in a
-    /// view with the given width-to-height ratio.
     func croppedToPreview(aspectRatio: CGFloat?) -> UIImage {
         guard let aspectRatio, size.width > 0, size.height > 0 else { return self }
         var visible = size

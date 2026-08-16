@@ -1,10 +1,3 @@
-//
-//  HeaderSection.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 3/26/25.
-//
-
 import SwiftUI
 
 struct HeaderSection: View {
@@ -12,7 +5,7 @@ struct HeaderSection: View {
     @Binding var isChartSelectionActive: Bool
 
     var body: some View {
-        VStack(spacing: .sectionGap) {
+        VStack(spacing: Spacing.section) {
             currentRateView
 
             TimeRangePicker(
@@ -26,11 +19,11 @@ struct HeaderSection: View {
     // MARK: - Private Views
 
     private var currentRateView: some View {
-        VStack(spacing: .hairlineGap) {
-            HStack(alignment: .firstTextBaseline, spacing: .tightGap) {
-                Text(historyViewModel.targetCurrency)
+        VStack(spacing: Spacing.hairline) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
+                Text(historyViewModel.targetCurrency.rawValue)
                     .font(.appTitle)
-                    .accessibilityLabel("\(historyViewModel.targetCurrency), \(CurrencyNameLookup.name(for: historyViewModel.targetCurrency))")
+                    .accessibilityLabel("\(historyViewModel.targetCurrency.rawValue), \(CurrencyNameLookup.name(for: historyViewModel.targetCurrency))")
 
                 Text(CurrencyNameLookup.name(for: historyViewModel.targetCurrency))
                     .font(.appHeadline.weight(.medium))
@@ -41,38 +34,32 @@ struct HeaderSection: View {
             }
 
             ViewThatFits(in: .horizontal) {
-                // Try horizontal layout first
-                HStack(alignment: .firstTextBaseline, spacing: .tightGap) {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
                     Text(historyViewModel.formattedCurrentRate)
                         .font(.appTitle3)
                         .accessibilityLabel("Current rate: \(historyViewModel.formattedCurrentRate)")
                         .accessibilityAddTraits(.updatesFrequently)
 
-                    // Percent change indicator
                     if let percentChange = historyViewModel.percentChange,
                        let priceChange = historyViewModel.priceChange
                     {
                         percentChangeIndicator(priceChange: priceChange, percentChange: percentChange)
-                            .font(.appSubheadline.weight(.medium))
                     }
 
                     Spacer()
                 }
 
-                // Fall back to vertical layout when horizontal doesn't fit
                 HStack {
-                    VStack(alignment: .leading, spacing: .hairlineGap) {
+                    VStack(alignment: .leading, spacing: Spacing.hairline) {
                         Text(historyViewModel.formattedCurrentRate)
                             .font(.appTitle3)
                             .accessibilityLabel("Current rate: \(historyViewModel.formattedCurrentRate)")
                             .accessibilityAddTraits(.updatesFrequently)
 
-                        // Percent change indicator
                         if let percentChange = historyViewModel.percentChange,
                            let priceChange = historyViewModel.priceChange
                         {
                             percentChangeIndicator(priceChange: priceChange, percentChange: percentChange)
-                                .font(.appHeadline.weight(.medium))
                         }
                     }
 
@@ -84,7 +71,7 @@ struct HeaderSection: View {
 
     @ViewBuilder
     private func percentChangeIndicator(priceChange: Double, percentChange: Double) -> some View {
-        HStack(spacing: .hairlineGap) {
+        HStack(spacing: Spacing.hairline) {
             Image(systemName: historyViewModel.trendDirection.systemImage)
                 .accessibilityHidden(true)
 
@@ -104,11 +91,10 @@ struct HeaderSection: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     HeaderSection(isChartSelectionActive: .constant(false))
-        .withDependencyContainer(DependencyContainer.preview())
+        .withDependencyContainer(.preview())
         .padding()
 }
 #endif

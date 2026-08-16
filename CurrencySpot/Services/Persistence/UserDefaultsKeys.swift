@@ -1,15 +1,7 @@
-//
-//  UserDefaultsKeys.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 9/14/25.
-//
-
 import Foundation
 
 // MARK: - UserDefaultsKeys
 
-/// Type-safe UserDefaults keys to avoid string literals throughout the codebase
 enum UserDefaultsKeys {
     // MARK: - Currency Settings
     

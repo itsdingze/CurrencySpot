@@ -1,31 +1,19 @@
-//
-//  FrankfurterV2Mapper.swift
-//  CurrencySpot
-//
-
 import Foundation
 
-/// Collapses Frankfurter v2's flat rate arrays back into the app's existing response shapes,
-/// so nothing downstream of the API client has to know v2's format.
-///
-/// This is the network boundary's validation gate: every entry's currency code, rate, and
-/// date are checked here, so downstream layers never see malformed values.
 nonisolated enum FrankfurterV2Mapper {
-    /// Maps a v2 "latest" array into the keyed `ExchangeRatesResponse` the app consumes.
     static func latest(from entries: [FrankfurterV2Rate], base: String) throws -> ExchangeRatesResponse {
+        guard !entries.isEmpty else {
+            throw AppError.dataValidationError("Rate response contained no entries")
+        }
         try validate(entries)
         let rates = Dictionary(entries.map { ($0.quote, $0.rate) }, uniquingKeysWith: { _, latest in latest })
-        // v2 carries a per-currency date; the snapshot's date is the most recent across them.
         let date = entries.map(\.date).max() ?? ""
         return ExchangeRatesResponse(base: base, date: date, rates: rates)
     }
 
-    /// Maps a v2 time-series array into the per-date keyed `HistoricalRatesResponse`.
-    ///
-    /// v2 is multi-source, so a currency can be absent on some dates. Each date's row is
-    /// forward-filled with the currency's last known rate, keeping series dense and equal-length
-    /// for downstream trend/chart logic (v1's ECB data was always dense). A currency is never
-    /// backfilled before its first appearance.
+    // An empty range is a legitimate answer here (no publication days), and it must map to an
+    // empty response rather than throw: the caller records the coverage watermark only on a
+    // successful fetch, so throwing would leave those days permanently un-checked and refetched.
     static func historical(from entries: [FrankfurterV2Rate], base: String) throws -> HistoricalRatesResponse {
         try validate(entries)
         var grouped: [String: [String: Double]] = [:]

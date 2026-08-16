@@ -1,13 +1,5 @@
-//
-//  TimeRange.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 3/25/25.
-//
-
 import Foundation
 
-/// Represents different time ranges for historical data
 nonisolated enum TimeRange: String, CaseIterable, Identifiable {
     case oneWeek = "1W"
     case oneMonth = "1M"
@@ -18,7 +10,6 @@ nonisolated enum TimeRange: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Human-readable display name for the time range
     var displayName: String {
         switch self {
         case .oneWeek: "1 Week"
@@ -30,7 +21,6 @@ nonisolated enum TimeRange: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Accessibility input labels for voice control
     var accessibilityInputLabels: [String] {
         switch self {
         case .oneWeek:
@@ -48,7 +38,6 @@ nonisolated enum TimeRange: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Calculates the start date for this time range from the given end date
     func startDate(from endDate: Date) -> Date {
         let calendar = TimeZoneManager.cetCalendar
 
@@ -68,7 +57,6 @@ nonisolated enum TimeRange: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Date format style for chart X-axis labels
     var chartAxisDateFormat: Date.FormatStyle {
         switch self {
         case .oneWeek, .oneMonth:

@@ -1,12 +1,5 @@
-//
-//  AspectFitMapping.swift
-//  CurrencySpot
-//
-
 import CoreGraphics
 
-/// Maps rects from image-pixel space into the coordinate space of a view
-/// displaying that image aspect-fit (scaled to fit, centered).
 struct AspectFitMapping {
     let imageSize: CGSize
     let viewSize: CGSize

@@ -1,8 +1,3 @@
-//
-//  PriceClassifier.swift
-//  CurrencySpot
-//
-
 import Foundation
 
 struct PriceClassification: Equatable, Sendable {
@@ -10,8 +5,6 @@ struct PriceClassification: Equatable, Sendable {
     let isPrice: Bool
 }
 
-/// MainActor (via default isolation), which the non-Sendable compiled `Regex`
-/// statics rely on; all callers (camera scan pipeline) live on the main actor.
 struct PriceClassifier {
     private static let currencySymbols = Set("$€£¥₩₹฿₫₺₪")
 
@@ -22,8 +15,6 @@ struct PriceClassifier {
             | NSTextCheckingResult.CheckingType.phoneNumber.rawValue
     )
 
-    /// nil means the number is noise (date, phone, unit, identifier) and gets
-    /// no outline at all; isPrice false keeps the outline for tap-to-convert.
     func classify(_ transcript: String) -> PriceClassification? {
         let matches = transcript.matches(of: Self.numberToken)
         guard !matches.isEmpty else { return nil }
@@ -32,23 +23,16 @@ struct PriceClassifier {
         let token = match.output
         guard let amount = Self.parseAmount(String(token)) else { return nil }
 
-        // A currency marker overrides every noise rule.
         if Self.containsCurrencyMarker(transcript) {
             return PriceClassification(amount: amount, isPrice: true)
         }
         guard !Self.isNoise(match.range, token: token, in: transcript) else { return nil }
-        // Conservative: a separator-less bare number is ambiguous (count, year,
-        // room number), so it stays an outline. A marker — inline, or a split
-        // neighbor resolved by CurrencyMarkerResolver — is what makes it a price.
         let isPriceShaped = token.contains(",") || token.contains(".")
         return PriceClassification(amount: amount, isPrice: isPriceShaped)
     }
 
     // MARK: - Noise Rules
 
-    /// Patterns that are essentially never prices: dates and phone numbers,
-    /// unit measurements, barcode-length digit runs, and tokens glued to
-    /// identifier characters (SN12345, 4006-100-0000, 16:9).
     private static func isNoise(
         _ range: Range<String.Index>,
         token: Substring,
@@ -60,8 +44,6 @@ struct PriceClassifier {
             || isGluedToIdentifier(range, in: transcript)
     }
 
-    /// Real-world bare prices top out around 6 digits (150000 IDR);
-    /// anything longer without separators is a barcode or serial.
     private static func isBareDigitRun(_ token: Substring) -> Bool {
         token.count >= 7 && token.allSatisfy(\.isNumber)
     }
@@ -70,8 +52,6 @@ struct PriceClassifier {
         isGlued(before: range.lowerBound, in: transcript) || isGlued(after: range.upperBound, in: transcript)
     }
 
-    /// Letter prefixes (SN12345), colons (16:9), and digit-hyphen joints
-    /// (4006-100) mark identifiers. A leading minus alone does not.
     private static func isGlued(before index: String.Index, in transcript: String) -> Bool {
         guard index > transcript.startIndex else { return false }
         let previous = transcript.index(before: index)
@@ -94,10 +74,6 @@ struct PriceClassifier {
     private static let cjkCurrencyMarkers = Set("円元원")
     private static let isoCurrencyCodes = Set(Locale.commonISOCurrencyCodes)
 
-    /// A transcript whose visible characters are all currency symbols or CJK
-    /// markers — a "¥" or "円" that OCR split off its number. Deliberately
-    /// excludes bare ISO-code words: a standalone all-caps token like "ALL",
-    /// "TOP", or "TRY" is too easily ordinary sign text to trust as a marker.
     static func isStandaloneCurrencyMarker(_ transcript: String) -> Bool {
         let visible = transcript.filter { !$0.isWhitespace }
         guard !visible.isEmpty else { return false }
@@ -135,16 +111,12 @@ struct PriceClassifier {
         }
     }
 
-    /// Resolves "," and "." per token shape: "1,200" → 1200, "12,50" → 12.5, "1.234,56" → 1234.56.
     private static func parseAmount(_ token: String) -> Decimal? {
         let separators = token.filter { $0 == "," || $0 == "." }
         guard let lastSeparator = separators.last,
               let separatorIndex = token.lastIndex(of: lastSeparator)
         else { return Decimal(string: token) }
 
-        // The last separator is decimal when the token mixes two separator kinds
-        // ("1.234,56"), or has a single separator with 1–2 trailing digits ("12,50").
-        // Otherwise every separator is grouping ("1,200", "1,200,300").
         let fraction = token.suffix(from: separatorIndex).dropFirst().filter(\.isNumber)
         let isDecimalSeparator = Set(separators).count == 2
             || (separators.count == 1 && (1...2).contains(fraction.count))

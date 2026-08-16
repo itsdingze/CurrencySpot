@@ -1,51 +1,40 @@
-//
-//  PreviewFactories.swift
-//  CurrencySpot
-//
-//  Preview-only factories, compiled out of release builds.
-//
-
 #if DEBUG
 
     import Foundation
-    import SwiftData
     import SwiftUI
 
-    // MARK: - DependencyContainer Preview Factory
+    // MARK: - Container Preview Factory
 
     extension DependencyContainer {
-        /// Creates a preview-ready dependency container with in-memory storage.
         static func preview() -> DependencyContainer {
-            do {
-                return DependencyContainer(modelContainer: try ModelContainer.inMemoryCurrencySpot())
-            } catch {
-                OSLogLoggerService().fault("Failed to create preview ModelContainer: \(error)", category: .app)
-                fatalError("Preview ModelContainer creation failed: \(error)")
-            }
+            DependencyContainer(
+                userDefaults: .previewSuite,
+                preferences: InMemoryPreferencesStore(),
+                networkService: PreviewNetworkService(),
+                syncStore: InMemoryHistoricalSyncStore()
+            )
         }
+    }
+
+    extension UserDefaults {
+        static let previewSuite: UserDefaults = {
+            let suite = UserDefaults(suiteName: "CurrencySpot.previews") ?? .standard
+            suite.removePersistentDomain(forName: "CurrencySpot.previews")
+            return suite
+        }()
     }
 
     // MARK: - ViewModel Preview Factories
 
-    extension CalculatorViewModel {
-        static func preview() -> CalculatorViewModel {
-            CalculatorViewModel(
-                repository: MockExchangeRateService(),
-                ratesStore: ExchangeRatesStore()
-            )
-        }
-    }
-
     extension HistoryViewModel {
         static func preview() -> HistoryViewModel {
-            let mockService = MockExchangeRateService()
-            let syncStore = UserDefaultsHistoricalSyncStore()
-            let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: syncStore)
+            let mockService = PreviewExchangeRateRepository()
+            let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncCoverage: InMemorySyncCoverage())
             let dataOrchestrationUseCase = DataOrchestrationUseCase(
                 repository: mockService,
                 historicalDataAnalysisUseCase: historicalDataAnalysisUseCase
             )
-            let chartDataPreparationUseCase = ChartDataPreparationUseCase(cacheService: InMemoryCacheService())
+            let chartDataPreparationUseCase = ChartDataPreparationUseCase(chartCache: InMemoryChartDataCache())
             let trendDataUseCase = TrendDataUseCase(
                 trendRepository: mockService,
                 historicalRateRepository: mockService
@@ -53,28 +42,18 @@
 
             return HistoryViewModel(
                 ratesStore: ExchangeRatesStore(),
-                watchlist: WatchlistStore(),
+                watchlist: WatchlistStore(userDefaults: .previewSuite),
                 historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
                 dataOrchestrationUseCase: dataOrchestrationUseCase,
                 chartDataPreparationUseCase: chartDataPreparationUseCase,
-                trendDataUseCase: trendDataUseCase
-            )
-        }
-    }
-
-    extension SettingsViewModel {
-        static func preview() -> SettingsViewModel {
-            SettingsViewModel(
-                refreshAllDataUseCase: RefreshAllDataUseCase(repository: MockExchangeRateService()),
-                watchlist: WatchlistStore()
+                trendDataUseCase: trendDataUseCase,
+                preferences: InMemoryPreferencesStore()
             )
         }
     }
 
     // MARK: - Loadable State Stubs
 
-    /// Pins CalculatorView's load state: `.stalled` never finishes (loading),
-    /// `.failing` always throws (failed).
     struct StubExchangeRateRepository: ExchangeRateRepository {
         enum Behavior {
             case stalled
@@ -105,27 +84,34 @@
     extension CalculatorViewModel {
         static func preview(_ behavior: StubExchangeRateRepository.Behavior) -> CalculatorViewModel {
             CalculatorViewModel(
-                repository: StubExchangeRateRepository(behavior: behavior),
-                ratesStore: ExchangeRatesStore()
+                loadExchangeRatesUseCase: LoadExchangeRatesUseCase(repository: StubExchangeRateRepository(behavior: behavior)),
+                ratesStore: ExchangeRatesStore(),
+                preferences: InMemoryPreferencesStore()
             )
         }
     }
 
-    /// Never finishes, so a chart preview stays in `.loading` indefinitely.
-    struct StalledHistoricalRateRepository: HistoricalRateRepository {
-        func fetchHistoricalRates(from _: Date, to _: Date) async throws -> [HistoricalRateSnapshot] {
+    struct StubHistoricalRateRepository: HistoricalRateRepository {
+        enum Behavior {
+            case stalled
+            case failing
+        }
+
+        let behavior: Behavior
+
+        func fetchHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await stall()
             return []
         }
 
         func waitForPendingHistoricalWrites() async {}
 
-        func fetchTransientHistoricalRates(for _: [CurrencyCode], from _: Date, to _: Date) async throws -> [HistoricalRateSnapshot] {
+        func fetchTransientHistoricalRates(for _: [CurrencyCode], in _: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await stall()
             return []
         }
 
-        func fetchAndPersistHistoricalRates(from _: Date, to _: Date) async throws { try await stall() }
+        func fetchAndPersistHistoricalRates(in _: DateRange) async throws { try await stall() }
 
         func loadHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await stall()
@@ -149,28 +135,41 @@
 
         func mergeCachedHistoricalRates(_: [HistoricalRateSnapshot]) async -> [HistoricalRateSnapshot] { [] }
 
-        private func stall() async throws { try await Task.sleep(for: .seconds(86_400)) }
+        private func stall() async throws {
+            switch behavior {
+            case .stalled: try await Task.sleep(for: .seconds(86_400))
+            case .failing: throw AppError.networkError("Preview failure")
+            }
+        }
     }
 
     extension HistoryViewModel {
-        /// A view model whose chart load never finishes, pinning `.loading`.
         static func previewLoading() -> HistoryViewModel {
-            let mockService = MockExchangeRateService()
-            let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncStore: UserDefaultsHistoricalSyncStore())
+            preview(.stalled)
+        }
+
+        static func previewFailed() -> HistoryViewModel {
+            preview(.failing)
+        }
+
+        private static func preview(_ behavior: StubHistoricalRateRepository.Behavior) -> HistoryViewModel {
+            let mockService = PreviewExchangeRateRepository()
+            let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncCoverage: InMemorySyncCoverage())
 
             return HistoryViewModel(
                 ratesStore: ExchangeRatesStore(),
-                watchlist: WatchlistStore(),
+                watchlist: WatchlistStore(userDefaults: .previewSuite),
                 historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
                 dataOrchestrationUseCase: DataOrchestrationUseCase(
-                    repository: StalledHistoricalRateRepository(),
+                    repository: StubHistoricalRateRepository(behavior: behavior),
                     historicalDataAnalysisUseCase: historicalDataAnalysisUseCase
                 ),
-                chartDataPreparationUseCase: ChartDataPreparationUseCase(cacheService: InMemoryCacheService()),
+                chartDataPreparationUseCase: ChartDataPreparationUseCase(chartCache: InMemoryChartDataCache()),
                 trendDataUseCase: TrendDataUseCase(
                     trendRepository: mockService,
                     historicalRateRepository: mockService
-                )
+                ),
+                preferences: InMemoryPreferencesStore()
             )
         }
     }

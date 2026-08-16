@@ -1,8 +1,3 @@
-//
-//  ScanConversionUseCaseTests.swift
-//  CurrencySpotTests
-//
-
 import Foundation
 import Testing
 @testable import CurrencySpot
@@ -10,65 +5,64 @@ import Testing
 struct ScanConversionUseCaseTests {
     private let useCase = ScanConversionUseCase()
 
-    /// USD-normalized rates, as served by the data layer.
     private let rates = [
         ExchangeRate(currencyCode: "JPY", rate: 150),
         ExchangeRate(currencyCode: "EUR", rate: 0.9),
         ExchangeRate(currencyCode: "USD", rate: 1),
     ]
 
-    @Test func convertsAPriceFromBaseToTarget() {
-        let result = useCase.evaluate(
-            transcript: "¥1,200",
-            baseCurrency: "JPY",
-            targetCurrency: "USD",
-            exchangeRates: rates
+    private func item(_ transcript: String, at originX: CGFloat = 0) -> RecognizedTextItem {
+        RecognizedTextItem(
+            id: UUID(),
+            transcript: transcript,
+            bounds: CGRect(x: originX, y: 0, width: 40, height: 10)
         )
-        #expect(result == .init(amount: 1200, converted: 8, isPrice: true))
     }
 
-    /// Non-prices keep a conversion so tap-to-convert (the user override) works.
-    @Test func nonPriceStillCarriesAConversion() {
-        let result = useCase.evaluate(
-            transcript: "1200",
+    private func detect(
+        _ items: [RecognizedTextItem],
+        rates: [ExchangeRate]? = nil
+    ) -> ScanConversionUseCase.DetectionResult {
+        useCase.detect(
+            in: items,
             baseCurrency: "JPY",
             targetCurrency: "USD",
-            exchangeRates: rates
+            exchangeRates: rates ?? self.rates
         )
-        #expect(result == .init(amount: 1200, converted: 8, isPrice: false))
+    }
+
+    @Test func convertsAPriceFromBaseToTarget() throws {
+        let result = detect([item("¥1,200")])
+
+        let detected = try #require(result.items.first)
+        #expect(detected.conversion == .init(amount: 1200, converted: 8, isPrice: true))
+        #expect(result.foundPrices)
+    }
+
+    @Test func nonPriceStillCarriesAConversion() throws {
+        let result = detect([item("1200")])
+
+        let detected = try #require(result.items.first)
+        #expect(detected.conversion == .init(amount: 1200, converted: 8, isPrice: false))
+        #expect(result.foundPrices == false)
     }
 
     @Test func transcriptWithoutANumberIsIgnored() {
-        let result = useCase.evaluate(
-            transcript: "Daily specials",
-            baseCurrency: "JPY",
-            targetCurrency: "USD",
-            exchangeRates: rates
-        )
-        #expect(result == nil)
+        let result = detect([item("Daily specials")])
+
+        #expect(result.items.isEmpty)
+        #expect(result.foundPrices == false)
     }
 
-    /// The use case caches the rate table and memoizes classifications between
-    /// frames; a rates update must not serve conversions from the stale table.
-    @Test func conversionReflectsUpdatedRates() {
-        let first = useCase.evaluate(
-            transcript: "¥1,200",
-            baseCurrency: "JPY",
-            targetCurrency: "USD",
-            exchangeRates: rates
-        )
-        #expect(first?.converted == 8)
+    @Test func conversionReflectsUpdatedRates() throws {
+        let first = try #require(detect([item("¥1,200")]).items.first)
+        #expect(first.conversion.converted == 8)
 
         let updatedRates = [
             ExchangeRate(currencyCode: "JPY", rate: 100),
             ExchangeRate(currencyCode: "USD", rate: 1),
         ]
-        let second = useCase.evaluate(
-            transcript: "¥1,200",
-            baseCurrency: "JPY",
-            targetCurrency: "USD",
-            exchangeRates: updatedRates
-        )
-        #expect(second?.converted == 12)
+        let second = try #require(detect([item("¥1,200")], rates: updatedRates).items.first)
+        #expect(second.conversion.converted == 12)
     }
 }

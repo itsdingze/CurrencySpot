@@ -1,8 +1,3 @@
-//
-//  CameraPermissionService.swift
-//  CurrencySpot
-//
-
 import AVFoundation
 
 enum CameraAuthorizationStatus: Sendable {

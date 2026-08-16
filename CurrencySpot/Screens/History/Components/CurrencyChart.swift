@@ -1,8 +1,3 @@
-//
-//  CurrencyChart.swift
-//  CurrencySpot
-//
-
 import Charts
 import SwiftUI
 
@@ -25,9 +20,7 @@ struct CurrencyChart: View {
         case pending, animating, complete
     }
 
-    // This controls when the animation will start after this view has being initialized
     private let animationDelay: Double = 0.3
-    // This controls the duration of the animation
     private let animationDuration: Double = 0.5
 
     private var chartColor: Color {
@@ -42,10 +35,6 @@ struct CurrencyChart: View {
         }
     }
 
-    /// Line/area marks keyed by (series, date): marks never match across a
-    /// currency or range switch, so Charts crossfades the whole old and new
-    /// series through the animating scales instead of morphing shared dates
-    /// in place and leaving the rest to fade without movement.
     private struct SeriesPoint: Identifiable {
         struct ID: Hashable {
             let series: HistoryViewModel.ChartSeriesID
@@ -63,7 +52,6 @@ struct CurrencyChart: View {
         }
     }
 
-    // Find highest and lowest points
     private var highestPoint: ChartDataPoint? {
         viewModel.displayedChartDataPoints.max { $0.rate < $1.rate }
     }
@@ -72,7 +60,6 @@ struct CurrencyChart: View {
         viewModel.displayedChartDataPoints.min { $0.rate < $1.rate }
     }
 
-    // Optimized selection with binary search
     private var selectedDate: ChartDataPoint? {
         guard let rawSelectedDate else { return nil }
 
@@ -81,7 +68,6 @@ struct CurrencyChart: View {
 
     var body: some View {
         Chart {
-            // Average rate line - always present, controlled by opacity
             if isChartReady, !viewModel.displayedChartDataPoints.isEmpty {
                 RuleMark(y: .value("Average", viewModel.averageRate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
@@ -116,7 +102,6 @@ struct CurrencyChart: View {
                 .foregroundStyle(trendColor)
             }
 
-            // Highest point marker - always present, controlled by opacity
             if let highestPoint, isChartReady {
                 PointMark(
                     x: .value("Date", highestPoint.date, unit: .day),
@@ -133,7 +118,6 @@ struct CurrencyChart: View {
                 }
             }
 
-            // Lowest point marker - always present, controlled by opacity
             if let lowestPoint, isChartReady {
                 PointMark(
                     x: .value("Date", lowestPoint.date, unit: .day),
@@ -163,8 +147,8 @@ struct CurrencyChart: View {
                                 .foregroundStyle(chartColor)
                         }
                         .fontDesign(.rounded)
-                        .padding(.chipPadding)
-                        .background(chartColor.opacity(0.2), in: .rect(cornerRadius: .badgeRadius))
+                        .padding(Spacing.chipPadding)
+                        .background(chartColor.opacity(0.2), in: .rect(cornerRadius: Radius.badge))
                     }
 
                 PointMark(
@@ -195,7 +179,7 @@ struct CurrencyChart: View {
         }
         .chartYScale(domain: viewModel.chartYDomain)
         .chartXSelection(value: isSelectionEnabled ? $rawSelectedDate : .constant(nil))
-        .animation(.smooth, value: viewModel.displayedChartDataPoints)
+        .animation(.appStageReveal, value: viewModel.displayedChartDataPoints)
         .accessibilityLabel(chartAccessibilityLabel)
         .accessibilityValue(chartAccessibilityValue)
         .accessibilityHint(chartAccessibilityHint)
@@ -214,13 +198,13 @@ struct CurrencyChart: View {
             }
         }
         .padding(8)
-        .frame(height: .chartHeight)
+        .frame(height: ChartMetrics.height)
     }
 
     // MARK: - Accessibility Helpers
 
     private var chartAccessibilityLabel: String {
-        "Exchange rate chart for \(viewModel.baseCurrency) to \(viewModel.targetCurrency)"
+        "Exchange rate chart for \(viewModel.baseCurrency.rawValue) to \(viewModel.targetCurrency.rawValue)"
     }
 
     private var chartAccessibilityValue: String {
@@ -244,8 +228,6 @@ struct CurrencyChart: View {
         "Swipe up or down to move between data points"
     }
 
-    /// Moves the VoiceOver-selected data point one step within bounds and mirrors
-    /// it onto `rawSelectedDate` so the visual annotation tracks the cursor.
     private func adjustSelection(_ direction: AccessibilityAdjustmentDirection) {
         let dataPoints = viewModel.displayedChartDataPoints
         guard !dataPoints.isEmpty else { return }
@@ -266,14 +248,13 @@ struct CurrencyChart: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     @Previewable @State var viewModel = HistoryViewModel.preview()
 
     CurrencyChart(isChartSelectionActive: .constant(false))
         .environment(viewModel)
-        .task { viewModel.openHistory(for: "EUR") }
+        .task { viewModel.openHistory(for: .eur) }
         .padding()
 }
 #endif

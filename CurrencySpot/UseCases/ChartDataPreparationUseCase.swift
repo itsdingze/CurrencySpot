@@ -1,32 +1,22 @@
-//
-//  ChartDataPreparationUseCase.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 7/30/25.
-//
-
 import Foundation
 
 // MARK: - ChartDataPreparationUseCase
 
-/// Use case responsible for chart data preparation and processing
-/// Extracted from HistoryViewModel to separate concerns
 final class ChartDataPreparationUseCase {
     // MARK: - Dependencies
 
-    private let cacheService: CacheService
+    private let chartCache: ChartDataCacheRepository
     private let logger: LoggerService
 
     // MARK: - Initialization
 
-    init(cacheService: CacheService, logger: LoggerService = OSLogLoggerService()) {
-        self.cacheService = cacheService
+    init(chartCache: ChartDataCacheRepository, logger: LoggerService = OSLogLoggerService()) {
+        self.chartCache = chartCache
         self.logger = logger
     }
 
     // MARK: - Chart Data Processing
 
-    /// Processes historical rate data for the specified currency pair within the given time range
     func processHistoricalRateData(
         historicalData: [HistoricalRateSnapshot],
         baseCurrency: CurrencyCode,
@@ -34,23 +24,20 @@ final class ChartDataPreparationUseCase {
         dateRange: DateRange,
         exchangeRates: [ExchangeRate]
     ) async -> [ChartDataPoint] {
-        // Generate a cache key for this configuration AND its input coverage. The processed output
-        // depends on the actual historical rows, not just the date range: the same currency pair +
-        // range can hold a partial (e.g. 7-day) or full (3-month) dataset, so the key must include the
-        // data's size/bounds — otherwise a smaller dataset's processed result shadows a larger one.
-        let coverage = "\(historicalData.count)-\(historicalData.first?.date.timeIntervalSince1970 ?? 0)-\(historicalData.last?.date.timeIntervalSince1970 ?? 0)"
-        let cacheKey = "\(baseCurrency)-\(targetCurrency)-\(dateRange.start.timeIntervalSince1970)-\(dateRange.end.timeIntervalSince1970)-\(coverage)"
+        let cacheKey = ChartCacheKey(
+            base: baseCurrency,
+            target: targetCurrency,
+            range: dateRange,
+            snapshotCount: historicalData.count,
+            firstSnapshot: historicalData.first?.date,
+            lastSnapshot: historicalData.last?.date
+        )
 
-        // Check cache first
-        if let cachedData = await cacheService.getCachedProcessedChartData(for: cacheKey) {
+        if let cachedData = await chartCache.cachedChartData(for: cacheKey) {
             logger.debug("Using cached processed chart data for \(baseCurrency) to \(targetCurrency)", category: .cache)
             return cachedData
         }
 
-        // Run the pure CPU transform off the main actor. This await is a suspension
-        // between the cache check and the cache write, so reentrant callers may
-        // duplicate the transform — never corrupt state, because the write below is
-        // an unconditional, idempotent set of the same computed value.
         let chartPoints = await Self.transformHistoricalData(
             historicalData,
             baseCurrency: baseCurrency,
@@ -59,14 +46,11 @@ final class ChartDataPreparationUseCase {
             exchangeRates: exchangeRates
         )
 
-        // Cache the processed data for future use
-        await cacheService.cacheProcessedChartData(chartPoints, for: cacheKey)
+        await chartCache.storeChartData(chartPoints, for: cacheKey)
 
         return chartPoints
     }
 
-    /// Pure transform from historical rows to chart points. `@concurrent` so the work
-    /// runs on the cooperative pool instead of blocking the main actor.
     @concurrent
     private nonisolated static func transformHistoricalData(
         _ historicalData: [HistoricalRateSnapshot],
@@ -88,13 +72,10 @@ final class ChartDataPreparationUseCase {
 
             let historicalRates = RateTable(points: historicalEntry.rates)
 
-            // Skip dates that never recorded the target currency (USD is implicit).
             guard let targetRate = historicalRates.usdRate(for: targetCurrency) else {
                 continue
             }
 
-            // Prefer the same-date historical base rate; fall back to current rates,
-            // then to 1.0 (returning the USD-based rate unchanged).
             let baseRate = historicalRates.usdRate(for: baseCurrency)
                 ?? currentRates.usdRate(for: baseCurrency)
                 ?? 1.0
@@ -106,24 +87,19 @@ final class ChartDataPreparationUseCase {
         return chartPoints
     }
 
-    /// Intelligently samples data points for chart performance while preserving important points.
-    /// Pure computation over its inputs, so it is not actor-isolated.
     nonisolated func sampleDataPoints(from data: [ChartDataPoint], maxPoints: Int = 100) -> [ChartDataPoint] {
-        // Guard against empty data or invalid maxPoints
         guard !data.isEmpty, maxPoints > 0 else { return data }
         guard data.count > maxPoints else { return data }
 
         let step = Double(data.count) / Double(maxPoints)
         var result: [ChartDataPoint] = []
-        result.reserveCapacity(maxPoints + 4) // Pre-allocate memory
+        result.reserveCapacity(maxPoints + 4)
 
-        // Single pass to find everything we need
         var minPoint: ChartDataPoint?
         var maxPoint: ChartDataPoint?
         var minRate = Double.infinity
         var maxRate = -Double.infinity
 
-        // Always include first
         if let first = data.first {
             result.append(first)
             minPoint = first
@@ -132,14 +108,12 @@ final class ChartDataPreparationUseCase {
             maxRate = first.rate
         }
 
-        // Combined sampling + min/max detection in single pass
         for i in stride(from: step, to: Double(data.count), by: step) {
             let index = Int(i.rounded())
             if index < data.count {
                 let point = data[index]
                 result.append(point)
 
-                // Track extremes in same iteration
                 if point.rate < minRate {
                     minRate = point.rate
                     minPoint = point
@@ -151,7 +125,6 @@ final class ChartDataPreparationUseCase {
             }
         }
 
-        // Add extremes if not already included
         if let min = minPoint, !result.contains(where: { $0.date == min.date }) {
             result.append(min)
         }
@@ -159,7 +132,6 @@ final class ChartDataPreparationUseCase {
             result.append(max)
         }
 
-        // Always include last
         if let last = data.last, result.last?.date != last.date {
             result.append(last)
         }
@@ -169,8 +141,6 @@ final class ChartDataPreparationUseCase {
 
     // MARK: - Statistics Calculations
 
-    /// Calculates statistics for chart data points.
-    /// Pure computation over its inputs, so it is not actor-isolated.
     nonisolated func calculateStatistics(from chartData: [ChartDataPoint]) -> ChartStatistics {
         let rates = chartData.map(\.rate)
         let priceChange = Self.priceChange(of: chartData)
@@ -189,7 +159,6 @@ final class ChartDataPreparationUseCase {
         )
     }
 
-    /// Absolute change from the first to the last point; nil with fewer than two points.
     private nonisolated static func priceChange(of chartData: [ChartDataPoint]) -> Double? {
         guard chartData.count >= 2,
               let firstRate = chartData.first?.rate,
@@ -200,8 +169,6 @@ final class ChartDataPreparationUseCase {
         return lastRate - firstRate
     }
 
-    /// Percentage change from the first to the last point; nil when there is no price
-    /// change to compute or the first rate is non-positive.
     private nonisolated static func percentChange(of chartData: [ChartDataPoint], priceChange: Double?) -> Double? {
         guard priceChange != nil,
               let firstRate = chartData.first?.rate,
@@ -213,12 +180,9 @@ final class ChartDataPreparationUseCase {
         return RateMath.percentChange(from: firstRate, to: lastRate)
     }
 
-    /// Annualized standard deviation of daily returns, as a percentage (252 trading
-    /// days). nil with too few points, or when validation rejects the inputs/result.
     private nonisolated static func annualizedVolatility(of chartData: [ChartDataPoint]) -> Double? {
         guard chartData.count > 1 else { return nil }
 
-        // Daily percentage returns, dropping non-finite rates and extreme outliers.
         let dailyReturns = (1 ..< chartData.count).compactMap { i -> Double? in
             let previousRate = chartData[i - 1].rate
             let currentRate = chartData[i].rate
@@ -242,12 +206,10 @@ final class ChartDataPreparationUseCase {
         let dailyVolatility = sqrt(variance)
         guard dailyVolatility.isFinite else { return nil }
 
-        // Annualize (252 trading days) and convert to a percentage.
         let annualizedVolatility = dailyVolatility * sqrt(252) * 100
         return annualizedVolatility.isFinite ? annualizedVolatility : nil
     }
 
-    /// Y-axis domain with 1% padding; falls back to 0...1 when no valid rates exist.
     private nonisolated static func chartYDomain(of rates: [Double]) -> ClosedRange<Double> {
         let validRates = rates.filter { $0.isFinite && $0 > 0 }
         guard !validRates.isEmpty else { return 0 ... 1 }

@@ -1,8 +1,3 @@
-//
-//  RetryManagerTests.swift
-//  CurrencySpotTests
-//
-
 @testable import CurrencySpot
 import Foundation
 import Testing
@@ -27,11 +22,31 @@ struct RetryManagerTests {
         while await manager.recordAttempt(for: endpoint) != nil {}
         snapshot = await manager.snapshot(for: endpoint)
         #expect(snapshot.attempt == snapshot.maxAttempts)
-        #expect(!snapshot.canRetry)
+        #expect(snapshot.canRetry == false)
 
         await manager.recordSuccess(for: endpoint)
         snapshot = await manager.snapshot(for: endpoint)
         #expect(snapshot.attempt == 0)
         #expect(snapshot.canRetry)
+    }
+
+    @Test("a success opens a fresh retry ladder instead of freezing the endpoint")
+    func retriesResumeAfterSuccess() async {
+        let manager = RetryManager(jitter: { _ in 1.0 })
+        let endpoint = "post-success-endpoint"
+
+        await manager.recordSuccess(for: endpoint)
+
+        let firstRetry = await manager.recordAttempt(for: endpoint)
+        #expect(firstRetry?.attempt == 1)
+
+        var snapshot = await manager.snapshot(for: endpoint)
+        #expect(snapshot.attempt == 1)
+        #expect(snapshot.canRetry)
+
+        while await manager.recordAttempt(for: endpoint) != nil {}
+        snapshot = await manager.snapshot(for: endpoint)
+        #expect(snapshot.attempt == snapshot.maxAttempts)
+        #expect(snapshot.canRetry == false)
     }
 }

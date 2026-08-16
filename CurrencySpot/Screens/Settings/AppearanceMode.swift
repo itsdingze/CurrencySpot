@@ -1,11 +1,5 @@
-//
-//  AppearanceMode.swift
-//  CurrencySpot
-//
-
 import Foundation
 
-/// Appearance mode options.
 enum AppearanceMode: String, CaseIterable, Identifiable {
     case system = "System"
     case light = "Light"

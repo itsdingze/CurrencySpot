@@ -1,10 +1,3 @@
-//
-//  AppError.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 4/23/25.
-//
-
 import Foundation
 
 nonisolated enum AppError: Error, Identifiable, Equatable {
@@ -15,12 +8,9 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
     case apiError(String)
     case dateCalculationError(String)
     case unknownError(String)
-    // SwiftData-specific errors
     case dataValidationError(String)
     case initializationFailed(String)
-    // Retry-specific errors
     case retryExhausted(String, attempts: Int)
-    // Camera-specific errors
     case cameraCaptureFailed
     case photoImportFailed
     case textRecognitionFailed
@@ -125,7 +115,6 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
             return appError
         }
 
-        // Cancellation isn't a user-facing failure.
         if error is CancellationError {
             return nil
         }
@@ -140,12 +129,10 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
         }
     }
 
-    /// Maps a `URLError` to a user-facing message, or nil for cancellations that
-    /// shouldn't surface.
     private static func from(urlError: URLError) -> AppError? {
         switch urlError.code {
         case .cancelled:
-            return nil // Don't show cancelled network requests
+            return nil
         case .notConnectedToInternet:
             return .noInternetConnection
         case .timedOut:

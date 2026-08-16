@@ -1,20 +1,11 @@
-//
-//  TrendIndicator.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 7/18/25.
-//
-
 import SwiftUI
 
 struct TrendIndicator: View {
-    /// Pre-formatted display text (e.g. "1.23%" or "0.0123"); the caller chooses
-    /// percentage vs price so this view only renders.
     let value: String
     let direction: TrendDirection
 
     var body: some View {
-        HStack(spacing: .hairlineGap) {
+        HStack(spacing: Spacing.hairline) {
             Image(systemName: "circle")
                 .opacity(0)
                 .overlay {
@@ -28,11 +19,11 @@ struct TrendIndicator: View {
         }
         .foregroundStyle(direction.color)
         .font(.appSubheadline.weight(.medium))
-        .padding(.horizontal, .badgePaddingHorizontal)
-        .padding(.vertical, .badgePaddingVertical)
+        .padding(.horizontal, Spacing.badgePaddingHorizontal)
+        .padding(.vertical, Spacing.badgePaddingVertical)
         .frame(minWidth: 80, alignment: .trailing)
         .background(
-            RoundedRectangle(cornerRadius: .badgeRadius)
+            RoundedRectangle(cornerRadius: Radius.badge)
                 .fill(direction.color.opacity(0.12))
                 .strokeBorder(direction.color.opacity(0.05), lineWidth: 1)
         )

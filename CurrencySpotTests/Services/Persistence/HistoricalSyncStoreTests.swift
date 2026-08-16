@@ -1,8 +1,3 @@
-//
-//  HistoricalSyncStoreTests.swift
-//  CurrencySpotTests
-//
-
 import Foundation
 import Testing
 @testable import CurrencySpot
@@ -38,13 +33,11 @@ struct HistoricalSyncStoreTests {
         #expect(store.through == jan20)
         #expect(store.checkedAt == t1)
 
-        // A narrower range must not shrink the window, but still updates checkedAt.
         store.record(from: jan10, through: jan10, at: t2)
         #expect(store.from == jan10)
         #expect(store.through == jan20)
         #expect(store.checkedAt == t2)
 
-        // An older start widens the lower bound.
         store.record(from: jan05, through: jan20, at: t2)
         #expect(store.from == jan05)
     }
@@ -57,8 +50,6 @@ struct HistoricalSyncStoreTests {
         let t2 = Date(timeIntervalSince1970: 101 * day)
         store.record(from: Date(timeIntervalSince1970: 0), through: Date(timeIntervalSince1970: 10 * day), at: t1)
 
-        // Starts more than a day past the window's end: uniting would claim the
-        // unfetched middle as checked. The newer window wins instead.
         let newFrom = Date(timeIntervalSince1970: 20 * day)
         let newThrough = Date(timeIntervalSince1970: 30 * day)
         store.record(from: newFrom, through: newThrough, at: t2)
@@ -83,8 +74,6 @@ struct HistoricalSyncStoreTests {
             at: Date(timeIntervalSince1970: 101 * day)
         )
 
-        // The backward range stays unrecorded (it will simply be refetched);
-        // checkedAt is untouched so live-edge freshness is not faked.
         #expect(store.from == from)
         #expect(store.through == through)
         #expect(store.checkedAt == t1)
@@ -97,7 +86,6 @@ struct HistoricalSyncStoreTests {
         let through = Date(timeIntervalSince1970: 10 * day)
         store.record(from: Date(timeIntervalSince1970: 5 * day), through: through, at: Date(timeIntervalSince1970: 100 * day))
 
-        // Begins exactly one day after the window ends — contiguous coverage.
         store.record(from: Date(timeIntervalSince1970: 11 * day), through: Date(timeIntervalSince1970: 15 * day), at: Date(timeIntervalSince1970: 101 * day))
 
         #expect(store.from == Date(timeIntervalSince1970: 5 * day))

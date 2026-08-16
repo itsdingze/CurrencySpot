@@ -1,13 +1,5 @@
-//
-//  RetryManager.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 8/28/25.
-//
-
 import Foundation
 
-/// Configuration for retry behavior
 private nonisolated struct RetryConfiguration {
     let maxAttempts: Int
     let baseDelay: TimeInterval
@@ -22,7 +14,6 @@ private nonisolated struct RetryConfiguration {
     )
 }
 
-/// Tracks retry state for network operations
 private nonisolated enum InternalRetryState {
     case initial
     case retrying(attempt: Int, nextDelay: TimeInterval)
@@ -30,37 +21,25 @@ private nonisolated enum InternalRetryState {
     case succeeded
 }
 
-/// Manages retry logic and state tracking for network operations
 actor RetryManager {
-    static let shared = RetryManager()
-
     private let configuration = RetryConfiguration.default
     private let jitter: @Sendable (ClosedRange<Double>) -> Double
 
     private var retryStates: [String: InternalRetryState] = [:]
 
-    /// Default jitter source; a nonisolated static so the default value expression
-    /// is not MainActor-isolated under default actor isolation.
     private nonisolated static let defaultJitter: @Sendable (ClosedRange<Double>) -> Double = { Double.random(in: $0) }
 
-    /// - Parameter jitter: Random factor source for backoff delays; tests inject
-    ///   a deterministic value.
     init(jitter: @escaping @Sendable (ClosedRange<Double>) -> Double = RetryManager.defaultJitter) {
         self.jitter = jitter
     }
 
     // MARK: - Public Interface
 
-    /// Determines if an error should be retried
-    /// - Parameter error: The error to evaluate
-    /// - Returns: True if the error is retryable
     nonisolated func shouldRetry(error: Error) -> Bool {
-        // Check for retryable network errors
         if let urlError = error as? URLError {
             return Self.isRetryableURLError(urlError)
         }
 
-        // Check for retryable app errors
         if let appError = error as? AppError {
             return Self.isRetryableAppError(appError)
         }
@@ -68,24 +47,15 @@ actor RetryManager {
         return false
     }
 
-    /// Calculates the next retry delay with exponential backoff and jitter
-    /// - Parameters:
-    ///   - attempt: The current attempt number (0-based)
-    /// - Returns: The delay in seconds before the next retry
     func calculateDelay(for attempt: Int) -> TimeInterval {
-        // Input validation to prevent undefined behavior
         precondition(attempt >= 0, "Attempt number must be non-negative")
 
         let exponentialDelay = configuration.baseDelay * pow(2.0, Double(attempt))
         let cappedDelay = min(exponentialDelay, configuration.maxDelay)
 
-        // Add jitter to prevent thundering herd
         return cappedDelay * jitter(configuration.jitterRange)
     }
 
-    /// Checks if more attempts are available for the given endpoint
-    /// - Parameter endpoint: The endpoint identifier
-    /// - Returns: True if more attempts are available
     func canRetry(for endpoint: String) -> Bool {
         guard let state = retryStates[endpoint] else { return true }
 
@@ -99,14 +69,11 @@ actor RetryManager {
         }
     }
 
-    /// Records a retry attempt for the given endpoint
-    /// - Parameter endpoint: The endpoint identifier
-    /// - Returns: The current attempt number and next delay, or nil if exhausted
     func recordAttempt(for endpoint: String) -> (attempt: Int, delay: TimeInterval)? {
         let currentState = retryStates[endpoint] ?? .initial
 
         switch currentState {
-        case .initial:
+        case .initial, .succeeded:
             let delay = calculateDelay(for: 0)
             retryStates[endpoint] = .retrying(attempt: 1, nextDelay: delay)
             return (attempt: 1, delay: delay)
@@ -122,20 +89,15 @@ actor RetryManager {
             retryStates[endpoint] = .retrying(attempt: nextAttempt, nextDelay: delay)
             return (attempt: nextAttempt, delay: delay)
 
-        case .exhausted, .succeeded:
+        case .exhausted:
             return nil
         }
     }
 
-    /// Records a successful operation, resetting retry state
-    /// - Parameter endpoint: The endpoint identifier
     func recordSuccess(for endpoint: String) {
         retryStates[endpoint] = .succeeded
     }
 
-    /// Gets the current retry attempt for an endpoint
-    /// - Parameter endpoint: The endpoint identifier
-    /// - Returns: The current attempt number, or 0 if no attempts recorded
     func getCurrentAttempt(for endpoint: String) -> Int {
         guard let state = retryStates[endpoint] else { return 0 }
 
@@ -149,14 +111,10 @@ actor RetryManager {
         }
     }
 
-    /// Consistent (attempt, maxAttempts, canRetry) triple read under a single
-    /// isolation hop, so UI state never mixes two different actor snapshots.
     func snapshot(for endpoint: String) -> (attempt: Int, maxAttempts: Int, canRetry: Bool) {
         (getCurrentAttempt(for: endpoint), configuration.maxAttempts, canRetry(for: endpoint))
     }
 
-    /// Resets retry state for an endpoint (useful when network reconnects)
-    /// - Parameter endpoint: The endpoint identifier
     func reset(for endpoint: String) {
         retryStates[endpoint] = .initial
     }
@@ -178,7 +136,6 @@ actor RetryManager {
         case .networkError, .noInternetConnection:
             true
         case let .apiError(message):
-            // Extract HTTP status code from message and check if it's a 5xx server error
             extractHTTPStatusCode(from: message)
                 .map { isRetryableHTTPStatus($0) } ?? false
         default:
@@ -187,7 +144,6 @@ actor RetryManager {
     }
 
     private static func extractHTTPStatusCode(from message: String) -> Int? {
-        // Extract status code from "HTTP Error: 500" format
         let pattern = #"HTTP Error: (\d{3})"#
         guard let regex = try? NSRegularExpression(pattern: pattern),
               let match = regex.firstMatch(in: message, range: NSRange(message.startIndex..., in: message)),
@@ -199,7 +155,6 @@ actor RetryManager {
     }
 
     private static func isRetryableHTTPStatus(_ statusCode: Int) -> Bool {
-        // Retry 5xx server errors, but not 4xx client errors
         (500 ... 599).contains(statusCode)
     }
 }

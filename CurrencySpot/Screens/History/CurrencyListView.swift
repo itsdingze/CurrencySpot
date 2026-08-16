@@ -1,21 +1,13 @@
-//
-//  CurrencyListView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 3/30/25.
-//
-
 import SwiftUI
 
 struct CurrencyListView: View {
     @Environment(HistoryViewModel.self) private var historyViewModel: HistoryViewModel
-    @State private var navigationPath = NavigationPath()
     @State private var editMode: EditMode = .inactive
 
     private var isEditing: Bool { editMode == .active }
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationStack(path: Bindable(historyViewModel).path) {
             content
             .navigationTitle("History")
             .toolbarTitleDisplayMode(.inlineLarge)
@@ -25,7 +17,7 @@ struct CurrencyListView: View {
                 prompt: "Search currencies"
             )
             .autocorrectionDisabled()
-            .navigationDestination(for: String.self) { _ in
+            .navigationDestination(for: CurrencyCode.self) { _ in
                 CurrencyHistoryView()
             }
             .toolbar {
@@ -38,17 +30,8 @@ struct CurrencyListView: View {
             .onChange(of: historyViewModel.isSearching || historyViewModel.isWatchlistEmpty) { _, cannotEdit in
                 if cannotEdit { editMode = .inactive }
             }
-            // After .toolbar so the EditButton and the list share one edit mode.
             .environment(\.editMode, $editMode)
         }
-    }
-
-    // MARK: - Private Methods
-
-    private func navigateToCurrency(_ currencyCode: String) {
-        // Single load: openHistory sets the pair without per-property reloads, then resets + loads once.
-        historyViewModel.openHistory(for: currencyCode)
-        navigationPath.append(currencyCode)
     }
 
     // MARK: - View Components
@@ -72,20 +55,17 @@ struct CurrencyListView: View {
         List {
             let currencies = historyViewModel.displayedCurrencies
             ForEach(currencies) { entry in
-                Button(action: { navigateToCurrency(entry.code) }) {
+                Button(action: { historyViewModel.openHistory(for: entry.code) }) {
                     CurrencyRow(entry: entry, metricsHidden: isEditing)
-                        .padding(.vertical, .elementGap)
-                        .padding(.horizontal, .cardPadding)
+                        .padding(.vertical, Spacing.element)
+                        .padding(.horizontal, Spacing.cardPadding)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        // Full-width hitbox: plain style only hit-tests opaque content.
                         .contentShape(Rectangle())
                 }
-                // Plain style: no row press/selection tint when swiping or tapping.
                 .buttonStyle(.plain)
                 .rowSeparator(isLast: entry.id == currencies.last?.id)
             }
             .onDelete { historyViewModel.removeFromWatchlist(atOffsets: $0) }
-            // Reorder applies only under manual order; other sorts would re-rank immediately.
             .onMove(perform: historyViewModel.sortOption == .manual
                 ? { historyViewModel.moveWatchlist(fromOffsets: $0, toOffset: $1) }
                 : nil)
@@ -96,16 +76,17 @@ struct CurrencyListView: View {
     private var searchResultsList: some View {
         List {
             ForEach(historyViewModel.displayedCurrencies) { entry in
-                HStack(spacing: .elementGap) {
+                HStack(spacing: Spacing.element) {
                     WatchlistToggleButton(
                         isInWatchlist: historyViewModel.isInWatchlist(entry.code),
                         action: { historyViewModel.toggleWatchlist(entry.code) }
                     )
 
-                    CurrencyRow(entry: entry, showsTrendChart: false)
-                        .contentShape(Rectangle())
-                        .onTapGesture { navigateToCurrency(entry.code) }
-                        .accessibilityAddTraits(.isButton)
+                    Button { historyViewModel.openHistory(for: entry.code) } label: {
+                        CurrencyRow(entry: entry, showsTrendChart: false)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .listSectionSeparator(.hidden)
@@ -145,7 +126,6 @@ struct CurrencyListView: View {
                 }
             }
 
-            // A second Text in a picker label renders as the row's subtitle.
             Picker(selection: sortSelection) {
                 ForEach(CurrencySortOption.allCases, id: \.self) { option in
                     Text(option.description).tag(option)
@@ -167,11 +147,9 @@ struct CurrencyListView: View {
             .pickerStyle(.menu)
         } label: {
             Label("Options", systemImage: optionsIcon)
-                .foregroundStyle(Color.accentColor)
         }
     }
 
-    /// Routed through the guarded setter (sortOption is private(set)).
     private var sortSelection: Binding<CurrencySortOption> {
         Binding(
             get: { historyViewModel.sortOption },
@@ -187,14 +165,11 @@ struct CurrencyListView: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     let container = DependencyContainer.preview()
 
-    NavigationStack {
-        CurrencyListView()
-    }
-    .withDependencyContainer(container)
+    CurrencyListView()
+        .withDependencyContainer(container)
 }
 #endif

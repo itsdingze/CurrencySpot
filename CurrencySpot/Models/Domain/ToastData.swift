@@ -1,10 +1,3 @@
-//
-//  ToastData.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 5/4/25.
-//
-
 import Foundation
 
 nonisolated enum ToastType: Sendable {

@@ -1,10 +1,3 @@
-//
-//  SampleChartData.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 8/27/25.
-//
-
 import Foundation
 
 enum SampleChartData {

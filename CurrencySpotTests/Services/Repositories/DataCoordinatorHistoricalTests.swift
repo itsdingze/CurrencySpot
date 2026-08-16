@@ -1,12 +1,3 @@
-//
-//  DataCoordinatorHistoricalTests.swift
-//  CurrencySpotTests
-//
-//  Render-first historical pipeline: fetches return decoded snapshots immediately,
-//  persistence runs behind them, and the coverage watermark is recorded only after
-//  the save commits.
-//
-
 @testable import CurrencySpot
 import Foundation
 import Testing
@@ -19,6 +10,7 @@ struct DataCoordinatorHistoricalTests {
     private static let now = createCETDate(year: 2025, month: 1, day: 15)!
     private static let startDate = calendar.date(byAdding: .day, value: -7, to: now)!
     private static let endDate = now
+    private static let dateRange = DateRange.spanning(startDate, endDate)
 
     private static func response(rates: [String: [String: Double]]) -> HistoricalRatesResponse {
         HistoricalRatesResponse(
@@ -60,13 +52,12 @@ struct DataCoordinatorHistoricalTests {
             syncStore: syncStore
         )
 
-        let snapshots = try await coordinator.fetchHistoricalRates(from: Self.startDate, to: Self.endDate)
+        let snapshots = try await coordinator.fetchHistoricalRates(in: Self.dateRange)
 
         #expect(snapshots.count == 2)
         #expect(snapshots.map(\.date) == snapshots.map(\.date).sorted())
         let firstDay = try #require(snapshots.first)
         #expect(firstDay.rates.first { $0.currencyCode == "EUR" }?.rate == 0.84)
-        // Deferred save: at the moment data is returned, nothing has been recorded yet.
         #expect(syncStore.recordCallCount == 0)
     }
 
@@ -80,7 +71,7 @@ struct DataCoordinatorHistoricalTests {
         let syncStore = MockHistoricalSyncStore()
         let coordinator = Self.makeCoordinator(network: network, persistence: persistence, syncStore: syncStore)
 
-        _ = try await coordinator.fetchHistoricalRates(from: Self.startDate, to: Self.endDate)
+        _ = try await coordinator.fetchHistoricalRates(in: Self.dateRange)
         #expect(syncStore.recordCallCount == 0)
 
         await coordinator.waitForPendingHistoricalWrites()
@@ -102,10 +93,9 @@ struct DataCoordinatorHistoricalTests {
         let syncStore = MockHistoricalSyncStore()
         let coordinator = Self.makeCoordinator(network: network, persistence: persistence, syncStore: syncStore)
 
-        let snapshots = try await coordinator.fetchHistoricalRates(from: Self.startDate, to: Self.endDate)
+        let snapshots = try await coordinator.fetchHistoricalRates(in: Self.dateRange)
         await coordinator.waitForPendingHistoricalWrites()
 
-        // The render path still got its data, but coverage was not claimed.
         #expect(snapshots.count == 1)
         #expect(syncStore.recordCallCount == 0)
     }
@@ -121,7 +111,7 @@ struct DataCoordinatorHistoricalTests {
             syncStore: syncStore
         )
 
-        let snapshots = try await coordinator.fetchHistoricalRates(from: Self.startDate, to: Self.endDate)
+        let snapshots = try await coordinator.fetchHistoricalRates(in: Self.dateRange)
         await coordinator.waitForPendingHistoricalWrites()
 
         #expect(snapshots.isEmpty)
@@ -144,8 +134,6 @@ struct DataCoordinatorHistoricalTests {
             cache: cache
         )
 
-        // The shared series already holds a row inside the fetch window (as the
-        // orchestrator's merge would produce) and one outside it.
         let inWindow = HistoricalRateSnapshot(
             date: Self.calendar.date(byAdding: .day, value: -1, to: Self.endDate)!,
             rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 0.85)]
@@ -156,10 +144,9 @@ struct DataCoordinatorHistoricalTests {
         )
         await cache.cacheHistoricalData([inWindow, outside])
 
-        _ = try await coordinator.fetchHistoricalRates(from: Self.startDate, to: Self.endDate)
+        _ = try await coordinator.fetchHistoricalRates(in: Self.dateRange)
         await coordinator.waitForPendingHistoricalWrites()
 
-        // Only the failed window is evicted; unrelated rows survive.
         let remaining = await cache.getCachedHistoricalData() ?? []
         #expect(remaining.map(\.date) == [outside.date])
     }
@@ -176,17 +163,12 @@ struct DataCoordinatorHistoricalTests {
         let syncStore = MockHistoricalSyncStore()
         let coordinator = Self.makeCoordinator(network: network, persistence: persistence, syncStore: syncStore)
 
-        let snapshots = try await coordinator.fetchTransientHistoricalRates(
-            for: ["EUR", "GBP"],
-            from: Self.startDate,
-            to: Self.endDate
-        )
+        let snapshots = try await coordinator.fetchTransientHistoricalRates(for: ["EUR", "GBP"], in: Self.dateRange)
         await coordinator.waitForPendingHistoricalWrites()
 
         #expect(snapshots.count == 1)
         let quotes = try #require(network.fetchHistoricalRatesQuotesCalls.first)
         #expect(Set(quotes.quotes) == Set(["EUR", "GBP"]))
-        // Pair-scoped rows must never masquerade as all-currency coverage.
         #expect(await persistence.savedHistoricalRates.isEmpty)
         #expect(syncStore.recordCallCount == 0)
         #expect(network.lastFetchDate == nil)
@@ -198,10 +180,7 @@ struct DataCoordinatorHistoricalTests {
         network.historicalRatesResult = .success(Self.response(rates: [
             "2025-01-14": ["EUR": 0.85],
         ]))
-        var releaseFetch: (() -> Void)!
-        let gate = AsyncStream<Void> { continuation in
-            releaseFetch = { continuation.finish() }
-        }
+        let (gate, gateContinuation) = AsyncStream.makeStream(of: Void.self)
         network.historicalFetchBarrier = { for await _ in gate {} }
         let coordinator = Self.makeCoordinator(
             network: network,
@@ -209,12 +188,10 @@ struct DataCoordinatorHistoricalTests {
             syncStore: MockHistoricalSyncStore()
         )
 
-        let fetchTask = Task { try await coordinator.fetchTransientHistoricalRates(for: ["EUR"], from: Self.startDate, to: Self.endDate) }
-        while network.fetchHistoricalRatesQuotesCalls.isEmpty {
-            await Task.yield()
-        }
+        let fetchTask = Task { try await coordinator.fetchTransientHistoricalRates(for: ["EUR"], in: Self.dateRange) }
+        await waitUntil { network.fetchHistoricalRatesQuotesCalls.isEmpty == false }
         try await coordinator.clearAllData()
-        releaseFetch()
+        gateContinuation.finish()
 
         await #expect(throws: CancellationError.self) {
             _ = try await fetchTask.value
@@ -231,7 +208,7 @@ struct DataCoordinatorHistoricalTests {
         let syncStore = MockHistoricalSyncStore()
         let coordinator = Self.makeCoordinator(network: network, persistence: persistence, syncStore: syncStore)
 
-        try await coordinator.fetchAndPersistHistoricalRates(from: Self.startDate, to: Self.endDate)
+        try await coordinator.fetchAndPersistHistoricalRates(in: Self.dateRange)
         await coordinator.waitForPendingHistoricalWrites()
 
         #expect(await persistence.savedHistoricalRates.count == 1)
@@ -252,7 +229,7 @@ struct DataCoordinatorHistoricalTests {
         let syncStore = MockHistoricalSyncStore()
         let coordinator = Self.makeCoordinator(network: network, persistence: persistence, syncStore: syncStore)
 
-        _ = try await coordinator.fetchHistoricalRates(from: Self.startDate, to: Self.endDate)
+        _ = try await coordinator.fetchHistoricalRates(in: Self.dateRange)
         try await coordinator.clearAllData()
 
         #expect(await persistence.clearAllDataCallCount == 1)
@@ -260,7 +237,6 @@ struct DataCoordinatorHistoricalTests {
         #expect(syncStore.from == nil)
         #expect(syncStore.through == nil)
 
-        // A late settle must not resurrect the watermark either.
         await coordinator.waitForPendingHistoricalWrites()
         #expect(syncStore.from == nil)
         #expect(syncStore.through == nil)
@@ -272,30 +248,22 @@ struct DataCoordinatorHistoricalTests {
         network.historicalRatesResult = .success(Self.response(rates: [
             "2025-01-14": ["EUR": 0.85],
         ]))
-        var releaseFetch: (() -> Void)!
-        let gate = AsyncStream<Void> { continuation in
-            releaseFetch = { continuation.finish() }
-        }
+        let (gate, gateContinuation) = AsyncStream.makeStream(of: Void.self)
         network.historicalFetchBarrier = { for await _ in gate {} }
 
         let persistence = MockPersistenceService()
         let syncStore = MockHistoricalSyncStore()
         let coordinator = Self.makeCoordinator(network: network, persistence: persistence, syncStore: syncStore)
 
-        // Park a fetch inside the network call, then clear while it is in flight.
-        let fetchTask = Task { try await coordinator.fetchHistoricalRates(from: Self.startDate, to: Self.endDate) }
-        while network.fetchHistoricalRatesCalls.isEmpty {
-            await Task.yield()
-        }
+        let fetchTask = Task { try await coordinator.fetchHistoricalRates(in: Self.dateRange) }
+        await waitUntil { network.fetchHistoricalRatesCalls.isEmpty == false }
         try await coordinator.clearAllData()
-        releaseFetch()
+        gateContinuation.finish()
 
-        // The stale fetch must fail rather than hand back pre-wipe data…
         await #expect(throws: CancellationError.self) {
             _ = try await fetchTask.value
         }
 
-        // …and nothing it carried may reach persistence or the watermark.
         await coordinator.waitForPendingHistoricalWrites()
         #expect(await persistence.savedHistoricalRates.isEmpty)
         #expect(await persistence.savedHistoricalAfterClear == false)

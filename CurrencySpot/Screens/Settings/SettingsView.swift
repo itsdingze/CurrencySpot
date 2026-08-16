@@ -1,18 +1,10 @@
-//
-//  SettingsView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 4/19/25.
-//
-
 import SwiftUI
 
 struct SettingsView: View {
-    @Environment(CalculatorViewModel.self) private var calculatorViewModel: CalculatorViewModel
+    @Environment(ExchangeRatesStore.self) private var ratesStore: ExchangeRatesStore
     @Environment(SettingsViewModel.self) private var settingsViewModel: SettingsViewModel
-    @Environment(AppState.self) private var appState: AppState
 
-    private var bindableSettingsViewModel: Bindable<SettingsViewModel> {
+    private var bindableViewModel: Bindable<SettingsViewModel> {
         Bindable(settingsViewModel)
     }
 
@@ -51,8 +43,6 @@ struct SettingsView: View {
         }
     }
 
-    /// Bool projection of the alert destination for the modern alert API;
-    /// system dismissal writes `nil` back to the ViewModel.
     private var isAlertPresented: Binding<Bool> {
         Binding(
             get: { settingsViewModel.pendingAlert != nil },
@@ -71,13 +61,15 @@ struct SettingsView: View {
         switch route {
         case .defaultBaseCurrency:
             CurrencyPickerView(
-                selectedCurrency: bindableSettingsViewModel.defaultBaseCurrency,
-                exchangeRates: calculatorViewModel.availableRates
+                selectedCurrency: bindableViewModel.defaultBaseCurrency,
+                exchangeRates: ratesStore.rates,
+                favoriteCurrencies: settingsViewModel.favoriteCurrencies
             )
         case .defaultTargetCurrency:
             CurrencyPickerView(
-                selectedCurrency: bindableSettingsViewModel.defaultTargetCurrency,
-                exchangeRates: calculatorViewModel.availableRates
+                selectedCurrency: bindableViewModel.defaultTargetCurrency,
+                exchangeRates: ratesStore.rates,
+                favoriteCurrencies: settingsViewModel.favoriteCurrencies
             )
         case .favoriteCurrencies:
             FavoriteCurrenciesView()
@@ -94,7 +86,7 @@ struct SettingsView: View {
         Section(header: Text("Appearance")) {
             AccentColorPickerSheet()
 
-            Picker(selection: bindableSettingsViewModel.appearanceMode) {
+            Picker(selection: bindableViewModel.appearanceMode) {
                 ForEach(AppearanceMode.allCases) { mode in
                     Text(mode.rawValue)
                         .fontDesign(.rounded)
@@ -187,7 +179,7 @@ struct SettingsView: View {
         title: String,
         icon: String,
         iconColors: (Color, Color),
-        currentValue: String,
+        currentValue: CurrencyCode,
         route: SettingsRoute
     ) -> some View {
         NavigationLink(value: route) {
@@ -202,7 +194,7 @@ struct SettingsView: View {
 
                 Spacer()
 
-                Text(currentValue)
+                Text(currentValue.rawValue)
                     .foregroundStyle(.secondary)
                     .fontDesign(.rounded)
             }
@@ -213,12 +205,10 @@ struct SettingsView: View {
     private func settingsActionButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
         Button(role: .destructive, action: action) {
             Label(title, systemImage: icon)
-                .foregroundStyle(Color.failure)
         }
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     let container = DependencyContainer.preview()

@@ -1,13 +1,5 @@
-//
-//  ChartPointMarker.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// The two-circle point marker used across all charts: a background dot with a
-/// colored dot inset. Sizes are parameterized to preserve each call site's
-/// current values until the design phase unifies them.
 struct ChartPointMarker: View {
     let color: Color
     var outerSize: CGFloat = 8

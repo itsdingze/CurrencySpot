@@ -1,11 +1,5 @@
-//
-//  Trend.swift
-//  CurrencySpot
-//
-
 import Foundation
 
-/// A currency's weekly trend: percentage change plus the sparkline series behind it.
 nonisolated struct Trend: Identifiable, Equatable, Sendable {
     let currencyCode: CurrencyCode
     let weeklyChange: Double

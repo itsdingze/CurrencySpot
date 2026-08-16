@@ -1,38 +1,24 @@
-//
-//  FrankfurterAPITests.swift
-//  CurrencySpotTests
-//
-
 @testable import CurrencySpot
 import Foundation
+import Synchronization
 import Testing
 
 // MARK: - URLProtocol Stub
 
-/// Intercepts every request on a stubbed session and serves canned responses keyed by
-/// absolute URL. Keying by URL (instead of a single shared handler) keeps parallel
-/// tests independent — each test registers its own unique URL.
-/// `nonisolated`: URLProtocol's overridable methods are nonisolated and the
-/// loading system calls them off-main; static stub state is NSLock-guarded.
 private nonisolated final class StubURLProtocol: URLProtocol {
     struct Stub {
         let statusCode: Int
         let data: Data
     }
 
-    private static let lock = NSLock()
-    private nonisolated(unsafe) static var stubs: [String: Stub] = [:]
+    private static let stubs = Mutex<[String: Stub]>([:])
 
     static func register(_ stub: Stub, for url: String) {
-        lock.lock()
-        defer { lock.unlock() }
-        stubs[url] = stub
+        stubs.withLock { $0[url] = stub }
     }
 
     private static func stub(for url: String) -> Stub? {
-        lock.lock()
-        defer { lock.unlock() }
-        return stubs[url]
+        stubs.withLock { $0[url] }
     }
 
     static func makeSession() -> URLSession {
@@ -46,8 +32,6 @@ private nonisolated final class StubURLProtocol: URLProtocol {
 
     override func startLoading() {
         guard let url = request.url, let stub = Self.stub(for: url.absoluteString) else {
-            // An unregistered URL means the client built a different URL than the test
-            // expected — fail the request so the test fails instead of hitting the network.
             client?.urlProtocol(self, didFailWithError: URLError(.unsupportedURL))
             return
         }
@@ -66,7 +50,7 @@ private nonisolated final class StubURLProtocol: URLProtocol {
 
 @Suite("FrankfurterAPI Tests")
 struct FrankfurterAPITests {
-    private let api = FrankfurterAPI(session: StubURLProtocol.makeSession())
+    private let api = FrankfurterAPI(session: StubURLProtocol.makeSession(), retryManager: RetryManager())
 
     private static func v2JSON(_ entries: [(date: String, quote: String, rate: Double)], base: String = "USD") -> Data {
         let rows = entries.map {
@@ -77,8 +61,6 @@ struct FrankfurterAPITests {
 
     @Test("fetchExchangeRates builds the latest endpoint URL and decodes through the v2 mapper")
     func latestEndpointHappyPath() async throws {
-        // Registering the stub at exactly this URL also asserts URL construction:
-        // any other URL fails with .unsupportedURL.
         StubURLProtocol.register(
             .init(statusCode: 200, data: Self.v2JSON([
                 (date: "2025-03-14", quote: "EUR", rate: 0.91),
@@ -90,7 +72,7 @@ struct FrankfurterAPITests {
         let response = try await api.fetchExchangeRates(baseCurrency: "CHF")
 
         #expect(response.base == "CHF")
-        #expect(response.date == "2025-03-14") // most recent across per-currency dates
+        #expect(response.date == "2025-03-14")
         #expect(response.rates == ["EUR": 0.91, "GBP": 0.78])
     }
 
@@ -118,8 +100,6 @@ struct FrankfurterAPITests {
 
     @Test("a non-2xx response maps to AppError.apiError with the status code")
     func httpErrorMapsToAPIError() async {
-        // 404 is deliberately non-retryable, so the request fails immediately
-        // instead of sleeping through the retry backoff.
         StubURLProtocol.register(
             .init(statusCode: 404, data: Data()),
             for: "https://api.frankfurter.dev/v2/rates?base=NOK"
@@ -150,16 +130,29 @@ struct FrankfurterAPITests {
         }
     }
 
-    @Test("an empty v2 array decodes to an empty rates dictionary")
-    func emptyResponseDecodesToEmptyRates() async throws {
+    @Test("an empty v2 array is rejected rather than accepted as a rateless snapshot")
+    func emptyResponseIsRejected() async throws {
         StubURLProtocol.register(
             .init(statusCode: 200, data: Data("[]".utf8)),
             for: "https://api.frankfurter.dev/v2/rates?base=DKK"
         )
 
-        let response = try await api.fetchExchangeRates(baseCurrency: "DKK")
+        await #expect(throws: AppError.self) {
+            _ = try await api.fetchExchangeRates(baseCurrency: "DKK")
+        }
+    }
+
+    @Test("a range with no publication days decodes to an empty series rather than throwing")
+    func emptyHistoricalRangeDecodesToEmptySeries() async throws {
+        let startDate = try #require(createCETDate(year: 2025, month: 3, day: 15))
+        let endDate = try #require(createCETDate(year: 2025, month: 3, day: 16))
+        StubURLProtocol.register(
+            .init(statusCode: 200, data: Data("[]".utf8)),
+            for: "https://api.frankfurter.dev/v2/rates?base=USD&from=2025-03-15&to=2025-03-16"
+        )
+
+        let response = try await api.fetchHistoricalRatesForRange(startDate: startDate, endDate: endDate)
 
         #expect(response.rates.isEmpty)
-        #expect(response.date.isEmpty)
     }
 }

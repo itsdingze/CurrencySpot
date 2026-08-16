@@ -1,11 +1,5 @@
-//
-//  ChartStatistics.swift
-//  CurrencySpot
-//
-
 import Foundation
 
-/// Statistics calculated from a chart's data points.
 struct ChartStatistics: Sendable {
     let currentRate: Double
     let highestRate: Double

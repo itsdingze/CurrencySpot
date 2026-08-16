@@ -1,18 +1,11 @@
-//
-//  CurrencyPairControl.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Base → target pair control floating over the camera feed.
-/// Base is the currency the price tags are in; target is what badges show.
 struct CurrencyPairControl: View {
     @Environment(CameraViewModel.self) private var viewModel
     @State private var isFlipped = false
 
     var body: some View {
-        HStack(spacing: .elementGap) {
+        HStack(spacing: Spacing.element) {
             currencyButton(
                 code: viewModel.baseCurrency,
                 caption: "From",
@@ -29,13 +22,13 @@ struct CurrencyPairControl: View {
                 accessibilityLabel: "Converted currency"
             )
         }
-        .padding(.horizontal, .cardPadding)
-        .padding(.vertical, .chipPadding)
+        .padding(.horizontal, Spacing.cardPadding)
+        .padding(.vertical, Spacing.chipPadding)
         .adaptiveGlassBackground(in: .capsule, isInteractive: true)
     }
 
     private func currencyButton(
-        code: String,
+        code: CurrencyCode,
         caption: String,
         destination: CameraViewModel.Destination,
         accessibilityLabel: String
@@ -49,12 +42,11 @@ struct CurrencyPairControl: View {
                     .foregroundStyle(Color.textSecondary)
 
                 FixedWidthCurrencyLabel(code: code)
-                    .foregroundStyle(Color.textPrimary)
             }
         }
         .buttonStyle(.currencyCode())
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityValue(code)
+        .accessibilityValue(code.rawValue)
     }
 
     private var swapButton: some View {
@@ -77,7 +69,6 @@ struct CurrencyPairControl: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     let container = DependencyContainer.preview()

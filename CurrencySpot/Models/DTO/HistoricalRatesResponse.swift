@@ -1,11 +1,5 @@
-//
-//  HistoricalRatesResponse.swift
-//  CurrencySpot
-//
-
 import Foundation
 
-/// Network DTO: historical USD-normalized rates keyed by API date string, then currency code.
 nonisolated struct HistoricalRatesResponse: Codable, Sendable {
     let base: String
     let startDate: String

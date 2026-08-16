@@ -1,20 +1,12 @@
-//
-//  StatisticsSection.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 3/26/25.
-//
-
 import SwiftUI
 
 // MARK: - Statistics Section
 
 struct StatisticsSection: View {
     @Environment(HistoryViewModel.self) private var viewModel: HistoryViewModel
-    @State private var showVolatilityInfo = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: .hairlineGap) {
+        VStack(alignment: .leading, spacing: Spacing.hairline) {
             HStack(spacing: 0) {
                 Button(action: toggleHighestPoint) {
                     statCard(
@@ -83,8 +75,8 @@ struct StatisticsSection: View {
 
     @ViewBuilder
     private func statCard(label: String, value: String, isToggled: Bool = false, indicatorColor: Color? = nil) -> some View {
-        let card = VStack(alignment: .leading, spacing: .hairlineGap) {
-            HStack(spacing: .hairlineGap) {
+        let card = VStack(alignment: .leading, spacing: Spacing.hairline) {
+            HStack(spacing: Spacing.hairline) {
                 Text(label)
                     .font(.appSubheadline)
                     .foregroundStyle(.secondary)
@@ -101,12 +93,11 @@ struct StatisticsSection: View {
                 .font(.appHeadline.weight(.medium).monospacedDigit())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.chipPadding)
+        .padding(Spacing.chipPadding)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(label): \(value)")
 
-        // Tapping a stat card toggles its marker on the chart — not obvious from the label, so it earns a hint.
         if indicatorColor != nil {
             card.accessibilityHint(isToggled
                 ? "Hides the \(label.lowercased()) marker on the chart"
@@ -118,11 +109,9 @@ struct StatisticsSection: View {
 
     @ViewBuilder
     private func volatilityCard(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: .hairlineGap) {
-            Button(action: {
-                showVolatilityInfo = true
-            }) {
-                HStack(spacing: .hairlineGap) {
+        VStack(alignment: .leading, spacing: Spacing.hairline) {
+            Button(action: viewModel.volatilityInfoTapped) {
+                HStack(spacing: Spacing.hairline) {
                     Text(label)
                         .font(.appSubheadline)
                         .foregroundStyle(.secondary)
@@ -141,24 +130,23 @@ struct StatisticsSection: View {
                 .foregroundStyle(viewModel.volatilityLevel?.color ?? .primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.chipPadding)
+        .padding(Spacing.chipPadding)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Volatility: \(value)")
-        .popover(isPresented: $showVolatilityInfo) {
+        .popover(isPresented: Bindable(viewModel).destination.isPresenting(.volatilityInfo)) {
             VolatilityInfoView()
                 .presentationCompactAdaptation(.popover)
         }
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     @Previewable @State var viewModel = HistoryViewModel.preview()
 
     StatisticsSection()
         .environment(viewModel)
-        .task { viewModel.openHistory(for: "EUR") }
+        .task { viewModel.openHistory(for: .eur) }
         .padding()
 }
 #endif

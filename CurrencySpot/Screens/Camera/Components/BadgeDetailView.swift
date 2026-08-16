@@ -1,17 +1,9 @@
-//
-//  BadgeDetailView.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Detail shown when tapping a converted plate: the original and converted
-/// amounts, a shortcut to the Convert tab, and an escape hatch that
-/// uncovers a misread price.
 struct BadgeDetailView: View {
     let item: DetectedItem
-    let baseCurrency: String
-    let targetCurrency: String
+    let baseCurrency: CurrencyCode
+    let targetCurrency: CurrencyCode
     let openInConverter: () -> Void
     let hideConversion: () -> Void
     @Environment(\.dismiss) private var dismiss
@@ -19,7 +11,7 @@ struct BadgeDetailView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 32) {
-                VStack(spacing: .tightGap) {
+                VStack(spacing: Spacing.tight) {
                     amountLine(item.conversion.amount, code: baseCurrency)
                         .foregroundStyle(Color.textSecondary)
                     
@@ -29,10 +21,9 @@ struct BadgeDetailView: View {
                         .accessibilityHidden(true)
                     
                     amountLine(item.conversion.converted, code: targetCurrency, fractionDigits: 2)
-                        .foregroundStyle(Color.textPrimary)
                 }
                 
-                VStack(spacing: .sectionGap) {
+                VStack(spacing: Spacing.section) {
                     Button(action: openInConverter) {
                         Label("Open in Convert", systemImage: "arrow.left.arrow.right")
                             .frame(maxWidth: .infinity)
@@ -62,8 +53,8 @@ struct BadgeDetailView: View {
         }
     }
 
-    private func amountLine(_ amount: Decimal, code: String, fractionDigits: Int? = nil) -> some View {
-        HStack(alignment: .lastTextBaseline, spacing: .tightGap) {
+    private func amountLine(_ amount: Decimal, code: CurrencyCode, fractionDigits: Int? = nil) -> some View {
+        HStack(alignment: .lastTextBaseline, spacing: Spacing.tight) {
             Text(amount, format: fractionDigits.map { .number.precision(.fractionLength($0)) } ?? .number)
                 .font(.appLargeTitle)
             Text(CurrencyNameLookup.name(for: code))
@@ -72,7 +63,6 @@ struct BadgeDetailView: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     @Previewable @State var isPresented = false
@@ -86,8 +76,8 @@ struct BadgeDetailView: View {
                     bounds: .zero,
                     conversion: .init(amount: 1200, converted: 8.0824, isPrice: true)
                 ),
-                baseCurrency: "JPY",
-                targetCurrency: "USD",
+                baseCurrency: .jpy,
+                targetCurrency: .usd,
                 openInConverter: {},
                 hideConversion: {}
             )

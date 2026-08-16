@@ -1,12 +1,5 @@
-//
-//  CameraStateScreen.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Shared full-screen layout for the camera tab's permission states:
-/// an icon, a headline, an explanation, and a single call to action.
 struct CameraStateScreen: View {
     let icon: String
     let title: LocalizedStringKey
@@ -15,14 +8,16 @@ struct CameraStateScreen: View {
     var buttonHint: LocalizedStringKey? = nil
     let action: () -> Void
 
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 56
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: .blockGap) {
-                VStack(spacing: .elementGap) {
+            VStack(spacing: Spacing.block) {
+                VStack(spacing: Spacing.element) {
                     Image(systemName: icon)
-                        .font(.heroIcon)
+                        .font(.system(size: heroIconSize, weight: .medium))
                         .foregroundStyle(Color.accentColor)
                         .accessibilityHidden(true)
 
@@ -42,7 +37,7 @@ struct CameraStateScreen: View {
 
             Spacer()
         }
-        .safeAreaPadding(.horizontal, .onboardingInset)
+        .safeAreaPadding(.horizontal, Spacing.instructionInset)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.background.ignoresSafeArea())
     }

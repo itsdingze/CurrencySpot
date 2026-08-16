@@ -1,11 +1,5 @@
-//
-//  HistoricalRateSnapshot.swift
-//  CurrencySpot
-//
-
 import Foundation
 
-/// One currency's USD-normalized rate on a historical date.
 nonisolated struct HistoricalRatePoint: Identifiable, Equatable, Sendable {
     let currencyCode: CurrencyCode
     let rate: Double
@@ -13,8 +7,6 @@ nonisolated struct HistoricalRatePoint: Identifiable, Equatable, Sendable {
     var id: CurrencyCode { currencyCode }
 }
 
-/// All recorded rates for a single historical date.
-/// Identity is the date: collections of these are merged/deduplicated by date upstream.
 nonisolated struct HistoricalRateSnapshot: Identifiable, Equatable, Sendable {
     let date: Date
     let rates: [HistoricalRatePoint]
@@ -36,9 +28,6 @@ nonisolated struct HistoricalRateSnapshot: Identifiable, Equatable, Sendable {
 }
 
 nonisolated extension HistoricalRateSnapshot {
-    /// Merges two series by date — rows in `new` replace same-day rows in `existing` —
-    /// returning a date-sorted result. Lives on the domain type so both the analysis
-    /// use case and the cache actor share one implementation.
     static func merge(existing: [HistoricalRateSnapshot], new: [HistoricalRateSnapshot]) -> [HistoricalRateSnapshot] {
         var byDate: [String: HistoricalRateSnapshot] = [:]
         for item in existing {

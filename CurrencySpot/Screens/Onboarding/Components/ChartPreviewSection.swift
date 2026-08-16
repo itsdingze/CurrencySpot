@@ -1,10 +1,3 @@
-//
-//  ChartPreviewSection.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 8/27/25.
-//
-
 import Charts
 import SwiftUI
 
@@ -14,7 +7,7 @@ struct ChartPreviewSection: View {
     @State private var showLowest = false
 
     var body: some View {
-        VStack(spacing: .blockGap) {
+        VStack(spacing: Spacing.block) {
             Chart {
                 RuleMark(y: .value("Average", SampleChartData.averageRate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
@@ -83,11 +76,11 @@ struct ChartPreviewSection: View {
             .chartYScale(domain: SampleChartData.chartYDomain)
             .frame(height: 180)
 
-            VStack(spacing: .tightGap) {
-                HStack(spacing: .elementGap) {
+            VStack(spacing: Spacing.tight) {
+                HStack(spacing: Spacing.element) {
                     MockStatCard(
                         label: "Highest",
-                        value: String(format: "%.4f", SampleChartData.highestPoint?.rate ?? 0),
+                        value: (SampleChartData.highestPoint?.rate ?? 0).formatted(.number.precision(.fractionLength(4))),
                         isToggled: showHighest,
                         color: .success
                     ) {
@@ -98,7 +91,7 @@ struct ChartPreviewSection: View {
 
                     MockStatCard(
                         label: "Lowest",
-                        value: String(format: "%.4f", SampleChartData.lowestPoint?.rate ?? 0),
+                        value: (SampleChartData.lowestPoint?.rate ?? 0).formatted(.number.precision(.fractionLength(4))),
                         isToggled: showLowest,
                         color: .failure
                     ) {
@@ -108,10 +101,10 @@ struct ChartPreviewSection: View {
                     }
                 }
 
-                HStack(spacing: .elementGap) {
+                HStack(spacing: Spacing.element) {
                     MockStatCard(
                         label: "Average",
-                        value: String(format: "%.4f", SampleChartData.averageRate),
+                        value: SampleChartData.averageRate.formatted(.number.precision(.fractionLength(4))),
                         isToggled: showAverage,
                         color: .gray
                     ) {
@@ -129,7 +122,7 @@ struct ChartPreviewSection: View {
                 }
             }
         }
-        .padding(.top, .blockGap)
+        .padding(.top, Spacing.block)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Interactive chart statistics demonstration")
         .accessibilityHint("Watch the chart indicators toggle as statistics are selected")
@@ -179,10 +172,10 @@ private struct MockStatCard: View {
     @ViewBuilder
     var body: some View {
         let card = Button(action: action) {
-            VStack(alignment: .leading, spacing: .hairlineGap) {
-                HStack(spacing: .hairlineGap) {
+            VStack(alignment: .leading, spacing: Spacing.hairline) {
+                HStack(spacing: Spacing.hairline) {
                     Text(label)
-                        .font(.caption)
+                        .font(.appCaption)
                         .foregroundStyle(.secondary)
 
                     if let color {
@@ -195,18 +188,15 @@ private struct MockStatCard: View {
 
                 Text(value)
                     .font(.appFootnote.weight(.medium).monospacedDigit())
-                    .foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.chipPadding)
+            .padding(Spacing.chipPadding)
             .background(
-                RoundedRectangle(cornerRadius: .badgeRadius)
-                    .fill(isToggled && color != nil ?
-                        Color.accentColor.opacity(0.08) :
-                        Color.gray.opacity(0.05))
+                isToggled && color != nil ? Color.accentColor.opacity(0.08) : Color.gray.opacity(0.05),
+                in: .rect(cornerRadius: Radius.badge)
             )
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
         .disabled(color == nil)
         .accessibilityLabel("\(label): \(value)")
 

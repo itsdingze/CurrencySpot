@@ -1,17 +1,10 @@
-//
-//  RateInfoView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 3/1/25.
-//
-
 import SwiftUI
 
 struct RateInfoView: View {
     @Environment(CalculatorViewModel.self) private var viewModel: CalculatorViewModel
 
     var body: some View {
-        VStack(spacing: .hairlineGap) {
+        VStack(spacing: Spacing.hairline) {
             if shouldShowConversionRate {
                 conversionRateText
             }
@@ -54,15 +47,14 @@ struct RateInfoView: View {
     }
 
     private var formattedConversionRate: String {
-        "1 \(viewModel.baseCurrency) = \(viewModel.conversionRate.toStringMax4Decimals) \(viewModel.targetCurrency)"
+        "1 \(viewModel.baseCurrency.rawValue) = \(viewModel.conversionRate.toStringMax4Decimals) \(viewModel.targetCurrency.rawValue)"
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     RateInfoView()
-        .withDependencyContainer(DependencyContainer.preview())
+        .withDependencyContainer(.preview())
         .padding()
 }
 #endif

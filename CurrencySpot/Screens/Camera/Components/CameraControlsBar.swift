@@ -1,12 +1,6 @@
-//
-//  CameraControlsBar.swift
-//  CurrencySpot
-//
-
 import PhotosUI
 import SwiftUI
 
-/// Bottom controls: photo import on the left, shutter-style freeze in the center.
 struct CameraControlsBar: View {
     let capturePhoto: () async throws -> UIImage?
 
@@ -29,7 +23,6 @@ struct CameraControlsBar: View {
             guard let item else { return }
             Task {
                 await viewModel.importPhoto(loading: { try await item.loadTransferable(type: Data.self) })
-                // A newer selection may have arrived while this one loaded.
                 if pickedPhoto == item { pickedPhoto = nil }
             }
         }
@@ -100,7 +93,6 @@ struct CameraControlsBar: View {
     private var photoImportButton: some View {
         PhotosPicker(selection: $pickedPhoto, matching: .images) {
             Image(systemName: "photo.on.rectangle")
-                .foregroundStyle(.primary)
         }
         .buttonStyle(.controlButton)
         .accessibilityLabel("Import photo")
@@ -110,7 +102,6 @@ struct CameraControlsBar: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     let container = DependencyContainer.preview()

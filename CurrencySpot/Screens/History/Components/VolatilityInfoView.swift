@@ -1,17 +1,10 @@
-//
-//  VolatilityInfoView.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Popover explaining the volatility metric and its qualitative levels.
 struct VolatilityInfoView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(alignment: .leading, spacing: .sectionGap) {
-            // Header
+        VStack(alignment: .leading, spacing: Spacing.section) {
             HStack {
                 Text("What is Volatility?")
                     .font(.appHeadline)
@@ -22,7 +15,6 @@ struct VolatilityInfoView: View {
                     dismiss()
                 }) {
                     Image(systemName: "xmark.circle.fill")
-//                        .controlIconStyle()
                         .foregroundStyle(.secondary)
                         .symbolRenderingMode(.hierarchical)
                 }
@@ -30,14 +22,12 @@ struct VolatilityInfoView: View {
                 .accessibilityLabel("Close volatility information")
             }
 
-            // Content
-            VStack(alignment: .leading, spacing: .elementGap) {
+            VStack(alignment: .leading, spacing: Spacing.element) {
                 Text("Volatility measures how much the exchange rate fluctuates over time.")
                     .font(.appSubheadline)
-                    .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                VStack(alignment: .leading, spacing: .tightGap) {
+                VStack(alignment: .leading, spacing: Spacing.tight) {
                     ForEach(VolatilityLevel.allCases, id: \.self) { level in
                         volatilityLevelRow(level)
                     }
@@ -49,15 +39,14 @@ struct VolatilityInfoView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.cardPadding)
+        .padding(Spacing.cardPadding)
         .frame(idealWidth: 320, maxWidth: 400)
-        .background(Color(UIColor.systemBackground))
         .presentationBackground(.regularMaterial)
     }
 
     @ViewBuilder
     private func volatilityLevelRow(_ level: VolatilityLevel) -> some View {
-        HStack(spacing: .tightGap) {
+        HStack(spacing: Spacing.tight) {
             Circle()
                 .fill(level.color)
                 .frame(width: 8, height: 8)
@@ -65,7 +54,6 @@ struct VolatilityInfoView: View {
 
             Text(level.displayName)
                 .font(.appCaption.weight(.medium))
-                .foregroundStyle(.primary)
                 .frame(minWidth: 70, alignment: .leading)
 
             Text(level.rangeDescription)

@@ -1,11 +1,5 @@
-//
-//  AccentColorOption.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Color theme options for the app.
 enum AccentColorOption: String, CaseIterable, Identifiable {
     case pink = "Pink"
     case orange = "Orange"

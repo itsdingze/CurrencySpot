@@ -1,53 +1,39 @@
-//
-//  HistoricalDataAnalysisUseCase.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 7/30/25.
-//
-
 import Foundation
 
 // MARK: - HistoricalDataAnalysisUseCase
 
-/// Use case responsible for historical data analysis business logic
-/// Extracted from HistoryViewModel to separate concerns
 final class HistoricalDataAnalysisUseCase {
     // MARK: - Dependencies
 
-    private let syncStore: HistoricalSyncStore
+    private let syncCoverage: SyncCoverageRepository
     private let dateProvider: DateProvider
     private let logger: LoggerService
 
-    /// - Parameter syncStore: Records the date window already fetched from the API.
-    ///   Wired explicitly by `DependencyContainer`; tests inject an isolated store.
     init(
-        syncStore: HistoricalSyncStore,
+        syncCoverage: SyncCoverageRepository,
         dateProvider: DateProvider = SystemDateProvider(),
         logger: LoggerService = OSLogLoggerService()
     ) {
-        self.syncStore = syncStore
+        self.syncCoverage = syncCoverage
         self.dateProvider = dateProvider
         self.logger = logger
     }
 
     // MARK: - Date Range Calculations
 
-    /// Calculates the date range based on selected time range
     func calculateDateRange(for timeRange: TimeRange) -> DateRange {
         let now = dateProvider.now()
         let calendar = TimeZoneManager.cetCalendar
 
-        // Safe date calculations with fallback
         let endDate = calendar.startOfDay(for: now)
         let rawStartDate = timeRange.startDate(from: now)
         let startDate = calendar.startOfDay(for: rawStartDate)
 
-        return DateRange(start: startDate, end: endDate)
+        return DateRange.spanning(startDate, endDate)
     }
 
     // MARK: - Data Gap Detection
 
-    /// Calculate the missing date ranges given a required range and existing cache
     func calculateMissingDateRanges(
         requiredRange: DateRange,
         cache: CurrencyCache?
@@ -56,24 +42,20 @@ final class HistoricalDataAnalysisUseCase {
               let earliestDate = cache.earliestDate,
               let latestDate = cache.latestDate
         else {
-            return [requiredRange] // No data at all, need everything
+            return [requiredRange]
         }
 
-        // Use cached metadata instead of expensive operations - O(1) instead of O(n log n)
         let calendar = TimeZoneManager.cetCalendar
         let cachedEarliest = calendar.startOfDay(for: earliestDate)
         let cachedLatest = calendar.startOfDay(for: latestDate)
 
         var missingRanges: [DateRange] = []
 
-        // Emit every gap versus the in-memory cache. Whether a gap is actually fetched from the API
-        // is decided later by `shouldFetchGap` (coverage-based), not by ECB calendar guesses — v2 is
-        // multi-source and may publish on any day, so suppressing "weekend" gaps would lose real data.
         if requiredRange.start < cachedEarliest {
             guard let endDate = calendar.date(byAdding: .day, value: -1, to: cachedEarliest) else {
                 throw AppError.dateCalculationError("Could not calculate end date for gap detection. Failed to subtract 1 day from \(cachedEarliest)")
             }
-            missingRanges.append(DateRange(start: requiredRange.start, end: endDate))
+            missingRanges.append(try DateRange.make(start: requiredRange.start, end: endDate))
             logger.warning("Gap BEFORE cache: need \(TimeZoneManager.formatForAPI(requiredRange.start)) to \(TimeZoneManager.formatForAPI(endDate))", category: .useCase)
         }
 
@@ -81,51 +63,38 @@ final class HistoricalDataAnalysisUseCase {
             guard let startDate = calendar.date(byAdding: .day, value: 1, to: cachedLatest) else {
                 throw AppError.dateCalculationError("Could not calculate start date for gap detection. Failed to add 1 day to \(cachedLatest)")
             }
-            missingRanges.append(DateRange(start: startDate, end: requiredRange.end))
+            missingRanges.append(try DateRange.make(start: startDate, end: requiredRange.end))
             logger.warning("Gap AFTER cache: need \(TimeZoneManager.formatForAPI(startDate)) to \(TimeZoneManager.formatForAPI(requiredRange.end))", category: .useCase)
         }
         return missingRanges
     }
 
-    /// Decides whether a gap is worth an API fetch, based on what we've already fetched/checked.
-    ///
-    /// Replaces the old ECB calendar prediction. A gap is worth fetching when it reaches outside the
-    /// covered `[from, through]` window. Inside the window, dates were already checked, so an absent
-    /// rate means v2 has no data — don't refetch — EXCEPT the live edge (today), which is rechecked
-    /// once the freshness window (`RateRefreshPolicy`) lapses so late-arriving data is still caught.
-    func shouldFetchGap(gapStart: Date, gapEnd: Date, now: Date) -> Bool {
+    func shouldFetchGap(_ gap: DateRange, now: Date) -> Bool {
         let calendar = TimeZoneManager.cetCalendar
 
-        guard let from = syncStore.from, let through = syncStore.through else {
-            return true // never synced anything
+        guard let from = syncCoverage.coveredFrom, let through = syncCoverage.coveredThrough else {
+            return true
         }
 
         let from0 = calendar.startOfDay(for: from)
         let through0 = calendar.startOfDay(for: through)
-        let start0 = calendar.startOfDay(for: gapStart)
-        let end0 = calendar.startOfDay(for: gapEnd)
+        let start0 = calendar.startOfDay(for: gap.start)
+        let end0 = calendar.startOfDay(for: gap.end)
 
-        if start0 < from0 { return true } // older than anything fetched → back-fill
-        if end0 > through0 { return true } // newer than anything fetched
+        if start0 < from0 { return true }
+        if end0 > through0 { return true }
 
-        // Fully inside the checked window. Only today's still-moving edge may be rechecked.
         let today0 = calendar.startOfDay(for: now)
         guard end0 == through0, through0 == today0 else { return false }
-        return RateRefreshPolicy.shouldRefetch(now: now, lastFetch: syncStore.checkedAt)
+        return RateRefreshPolicy.shouldRefetch(now: now, lastFetch: syncCoverage.coverageCheckedAt)
     }
 
-    /// Re-claims coverage from persisted row bounds. Persistence grows contiguously
-    /// (every fetched gap anchors at the stored edge), so stored bounds never span
-    /// unchecked dates. Heals a watermark that under-claims after the store's
-    /// contiguity guard dropped a record.
     func repairCoverage(from: Date, through: Date) {
-        syncStore.record(from: from, through: through, at: dateProvider.now())
+        syncCoverage.recordCoverage(from: from, through: through, at: dateProvider.now())
     }
 
-    /// True when the coverage watermark spans the entire range — every day inside it
-    /// was already fetched (or checked and found empty), so persistence is authoritative.
     func isRangeCovered(_ range: DateRange) -> Bool {
-        guard let from = syncStore.from, let through = syncStore.through else { return false }
+        guard let from = syncCoverage.coveredFrom, let through = syncCoverage.coveredThrough else { return false }
         let calendar = TimeZoneManager.cetCalendar
         return calendar.startOfDay(for: from) <= calendar.startOfDay(for: range.start)
             && calendar.startOfDay(for: through) >= calendar.startOfDay(for: range.end)
@@ -133,7 +102,6 @@ final class HistoricalDataAnalysisUseCase {
 
     // MARK: - Data Merging
 
-    /// Merges existing and new historical data, removing duplicates and maintaining sort order
     func mergeHistoricalData(
         existing: [HistoricalRateSnapshot],
         new: [HistoricalRateSnapshot]

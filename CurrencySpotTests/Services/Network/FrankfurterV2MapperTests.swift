@@ -1,8 +1,3 @@
-//
-//  FrankfurterV2MapperTests.swift
-//  CurrencySpotTests
-//
-
 import Foundation
 import Testing
 @testable import CurrencySpot
@@ -59,21 +54,19 @@ struct FrankfurterV2MapperTests {
         let entries = [
             FrankfurterV2Rate(date: "2026-01-02", base: "USD", quote: "EUR", rate: 0.85),
             FrankfurterV2Rate(date: "2026-01-02", base: "USD", quote: "GBP", rate: 0.74),
-            // 2026-01-03: GBP did not publish
             FrankfurterV2Rate(date: "2026-01-03", base: "USD", quote: "EUR", rate: 0.86),
         ]
 
         let response = try FrankfurterV2Mapper.historical(from: entries, base: "USD")
 
         #expect(response.rates["2026-01-03"]?["EUR"] == 0.86)
-        #expect(response.rates["2026-01-03"]?["GBP"] == 0.74) // carried forward from 01-02
+        #expect(response.rates["2026-01-03"]?["GBP"] == 0.74)
     }
 
     @Test("historical does not backfill a currency before its first appearance")
     func historicalDoesNotBackfill() throws {
         let entries = [
             FrankfurterV2Rate(date: "2026-01-02", base: "USD", quote: "EUR", rate: 0.85),
-            // GBP only appears on 01-03
             FrankfurterV2Rate(date: "2026-01-03", base: "USD", quote: "EUR", rate: 0.86),
             FrankfurterV2Rate(date: "2026-01-03", base: "USD", quote: "GBP", rate: 0.74),
         ]
@@ -88,7 +81,7 @@ struct FrankfurterV2MapperTests {
     @Test("latest throws on an invalid currency code")
     func latestThrowsOnBadCode() {
         let entries = [FrankfurterV2Rate(date: "2026-06-07", base: "USD", quote: "eur1", rate: 0.86)]
-        #expect(throws: Error.self) {
+        #expect(throws: AppError.self) {
             _ = try FrankfurterV2Mapper.latest(from: entries, base: "USD")
         }
     }
@@ -96,7 +89,7 @@ struct FrankfurterV2MapperTests {
     @Test("latest throws on non-positive or non-finite rates", arguments: [0.0, -1.5, Double.infinity, Double.nan])
     func latestThrowsOnBadRate(rate: Double) {
         let entries = [FrankfurterV2Rate(date: "2026-06-07", base: "USD", quote: "EUR", rate: rate)]
-        #expect(throws: Error.self) {
+        #expect(throws: AppError.self) {
             _ = try FrankfurterV2Mapper.latest(from: entries, base: "USD")
         }
     }
@@ -104,8 +97,24 @@ struct FrankfurterV2MapperTests {
     @Test("historical throws on an unparseable date")
     func historicalThrowsOnBadDate() {
         let entries = [FrankfurterV2Rate(date: "not-a-date", base: "USD", quote: "EUR", rate: 0.86)]
-        #expect(throws: Error.self) {
+        #expect(throws: AppError.self) {
             _ = try FrankfurterV2Mapper.historical(from: entries, base: "USD")
         }
+    }
+
+    @Test("latest rejects an empty payload instead of synthesizing an empty snapshot")
+    func latestThrowsOnEmptyPayload() {
+        #expect(throws: AppError.self) {
+            _ = try FrankfurterV2Mapper.latest(from: [], base: "USD")
+        }
+    }
+
+    @Test("historical maps an empty payload to an empty response so the caller can record coverage")
+    func historicalAcceptsEmptyPayload() throws {
+        let response = try FrankfurterV2Mapper.historical(from: [], base: "USD")
+
+        #expect(response.rates.isEmpty)
+        #expect(response.startDate.isEmpty)
+        #expect(response.endDate.isEmpty)
     }
 }

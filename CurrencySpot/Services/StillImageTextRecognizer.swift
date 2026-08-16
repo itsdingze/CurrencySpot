@@ -1,14 +1,6 @@
-//
-//  StillImageTextRecognizer.swift
-//  CurrencySpot
-//
-
 import UIKit
 import Vision
 
-/// Still-image counterpart of the live scanner: recognizes text in a frozen
-/// frame or an imported photo. Bounds are in pixel coordinates (origin
-/// top-left) of `imagePixelSize` — the caller maps them into view space.
 nonisolated struct StillRecognitionResult: Equatable, Sendable {
     let items: [RecognizedTextItem]
     let imagePixelSize: CGSize
@@ -16,8 +8,6 @@ nonisolated struct StillRecognitionResult: Equatable, Sendable {
     static let empty = StillRecognitionResult(items: [], imagePixelSize: .zero)
 }
 
-/// `nonisolated` + `@concurrent`: the orientation-normalizing full-photo redraw is
-/// CPU-bound and must stay off the main actor under caller-isolation-by-default.
 nonisolated protocol StillTextRecognitionService: Sendable {
     @concurrent func recognize(_ image: UIImage) async throws -> StillRecognitionResult
 }
@@ -44,8 +34,6 @@ nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
 }
 
 private nonisolated extension UIImage {
-    /// Vision works on the raw CGImage, which ignores EXIF orientation.
-    /// Redraw rotated photos so pixels match what the user sees.
     var orientationNormalized: UIImage {
         guard imageOrientation != .up else { return self }
         return UIGraphicsImageRenderer(size: size).image { _ in

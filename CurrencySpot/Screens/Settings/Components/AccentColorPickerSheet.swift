@@ -53,14 +53,10 @@ struct AccentColorPickerSheet: View {
 
 // MARK: - Color Customization Sheet
 
-struct ColorCustomizationSheet: View {
+private struct ColorCustomizationSheet: View {
     @Binding var selectedColor: AccentColorOption
     @Environment(\.dismiss) private var dismiss
 
-    /// The selection shown while the sheet is open. Taps update only this, so
-    /// each tap stays a purely local change and the swatch animates cleanly; the
-    /// app-global `selectedColor` (which re-tints the whole app) is written once
-    /// on dismiss, in `body`'s `.onDisappear`. nil until the first tap, then leads.
     @State private var displaySelection: AccentColorOption?
 
     private let gridColumns = Array(repeating: GridItem(.flexible()), count: 4)
@@ -70,10 +66,6 @@ struct ColorCustomizationSheet: View {
 
     var body: some View {
         sheetContent
-            // Apply the picked accent once, as the sheet closes (Done or swipe).
-            // Writing it on every tap re-tints the whole app mid-interaction and
-            // snaps the swatch animation; committing on dismiss keeps each tap a
-            // purely local change.
             .onDisappear {
                 if let displaySelection, displaySelection != selectedColor {
                     selectedColor = displaySelection
@@ -134,14 +126,10 @@ struct ColorCustomizationSheet: View {
     // MARK: - Private Methods
 
     private func selectColor(_ colorOption: AccentColorOption) {
-        // Local only — the single `.animation(value: isSelected)` drives the
-        // scale. The app-global accent is committed on dismiss (see body), so a
-        // tap never triggers an app-wide re-tint that would swamp the animation.
         displaySelection = colorOption
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     let container = DependencyContainer.preview()

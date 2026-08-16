@@ -1,10 +1,3 @@
-//
-//  NumberPadView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 2/27/25.
-//
-
 import SwiftUI
 
 private enum NumberPadButton: Identifiable, Equatable {
@@ -83,9 +76,9 @@ struct NumberPadView: View {
     ]
 
     var body: some View {
-        VStack(spacing: .elementGap) {
+        VStack(spacing: Spacing.element) {
             ForEach(buttonLayout.indices, id: \.self) { rowIndex in
-                HStack(spacing: .elementGap) {
+                HStack(spacing: Spacing.element) {
                     ForEach(buttonLayout[rowIndex]) { button in
                         numberPadButton(button)
                     }
@@ -103,25 +96,14 @@ struct NumberPadView: View {
 
     // MARK: - Private Views
 
-    @ViewBuilder
     private func numberPadButton(_ button: NumberPadButton) -> some View {
-        Button(action: { buttonTapped(button) }) {
-            Text(button.label)
-                .font(.appTitle)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .foregroundStyle(button.foregroundColor)
-        .adaptiveGlassBackground(in: Capsule(), isInteractive: true, tint: button.backgroundColor) {
-            Capsule()
-                .fill(button.backgroundColor)
-        }
-        .accessibilityLabel(button.accessibilityLabel)
+        Button(button.label) { buttonTapped(button) }
+            .buttonStyle(.numberPadKey(fill: button.backgroundColor, foreground: button.foregroundColor))
+            .accessibilityLabel(button.accessibilityLabel)
     }
 
     // MARK: - Private Methods
 
-    /// Digit-entry rules live on the ViewModel; the view only triggers the
-    /// haptic matching the outcome.
     private func buttonTapped(_ button: NumberPadButton) {
         switch button {
         case let .number(value):
@@ -140,11 +122,10 @@ struct NumberPadView: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
     NumberPadView()
-        .withDependencyContainer(DependencyContainer.preview())
+        .withDependencyContainer(.preview())
         .frame(height: 400)
         .padding()
 }

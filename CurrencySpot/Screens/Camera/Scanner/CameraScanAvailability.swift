@@ -1,11 +1,5 @@
-//
-//  CameraScanAvailability.swift
-//  CurrencySpot
-//
-
 import VisionKit
 
-/// Gate for the Camera tab. Per the camera plan, unsupported devices hide the tab entirely.
 enum CameraScanAvailability {
     static var isSupported: Bool {
         #if DEBUG && targetEnvironment(simulator)

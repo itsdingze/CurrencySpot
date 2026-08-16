@@ -1,19 +1,11 @@
-//
-//  AcknowledgementsView.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Settings → About → Open Source Licenses: the bundled third-party packages.
-/// Each row pushes to the full, verbatim license text via the shared Settings
-/// navigation stack (destinations registered in `SettingsView`).
 struct AcknowledgementsView: View {
     var body: some View {
         List {
             ForEach(Acknowledgement.bundled) { acknowledgement in
                 NavigationLink(value: acknowledgement) {
-                    VStack(alignment: .leading, spacing: .hairlineGap) {
+                    VStack(alignment: .leading, spacing: Spacing.hairline) {
                         Text(acknowledgement.name)
                             .font(.appHeadline)
 
@@ -31,14 +23,13 @@ struct AcknowledgementsView: View {
     }
 }
 
-/// Full license text for a single package, with a link back to its source.
 struct LicenseDetailView: View {
     let acknowledgement: Acknowledgement
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: .sectionGap) {
-                VStack(alignment: .leading, spacing: .hairlineGap) {
+            VStack(alignment: .leading, spacing: Spacing.section) {
+                VStack(alignment: .leading, spacing: Spacing.hairline) {
                     Text(acknowledgement.copyright)
                         .font(.appSubheadline)
 
@@ -69,14 +60,13 @@ struct LicenseDetailView: View {
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.cardPadding)
+            .padding(Spacing.cardPadding)
         }
         .navigationTitle(acknowledgement.name)
         .toolbarTitleDisplayMode(.inline)
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview("List") {
     NavigationStack {

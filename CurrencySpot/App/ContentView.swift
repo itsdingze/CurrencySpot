@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  CurrencySpot
-//
-//  Created by Dingze Yu on 3/25/25.
-//
-
 import SwiftUI
 
 struct ContentView: View {
@@ -56,7 +49,7 @@ struct ContentView: View {
             settingsViewModel.presentOnboardingIfNeeded()
         }
         .sheet(isPresented: onboardingPresented) {
-            CurrencySpotOnboarding()
+            AppOnboardingView()
                 .onDisappear {
                     settingsViewModel.completeOnboarding()
                 }
@@ -65,8 +58,6 @@ struct ContentView: View {
 
     // MARK: - Presentation Bindings
 
-    /// `currentError` is the single source of truth; system dismissal of the
-    /// alert routes through the handler's `dismiss()`.
     private var errorAlertPresented: Binding<Bool> {
         Binding(
             get: { appState.errorHandler.currentError != nil },
@@ -83,14 +74,11 @@ struct ContentView: View {
     }
 }
 
-// Preview factories are DEBUG-only; #Preview bodies compile in Release too.
 #if DEBUG
 #Preview {
-    @Previewable @State var appState = AppState.shared
     let container = DependencyContainer.preview()
 
     ContentView()
         .withDependencyContainer(container)
-        .environment(appState)
 }
 #endif

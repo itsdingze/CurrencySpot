@@ -1,14 +1,5 @@
-//
-//  RateStatusBanner.swift
-//  CurrencySpot
-//
-
 import SwiftUI
 
-/// Status strip shown above the calculator whenever the displayed rates aren't current
-/// and live: a refresh in progress, offline, a failed refresh, or sample rates. Its
-/// appearance is fully determined by the `RateBanner` it's handed, so it can never
-/// disagree with the load state. Callers render it only when the status isn't `.hidden`.
 struct RateStatusBanner: View {
     var status: RateBanner
     var showsRetry: Bool
@@ -24,9 +15,6 @@ struct RateStatusBanner: View {
 
             Spacer()
 
-            // While a refresh runs, show its spinner. Otherwise offer retry only when the
-            // caller says it's worthwhile — online and the last fetch failed. Offline,
-            // reconnecting refreshes on its own, so there's nothing to retry.
             if status == .updating {
                 ProgressView()
                     .scaleEffect(0.8)
@@ -39,7 +27,6 @@ struct RateStatusBanner: View {
                 .accessibilityLabel("Try loading exchange rates again")
             }
         }
-        .padding(.horizontal, .screenInset)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityText)
         .onAppear {

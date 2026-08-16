@@ -1,10 +1,3 @@
-//
-//  TrendDataUseCaseTests.swift
-//  CurrencySpotTests
-//
-//  Created by Dingze Yu on 8/1/25.
-//
-
 @testable import CurrencySpot
 import Foundation
 import Testing
@@ -13,7 +6,6 @@ import Testing
 struct TrendDataUseCaseTests {
     // MARK: - Test Data Constants
 
-    /// Fixed anchor (Wednesday, midnight CET) so date math never depends on the wall clock.
     private static let fixedNow = createCETDate(year: 2025, month: 1, day: 15)!
     private static let calendar = TimeZoneManager.cetCalendar
 
@@ -23,22 +15,19 @@ struct TrendDataUseCaseTests {
         Trend(currencyCode: "JPY", weeklyChange: 0.05, miniChartData: [110.0, 110.2, 110.1, 110.0, 110.05]),
     ]
 
-    /// Ranges inside the trend window (last 7 days before fixedNow).
     private static let affectingRanges: [DateRange] = [
-        DateRange(start: createCETDate(year: 2025, month: 1, day: 12)!, end: createCETDate(year: 2025, month: 1, day: 13)!),
-        DateRange(start: createCETDate(year: 2025, month: 1, day: 14)!, end: createCETDate(year: 2025, month: 1, day: 15)!),
+        DateRange.spanning(createCETDate(year: 2025, month: 1, day: 12)!, createCETDate(year: 2025, month: 1, day: 13)!),
+        DateRange.spanning(createCETDate(year: 2025, month: 1, day: 14)!, createCETDate(year: 2025, month: 1, day: 15)!),
     ]
 
-    /// Ranges far outside the trend window.
     private static let nonAffectingRanges: [DateRange] = [
-        DateRange(start: createCETDate(year: 2024, month: 11, day: 1)!, end: createCETDate(year: 2024, month: 11, day: 5)!),
+        DateRange.spanning(createCETDate(year: 2024, month: 11, day: 1)!, createCETDate(year: 2024, month: 11, day: 5)!),
     ]
 
     private static func day(_ offset: Int) -> Date {
         calendar.date(byAdding: .day, value: offset, to: fixedNow)!
     }
 
-    /// Historical rows inside the trend window, two days with drifting EUR/GBP rates.
     private static func windowHistoricalData() -> [HistoricalRateSnapshot] {
         [
             HistoricalRateSnapshot(date: day(-6), rates: [
@@ -94,19 +83,17 @@ struct TrendDataUseCaseTests {
 
         #expect(historicalRepository.fetchHistoricalRatesCallCount == 0)
         #expect(trendRepository.saveTrendDataCallCount == 1)
-        #expect(result.count == 2) // EUR and GBP computed from the window data
+        #expect(result.count == 2)
         let eur = try #require(result.first { $0.currencyCode == "EUR" })
-        #expect(abs(eur.weeklyChange - 10.0) < 0.0001) // (1.1 - 1.0) / 1.0 * 100
+        #expect(abs(eur.weeklyChange - 10.0) < 0.0001)
         #expect(eur.miniChartData == [1.0, 1.1])
     }
 
     @Test("When no existing trends and insufficient data, should fetch and calculate from the fetched snapshots")
     func whenNoExistingTrendsAndInsufficientData_shouldFetchThenCalculate() async throws {
         let trendRepository = MockTrendRepository(trends: [])
-        trendRepository.historicalWindowData = [] // insufficient on disk
+        trendRepository.historicalWindowData = []
         let historicalRepository = MockHistoricalRateRepository()
-        // Render-first repository: the fetch RETURNS the window's rows; the deferred save
-        // means a persistence read-back would still be empty here.
         historicalRepository.fetchedDataToReturn = Self.windowHistoricalData()
         let useCase = makeUseCase(trendRepository: trendRepository, historicalRepository: historicalRepository)
 
@@ -114,7 +101,6 @@ struct TrendDataUseCaseTests {
 
         #expect(historicalRepository.fetchHistoricalRatesCallCount == 1)
         #expect(trendRepository.saveTrendDataCallCount == 1)
-        // Trends were computed from the fetched snapshots, not a stale read-back.
         let saved = try #require(trendRepository.lastSavedTrends)
         #expect(saved.count == 2)
         #expect(saved.contains { $0.currencyCode == "EUR" })
@@ -142,7 +128,6 @@ struct TrendDataUseCaseTests {
 
         _ = await useCase.checkAndRecalculateTrendsIfNeeded(for: Self.affectingRanges)
 
-        // The window read must be sequenced behind the deferred chart-fetch save.
         #expect(historicalRepository.waitForPendingWritesCallCount == 1)
         #expect(trendRepository.saveTrendDataCallCount == 1)
     }
@@ -153,7 +138,7 @@ struct TrendDataUseCaseTests {
         trendRepository.shouldThrowOnLoadTrends = true
         let useCase = makeUseCase(trendRepository: trendRepository)
 
-        await #expect(throws: Error.self) {
+        await #expect(throws: AppError.self) {
             _ = try await useCase.initializeTrendData()
         }
     }
@@ -165,7 +150,7 @@ struct TrendDataUseCaseTests {
         trendRepository.shouldThrowOnSave = true
         let useCase = makeUseCase(trendRepository: trendRepository)
 
-        await #expect(throws: Error.self) {
+        await #expect(throws: AppError.self) {
             _ = try await useCase.initializeTrendData()
         }
     }
@@ -177,7 +162,6 @@ struct TrendDataUseCaseTests {
         trendRepository.shouldThrowOnSave = true
         let useCase = makeUseCase(trendRepository: trendRepository)
 
-        // The main load flow must continue with empty trends, not throw.
         let trends = await useCase.checkAndRecalculateTrendsIfNeeded(for: Self.affectingRanges)
 
         #expect(trends.isEmpty)
@@ -188,7 +172,6 @@ struct TrendDataUseCaseTests {
 
     @Test("calculateTrends computes per-currency weekly change and sparkline, sorted by date")
     func calculateTrendsComputesWeeklyChangeAndSparkline() throws {
-        // Deliberately unsorted input rows.
         let rows = [
             HistoricalRateSnapshot(date: Self.day(-1), rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.2)]),
             HistoricalRateSnapshot(date: Self.day(-6), rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.0)]),
@@ -199,7 +182,7 @@ struct TrendDataUseCaseTests {
 
         let eur = try #require(trends.first { $0.currencyCode == "EUR" })
         #expect(eur.miniChartData == [1.0, 1.1, 1.2])
-        #expect(abs(eur.weeklyChange - 20.0) < 0.0001) // (1.2 - 1.0) / 1.0 * 100
+        #expect(abs(eur.weeklyChange - 20.0) < 0.0001)
     }
 
     @Test("calculateTrends skips currencies with fewer than 2 data points")
@@ -253,10 +236,10 @@ struct TrendDataUseCaseTests {
     // MARK: - dateRangeAffectsTrends Tests (pure overlap math)
 
     @Test("dateRangeAffectsTrends detects overlap with the 7-day trend window", arguments: [
-        (-30, -15, false), // old historical data
-        (-3, 0, true), // recent data
-        (-15, -2, true), // spans into the window
-        (1, 2, false), // future data
+        (-30, -15, false),
+        (-3, 0, true),
+        (-15, -2, true),
+        (1, 2, false),
     ])
     func dateRangeAffectsTrendsDetection(startOffset: Int, endOffset: Int, expected: Bool) {
         let useCase = makeUseCase(trendRepository: MockTrendRepository())
@@ -281,7 +264,6 @@ struct TrendDataUseCaseTests {
         let result = await useCase.checkAndRecalculateTrendsIfNeeded(for: Self.affectingRanges)
 
         #expect(trendRepository.saveTrendDataCallCount == 1)
-        // The recalculated trends replace the stored fixture set.
         #expect(result.count == 2)
         #expect(result.contains { $0.currencyCode == "EUR" })
     }
