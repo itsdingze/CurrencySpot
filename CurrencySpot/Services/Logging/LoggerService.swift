@@ -1,7 +1,7 @@
 import Foundation
 import os.log
 
-enum LogCategory: String, Sendable {
+nonisolated enum LogCategory: String, CaseIterable, Sendable {
     case network = "Network"
     case data = "DataCoordinator"
     case cache = "Cache"
@@ -51,10 +51,15 @@ nonisolated extension LoggerService {
 }
 
 nonisolated struct OSLogLoggerService: LoggerService {
-    private static let subsystem = Bundle.main.bundleIdentifier ?? "CurrencySpot"
+    private static let loggers: [LogCategory: Logger] = {
+        let subsystem = Bundle.main.bundleIdentifier ?? "CurrencySpot"
+        return Dictionary(uniqueKeysWithValues: LogCategory.allCases.map {
+            ($0, Logger(subsystem: subsystem, category: $0.rawValue))
+        })
+    }()
 
     func log(_ level: LogLevel, _ message: String, category: LogCategory, isPrivate: Bool) {
-        let logger = Logger(subsystem: Self.subsystem, category: category.rawValue)
+        guard let logger = Self.loggers[category] else { return }
         switch (level, isPrivate) {
         case (.debug, false): logger.debug("\(message, privacy: .public)")
         case (.debug, true): logger.debug("\(message, privacy: .private)")
