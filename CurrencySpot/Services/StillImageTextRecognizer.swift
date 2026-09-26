@@ -36,7 +36,9 @@ nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
 private nonisolated extension UIImage {
     var orientationNormalized: UIImage {
         guard imageOrientation != .up else { return self }
-        return UIGraphicsImageRenderer(size: size).image { _ in
+        let format = UIGraphicsImageRendererFormat.preferred()
+        format.scale = scale
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
             draw(in: CGRect(origin: .zero, size: size))
         }
     }

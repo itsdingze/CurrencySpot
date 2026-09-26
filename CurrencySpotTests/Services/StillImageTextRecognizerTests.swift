@@ -26,13 +26,13 @@ struct StillImageTextRecognizerTests {
         #expect(result.imagePixelSize == CGSize(width: 120, height: 60))
     }
 
-    @Test("an EXIF-rotated image is normalized before recognition")
+    @Test("an EXIF-rotated image is normalized to its upright pixel size, not the screen scale")
     func rotatedImageIsNormalized() async throws {
         let landscapePixels = try solidImage(width: 120, height: 60, orientation: .right)
 
         let result = try await recognizer.recognize(landscapePixels)
 
-        #expect(result.imagePixelSize.width < result.imagePixelSize.height)
+        #expect(result.imagePixelSize == CGSize(width: 60, height: 120))
     }
 
     @Test("recognized text is reported with bounds inside the image")
