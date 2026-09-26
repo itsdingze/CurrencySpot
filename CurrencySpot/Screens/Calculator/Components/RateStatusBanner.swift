@@ -17,7 +17,7 @@ struct RateStatusBanner: View {
 
             if status == .updating {
                 ProgressView()
-                    .scaleEffect(0.8)
+                    .controlSize(.small)
                     .accessibilityLabel("Updating exchange rates")
             } else if showsRetry {
                 Button(action: refreshAction) {

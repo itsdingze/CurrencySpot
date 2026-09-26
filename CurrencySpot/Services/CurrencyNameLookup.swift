@@ -8,13 +8,9 @@ enum CurrencyNameLookup {
             return cachedName
         }
 
-        let name: String
-        if let localName = NSLocale.current.localizedString(forCurrencyCode: code.rawValue) {
-            name = localName
-        } else {
-            let enLocale = NSLocale(localeIdentifier: "en_US")
-            name = enLocale.displayName(forKey: .currencyCode, value: code.rawValue) ?? code.rawValue
-        }
+        let name = Locale.current.localizedString(forCurrencyCode: code.rawValue)
+            ?? Locale(identifier: "en_US").localizedString(forCurrencyCode: code.rawValue)
+            ?? code.rawValue
 
         currencyNameCache[code] = name
         return name
