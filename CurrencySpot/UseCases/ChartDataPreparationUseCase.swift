@@ -95,35 +95,19 @@ final class ChartDataPreparationUseCase {
         var result: [ChartDataPoint] = []
         result.reserveCapacity(maxPoints + 4)
 
-        var minPoint: ChartDataPoint?
-        var maxPoint: ChartDataPoint?
-        var minRate = Double.infinity
-        var maxRate = -Double.infinity
-
         if let first = data.first {
             result.append(first)
-            minPoint = first
-            maxPoint = first
-            minRate = first.rate
-            maxRate = first.rate
         }
 
         for i in stride(from: step, to: Double(data.count), by: step) {
             let index = Int(i.rounded())
             if index < data.count {
-                let point = data[index]
-                result.append(point)
-
-                if point.rate < minRate {
-                    minRate = point.rate
-                    minPoint = point
-                }
-                if point.rate > maxRate {
-                    maxRate = point.rate
-                    maxPoint = point
-                }
+                result.append(data[index])
             }
         }
+
+        let minPoint = data.min { $0.rate < $1.rate }
+        let maxPoint = data.max { $0.rate < $1.rate }
 
         if let min = minPoint, !result.contains(where: { $0.date == min.date }) {
             result.append(min)

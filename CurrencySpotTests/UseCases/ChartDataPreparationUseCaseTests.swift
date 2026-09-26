@@ -297,6 +297,19 @@ struct ChartDataPreparationUseCaseTests {
             #expect(result.count == 1, "Should return single data point")
             #expect(result.first?.date == data.first?.date, "Should return the same point")
         }
+
+        @Test("Keeps the series' true high and low even when they fall between samples")
+        func keepsExtremesBetweenSamples() {
+            let useCase = makeUseCase()
+            var data = createTestChartDataPoints(count: 1000).map { ChartDataPoint(date: $0.date, rate: 1.0) }
+            data[150] = ChartDataPoint(date: data[150].date, rate: 9.0)
+            data[351] = ChartDataPoint(date: data[351].date, rate: 0.1)
+
+            let result = useCase.sampleDataPoints(from: data, maxPoints: 10)
+
+            #expect(result.contains(data[150]))
+            #expect(result.contains(data[351]))
+        }
     }
 
     // MARK: - calculateStatistics Tests

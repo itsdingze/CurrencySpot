@@ -150,6 +150,56 @@ struct HistoryViewModelTests {
         }
     }
 
+    @Test("volatility describes the full daily series, not the downsampled chart line", .timeLimit(.minutes(1)))
+    func volatilityUsesFullSeries() async {
+        let repository = MockHistoricalRateRepository()
+        repository.fetchedDataProvider = { from, to in
+            Self.randomWalk(from: from, to: to, dailyMove: 0.0025)
+        }
+        let analysis = HistoricalDataAnalysisUseCase(syncCoverage: MockHistoricalSyncStore())
+        let viewModel = HistoryViewModel(
+            ratesStore: ExchangeRatesStore(),
+            watchlist: Self.makeWatchlist(),
+            historicalDataAnalysisUseCase: analysis,
+            dataOrchestrationUseCase: DataOrchestrationUseCase(
+                repository: repository,
+                historicalDataAnalysisUseCase: analysis
+            ),
+            chartDataPreparationUseCase: ChartDataPreparationUseCase(chartCache: InMemoryChartDataCache()),
+            trendDataUseCase: TrendDataUseCase(
+                trendRepository: MockTrendRepository(),
+                historicalRateRepository: repository
+            ),
+            preferences: InMemoryPreferencesStore(),
+            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
+            clock: ImmediateClock()
+        )
+
+        viewModel.selectTimeRange(.oneYear)
+        await waitUntil {
+            if case let .loaded(points) = viewModel.chartData { return !points.isEmpty }
+            return false
+        }
+
+        #expect(viewModel.volatilityLevel == .veryLow)
+    }
+
+    private static func randomWalk(from: Date, to: Date, dailyMove: Double) -> [HistoricalRateSnapshot] {
+        let calendar = TimeZoneManager.cetCalendar
+        var state: UInt64 = 42
+        var rate = 1.0
+        var day = calendar.startOfDay(for: from)
+        var snapshots: [HistoricalRateSnapshot] = []
+        while day <= to {
+            snapshots.append(HistoricalRateSnapshot(date: day, rates: [HistoricalRatePoint(currencyCode: "EUR", rate: rate)]))
+            state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+            rate *= (state >> 33) & 1 == 0 ? 1 + dailyMove : 1 - dailyMove
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+        return snapshots
+    }
+
     @Test("prefetchHistoricalWindow warms a today-anchored 1-year window without touching chart state")
     func prefetchWarmsSharedSeriesSilently() async throws {
         let repository = MockHistoricalRateRepository()

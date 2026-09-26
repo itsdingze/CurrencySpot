@@ -9,9 +9,7 @@ final class HistoryViewModel {
 
     private(set) var chartData: Loadable<[ChartDataPoint]> = .idle
 
-    var displayedChartDataPoints: [ChartDataPoint] {
-        chartData.value ?? []
-    }
+    private(set) var displayedChartDataPoints: [ChartDataPoint] = []
 
     private(set) var chartStatistics: ChartStatistics
 
@@ -381,7 +379,9 @@ final class HistoryViewModel {
         if case .loaded = newState {
             chartSeriesID = ChartSeriesID(currency: targetCurrency, range: selectedTimeRange)
         }
-        chartStatistics = chartDataPreparationUseCase.calculateStatistics(from: newState.value ?? [])
+        let series = newState.value ?? []
+        displayedChartDataPoints = chartDataPreparationUseCase.sampleDataPoints(from: series)
+        chartStatistics = chartDataPreparationUseCase.calculateStatistics(from: series)
 
         if wasLoading != newState.isLoading {
             loadingPhaseChanged(isLoading: newState.isLoading)
@@ -505,12 +505,11 @@ final class HistoryViewModel {
             exchangeRates: ratesStore.rates
         )
 
-        guard !fullDataPoints.isEmpty else {
+        if fullDataPoints.isEmpty {
             logger.warning("No valid chart data points after processing", category: .viewModel)
-            return []
         }
 
-        return chartDataPreparationUseCase.sampleDataPoints(from: fullDataPoints)
+        return fullDataPoints
     }
 
 }
