@@ -127,6 +127,13 @@ final class TrendDataUseCase {
 
     // MARK: - Cross-Currency Adjustment
 
+    func adjustedTrends(baseCurrency: CurrencyCode, in trendData: [Trend]) -> [CurrencyCode: Trend] {
+        let codes = Set(trendData.map(\.currencyCode)).union([.usd])
+        return codes.reduce(into: [:]) { adjusted, code in
+            adjusted[code] = adjustedTrend(for: code, baseCurrency: baseCurrency, in: trendData)
+        }
+    }
+
     func adjustedTrend(
         for currencyCode: CurrencyCode,
         baseCurrency: CurrencyCode,

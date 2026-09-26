@@ -20,7 +20,9 @@ final class HistoryViewModel {
 
     // MARK: - Configuration Properties
 
-    private(set) var baseCurrency = CurrencyCode.usd
+    private(set) var baseCurrency = CurrencyCode.usd {
+        didSet { refreshAdjustedTrends() }
+    }
 
     private(set) var targetCurrency = CurrencyCode.eur
 
@@ -71,8 +73,13 @@ final class HistoryViewModel {
     // MARK: - Trend Data Storage
 
     private(set) var trendData: [Trend] = [] {
-        didSet { updateDisplayedCurrencies() }
+        didSet {
+            refreshAdjustedTrends()
+            updateDisplayedCurrencies()
+        }
     }
+
+    private var adjustedTrends: [CurrencyCode: Trend] = [:]
 
     // MARK: - Dependencies
 
@@ -463,7 +470,11 @@ final class HistoryViewModel {
     }
 
     func getTrendData(for currencyCode: CurrencyCode) -> Trend? {
-        trendDataUseCase.adjustedTrend(for: currencyCode, baseCurrency: baseCurrency, in: trendData)
+        adjustedTrends[currencyCode]
+    }
+
+    private func refreshAdjustedTrends() {
+        adjustedTrends = trendDataUseCase.adjustedTrends(baseCurrency: baseCurrency, in: trendData)
     }
 
     // MARK: - Date Range Calculations

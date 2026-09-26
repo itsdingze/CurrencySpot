@@ -227,6 +227,23 @@ struct TrendDataUseCaseTests {
         }
     }
 
+    @Test("adjustedTrends re-bases every currency, and derives USD from the base's own trend")
+    func adjustedTrendsRebaseEveryCurrency() throws {
+        let useCase = makeUseCase(trendRepository: MockTrendRepository())
+        let trends = [
+            Trend(currencyCode: "EUR", weeklyChange: 10, miniChartData: [1.0, 1.1]),
+            Trend(currencyCode: "GBP", weeklyChange: 10, miniChartData: [0.5, 0.55]),
+        ]
+
+        let adjusted = useCase.adjustedTrends(baseCurrency: "EUR", in: trends)
+
+        #expect(Set(adjusted.keys) == ["EUR", "GBP", "USD"])
+        let gbp = try #require(adjusted["GBP"])
+        #expect(abs(gbp.weeklyChange) < 1e-9)
+        let usd = try #require(adjusted["USD"])
+        #expect(usd.weeklyChange < 0)
+    }
+
     @Test("When trend data array is empty, should return nil")
     func whenTrendDataArrayIsEmpty_shouldReturnNil() {
         let useCase = makeUseCase(trendRepository: MockTrendRepository())
