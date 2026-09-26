@@ -47,14 +47,16 @@ nonisolated enum FrankfurterV2Mapper {
     }
 
     private static func validate(_ entries: [FrankfurterV2Rate]) throws {
+        var validDates = Set<String>()
         for entry in entries {
             _ = try CurrencyCode(validating: entry.quote)
             guard entry.rate.isFinite, entry.rate > 0 else {
                 throw AppError.dataValidationError("Invalid rate \(entry.rate) for \(entry.quote)")
             }
-            guard TimeZoneManager.parseAPIDate(entry.date) != nil else {
+            guard validDates.contains(entry.date) || TimeZoneManager.parseAPIDate(entry.date) != nil else {
                 throw AppError.dataValidationError("Unparseable date '\(entry.date)' for \(entry.quote)")
             }
+            validDates.insert(entry.date)
         }
     }
 }
