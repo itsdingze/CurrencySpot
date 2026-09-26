@@ -538,6 +538,23 @@ struct CameraViewModelTests {
         #expect(viewModel.frozenImage != nil)
     }
 
+    @Test func importedEXIFRotatedPhotoFreezesUpright() async throws {
+        let viewModel = Self.makeScanningViewModel()
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let landscapePixels = UIGraphicsImageRenderer(size: CGSize(width: 120, height: 60), format: format).image { context in
+            UIColor.gray.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 120, height: 60))
+        }
+        let cgImage = try #require(landscapePixels.cgImage)
+        let portraitPhoto = try #require(UIImage(cgImage: cgImage, scale: 1, orientation: .right).jpegData(compressionQuality: 1))
+
+        await viewModel.importPhoto(loading: { portraitPhoto })
+
+        let frozen = try #require(viewModel.frozenImage)
+        #expect(frozen.size.width < frozen.size.height)
+    }
+
     @Test func importPhotoWithNoDataSurfacesImportError() async {
         let appState = AppState()
         let viewModel = Self.makeScanningViewModel(appState: appState)

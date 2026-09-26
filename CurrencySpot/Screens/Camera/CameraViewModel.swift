@@ -131,8 +131,9 @@ final class CameraViewModel {
             guard let data = try await load(), let image = UIImage(data: data) else {
                 throw AppError.photoImportFailed
             }
+            let decoded = await image.byPreparingForDisplay() ?? image
             guard request == freezeRequestID else { return }
-            freeze(with: image)
+            freeze(with: decoded)
         } catch is CancellationError {
         } catch {
             guard request == freezeRequestID else { return }
