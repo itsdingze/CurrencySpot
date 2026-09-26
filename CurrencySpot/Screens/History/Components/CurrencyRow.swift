@@ -26,7 +26,7 @@ struct CurrencyRow: View {
             Spacer()
 
             ZStack(alignment: .trailing) {
-                metrics(trendData)
+                metrics(trendData, drawsChart: false)
                     .frame(width: 0)
                     .clipped()
                     .hidden()
@@ -49,11 +49,16 @@ struct CurrencyRow: View {
     }
 
     @ViewBuilder
-    private func metrics(_ trendData: Trend?) -> some View {
+    private func metrics(_ trendData: Trend?, drawsChart: Bool = true) -> some View {
         HStack(spacing: Spacing.element) {
             if showsTrendChart, let trend = trendData {
-                MiniChart(trend: trend)
-                    .accessibilityHidden(true)
+                if drawsChart {
+                    MiniChart(trend: trend)
+                        .accessibilityHidden(true)
+                } else {
+                    Color.clear
+                        .frame(width: MiniChart.size.width, height: MiniChart.size.height)
+                }
             }
 
             VStack(alignment: .trailing, spacing: Spacing.hairline) {

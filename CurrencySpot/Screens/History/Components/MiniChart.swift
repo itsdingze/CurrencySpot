@@ -6,8 +6,7 @@ struct MiniChart: View {
 
     private let data: [Double]
     private let direction: TrendDirection
-    private let chartWidth: CGFloat = 80
-    private let chartHeight: CGFloat = 48
+    static let size = CGSize(width: 80, height: 48)
     private let endpointSize: CGFloat = 6
     private let innerPointSize: CGFloat = 4
     private let lineWidth: CGFloat = 1.5
@@ -45,7 +44,7 @@ struct MiniChart: View {
         .chartYAxis(.hidden)
         .chartLegend(.hidden)
         .chartYScale(domain: chartYDomain)
-        .frame(width: chartWidth, height: chartHeight)
+        .frame(width: Self.size.width, height: Self.size.height)
     }
 
     // MARK: - Private Chart Content
