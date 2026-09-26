@@ -13,16 +13,12 @@ nonisolated final class HistoricalRateData {
     }
 }
 
+private nonisolated let ratesEncoder = JSONEncoder()
+private nonisolated let ratesDecoder = JSONDecoder()
+
 nonisolated extension HistoricalRateData {
     convenience init(date: Date, rates: [String: Double]) throws {
-        self.init(date: date, ratesData: try JSONEncoder().encode(rates))
-    }
-
-    convenience init(dateString: String, rates: [String: Double]) throws {
-        guard let date = TimeZoneManager.parseAPIDate(dateString) else {
-            throw AppError.dataValidationError("Invalid date string: \(dateString)")
-        }
-        try self.init(date: date, rates: rates)
+        self.init(date: date, ratesData: try ratesEncoder.encode(rates))
     }
 }
 
@@ -30,7 +26,7 @@ nonisolated extension HistoricalRateData {
 
 nonisolated extension HistoricalRateData {
     func toDomain() throws -> HistoricalRateSnapshot {
-        let rates = try JSONDecoder().decode([String: Double].self, from: ratesData)
+        let rates = try ratesDecoder.decode([String: Double].self, from: ratesData)
         return HistoricalRateSnapshot(
             date: date,
             rates: try rates.map {

@@ -1,6 +1,9 @@
 import Foundation
 import SwiftData
 
+private nonisolated let miniChartEncoder = JSONEncoder()
+private nonisolated let miniChartDecoder = JSONDecoder()
+
 @Model
 nonisolated final class TrendData {
     @Attribute(.unique) var currencyCode: String
@@ -12,20 +15,20 @@ nonisolated final class TrendData {
     var miniChartData: [Double] {
         get {
             guard !miniChartDataStorage.isEmpty,
-                  let decoded = try? JSONDecoder().decode([Double].self, from: miniChartDataStorage) else {
+                  let decoded = try? miniChartDecoder.decode([Double].self, from: miniChartDataStorage) else {
                 return []
             }
             return decoded
         }
         set {
-            miniChartDataStorage = (try? JSONEncoder().encode(newValue)) ?? Data()
+            miniChartDataStorage = (try? miniChartEncoder.encode(newValue)) ?? Data()
         }
     }
 
     init(currencyCode: String, weeklyChange: Double, miniChartData: [Double]) {
         self.currencyCode = currencyCode
         self.weeklyChange = weeklyChange
-        self.miniChartDataStorage = (try? JSONEncoder().encode(miniChartData)) ?? Data()
+        self.miniChartDataStorage = (try? miniChartEncoder.encode(miniChartData)) ?? Data()
     }
 }
 

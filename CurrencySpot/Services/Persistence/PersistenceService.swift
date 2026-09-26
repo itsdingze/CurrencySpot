@@ -79,20 +79,28 @@ actor SwiftDataPersistenceService: PersistenceService {
         guard !rates.isEmpty else { return }
 
         try modelContext.transaction {
-            let incomingDates = rates.keys.compactMap(TimeZoneManager.parseAPIDate)
-            guard let windowStart = incomingDates.min(), let windowEnd = incomingDates.max() else { return }
-            let descriptor = FetchDescriptor<HistoricalRateData>(
+            var incoming: [Date: [String: Double]] = [:]
+            for (dateString, currencyRates) in rates {
+                guard let date = TimeZoneManager.parseAPIDate(dateString) else {
+                    logger.warning("Skipping invalid date: \(dateString)", category: .persistence)
+                    continue
+                }
+                incoming[date] = currencyRates
+            }
+            guard let windowStart = incoming.keys.min(), let windowEnd = incoming.keys.max() else { return }
+            var descriptor = FetchDescriptor<HistoricalRateData>(
                 predicate: #Predicate { $0.date >= windowStart && $0.date <= windowEnd }
             )
-            let existingDates = Set(try modelContext.fetch(descriptor).map { TimeZoneManager.formatForAPI($0.date) })
+            descriptor.propertiesToFetch = [\.date]
+            let existingDates = Set(try modelContext.fetch(descriptor).map(\.date))
 
-            for (date, currencyRates) in rates where !existingDates.contains(date) {
+            for (date, currencyRates) in incoming where !existingDates.contains(date) {
                 guard !currencyRates.isEmpty else { continue }
 
                 do {
-                    modelContext.insert(try HistoricalRateData(dateString: date, rates: currencyRates))
+                    modelContext.insert(try HistoricalRateData(date: date, rates: currencyRates))
                 } catch {
-                    logger.warning("Skipping invalid date: \(date) - \(error)", category: .persistence)
+                    logger.warning("Skipping unencodable rates for \(TimeZoneManager.formatForAPI(date)) - \(error)", category: .persistence)
                     continue
                 }
             }

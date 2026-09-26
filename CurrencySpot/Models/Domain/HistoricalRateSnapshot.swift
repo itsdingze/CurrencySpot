@@ -29,13 +29,14 @@ nonisolated struct HistoricalRateSnapshot: Identifiable, Equatable, Sendable {
 
 nonisolated extension HistoricalRateSnapshot {
     static func merge(existing: [HistoricalRateSnapshot], new: [HistoricalRateSnapshot]) -> [HistoricalRateSnapshot] {
-        var byDate: [String: HistoricalRateSnapshot] = [:]
+        let calendar = TimeZoneManager.cetCalendar
+        var byDay: [Date: HistoricalRateSnapshot] = [:]
         for item in existing {
-            byDate[TimeZoneManager.formatForAPI(item.date)] = item
+            byDay[calendar.startOfDay(for: item.date)] = item
         }
         for item in new {
-            byDate[TimeZoneManager.formatForAPI(item.date)] = item
+            byDay[calendar.startOfDay(for: item.date)] = item
         }
-        return byDate.values.sorted { $0.date < $1.date }
+        return byDay.values.sorted { $0.date < $1.date }
     }
 }

@@ -72,7 +72,7 @@ struct DataMigrationTests {
         defaults.set(true, forKey: "DidMigrateToFrankfurterV2")
 
         let context = container.mainContext
-        context.insert(try HistoricalRateData(dateString: "2025-03-15", rates: ["EUR": 1.21]))
+        context.insert(try HistoricalRateData(date: #require(TimeZoneManager.parseAPIDate("2025-03-15")), rates: ["EUR": 1.21]))
         try context.save()
         let store = UserDefaultsHistoricalSyncStore(defaults: defaults)
         store.record(
@@ -86,7 +86,7 @@ struct DataMigrationTests {
         #expect(try context.fetch(FetchDescriptor<HistoricalRateData>()).isEmpty)
         #expect(store.from == nil)
 
-        context.insert(try HistoricalRateData(dateString: "2025-03-16", rates: ["EUR": 1.22]))
+        context.insert(try HistoricalRateData(date: #require(TimeZoneManager.parseAPIDate("2025-03-16")), rates: ["EUR": 1.22]))
         try context.save()
         DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
         #expect(try context.fetch(FetchDescriptor<HistoricalRateData>()).count == 1)

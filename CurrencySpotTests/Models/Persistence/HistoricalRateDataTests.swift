@@ -31,23 +31,10 @@ struct HistoricalRateDataTests {
         assertIsMarch15CET(validValue.date)
     }
 
-    @Test("SwiftData model rejects invalid dates and parses valid ones")
-    func swiftDataModelHandlesInvalidDates() throws {
-        let error = try #require(throws: AppError.self) {
-            try HistoricalRateData(dateString: "invalid-date", rates: ["EUR": 1.21])
-        }
-        guard case .dataValidationError = error else {
-            Issue.record("Expected .dataValidationError, got \(error)")
-            return
-        }
-
-        let validData = try HistoricalRateData(dateString: "2025-03-15", rates: ["EUR": 1.21])
-        assertIsMarch15CET(validData.date)
-    }
-
     @Test("rates round-trip through the blob into validated domain points")
     func blobRoundTripsToDomain() throws {
-        let model = try HistoricalRateData(dateString: "2025-03-15", rates: ["EUR": 1.21, "GBP": 0.85])
+        let date = try #require(TimeZoneManager.parseAPIDate("2025-03-15"))
+        let model = try HistoricalRateData(date: date, rates: ["EUR": 1.21, "GBP": 0.85])
 
         let snapshot = try model.toDomain()
 

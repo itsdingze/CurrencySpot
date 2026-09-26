@@ -185,7 +185,7 @@ struct DataCoordinatorRatesTests {
     func corruptBlobRowIsPurgedAndRepairable() async throws {
         let context = container.mainContext
         context.insert(HistoricalRateData(date: try #require(TimeZoneManager.parseAPIDate("2025-03-15")), ratesData: Data("garbage".utf8)))
-        context.insert(try HistoricalRateData(dateString: "2025-03-16", rates: ["EUR": 1.22]))
+        context.insert(try HistoricalRateData(date: #require(TimeZoneManager.parseAPIDate("2025-03-16")), rates: ["EUR": 1.22]))
         try context.save()
 
         await #expect(throws: (any Error).self) {
@@ -202,6 +202,23 @@ struct DataCoordinatorRatesTests {
             to: try #require(TimeZoneManager.parseAPIDate("2025-03-16"))
         )
         #expect(reloaded.count == 2)
+    }
+
+    @Test("re-saving a stored day keeps the stored row and still adds the new days")
+    func resaveKeepsStoredDayAndAddsNewOnes() async throws {
+        try await persistence.saveHistoricalExchangeRates(["2025-03-15": ["EUR": 1.21]])
+        try await persistence.saveHistoricalExchangeRates([
+            "2025-03-15": ["EUR": 9.99],
+            "2025-03-16": ["EUR": 1.22],
+        ])
+
+        let stored = try await persistence.loadHistoricalRates(
+            from: try #require(TimeZoneManager.parseAPIDate("2025-03-15")),
+            to: try #require(TimeZoneManager.parseAPIDate("2025-03-16"))
+        )
+
+        #expect(stored.count == 2)
+        #expect(stored.first?.rates == [HistoricalRatePoint(currencyCode: "EUR", rate: 1.21)])
     }
 
     @Test("Save and load current exchange rates")
