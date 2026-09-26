@@ -18,7 +18,6 @@ extension ModelContainer {
 
 // MARK: - DependencyContainer
 
-@Observable
 final class DependencyContainer {
     // MARK: - Core Services
 
