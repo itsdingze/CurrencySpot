@@ -92,7 +92,7 @@ nonisolated enum NetworkRequestRunner {
 
         if let httpResponse = response as? HTTPURLResponse {
             guard (200 ... 299).contains(httpResponse.statusCode) else {
-                throw AppError.apiError("HTTP Error: \(httpResponse.statusCode)")
+                throw AppError.httpError(statusCode: httpResponse.statusCode)
             }
         }
 

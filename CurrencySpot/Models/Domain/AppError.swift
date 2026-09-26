@@ -5,7 +5,7 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
     case noInternetConnection
     case noCachedData
     case decodingError(String)
-    case apiError(String)
+    case httpError(statusCode: Int)
     case dateCalculationError(String)
     case unknownError(String)
     case dataValidationError(String)
@@ -27,7 +27,7 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
         case .noInternetConnection: "noInternet"
         case .noCachedData: "noCache"
         case .decodingError: "decoding"
-        case .apiError: "api"
+        case .httpError: "http"
         case .dateCalculationError: "dateCalculation"
         case .unknownError: "unknown"
         case .dataValidationError: "dataValidation"
@@ -43,7 +43,6 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
         switch self {
         case let .networkError(message),
              let .decodingError(message),
-             let .apiError(message),
              let .dateCalculationError(message),
              let .unknownError(message),
              let .dataValidationError(message),
@@ -51,6 +50,8 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
             message
         case let .retryExhausted(message, attempts):
             "\(message)-\(attempts)"
+        case let .httpError(statusCode):
+            "\(statusCode)"
         case .noInternetConnection, .noCachedData, .cameraCaptureFailed, .photoImportFailed,
              .textRecognitionFailed:
             "static"
@@ -63,7 +64,7 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
         case .noInternetConnection: "No Internet Connection"
         case .noCachedData: "No Cached Data"
         case .decodingError: "Data Error"
-        case .apiError: "API Error"
+        case .httpError: "API Error"
         case .dateCalculationError: "Date Processing Error"
         case .unknownError: "Error"
         case .dataValidationError: "Data Validation Error"
@@ -85,8 +86,8 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
             "No exchange rate data available. Connect to the internet to get the latest rates."
         case let .decodingError(message):
             "Error decoding data: \(message)"
-        case let .apiError(message):
-            "\(message)"
+        case let .httpError(statusCode):
+            "HTTP Error: \(statusCode)"
         case let .dateCalculationError(message):
             "Error calculating date range for historical data: \(message)"
         case let .unknownError(message):

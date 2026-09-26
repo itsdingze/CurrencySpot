@@ -30,6 +30,15 @@ struct RetryManagerTests {
         #expect(snapshot.canRetry)
     }
 
+    @Test("server errors are retried, client errors are not", arguments: [
+        (500, true), (503, true), (599, true), (400, false), (404, false), (429, false),
+    ])
+    func retriesOnlyServerErrors(statusCode: Int, isRetryable: Bool) {
+        let manager = RetryManager()
+
+        #expect(manager.shouldRetry(error: AppError.httpError(statusCode: statusCode)) == isRetryable)
+    }
+
     @Test("a success opens a fresh retry ladder instead of freezing the endpoint")
     func retriesResumeAfterSuccess() async {
         let manager = RetryManager(jitter: { _ in 1.0 })

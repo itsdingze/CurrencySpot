@@ -98,14 +98,31 @@ struct FrankfurterAPITests {
         #expect(response.rates.count == 3)
     }
 
-    @Test("a non-2xx response maps to AppError.apiError with the status code")
-    func httpErrorMapsToAPIError() async {
+    @Test("a quoted range request narrows the endpoint to the requested currencies")
+    func quotedRangeEndpoint() async throws {
+        let startDate = try #require(createCETDate(year: 2025, month: 4, day: 1))
+        let endDate = try #require(createCETDate(year: 2025, month: 4, day: 2))
+        StubURLProtocol.register(
+            .init(statusCode: 200, data: Self.v2JSON([
+                (date: "2025-04-01", quote: "EUR", rate: 0.90),
+                (date: "2025-04-01", quote: "JPY", rate: 150.0),
+            ])),
+            for: "https://api.frankfurter.dev/v2/rates?base=USD&from=2025-04-01&to=2025-04-02&quotes=EUR,JPY"
+        )
+
+        let response = try await api.fetchHistoricalRatesForRange(startDate: startDate, endDate: endDate, quotes: ["EUR", "JPY"])
+
+        #expect(response.rates["2025-04-01"] == ["EUR": 0.90, "JPY": 150.0])
+    }
+
+    @Test("a non-2xx response maps to AppError.httpError with the status code")
+    func httpErrorMapsToAppError() async {
         StubURLProtocol.register(
             .init(statusCode: 404, data: Data()),
             for: "https://api.frankfurter.dev/v2/rates?base=NOK"
         )
 
-        await #expect(throws: AppError.apiError("HTTP Error: 404")) {
+        await #expect(throws: AppError.httpError(statusCode: 404)) {
             _ = try await api.fetchExchangeRates(baseCurrency: "NOK")
         }
     }

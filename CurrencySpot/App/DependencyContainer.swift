@@ -80,7 +80,7 @@ final class DependencyContainer {
         self.modelContainer = resolvedModelContainer
         self.appState = appState
         self.networkService = networkService ?? FrankfurterNetworkService(
-            api: FrankfurterAPI(retryManager: retryManager, dateProvider: dateProvider),
+            api: FrankfurterAPI(retryManager: retryManager),
             userDefaults: userDefaults,
             dateProvider: dateProvider
         )

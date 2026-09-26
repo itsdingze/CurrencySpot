@@ -15,10 +15,8 @@ private nonisolated struct RetryConfiguration {
 }
 
 private nonisolated enum InternalRetryState {
-    case initial
     case retrying(attempt: Int, nextDelay: TimeInterval)
     case exhausted
-    case succeeded
 }
 
 actor RetryManager {
@@ -60,8 +58,6 @@ actor RetryManager {
         guard let state = retryStates[endpoint] else { return true }
 
         switch state {
-        case .initial, .succeeded:
-            return true
         case let .retrying(attempt, _):
             return attempt < configuration.maxAttempts
         case .exhausted:
@@ -70,14 +66,13 @@ actor RetryManager {
     }
 
     func recordAttempt(for endpoint: String) -> (attempt: Int, delay: TimeInterval)? {
-        let currentState = retryStates[endpoint] ?? .initial
-
-        switch currentState {
-        case .initial, .succeeded:
+        guard let currentState = retryStates[endpoint] else {
             let delay = calculateDelay(for: 0)
             retryStates[endpoint] = .retrying(attempt: 1, nextDelay: delay)
             return (attempt: 1, delay: delay)
+        }
 
+        switch currentState {
         case let .retrying(attempt, _):
             if attempt >= configuration.maxAttempts {
                 retryStates[endpoint] = .exhausted
@@ -95,15 +90,13 @@ actor RetryManager {
     }
 
     func recordSuccess(for endpoint: String) {
-        retryStates[endpoint] = .succeeded
+        retryStates[endpoint] = nil
     }
 
     func getCurrentAttempt(for endpoint: String) -> Int {
         guard let state = retryStates[endpoint] else { return 0 }
 
         switch state {
-        case .initial, .succeeded:
-            return 0
         case let .retrying(attempt, _):
             return attempt
         case .exhausted:
@@ -116,7 +109,7 @@ actor RetryManager {
     }
 
     func reset(for endpoint: String) {
-        retryStates[endpoint] = .initial
+        retryStates[endpoint] = nil
     }
 
     // MARK: - Private Methods
@@ -135,26 +128,10 @@ actor RetryManager {
         switch error {
         case .networkError, .noInternetConnection:
             true
-        case let .apiError(message):
-            extractHTTPStatusCode(from: message)
-                .map { isRetryableHTTPStatus($0) } ?? false
+        case let .httpError(statusCode):
+            (500 ... 599).contains(statusCode)
         default:
             false
         }
-    }
-
-    private static func extractHTTPStatusCode(from message: String) -> Int? {
-        let pattern = #"HTTP Error: (\d{3})"#
-        guard let regex = try? NSRegularExpression(pattern: pattern),
-              let match = regex.firstMatch(in: message, range: NSRange(message.startIndex..., in: message)),
-              let statusCodeRange = Range(match.range(at: 1), in: message)
-        else {
-            return nil
-        }
-        return Int(message[statusCodeRange])
-    }
-
-    private static func isRetryableHTTPStatus(_ statusCode: Int) -> Bool {
-        (500 ... 599).contains(statusCode)
     }
 }
