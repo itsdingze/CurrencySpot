@@ -34,6 +34,10 @@ struct CurrencyChart: View {
         }
     }
 
+    private var yAxisSpan: Double {
+        statistics.chartYDomain.upperBound - statistics.chartYDomain.lowerBound
+    }
+
     private struct SeriesPoint: Identifiable {
         struct ID: Hashable {
             let series: CurrencyHistoryViewModel.ChartSeriesID
@@ -149,7 +153,7 @@ struct CurrencyChart: View {
                 }
             } else {
                 AxisMarks {
-                    AxisValueLabel(format: viewModel.selectedTimeRange.chartAxisDateFormat)
+                    AxisValueLabel(format: viewModel.selectedTimeRange.chartAxisDateFormat, collisionResolution: .greedy)
                 }
             }
         }
@@ -159,7 +163,7 @@ struct CurrencyChart: View {
                 AxisTick()
                 AxisValueLabel {
                     if let doubleValue = value.as(Double.self) {
-                        Text(doubleValue.toStringMax2Decimals)
+                        Text(doubleValue.axisLabel(across: yAxisSpan))
                             .fontDesign(.rounded)
                     }
                 }
