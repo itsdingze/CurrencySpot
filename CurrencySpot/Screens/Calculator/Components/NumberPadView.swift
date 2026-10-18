@@ -77,6 +77,7 @@ struct NumberPadView: View {
     @State private var maxLengthReached = false
     @State private var clearPressed = false
     @State private var deletePressed = false
+    @State private var pressOrder: [NumberPadButton.ID] = []
 
     private let buttonLayout: [[NumberPadButton]] = [
         [.number("7"), .number("8"), .number("9")],
@@ -86,11 +87,12 @@ struct NumberPadView: View {
     ]
 
     var body: some View {
-        VStack(spacing: Spacing.element) {
+        Grid(horizontalSpacing: Spacing.element, verticalSpacing: Spacing.element) {
             ForEach(buttonLayout.indices, id: \.self) { rowIndex in
-                HStack(spacing: Spacing.element) {
+                GridRow {
                     ForEach(buttonLayout[rowIndex]) { button in
                         numberPadButton(button)
+                            .zIndex(zIndex(of: button))
                     }
                 }
             }
@@ -108,12 +110,23 @@ struct NumberPadView: View {
 
     private func numberPadButton(_ button: NumberPadButton) -> some View {
         Button(button.label) { buttonTapped(button) }
-            .buttonStyle(.numberPadKey(fill: button.backgroundColor(accent: accent), foreground: button.foregroundColor))
+            .buttonStyle(.numberPadKey(fill: button.backgroundColor(accent: accent), foreground: button.foregroundColor) {
+                bringToFront(button)
+            })
             .accessibilityLabel(button.accessibilityLabel)
             .accessibilityInputLabels(button.accessibilityInputLabels)
     }
 
     // MARK: - Private Methods
+
+    private func zIndex(of button: NumberPadButton) -> Double {
+        pressOrder.firstIndex(of: button.id).map { Double($0 + 1) } ?? 0
+    }
+
+    private func bringToFront(_ button: NumberPadButton) {
+        pressOrder.removeAll { $0 == button.id }
+        pressOrder.append(button.id)
+    }
 
     private func buttonTapped(_ button: NumberPadButton) {
         switch button {

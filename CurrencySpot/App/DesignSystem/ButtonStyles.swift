@@ -69,6 +69,7 @@ private struct ControlButtonChrome<Label: View>: View {
 struct NumberPadKeyButtonStyle: ButtonStyle {
     let fill: Color
     let foreground: Color
+    let onPress: () -> Void
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -80,12 +81,19 @@ struct NumberPadKeyButtonStyle: ButtonStyle {
             }
             .contentShape(.rect)
             .opacity(configuration.isPressed ? pressedOpacity : 1)
+            .onChange(of: configuration.isPressed) { _, isPressed in
+                if isPressed { onPress() }
+            }
     }
 }
 
 extension ButtonStyle where Self == NumberPadKeyButtonStyle {
-    static func numberPadKey(fill: Color, foreground: Color) -> NumberPadKeyButtonStyle {
-        NumberPadKeyButtonStyle(fill: fill, foreground: foreground)
+    static func numberPadKey(
+        fill: Color,
+        foreground: Color,
+        onPress: @escaping () -> Void
+    ) -> NumberPadKeyButtonStyle {
+        NumberPadKeyButtonStyle(fill: fill, foreground: foreground, onPress: onPress)
     }
 }
 
