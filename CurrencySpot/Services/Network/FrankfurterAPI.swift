@@ -4,11 +4,13 @@ nonisolated final class FrankfurterAPI: Sendable {
     private let ratesEndpoint = "https://api.frankfurter.dev/v2/rates"
 
     private let urlSession: URLSession
-    private let retryManager: RetryManager
+    private let retryPolicy: RetryPolicy
+    private let clock: ClockService
 
-    init(session: URLSession = FrankfurterAPI.makeDefaultSession(), retryManager: RetryManager) {
+    init(session: URLSession = FrankfurterAPI.makeDefaultSession(), retryPolicy: RetryPolicy, clock: ClockService) {
         urlSession = session
-        self.retryManager = retryManager
+        self.retryPolicy = retryPolicy
+        self.clock = clock
     }
 
     static func makeDefaultSession() -> URLSession {
@@ -29,7 +31,8 @@ nonisolated final class FrankfurterAPI: Sendable {
             urlSession: urlSession,
             responseType: [FrankfurterV2Rate].self,
             endpoint: "exchange-rates-latest",
-            retryManager: retryManager
+            retryPolicy: retryPolicy,
+            clock: clock
         )
         return try FrankfurterV2Mapper.latest(from: entries, base: baseCurrency)
     }
@@ -54,7 +57,8 @@ nonisolated final class FrankfurterAPI: Sendable {
             urlSession: urlSession,
             responseType: [FrankfurterV2Rate].self,
             endpoint: "historical-rates-range-\(startDateString)-\(endDateString)\(quotes.isEmpty ? "" : "-" + quotes.sorted().joined(separator: "-"))",
-            retryManager: retryManager
+            retryPolicy: retryPolicy,
+            clock: clock
         )
         return try FrankfurterV2Mapper.historical(from: entries, base: baseCurrency)
     }

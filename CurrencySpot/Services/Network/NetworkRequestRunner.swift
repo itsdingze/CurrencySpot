@@ -9,68 +9,40 @@ nonisolated enum NetworkRequestRunner {
         urlSession: URLSession,
         responseType: T.Type,
         endpoint: String? = nil,
-        retryManager: RetryManager,
-        clock: ClockService = ContinuousClockService(),
+        retryPolicy: RetryPolicy,
+        clock: ClockService,
         logger: LoggerService = OSLogLoggerService()
     ) async throws -> T {
         let endpointKey = endpoint ?? url.path
-
-        var lastError: Error?
-
-        do {
-            let result = try await performRequest(url: url, urlSession: urlSession, responseType: responseType)
-            await retryManager.recordSuccess(for: endpointKey)
-            return result
-        } catch {
-            lastError = error
-
-            guard retryManager.shouldRetry(error: error), await retryManager.canRetry(for: endpointKey) else {
-                throw error
-            }
-        }
+        var retry = 0
 
         while true {
-            guard let retryInfo = await retryManager.recordAttempt(for: endpointKey) else {
-                break
-            }
-
-            logger.info("Retrying request to \(endpointKey) (attempt \(retryInfo.attempt), delay: \(retryInfo.delay.formatted(.number.precision(.fractionLength(1))))s)", category: .network)
-
-            do {
-                try await clock.sleep(for: .seconds(retryInfo.delay))
-            } catch is CancellationError {
-                await retryManager.reset(for: endpointKey)
-                logger.info("Request to \(endpointKey) was cancelled during retry delay", category: .network)
-                throw CancellationError()
-            }
-
             do {
                 let result = try await performRequest(url: url, urlSession: urlSession, responseType: responseType)
-                await retryManager.recordSuccess(for: endpointKey)
-                logger.info("Request to \(endpointKey) succeeded on attempt \(retryInfo.attempt)", category: .network)
+                if retry > 0 {
+                    logger.info("Request to \(endpointKey) succeeded on retry \(retry)", category: .network)
+                }
                 return result
             } catch is CancellationError {
-                await retryManager.reset(for: endpointKey)
-                logger.info("Request to \(endpointKey) was cancelled during network request", category: .network)
+                logger.info("Request to \(endpointKey) was cancelled", category: .network)
                 throw CancellationError()
             } catch {
-                lastError = error
-                logger.warning("Retry \(retryInfo.attempt) failed for \(endpointKey): \(error.localizedDescription)", category: .network)
-
-                if !retryManager.shouldRetry(error: error) {
-                    logger.warning("Error not retryable, stopping retry attempts for \(endpointKey)", category: .network)
-                    break
+                guard retryPolicy.shouldRetry(error) else {
+                    if retry > 0 {
+                        logger.warning("Error not retryable, stopping retries for \(endpointKey)", category: .network)
+                    }
+                    throw error
                 }
+                guard retry < retryPolicy.maxRetries else {
+                    logger.error("All retries exhausted for \(endpointKey) after \(retry) retries", category: .network)
+                    throw AppError.retryExhausted("Unable to connect to server", attempts: retry)
+                }
+
+                retry += 1
+                let delay = retryPolicy.delay(beforeRetry: retry)
+                logger.info("Retrying request to \(endpointKey) (retry \(retry), delay: \(delay.formatted(.number.precision(.fractionLength(1))))s)", category: .network)
+                try await clock.sleep(for: .seconds(delay))
             }
-        }
-
-        let finalAttempt = await retryManager.getCurrentAttempt(for: endpointKey)
-        logger.error("All retry attempts exhausted for \(endpointKey) after \(finalAttempt) attempts", category: .network)
-
-        if let lastError, retryManager.shouldRetry(error: lastError) {
-            throw AppError.retryExhausted("Unable to connect to server", attempts: finalAttempt)
-        } else {
-            throw lastError ?? AppError.networkError("Request failed after retries")
         }
     }
 

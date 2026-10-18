@@ -63,7 +63,7 @@ final class DependencyContainer {
         appState: AppState = .shared,
         userDefaults: UserDefaults = .standard,
         preferences: PreferencesStore = UserDefaultsPreferencesStore(),
-        retryManager: RetryManager = RetryManager(),
+        retryPolicy: RetryPolicy = RetryPolicy(),
         networkService: NetworkService? = nil,
         persistenceService: PersistenceService? = nil,
         cacheService: CacheService = InMemoryCacheService(),
@@ -80,7 +80,7 @@ final class DependencyContainer {
         self.modelContainer = resolvedModelContainer
         self.appState = appState
         self.networkService = networkService ?? FrankfurterNetworkService(
-            api: FrankfurterAPI(retryManager: retryManager)
+            api: FrankfurterAPI(retryPolicy: retryPolicy, clock: clockService)
         )
         self.persistenceService = persistenceService ?? SwiftDataPersistenceService(
             modelContainer: resolvedModelContainer,

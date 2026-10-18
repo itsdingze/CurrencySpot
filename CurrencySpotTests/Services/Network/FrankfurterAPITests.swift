@@ -50,7 +50,11 @@ private nonisolated final class StubURLProtocol: URLProtocol {
 
 @Suite("FrankfurterAPI Tests")
 struct FrankfurterAPITests {
-    private let api = FrankfurterAPI(session: StubURLProtocol.makeSession(), retryManager: RetryManager())
+    private let api = FrankfurterAPI(
+        session: StubURLProtocol.makeSession(),
+        retryPolicy: RetryPolicy(jitter: { _ in 1.0 }),
+        clock: ImmediateClock()
+    )
 
     private static func v2JSON(_ entries: [(date: String, quote: String, rate: Double)], base: String = "USD") -> Data {
         let rows = entries.map {
@@ -134,17 +138,30 @@ struct FrankfurterAPITests {
             for: "https://api.frankfurter.dev/v2/rates?base=SEK"
         )
 
-        do {
+        let error = await #expect(throws: AppError.self) {
             _ = try await api.fetchExchangeRates(baseCurrency: "SEK")
-            Issue.record("Expected a decoding error to be thrown.")
-        } catch let error as AppError {
-            guard case .decodingError = error else {
-                Issue.record("Expected .decodingError, got \(error)")
-                return
-            }
-        } catch {
-            Issue.record("Expected AppError.decodingError, got \(error)")
         }
+        guard case .decodingError = error else {
+            Issue.record("Expected .decodingError, got \(String(describing: error))")
+            return
+        }
+    }
+
+    @Test("a persistent server error is retried before surfacing as retryExhausted", .timeLimit(.minutes(1)))
+    func serverErrorIsRetriedThroughThePublicAPI() async {
+        StubURLProtocol.register(
+            .init(statusCode: 503, data: Data()),
+            for: "https://api.frankfurter.dev/v2/rates?base=PLN"
+        )
+
+        let error = await #expect(throws: AppError.self) {
+            _ = try await api.fetchExchangeRates(baseCurrency: "PLN")
+        }
+        guard case let .retryExhausted(_, attempts) = error else {
+            Issue.record("Expected .retryExhausted, got \(String(describing: error))")
+            return
+        }
+        #expect(attempts == 3)
     }
 
     @Test("an empty v2 array is rejected rather than accepted as a rateless snapshot")
