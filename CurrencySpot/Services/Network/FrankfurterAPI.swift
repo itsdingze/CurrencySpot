@@ -60,7 +60,7 @@ nonisolated final class FrankfurterAPI: Sendable {
             retryPolicy: retryPolicy,
             clock: clock
         )
-        return try FrankfurterV2Mapper.historical(from: entries, base: baseCurrency)
+        return try FrankfurterV2Mapper.historical(from: entries, base: baseCurrency, startingOn: startDateString)
     }
 
     private func ratesURL(_ queryItems: [URLQueryItem]) throws -> URL {

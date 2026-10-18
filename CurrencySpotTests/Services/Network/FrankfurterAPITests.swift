@@ -189,4 +189,61 @@ struct FrankfurterAPITests {
 
         #expect(response.rates.isEmpty)
     }
+
+    @Test("a range padded with rates dated before the requested start keeps only the requested days")
+    func paddedRangeKeepsOnlyRequestedDays() async throws {
+        let startDate = try #require(createCETDate(year: 2026, month: 10, day: 10))
+        let endDate = try #require(createCETDate(year: 2026, month: 10, day: 12))
+        StubURLProtocol.register(
+            .init(statusCode: 200, data: Self.v2JSON([
+                (date: "2026-10-08", quote: "KPW", rate: 130.02),
+                (date: "2026-10-09", quote: "ALL", rate: 82.1),
+                (date: "2026-10-10", quote: "EUR", rate: 0.8913),
+                (date: "2026-10-11", quote: "EUR", rate: 0.8912),
+                (date: "2026-10-12", quote: "EUR", rate: 0.8926),
+            ])),
+            for: "https://api.frankfurter.dev/v2/rates?base=USD&from=2026-10-10&to=2026-10-12"
+        )
+
+        let response = try await api.fetchHistoricalRatesForRange(startDate: startDate, endDate: endDate)
+
+        #expect(response.rates.keys.sorted() == ["2026-10-10", "2026-10-11", "2026-10-12"])
+        #expect(response.startDate == "2026-10-10")
+    }
+
+    @Test("the first requested day carries rates the padding dated before it")
+    func firstRequestedDayCarriesPaddedRates() async throws {
+        let startDate = try #require(createCETDate(year: 2026, month: 10, day: 17))
+        let endDate = try #require(createCETDate(year: 2026, month: 10, day: 18))
+        StubURLProtocol.register(
+            .init(statusCode: 200, data: Self.v2JSON([
+                (date: "2026-10-15", quote: "KPW", rate: 130.02),
+                (date: "2026-10-16", quote: "ALL", rate: 82.1),
+                (date: "2026-10-17", quote: "EUR", rate: 0.8906),
+                (date: "2026-10-18", quote: "EUR", rate: 0.8905),
+            ])),
+            for: "https://api.frankfurter.dev/v2/rates?base=USD&from=2026-10-17&to=2026-10-18"
+        )
+
+        let response = try await api.fetchHistoricalRatesForRange(startDate: startDate, endDate: endDate)
+
+        #expect(response.rates["2026-10-17"] == ["EUR": 0.8906, "KPW": 130.02, "ALL": 82.1])
+    }
+
+    @Test("a range answered only with padding decodes to an empty series rather than throwing")
+    func paddingOnlyRangeDecodesToEmptySeries() async throws {
+        let startDate = try #require(createCETDate(year: 2026, month: 10, day: 24))
+        let endDate = try #require(createCETDate(year: 2026, month: 10, day: 25))
+        StubURLProtocol.register(
+            .init(statusCode: 200, data: Self.v2JSON([
+                (date: "2026-10-23", quote: "EUR", rate: 0.8901),
+            ])),
+            for: "https://api.frankfurter.dev/v2/rates?base=USD&from=2026-10-24&to=2026-10-25"
+        )
+
+        let response = try await api.fetchHistoricalRatesForRange(startDate: startDate, endDate: endDate)
+
+        #expect(response.rates.isEmpty)
+        #expect(response.startDate.isEmpty)
+    }
 }

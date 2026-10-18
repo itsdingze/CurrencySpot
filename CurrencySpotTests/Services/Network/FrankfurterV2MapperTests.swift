@@ -40,7 +40,7 @@ struct FrankfurterV2MapperTests {
             FrankfurterV2Rate(date: "2026-01-03", base: "USD", quote: "GBP", rate: 0.75),
         ]
 
-        let response = try FrankfurterV2Mapper.historical(from: entries, base: "USD")
+        let response = try FrankfurterV2Mapper.historical(from: entries, base: "USD", startingOn: "2026-01-02")
 
         #expect(response.base == "USD")
         #expect(response.startDate == "2026-01-02")
@@ -57,7 +57,7 @@ struct FrankfurterV2MapperTests {
             FrankfurterV2Rate(date: "2026-01-03", base: "USD", quote: "EUR", rate: 0.86),
         ]
 
-        let response = try FrankfurterV2Mapper.historical(from: entries, base: "USD")
+        let response = try FrankfurterV2Mapper.historical(from: entries, base: "USD", startingOn: "2026-01-02")
 
         #expect(response.rates["2026-01-03"]?["EUR"] == 0.86)
         #expect(response.rates["2026-01-03"]?["GBP"] == 0.74)
@@ -71,7 +71,7 @@ struct FrankfurterV2MapperTests {
             FrankfurterV2Rate(date: "2026-01-03", base: "USD", quote: "GBP", rate: 0.74),
         ]
 
-        let response = try FrankfurterV2Mapper.historical(from: entries, base: "USD")
+        let response = try FrankfurterV2Mapper.historical(from: entries, base: "USD", startingOn: "2026-01-02")
 
         #expect(response.rates["2026-01-02"]?["GBP"] == nil)
     }
@@ -98,7 +98,7 @@ struct FrankfurterV2MapperTests {
     func historicalThrowsOnBadDate() {
         let entries = [FrankfurterV2Rate(date: "not-a-date", base: "USD", quote: "EUR", rate: 0.86)]
         #expect(throws: AppError.self) {
-            _ = try FrankfurterV2Mapper.historical(from: entries, base: "USD")
+            _ = try FrankfurterV2Mapper.historical(from: entries, base: "USD", startingOn: "2026-01-01")
         }
     }
 
@@ -111,7 +111,7 @@ struct FrankfurterV2MapperTests {
 
     @Test("historical maps an empty payload to an empty response so the caller can record coverage")
     func historicalAcceptsEmptyPayload() throws {
-        let response = try FrankfurterV2Mapper.historical(from: [], base: "USD")
+        let response = try FrankfurterV2Mapper.historical(from: [], base: "USD", startingOn: "2026-01-02")
 
         #expect(response.rates.isEmpty)
         #expect(response.startDate.isEmpty)

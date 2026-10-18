@@ -11,7 +11,7 @@ nonisolated enum FrankfurterV2Mapper {
         return ExchangeRatesResponse(base: base, date: date, rates: rates)
     }
 
-    static func historical(from entries: [FrankfurterV2Rate], base: String) throws -> HistoricalRatesResponse {
+    static func historical(from entries: [FrankfurterV2Rate], base: String, startingOn firstDay: String) throws -> HistoricalRatesResponse {
         try validate(entries)
         var grouped: [String: [String: Double]] = [:]
         for entry in entries {
@@ -32,13 +32,15 @@ nonisolated enum FrankfurterV2Mapper {
                     row[currency] = carried
                 }
             }
+            guard date >= firstDay else { continue }
             rates[date] = row
         }
 
+        let requestedDates = rates.keys.sorted()
         return HistoricalRatesResponse(
             base: base,
-            startDate: sortedDates.first ?? "",
-            endDate: sortedDates.last ?? "",
+            startDate: requestedDates.first ?? "",
+            endDate: requestedDates.last ?? "",
             rates: rates
         )
     }
