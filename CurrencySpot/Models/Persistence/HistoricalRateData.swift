@@ -1,15 +1,17 @@
 import Foundation
 import SwiftData
 
-@Model
-nonisolated final class HistoricalRateData {
-    @Attribute(.unique) var date: Date
+nonisolated extension CurrencySpotSchemaV2 {
+    @Model
+    final class HistoricalRateData {
+        @Attribute(.unique) var date: Date
 
-    var ratesData: Data = Data()
+        var ratesData: Data = Data()
 
-    init(date: Date, ratesData: Data) {
-        self.date = date
-        self.ratesData = ratesData
+        init(date: Date, ratesData: Data) {
+            self.date = date
+            self.ratesData = ratesData
+        }
     }
 }
 

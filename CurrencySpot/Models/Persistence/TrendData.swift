@@ -4,31 +4,33 @@ import SwiftData
 private nonisolated let miniChartEncoder = JSONEncoder()
 private nonisolated let miniChartDecoder = JSONDecoder()
 
-@Model
-nonisolated final class TrendData {
-    @Attribute(.unique) var currencyCode: String
-    var weeklyChange: Double
+nonisolated extension CurrencySpotSchemaV2 {
+    @Model
+    final class TrendData {
+        @Attribute(.unique) var currencyCode: String
+        var weeklyChange: Double
 
-    // Stored as Data rather than [Double]: CoreData cannot serialize the array form.
-    private var miniChartDataStorage: Data = Data()
+        // Stored as Data rather than [Double]: CoreData cannot serialize the array form.
+        private var miniChartDataStorage: Data = Data()
 
-    var miniChartData: [Double] {
-        get {
-            guard !miniChartDataStorage.isEmpty,
-                  let decoded = try? miniChartDecoder.decode([Double].self, from: miniChartDataStorage) else {
-                return []
+        var miniChartData: [Double] {
+            get {
+                guard !miniChartDataStorage.isEmpty,
+                      let decoded = try? miniChartDecoder.decode([Double].self, from: miniChartDataStorage) else {
+                    return []
+                }
+                return decoded
             }
-            return decoded
+            set {
+                miniChartDataStorage = (try? miniChartEncoder.encode(newValue)) ?? Data()
+            }
         }
-        set {
-            miniChartDataStorage = (try? miniChartEncoder.encode(newValue)) ?? Data()
-        }
-    }
 
-    init(currencyCode: String, weeklyChange: Double, miniChartData: [Double]) {
-        self.currencyCode = currencyCode
-        self.weeklyChange = weeklyChange
-        self.miniChartDataStorage = (try? miniChartEncoder.encode(miniChartData)) ?? Data()
+        init(currencyCode: String, weeklyChange: Double, miniChartData: [Double]) {
+            self.currencyCode = currencyCode
+            self.weeklyChange = weeklyChange
+            self.miniChartDataStorage = (try? miniChartEncoder.encode(miniChartData)) ?? Data()
+        }
     }
 }
 

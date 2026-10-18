@@ -1,21 +1,6 @@
 import Foundation
 import SwiftData
 
-// MARK: - ModelContainer Factory
-
-extension ModelContainer {
-    static let currencySpotSchema = Schema([
-        ExchangeRateData.self,
-        HistoricalRateData.self,
-        TrendData.self,
-    ])
-
-    static func inMemoryCurrencySpot() throws -> ModelContainer {
-        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try ModelContainer(for: currencySpotSchema, configurations: configuration)
-    }
-}
-
 // MARK: - DependencyContainer
 
 final class DependencyContainer {
@@ -227,10 +212,11 @@ final class DependencyContainer {
         #endif
 
         do {
-            let container = try ModelContainer(
-                for: ModelContainer.currencySpotSchema,
-                configurations: ModelConfiguration()
-            )
+            let container = try PersistentStoreLoader(storeURL: ModelConfiguration().url).load {
+                logger.fault("Persistent store could not be opened; rebuilt it empty", category: .app)
+                UserDefaultsHistoricalSyncStore().reset()
+                UserDefaultsRatesFetchDateStore().lastFetchDate = nil
+            }
             DataMigration.runIfNeeded(modelContainer: container, logger: logger)
             return DependencyContainer(modelContainer: container, appState: appState)
         } catch {
@@ -239,19 +225,10 @@ final class DependencyContainer {
 
         do {
             let fallback = try ModelContainer.inMemoryCurrencySpot()
-            logger.info("Fallback to in-memory storage successful", category: .app)
             appState.errorHandler.handle(AppError.initializationFailed("Persistent storage failed"))
             return DependencyContainer(modelContainer: fallback, appState: appState)
         } catch {
-            logger.fault("Critical error: Failed to initialize in-memory container: \(error)", category: .app)
-        }
-
-        do {
-            let minimal = try ModelContainer(for: Schema([]))
-            appState.errorHandler.handle(AppError.initializationFailed("App initialization failed. Running in limited mode."))
-            return DependencyContainer(modelContainer: minimal, appState: appState)
-        } catch {
-            logger.fault("Unrecoverable: failed to create an empty in-memory ModelContainer: \(error)", category: .app)
+            logger.fault("Unrecoverable: failed to create an in-memory ModelContainer: \(error)", category: .app)
             fatalError("CurrencySpot cannot start: SwiftData is unavailable (\(error))")
         }
     }

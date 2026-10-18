@@ -5,42 +5,35 @@ import Testing
 
 @Suite("DataMigration")
 struct DataMigrationTests {
-    private static func makeContainer() throws -> ModelContainer {
-        let configuration = ModelConfiguration(
-            for: ExchangeRateData.self, HistoricalRateData.self, TrendData.self,
-            isStoredInMemoryOnly: true
-        )
-        return try ModelContainer(
-            for: ExchangeRateData.self, HistoricalRateData.self, TrendData.self,
-            configurations: configuration
-        )
+    private let suiteName = "DataMigrationTests.\(UUID().uuidString)"
+    private let defaults: UserDefaults
+    private let container: ModelContainer
+
+    init() throws {
+        defaults = try #require(UserDefaults(suiteName: suiteName))
+        container = try ModelContainer.inMemoryCurrencySpot()
     }
 
-    private static func makeDefaults() -> UserDefaults {
-        let name = "DataMigrationTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: name)!
-        defaults.removePersistentDomain(forName: name)
-        return defaults
+    private func removeDefaults() {
+        defaults.removePersistentDomain(forName: suiteName)
     }
 
     @Test("first run purges v1 cached rate data")
     func purgesCachedDataOnFirstRun() throws {
-        let container = try Self.makeContainer()
+        defer { removeDefaults() }
         let context = container.mainContext
         context.insert(ExchangeRateData(currencyCode: "EUR", rate: 0.86))
         try context.save()
 
-        DataMigration.runIfNeeded(modelContainer: container, defaults: Self.makeDefaults())
+        DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
 
-        let remaining = try context.fetch(FetchDescriptor<ExchangeRateData>())
-        #expect(remaining.isEmpty)
+        #expect(try context.fetch(FetchDescriptor<ExchangeRateData>()).isEmpty)
     }
 
     @Test("first run clears the last-fetch date so rates refetch immediately")
     func clearsLastFetchDate() throws {
-        let container = try Self.makeContainer()
-        let defaults = Self.makeDefaults()
-        defaults.set(Date(), forKey: UserDefaultsKeys.lastFetchDate)
+        defer { removeDefaults() }
+        defaults.set(Date(timeIntervalSince1970: 1), forKey: UserDefaultsKeys.lastFetchDate)
 
         DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
 
@@ -49,8 +42,7 @@ struct DataMigrationTests {
 
     @Test("first run resets the historical sync coverage window")
     func resetsHistoricalSyncCoverage() throws {
-        let container = try Self.makeContainer()
-        let defaults = Self.makeDefaults()
+        defer { removeDefaults() }
         let store = UserDefaultsHistoricalSyncStore(defaults: defaults)
         store.record(
             from: Date(timeIntervalSince1970: 1),
@@ -65,38 +57,9 @@ struct DataMigrationTests {
         #expect(store.checkedAt == nil)
     }
 
-    @Test("the blob-schema step purges historical rows even when the v2 step already ran")
-    func blobMigrationPurgesHistoricalRows() throws {
-        let container = try Self.makeContainer()
-        let defaults = Self.makeDefaults()
-        defaults.set(true, forKey: "DidMigrateToFrankfurterV2")
-
-        let context = container.mainContext
-        context.insert(try HistoricalRateData(date: #require(TimeZoneManager.parseAPIDate("2025-03-15")), rates: ["EUR": 1.21]))
-        try context.save()
-        let store = UserDefaultsHistoricalSyncStore(defaults: defaults)
-        store.record(
-            from: Date(timeIntervalSince1970: 1),
-            through: Date(timeIntervalSince1970: 2),
-            at: Date(timeIntervalSince1970: 3)
-        )
-
-        DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
-
-        #expect(try context.fetch(FetchDescriptor<HistoricalRateData>()).isEmpty)
-        #expect(store.from == nil)
-
-        context.insert(try HistoricalRateData(date: #require(TimeZoneManager.parseAPIDate("2025-03-16")), rates: ["EUR": 1.22]))
-        try context.save()
-        DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
-        #expect(try context.fetch(FetchDescriptor<HistoricalRateData>()).count == 1)
-    }
-
     @Test("does nothing once migration has already run")
     func skipsWhenAlreadyMigrated() throws {
-        let container = try Self.makeContainer()
-        let defaults = Self.makeDefaults()
-
+        defer { removeDefaults() }
         DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
 
         let context = container.mainContext

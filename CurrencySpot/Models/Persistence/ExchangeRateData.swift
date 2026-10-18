@@ -1,14 +1,16 @@
 import Foundation
 import SwiftData
 
-@Model
-nonisolated final class ExchangeRateData {
-    @Attribute(.unique) var currencyCode: String
-    var rate: Double
+nonisolated extension CurrencySpotSchemaV2 {
+    @Model
+    final class ExchangeRateData {
+        @Attribute(.unique) var currencyCode: String
+        var rate: Double
 
-    init(currencyCode: String, rate: Double) {
-        self.currencyCode = currencyCode
-        self.rate = rate
+        init(currencyCode: String, rate: Double) {
+            self.currencyCode = currencyCode
+            self.rate = rate
+        }
     }
 }
 
