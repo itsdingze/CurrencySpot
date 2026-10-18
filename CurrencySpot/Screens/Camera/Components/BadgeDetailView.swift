@@ -25,24 +25,24 @@ struct BadgeDetailView: View {
                 
                 VStack(spacing: Spacing.section) {
                     Button(action: openInConverter) {
-                        Label("Open in Convert", systemImage: "arrow.left.arrow.right")
+                        Label(.cameraBadgeDetailOpenInConvert, systemImage: "arrow.left.arrow.right")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.primaryAction)
                     
                     Button(action: hideConversion) {
-                        Label("Hide this conversion", systemImage: "eye.slash")
+                        Label(.cameraBadgeDetailHide, systemImage: "eye.slash")
                             .font(.appSubheadline)
                     }
                     .foregroundStyle(Color.secondary)
                 }
             }
             .padding()
-            .navigationTitle("Conversion")
+            .navigationTitle(.cameraBadgeDetailTitle)
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close", systemImage: "xmark") {
+                    Button(.cameraBadgeDetailClose, systemImage: "xmark") {
                         dismiss()
                     }
                     .labelStyle(.iconOnly)
@@ -65,7 +65,7 @@ struct BadgeDetailView: View {
 #Preview {
     @Previewable @State var isPresented = false
 
-    Button("Show conversion") { isPresented = true }
+    Button { isPresented = true } label: { Text(verbatim: "Show conversion") }
         .sheet(isPresented: $isPresented) {
             BadgeDetailView(
                 item: DetectedItem(

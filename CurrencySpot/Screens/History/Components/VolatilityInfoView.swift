@@ -6,13 +6,13 @@ struct VolatilityInfoView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.section) {
             HStack {
-                Text("What is Volatility?")
+                Text(.historyVolatilityInfoTitle)
                     .font(.appHeadline)
 
                 Spacer()
 
                 Button { dismiss() } label: {
-                    Label("Close volatility information", systemImage: "xmark.circle.fill")
+                    Label(.historyVolatilityInfoClose, systemImage: "xmark.circle.fill")
                         .labelStyle(.iconOnly)
                         .minimumHitTarget()
                 }
@@ -22,7 +22,7 @@ struct VolatilityInfoView: View {
             }
 
             VStack(alignment: .leading, spacing: Spacing.element) {
-                Text("Volatility measures how much the exchange rate fluctuates over time.")
+                Text(.historyVolatilityInfoBody)
                     .font(.appSubheadline)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -32,7 +32,7 @@ struct VolatilityInfoView: View {
                     }
                 }
 
-                Text("Lower volatility means more stable exchange rates, while higher volatility indicates larger price swings.")
+                Text(.historyVolatilityInfoFootnote)
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -60,7 +60,10 @@ struct VolatilityInfoView: View {
                 .foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(level.displayName) volatility: \(level.rangeDescription)")
+        .accessibilityLabel(.historyVolatilityInfoLevelAccessibilityLabel(
+            level: String(localized: level.displayName),
+            range: String(localized: level.rangeDescription)
+        ))
     }
 }
 

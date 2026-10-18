@@ -2,6 +2,7 @@ import Foundation
 
 nonisolated enum AppError: Error, Identifiable, Equatable {
     case networkError(String)
+    case requestFailed(RequestFailure)
     case noInternetConnection
     case decodingError(String)
     case httpError(statusCode: Int)
@@ -14,6 +15,30 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
     case photoImportFailed
     case textRecognitionFailed
 
+    nonisolated enum RequestFailure: Sendable {
+        case timedOut
+        case cannotFindHost
+        case cannotConnectToHost
+        case connectionLost
+        case dnsLookupFailed
+        case tooManyRedirects
+        case resourceUnavailable
+        case badServerResponse
+
+        fileprivate var message: LocalizedStringResource {
+            switch self {
+            case .timedOut: .errorRequestTimedOutMessage
+            case .cannotFindHost: .errorRequestCannotFindHostMessage
+            case .cannotConnectToHost: .errorRequestCannotConnectToHostMessage
+            case .connectionLost: .errorRequestConnectionLostMessage
+            case .dnsLookupFailed: .errorRequestDnsLookupFailedMessage
+            case .tooManyRedirects: .errorRequestTooManyRedirectsMessage
+            case .resourceUnavailable: .errorRequestResourceUnavailableMessage
+            case .badServerResponse: .errorRequestBadServerResponseMessage
+            }
+        }
+    }
+
     var id: String {
         let prefix = errorPrefix
         let suffix = errorSuffix
@@ -23,6 +48,7 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
     private var errorPrefix: String {
         switch self {
         case .networkError: "network"
+        case .requestFailed: "requestFailed"
         case .noInternetConnection: "noInternet"
         case .decodingError: "decoding"
         case .httpError: "http"
@@ -46,6 +72,8 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
              let .dataValidationError(message),
              let .initializationFailed(message):
             message
+        case let .requestFailed(failure):
+            "\(failure)"
         case let .retryExhausted(message, attempts):
             "\(message)-\(attempts)"
         case let .httpError(statusCode):
@@ -56,49 +84,38 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
         }
     }
 
-    var title: String {
+    var title: LocalizedStringResource {
         switch self {
-        case .networkError: "Network Error"
-        case .noInternetConnection: "No Internet Connection"
-        case .decodingError: "Data Error"
-        case .httpError: "API Error"
-        case .dateCalculationError: "Date Processing Error"
-        case .unknownError: "Error"
-        case .dataValidationError: "Data Validation Error"
-        case .initializationFailed: "Initialization Failed"
-        case .retryExhausted: "Connection Failed"
-        case .cameraCaptureFailed: "Capture Failed"
-        case .photoImportFailed: "Photo Import Failed"
-        case .textRecognitionFailed: "Scan Failed"
+        case .networkError, .requestFailed: .errorNetworkTitle
+        case .noInternetConnection: .errorNoInternetTitle
+        case .decodingError: .errorDecodingTitle
+        case .httpError: .errorHttpTitle
+        case .dateCalculationError: .errorDateCalculationTitle
+        case .unknownError: .errorUnexpectedTitle
+        case .dataValidationError: .errorDataValidationTitle
+        case .initializationFailed: .errorStorageTitle
+        case .retryExhausted: .errorRetryExhaustedTitle
+        case .cameraCaptureFailed: .errorCameraCaptureTitle
+        case .photoImportFailed: .errorPhotoImportTitle
+        case .textRecognitionFailed: .errorTextRecognitionTitle
         }
     }
 
-    var message: String {
+    var message: LocalizedStringResource {
         switch self {
-        case let .networkError(message):
-            "\(message). Please check your internet connection."
-        case .noInternetConnection:
-            "Unable to connect to the internet. Please check your connection."
-        case let .decodingError(message):
-            "Error decoding data: \(message)"
-        case let .httpError(statusCode):
-            "HTTP Error: \(statusCode)"
-        case let .dateCalculationError(message):
-            "Error calculating date range for historical data: \(message)"
-        case let .unknownError(message):
-            "An unexpected error occurred: \(message)"
-        case let .dataValidationError(message):
-            "Data validation failed: \(message). Please try again."
-        case let .initializationFailed(message):
-            "Storage unavailable: \(message). The app works normally but data will not be saved after closing."
-        case let .retryExhausted(message, attempts):
-            "Failed to connect after \(attempts) attempts. \(message). Tap refresh to try again."
-        case .cameraCaptureFailed:
-            "Couldn't capture the frame. Please try again."
-        case .photoImportFailed:
-            "Couldn't load that photo. Please try again."
-        case .textRecognitionFailed:
-            "Couldn't read text in this image. Please try again."
+        case .networkError: .errorNetworkMessage
+        case let .requestFailed(failure): failure.message
+        case .noInternetConnection: .errorNoInternetMessage
+        case .decodingError: .errorDecodingMessage
+        case .httpError: .errorHttpMessage
+        case .dateCalculationError: .errorDateCalculationMessage
+        case .unknownError: .errorUnexpectedMessage
+        case .dataValidationError: .errorDataValidationMessage
+        case .initializationFailed: .errorStorageMessage
+        case let .retryExhausted(_, attempts): .errorRetryExhaustedMessage(attempts: attempts)
+        case .cameraCaptureFailed: .errorCameraCaptureMessage
+        case .photoImportFailed: .errorPhotoImportMessage
+        case .textRecognitionFailed: .errorTextRecognitionMessage
         }
     }
 
@@ -127,28 +144,17 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
 
     private static func from(urlError: URLError) -> AppError? {
         switch urlError.code {
-        case .cancelled:
-            return nil
-        case .notConnectedToInternet:
-            return .noInternetConnection
-        case .timedOut:
-            return .networkError("Request timed out. Please try again.")
-        case .cannotFindHost:
-            return .networkError("Cannot find server. Please check your internet connection.")
-        case .cannotConnectToHost:
-            return .networkError("Cannot connect to server. Please try again later.")
-        case .networkConnectionLost:
-            return .networkError("Network connection lost. Please check your connection.")
-        case .dnsLookupFailed:
-            return .networkError("DNS lookup failed. Please check your internet connection.")
-        case .httpTooManyRedirects:
-            return .networkError("Too many redirects. Please try again later.")
-        case .resourceUnavailable:
-            return .networkError("Resource unavailable. Please try again later.")
-        case .badServerResponse:
-            return .networkError("Invalid server response. Please try again.")
-        default:
-            return .networkError("Network error: \(urlError.code.rawValue)")
+        case .cancelled: nil
+        case .notConnectedToInternet: .noInternetConnection
+        case .timedOut: .requestFailed(.timedOut)
+        case .cannotFindHost: .requestFailed(.cannotFindHost)
+        case .cannotConnectToHost: .requestFailed(.cannotConnectToHost)
+        case .networkConnectionLost: .requestFailed(.connectionLost)
+        case .dnsLookupFailed: .requestFailed(.dnsLookupFailed)
+        case .httpTooManyRedirects: .requestFailed(.tooManyRedirects)
+        case .resourceUnavailable: .requestFailed(.resourceUnavailable)
+        case .badServerResponse: .requestFailed(.badServerResponse)
+        default: .networkError("URLError \(urlError.code.rawValue)")
         }
     }
 }

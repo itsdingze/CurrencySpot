@@ -27,7 +27,7 @@ struct AccentColorPickerSheet: View {
     @ViewBuilder
     private var accentColorLabel: some View {
         Label(title: {
-            Text("Accent Color")
+            Text(.settingsAccentColorLabel)
         }, icon: {
             Image(systemName: "drop.circle.fill")
                 .foregroundStyle(
@@ -46,8 +46,8 @@ struct AccentColorPickerSheet: View {
                 .fill(settingsViewModel.accentColor.color)
                 .frame(width: colorButtonSize, height: colorButtonSize)
         }
-        .accessibilityLabel("Accent color: \(settingsViewModel.accentColor.rawValue)")
-        .accessibilityHint("Opens the accent color picker")
+        .accessibilityLabel(.settingsAccentColorAccessibilityLabel(color: String(localized: settingsViewModel.accentColor.displayName)))
+        .accessibilityHint(.settingsAccentColorHint)
     }
 }
 
@@ -80,11 +80,11 @@ private struct ColorCustomizationSheet: View {
                 colorSelectionGrid
             }
             .padding()
-            .navigationTitle("Accent Color")
+            .navigationTitle(.settingsAccentColorTitle)
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button(.settingsAccentColorDone) { dismiss() }
                 }
             }
         }
@@ -119,7 +119,7 @@ private struct ColorCustomizationSheet: View {
                 .scaleEffect(isSelected ? 1.1 : 1.0)
                 .animation(.snappy(duration: 0.3), value: isSelected)
         }
-        .accessibilityLabel(colorOption.rawValue)
+        .accessibilityLabel(colorOption.displayName)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 

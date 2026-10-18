@@ -19,7 +19,7 @@ struct CameraView: View {
         .environment(\.colorScheme, .dark)
         .onChange(of: isAuthorized) { _, authorized in
             if authorized {
-                AccessibilityNotification.Announcement("Camera ready. Point at a price tag.").post()
+                AccessibilityNotification.Announcement(String(localized: .cameraAnnouncementReady)).post()
             }
         }
     }

@@ -19,7 +19,7 @@ struct NavigationHeader: View {
 
     private var backButton: some View {
         Button(action: onBack) {
-            Label("Go back", systemImage: "arrow.left")
+            Label(.onboardingHeaderBack, systemImage: "arrow.left")
                 .labelStyle(.iconOnly)
                 .minimumHitTarget()
         }
@@ -40,12 +40,12 @@ struct NavigationHeader: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Page \(currentPage + 1) of \(totalPages)")
+        .accessibilityLabel(.onboardingHeaderPage(page: currentPage + 1, total: totalPages))
     }
 
     private var skipButton: some View {
         Button(action: onSkip) {
-            Text("Skip")
+            Text(.onboardingHeaderSkip)
                 .minimumHitTarget()
         }
         .font(.appSubheadline.weight(.medium))
@@ -69,19 +69,23 @@ struct NavigationHeader: View {
         Spacer()
 
         HStack {
-            Button("Previous") {
+            Button {
                 currentPage = max(0, currentPage - 1)
+            } label: {
+                Text(verbatim: "Previous")
             }
             .disabled(currentPage == 0)
 
             Spacer()
 
-            Text("Page \(currentPage + 1) of 3")
+            Text(.onboardingHeaderPage(page: currentPage + 1, total: 3))
 
             Spacer()
 
-            Button("Next") {
+            Button {
                 currentPage = min(2, currentPage + 1)
+            } label: {
+                Text(verbatim: "Next")
             }
             .disabled(currentPage == 2)
         }

@@ -15,20 +15,25 @@ struct RateInfoView: View {
         .accessibilityAddTraits(.updatesFrequently)
     }
 
-    private var accessibilityContainerLabel: String {
-        var label = "Exchange rate information. "
-        if shouldShowConversionRate {
-            label += "Current rate: \(formattedConversionRate). "
+    private var accessibilityContainerLabel: LocalizedStringResource {
+        let rate = String(localized: conversionRate)
+        switch (shouldShowConversionRate, viewModel.lastUpdated) {
+        case let (true, lastUpdated?):
+            return .calculatorRateInfoAccessibilityLabelRateUpdated(rate: rate, date: lastUpdated.lastUpdatedDisplay)
+        case (true, nil):
+            return .calculatorRateInfoAccessibilityLabelRateNotUpdated(rate: rate)
+        case let (false, lastUpdated?):
+            return .calculatorRateInfoAccessibilityLabelUpdated(date: lastUpdated.lastUpdatedDisplay)
+        case (false, nil):
+            return .calculatorRateInfoAccessibilityLabelNotUpdated
         }
-        label += viewModel.formattedLastUpdated
-        return label
     }
 
     // MARK: - Private Views
 
     @ViewBuilder
     private var conversionRateText: some View {
-        Text(formattedConversionRate)
+        Text(conversionRate)
             .font(.appCaption)
             .foregroundStyle(.secondary)
     }
@@ -46,8 +51,12 @@ struct RateInfoView: View {
         viewModel.baseCurrency != viewModel.targetCurrency
     }
 
-    private var formattedConversionRate: String {
-        "1 \(viewModel.baseCurrency.rawValue) = \(viewModel.conversionRate.toStringMax4Decimals) \(viewModel.targetCurrency.rawValue)"
+    private var conversionRate: LocalizedStringResource {
+        .calculatorRateInfoConversionRate(
+            base: viewModel.baseCurrency.rawValue,
+            rate: viewModel.conversionRate.toStringMax4Decimals,
+            target: viewModel.targetCurrency.rawValue
+        )
     }
 }
 

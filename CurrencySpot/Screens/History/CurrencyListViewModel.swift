@@ -121,7 +121,7 @@ final class CurrencyListViewModel {
     func trendDisplayValue(rate: Double, weeklyChange: Double) -> String {
         switch trendDisplayMode {
         case .percentChange:
-            abs(weeklyChange).formatted(.number.precision(.fractionLength(2))) + "%"
+            (abs(weeklyChange) / 100).formatted(.percent.precision(.fractionLength(2)))
         case .priceChange:
             abs(RateMath.priceChange(rate: rate, percentChange: weeklyChange)).toStringMax4Decimals
         }

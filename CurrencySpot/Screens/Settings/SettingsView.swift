@@ -35,9 +35,9 @@ struct SettingsView: View {
             onConfirm: { settingsViewModel.confirmAlert(.resetPreferences) }
         )
         .overlay { toastOverlay }
-        .onChange(of: settingsViewModel.toast?.id) { _, newID in
-            if newID != nil {
-                AccessibilityNotification.Announcement(settingsViewModel.toast?.message ?? "").post()
+        .onChange(of: settingsViewModel.toast?.id) {
+            if let toast = settingsViewModel.toast {
+                AccessibilityNotification.Announcement(String(localized: toast.message)).post()
             }
         }
     }
@@ -71,18 +71,18 @@ struct SettingsView: View {
     // MARK: - UI Sections
 
     private var appearanceSection: some View {
-        Section(header: Text("Appearance")) {
+        Section(header: Text(.settingsAppearanceHeader)) {
             AccentColorPickerSheet()
 
             Picker(selection: bindableViewModel.appearanceMode) {
                 ForEach(AppearanceMode.allCases) { mode in
-                    Text(mode.rawValue)
+                    Text(mode.displayName)
                         .fontDesign(.rounded)
                         .tag(mode)
                 }
             } label: {
                 Label(title: {
-                    Text("Color Scheme")
+                    Text(.settingsAppearanceColorScheme)
                 }, icon: {
                     Image(systemName: "moon.circle.fill")
                         .symbolRenderingMode(.multicolor)
@@ -93,11 +93,11 @@ struct SettingsView: View {
 
     private var currencyPreferencesSection: some View {
         Section(
-            header: Text("Currency Preferences"),
-            footer: Text("These settings determine the default values used when you open the app.")
+            header: Text(.settingsCurrenciesHeader),
+            footer: Text(.settingsCurrenciesFooter)
         ) {
             currencyNavigationLink(
-                title: "Default Base Currency",
+                title: .settingsCurrenciesDefaultBase,
                 icon: "dollarsign.circle.fill",
                 iconColors: (Color.white, Color.green),
                 currentValue: settingsViewModel.defaultBaseCurrency,
@@ -105,7 +105,7 @@ struct SettingsView: View {
             )
 
             currencyNavigationLink(
-                title: "Default Target Currency",
+                title: .settingsCurrenciesDefaultTarget,
                 icon: "dollarsign.circle.fill",
                 iconColors: (Color.white, Color.green),
                 currentValue: settingsViewModel.defaultTargetCurrency,
@@ -113,7 +113,7 @@ struct SettingsView: View {
             )
 
             NavigationLink(value: SettingsRoute.favoriteCurrencies) {
-                Label("Favorite Currencies", systemImage: "star.circle.fill")
+                Label(.settingsCurrenciesFavorites, systemImage: "star.circle.fill")
                     .symbolRenderingMode(.multicolor)
             }
         }
@@ -123,17 +123,17 @@ struct SettingsView: View {
         Section {
             settingsActionButton(
                 icon: "arrow.clockwise.circle.fill",
-                title: "Refresh All Data",
+                title: .settingsDataRefreshAll,
                 action: settingsViewModel.refreshAllDataTapped
             )
-            .accessibilityHint("Erases all stored exchange rates and historical data, then downloads fresh data")
+            .accessibilityHint(.settingsDataRefreshAllHint)
 
             settingsActionButton(
                 icon: "arrow.triangle.2.circlepath.circle.fill",
-                title: "Reset All Preferences",
+                title: .settingsDataResetPreferences,
                 action: settingsViewModel.resetPreferencesTapped
             )
-            .accessibilityHint("Resets all settings to their default values")
+            .accessibilityHint(.settingsDataResetPreferencesHint)
         }
     }
 
@@ -141,7 +141,7 @@ struct SettingsView: View {
         Section {
             NavigationLink(value: SettingsRoute.about) {
                 Label(title: {
-                    Text("About")
+                    Text(.settingsAboutRow)
                 }, icon: {
                     Image(systemName: "info.circle.fill")
                         .symbolRenderingMode(.multicolor)
@@ -164,7 +164,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func currencyNavigationLink(
-        title: String,
+        title: LocalizedStringResource,
         icon: String,
         iconColors: (Color, Color),
         currentValue: CurrencyCode,
@@ -190,7 +190,7 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private func settingsActionButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
+    private func settingsActionButton(icon: String, title: LocalizedStringResource, action: @escaping () -> Void) -> some View {
         Button(role: .destructive, action: action) {
             Label {
                 Text(title)
@@ -212,7 +212,7 @@ private extension View {
     ) -> some View {
         self.alert(alert.title, isPresented: isPresented) {
             Button(alert.confirmTitle, role: .destructive, action: onConfirm)
-            Button("Cancel", role: .cancel) {}
+            Button(.settingsAlertCancel, role: .cancel) {}
         } message: {
             Text(alert.message)
         }

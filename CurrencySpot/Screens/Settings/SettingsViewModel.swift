@@ -19,26 +19,24 @@ final class SettingsViewModel {
         case refreshAllData
         case resetPreferences
 
-        var title: String {
+        var title: LocalizedStringResource {
             switch self {
-            case .refreshAllData: "Refresh All Data"
-            case .resetPreferences: "Reset Preferences"
+            case .refreshAllData: .settingsRefreshAllAlertTitle
+            case .resetPreferences: .settingsResetPreferencesAlertTitle
             }
         }
 
-        var message: String {
+        var message: LocalizedStringResource {
             switch self {
-            case .refreshAllData:
-                "This will erase all locally stored exchange rates and historical data, then download fresh data from the network."
-            case .resetPreferences:
-                "This will reset all settings to their default values. Your stored data will not be affected."
+            case .refreshAllData: .settingsRefreshAllAlertMessage
+            case .resetPreferences: .settingsResetPreferencesAlertMessage
             }
         }
 
-        var confirmTitle: String {
+        var confirmTitle: LocalizedStringResource {
             switch self {
-            case .refreshAllData: "Refresh"
-            case .resetPreferences: "Reset"
+            case .refreshAllData: .settingsRefreshAllConfirm
+            case .resetPreferences: .settingsResetPreferencesConfirm
             }
         }
     }

@@ -13,7 +13,7 @@ struct WatchlistToggleButton: View {
                 .minimumHitTarget()
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isInWatchlist ? "Remove from watchlist" : "Add to watchlist")
+        .accessibilityLabel(isInWatchlist ? LocalizedStringResource.historyWatchlistToggleRemove : .historyWatchlistToggleAdd)
         .accessibilityAddTraits(isInWatchlist ? [.isButton, .isSelected] : .isButton)
     }
 

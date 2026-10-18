@@ -10,8 +10,8 @@ struct ChartPreviewSection: View {
         demo
             .padding(.top, Spacing.block)
             .accessibilityElement(children: .contain)
-            .accessibilityLabel("Interactive chart statistics demonstration")
-            .accessibilityHint("Watch the chart indicators toggle as statistics are selected")
+            .accessibilityLabel(.onboardingChartPreviewAccessibilityLabel)
+            .accessibilityHint(.onboardingChartPreviewAccessibilityHint)
     }
 
     @ViewBuilder
@@ -69,7 +69,7 @@ struct ChartPreviewSection: View {
 
     private func chart(showing shown: Set<ChartIndicator>) -> some View {
         Chart {
-            RuleMark(y: .value("Average", SampleChartData.averageRate))
+            RuleMark(y: .value(.historyChartPlotAverage, SampleChartData.averageRate))
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
                 .foregroundStyle(Color.gray.opacity(shown.contains(.average) ? 0.5 : 0.0))
                 .zIndex(-1)
@@ -86,8 +86,8 @@ struct ChartPreviewSection: View {
 
             if let highestPoint = SampleChartData.highestPoint {
                 PointMark(
-                    x: .value("Date", highestPoint.date, unit: .day),
-                    y: .value("Rate", highestPoint.rate)
+                    x: .value(.rateChartAxisDate, highestPoint.date, unit: .day),
+                    y: .value(.rateChartAxisRate, highestPoint.rate)
                 )
                 .symbol {
                     extremeMarker(isShown: shown.contains(.highest), color: .success)
@@ -96,8 +96,8 @@ struct ChartPreviewSection: View {
 
             if let lowestPoint = SampleChartData.lowestPoint {
                 PointMark(
-                    x: .value("Date", lowestPoint.date, unit: .day),
-                    y: .value("Rate", lowestPoint.rate)
+                    x: .value(.rateChartAxisDate, lowestPoint.date, unit: .day),
+                    y: .value(.rateChartAxisRate, lowestPoint.rate)
                 )
                 .symbol {
                     extremeMarker(isShown: shown.contains(.lowest), color: .failure)
@@ -124,9 +124,9 @@ struct ChartPreviewSection: View {
         VStack(spacing: Spacing.tight) {
             HStack(spacing: Spacing.element) {
                 StatCard(
-                    label: "Highest",
+                    label: .historyStatisticsHighest,
                     value: (SampleChartData.highestPoint?.rate ?? 0).formatted(.number.precision(.fractionLength(4))),
-                    indicatorColor: .success,
+                    marker: .highest,
                     isToggled: shown.contains(.highest),
                     size: .compact
                 ) {
@@ -134,9 +134,9 @@ struct ChartPreviewSection: View {
                 }
 
                 StatCard(
-                    label: "Lowest",
+                    label: .historyStatisticsLowest,
                     value: (SampleChartData.lowestPoint?.rate ?? 0).formatted(.number.precision(.fractionLength(4))),
-                    indicatorColor: .failure,
+                    marker: .lowest,
                     isToggled: shown.contains(.lowest),
                     size: .compact
                 ) {
@@ -146,9 +146,9 @@ struct ChartPreviewSection: View {
 
             HStack(spacing: Spacing.element) {
                 StatCard(
-                    label: "Average",
+                    label: .historyStatisticsAverage,
                     value: SampleChartData.averageRate.formatted(.number.precision(.fractionLength(4))),
-                    indicatorColor: .gray,
+                    marker: .average,
                     isToggled: shown.contains(.average),
                     size: .compact
                 ) {
@@ -156,9 +156,9 @@ struct ChartPreviewSection: View {
                 }
 
                 StatCard(
-                    label: "Volatility",
-                    value: "Low",
-                    indicatorColor: nil,
+                    label: .historyStatisticsVolatility,
+                    value: String(localized: VolatilityLevel.low.displayName),
+                    marker: nil,
                     isToggled: false,
                     size: .compact
                 ) {}

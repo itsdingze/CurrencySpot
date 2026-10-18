@@ -38,19 +38,19 @@ struct ScanStatusCapsule: View {
         }
         .onChange(of: phase == .pointHint) { _, showing in
             if showing {
-                AccessibilityNotification.Announcement("Point the camera at a price tag.").post()
+                AccessibilityNotification.Announcement(String(localized: .cameraAnnouncementPointHint)).post()
             }
         }
     }
 
     private var isAwaitingFirstPrice: Bool { isLive && !hasPrices }
 
-    private var message: LocalizedStringKey? {
+    private var message: LocalizedStringResource? {
         switch phase {
         case .hidden: nil
-        case .scanning: "Scanning"
-        case .pointHint: "Point at a price tag or menu"
-        case .notFound: "No prices found"
+        case .scanning: .cameraStatusScanning
+        case .pointHint: .cameraStatusPointHint
+        case .notFound: .cameraStatusNotFound
         }
     }
 }

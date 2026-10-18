@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ToastView: View {
-    let message: String
+    let message: LocalizedStringResource
     let icon: String
 
     var body: some View {
@@ -24,5 +24,5 @@ struct ToastView: View {
 }
 
 #Preview {
-    ToastView(message: "123", icon: "house")
+    ToastView(message: ToastData(type: .preferencesReset).message, icon: "house")
 }

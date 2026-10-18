@@ -74,16 +74,27 @@ struct CurrencyRow: View {
         }
     }
 
-    private func accessibilityLabel(trend: Trend?) -> String {
-        var parts = ["\(entry.code.rawValue), \(entry.name)"]
-        guard !metricsHidden else { return parts.joined(separator: ", ") }
-
-        parts.append("1 \(viewModel.baseCurrency.rawValue) equals \(entry.rate.toStringMax4Decimals) \(entry.code.rawValue)")
-        if let trend {
-            let value = viewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange)
-            parts.append("\(trend.direction.description) \(value)")
+    private func accessibilityLabel(trend: Trend?) -> LocalizedStringResource {
+        let code = entry.code.rawValue
+        guard !metricsHidden else {
+            return .historyRowAccessibilityLabel(code: code, name: entry.name)
         }
-        return parts.joined(separator: ", ")
+
+        let base = viewModel.baseCurrency.rawValue
+        let rate = entry.rate.toStringMax4Decimals
+        guard let trend else {
+            return .historyRowAccessibilityLabelRate(code: code, name: entry.name, base: base, rate: rate, target: code)
+        }
+
+        let change = viewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange)
+        switch trend.direction {
+        case .up:
+            return .historyRowAccessibilityLabelUp(code: code, name: entry.name, base: base, rate: rate, target: code, change: change)
+        case .down:
+            return .historyRowAccessibilityLabelDown(code: code, name: entry.name, base: base, rate: rate, target: code, change: change)
+        case .stable:
+            return .historyRowAccessibilityLabelStable(code: code, name: entry.name, base: base, rate: rate, target: code, change: change)
+        }
     }
 }
 

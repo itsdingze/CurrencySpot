@@ -51,8 +51,8 @@ struct MiniChart: View {
 
     private func chartLineMark(at index: Int, value: Double) -> some ChartContent {
         LineMark(
-            x: .value("Day", index),
-            y: .value("Rate", value)
+            x: .value(.historyChartPlotDay, index),
+            y: .value(.rateChartAxisRate, value)
         )
         .interpolationMethod(.cardinal(tension: tension))
         .lineStyle(StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
@@ -61,9 +61,9 @@ struct MiniChart: View {
 
     private func chartAreaMark(at index: Int, value: Double) -> some ChartContent {
         AreaMark(
-            x: .value("Day", index),
-            yStart: .value("Rate", value),
-            yEnd: .value("Rate", chartYDomain.lowerBound)
+            x: .value(.historyChartPlotDay, index),
+            yStart: .value(.rateChartAxisRate, value),
+            yEnd: .value(.rateChartAxisRate, chartYDomain.lowerBound)
         )
         .interpolationMethod(.cardinal(tension: tension))
         .foregroundStyle(areaGradient)
@@ -75,8 +75,8 @@ struct MiniChart: View {
            let lastValue = data.last
         {
             PointMark(
-                x: .value("Day", lastIndex),
-                y: .value("Rate", lastValue)
+                x: .value(.historyChartPlotDay, lastIndex),
+                y: .value(.rateChartAxisRate, lastValue)
             )
             .symbol {
                 ChartPointMarker(

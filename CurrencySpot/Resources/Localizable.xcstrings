@@ -1,0 +1,3858 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "app.errorAlert.dismiss" : {
+      "comment" : "Button that dismisses the app-wide error alert.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "app.tab.camera" : {
+      "comment" : "Tab bar item for the camera price scanner screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera"
+          }
+        }
+      }
+    },
+    "app.tab.convert" : {
+      "comment" : "Tab bar item for the currency converter screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convert"
+          }
+        }
+      }
+    },
+    "app.tab.history" : {
+      "comment" : "Tab bar item for the exchange rate history screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        }
+      }
+    },
+    "app.tab.settings" : {
+      "comment" : "Tab bar item for the settings screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
+    "calculator.announcement.failedRetry" : {
+      "comment" : "VoiceOver announcement on the converter screen when rates fail to load while online; the screen shows a Try Again button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load exchange rates. Try again."
+          }
+        }
+      }
+    },
+    "calculator.announcement.failedSampleRates" : {
+      "comment" : "VoiceOver announcement on the converter screen when rates fail to load while offline; the screen shows a Use Sample Rates button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load exchange rates. Use sample rates."
+          }
+        }
+      }
+    },
+    "calculator.announcement.loaded" : {
+      "comment" : "VoiceOver announcement on the converter screen when exchange rates finish loading.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exchange rates loaded"
+          }
+        }
+      }
+    },
+    "calculator.currency.amount.accessibilityValue" : {
+      "comment" : "VoiceOver value for an amount on the converter screen, e.g. 1,234.56 US Dollar. amount: formatted amount. currency: localized currency name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(amount)@ %2$(currency)@"
+          }
+        }
+      }
+    },
+    "calculator.currency.amount.converted.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the converted amount on the converter screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Converted amount"
+          }
+        }
+      }
+    },
+    "calculator.currency.amount.source.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the source amount on the converter screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amount to convert"
+          }
+        }
+      }
+    },
+    "calculator.currency.from" : {
+      "comment" : "Converter screen caption above the source amount and currency.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From"
+          }
+        }
+      }
+    },
+    "calculator.currency.picker.accessibilityValue" : {
+      "comment" : "VoiceOver value for a converter screen currency button. name: localized currency name. code: currency code such as EUR.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currently selected: %1$(name)@, %2$(code)@"
+          }
+        }
+      }
+    },
+    "calculator.currency.picker.source.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the converter screen button that opens the source currency picker.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select source currency"
+          }
+        }
+      }
+    },
+    "calculator.currency.picker.target.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the converter screen button that opens the target currency picker.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select target currency"
+          }
+        }
+      }
+    },
+    "calculator.currency.to" : {
+      "comment" : "Converter screen caption above the converted amount and currency.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To"
+          }
+        }
+      }
+    },
+    "calculator.error.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the converter screen error container.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load exchange rates"
+          }
+        }
+      }
+    },
+    "calculator.error.message.offline" : {
+      "comment" : "Converter screen error message when the device is offline and no rates are saved, above the Use Sample Rates button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're offline and there are no saved rates yet. Connect to the internet to get the latest rates."
+          }
+        }
+      }
+    },
+    "calculator.error.message.online" : {
+      "comment" : "Converter screen error message when rates fail to load while online, above the Try Again button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to load the latest exchange rates. Please try again."
+          }
+        }
+      }
+    },
+    "calculator.error.sampleRatesNote" : {
+      "comment" : "Converter screen note under the Use Sample Rates button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample rates are made up, not real exchange rates."
+          }
+        }
+      }
+    },
+    "calculator.error.title" : {
+      "comment" : "Converter screen heading when exchange rates fail to load and none are saved.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Load Exchange Rates"
+          }
+        }
+      }
+    },
+    "calculator.error.tryAgain" : {
+      "comment" : "Converter screen error button that retries loading exchange rates.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Again"
+          }
+        }
+      }
+    },
+    "calculator.error.useSampleRates" : {
+      "comment" : "Converter screen error button that fills the converter with made-up sample rates while offline.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Sample Rates"
+          }
+        }
+      }
+    },
+    "calculator.loading" : {
+      "comment" : "Converter screen progress label shown while the first exchange rates load.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading exchange rates…"
+          }
+        }
+      }
+    },
+    "calculator.numberPad.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the converter screen number pad container.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number pad"
+          }
+        }
+      }
+    },
+    "calculator.numberPad.clear.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the C key on the converter number pad.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear all"
+          }
+        }
+      }
+    },
+    "calculator.numberPad.delete.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the backspace key on the converter number pad.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete last digit"
+          }
+        }
+      }
+    },
+    "calculator.numberPad.digit.accessibilityLabel" : {
+      "comment" : "VoiceOver label for a digit key on the converter number pad. digit: the digit, 0 to 9.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number %(digit)@"
+          }
+        }
+      }
+    },
+    "calculator.rateInfo.accessibilityLabel.notUpdated" : {
+      "comment" : "VoiceOver label for the converter screen rate caption when both currencies are the same and no rates were fetched yet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exchange rate information. Not updated yet"
+          }
+        }
+      }
+    },
+    "calculator.rateInfo.accessibilityLabel.rateNotUpdated" : {
+      "comment" : "VoiceOver label for the converter screen rate caption before any rates were fetched. rate: current rate such as 1 USD = 0.85 EUR.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exchange rate information. Current rate: %(rate)@. Not updated yet"
+          }
+        }
+      }
+    },
+    "calculator.rateInfo.accessibilityLabel.rateUpdated" : {
+      "comment" : "VoiceOver label for the converter screen rate caption. rate: current rate such as 1 USD = 0.85 EUR. date: when the rates were last fetched, formatted with date and time.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exchange rate information. Current rate: %1$(rate)@. Last updated: %2$(date)@"
+          }
+        }
+      }
+    },
+    "calculator.rateInfo.accessibilityLabel.updated" : {
+      "comment" : "VoiceOver label for the converter screen rate caption when both currencies are the same. date: when the rates were last fetched, formatted with date and time.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exchange rate information. Last updated: %(date)@"
+          }
+        }
+      }
+    },
+    "calculator.rateInfo.conversionRate" : {
+      "comment" : "Converter screen caption showing the current rate, e.g. 1 USD = 0.85 EUR. base: source currency code. rate: formatted rate number. target: target currency code.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 %1$(base)@ = %2$(rate)@ %3$(target)@"
+          }
+        }
+      }
+    },
+    "calculator.rateInfo.lastUpdated" : {
+      "comment" : "Converter screen caption under the conversion rate. date: when the exchange rates were last fetched, formatted with date and time.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last updated: %(date)@"
+          }
+        }
+      }
+    },
+    "calculator.rateInfo.notUpdated" : {
+      "comment" : "Converter screen caption under the conversion rate when no exchange rates have been fetched yet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not updated yet"
+          }
+        }
+      }
+    },
+    "calculator.swap.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the converter screen button that swaps the source and target currencies.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swap currencies"
+          }
+        }
+      }
+    },
+    "calculator.swap.announcement" : {
+      "comment" : "VoiceOver announcement after swapping currencies on the converter screen. base: new source currency code. target: new target currency code.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swapped. %1$(base)@ to %2$(target)@"
+          }
+        }
+      }
+    },
+    "camera.accessDenied.action" : {
+      "comment" : "Camera screen button that opens the system Settings app to turn on camera access.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
+          }
+        }
+      }
+    },
+    "camera.accessDenied.action.accessibilityHint" : {
+      "comment" : "VoiceOver hint for the Open Settings button on the camera screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the Settings app to enable camera access"
+          }
+        }
+      }
+    },
+    "camera.accessDenied.message" : {
+      "comment" : "Camera screen message when camera permission was denied.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on camera access in Settings to convert prices with your camera."
+          }
+        }
+      }
+    },
+    "camera.accessDenied.title" : {
+      "comment" : "Camera screen heading when camera permission was denied.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera Access Is Off"
+          }
+        }
+      }
+    },
+    "camera.announcement.livePriceDetected" : {
+      "comment" : "VoiceOver announcement when the live camera first finds a price.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price detected. Swipe right to hear the conversion, or tap the shutter to freeze and review."
+          }
+        }
+      }
+    },
+    "camera.announcement.noPricesFound" : {
+      "comment" : "VoiceOver announcement when a frozen camera frame contains no prices. Resume camera is the shutter button label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No prices found. Tap Resume camera to try again."
+          }
+        }
+      }
+    },
+    "camera.announcement.pointHint" : {
+      "comment" : "VoiceOver announcement when the camera has found no price after a few seconds.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Point the camera at a price tag."
+          }
+        }
+      }
+    },
+    "camera.announcement.ready" : {
+      "comment" : "VoiceOver announcement when camera access is granted on the camera screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera ready. Point at a price tag."
+          }
+        }
+      }
+    },
+    "camera.announcement.stillPricesDetected" : {
+      "comment" : "VoiceOver announcement when prices are found in a frozen camera frame.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prices detected. Swipe to explore."
+          }
+        }
+      }
+    },
+    "camera.badgeDetail.close" : {
+      "comment" : "Label for the icon-only button that closes the camera conversion sheet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "camera.badgeDetail.hide" : {
+      "comment" : "Button in the camera conversion sheet that hides this converted price.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide this conversion"
+          }
+        }
+      }
+    },
+    "camera.badgeDetail.openInConvert" : {
+      "comment" : "Button in the camera conversion sheet that opens the amount in the Convert tab.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Convert"
+          }
+        }
+      }
+    },
+    "camera.badgeDetail.title" : {
+      "comment" : "Navigation title of the camera screen sheet showing one converted price.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conversion"
+          }
+        }
+      }
+    },
+    "camera.currencyPair.base.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the camera screen button that picks the currency printed on price tags.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price tag currency"
+          }
+        }
+      }
+    },
+    "camera.currencyPair.from" : {
+      "comment" : "Camera screen caption above the price tag currency code.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From"
+          }
+        }
+      }
+    },
+    "camera.currencyPair.swap.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the camera screen button that swaps the two currencies.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swap currencies"
+          }
+        }
+      }
+    },
+    "camera.currencyPair.target.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the camera screen button that picks the currency prices convert into.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Converted currency"
+          }
+        }
+      }
+    },
+    "camera.currencyPair.to" : {
+      "comment" : "Camera screen caption above the converted currency code.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To"
+          }
+        }
+      }
+    },
+    "camera.detection.outline.accessibilityHint" : {
+      "comment" : "VoiceOver hint for a recognized number on the camera screen that can be converted.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convert this number"
+          }
+        }
+      }
+    },
+    "camera.detection.outline.accessibilityLabel" : {
+      "comment" : "VoiceOver label for a number the camera recognized but did not treat as a price. number: the recognized text.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number %(number)@"
+          }
+        }
+      }
+    },
+    "camera.detection.plate.accessibilityLabel" : {
+      "comment" : "VoiceOver label for a converted price shown over a price tag on the camera screen. price: amount formatted as currency.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Converted price %(price)@"
+          }
+        }
+      }
+    },
+    "camera.detection.plate.details.accessibilityHint" : {
+      "comment" : "VoiceOver hint for a converted price on the camera screen that opens its details sheet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens conversion details"
+          }
+        }
+      }
+    },
+    "camera.detection.plate.promote.accessibilityHint" : {
+      "comment" : "VoiceOver hint for a converted price partly hidden behind another on the camera screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brings this conversion to the front"
+          }
+        }
+      }
+    },
+    "camera.detection.summary.accessibilityLabel" : {
+      "comment" : "VoiceOver label summarizing the prices the live camera found. count: number of prices.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld price detected. Double-tap the shutter to freeze and review."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld prices detected. Double-tap the shutter to freeze and review."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "camera.flashlight" : {
+      "comment" : "Label for the icon-only flashlight toggle on the camera screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flashlight"
+          }
+        }
+      }
+    },
+    "camera.flashlight.off" : {
+      "comment" : "VoiceOver value of the camera flashlight toggle when the flashlight is off.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "camera.flashlight.on" : {
+      "comment" : "VoiceOver value of the camera flashlight toggle when the flashlight is on.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On"
+          }
+        }
+      }
+    },
+    "camera.importPhoto" : {
+      "comment" : "Label for the icon-only button on the camera screen that picks a photo from the library.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import photo"
+          }
+        }
+      }
+    },
+    "camera.permission.action" : {
+      "comment" : "Camera screen button that asks for camera permission.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get Started"
+          }
+        }
+      }
+    },
+    "camera.permission.message" : {
+      "comment" : "Camera screen message before the camera permission prompt.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Point your camera at a price tag or menu and see every price in your currency."
+          }
+        }
+      }
+    },
+    "camera.permission.title" : {
+      "comment" : "Camera screen heading before the camera permission prompt.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convert Prices with Your Camera"
+          }
+        }
+      }
+    },
+    "camera.shutter.freeze" : {
+      "comment" : "VoiceOver label and large content title for the camera shutter button while the camera is live.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Freeze frame"
+          }
+        }
+      }
+    },
+    "camera.shutter.resume" : {
+      "comment" : "VoiceOver label and large content title for the camera shutter button while a frame is frozen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume camera"
+          }
+        }
+      }
+    },
+    "camera.status.notFound" : {
+      "comment" : "Camera screen status capsule when a frozen frame contains no prices.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No prices found"
+          }
+        }
+      }
+    },
+    "camera.status.pointHint" : {
+      "comment" : "Camera screen status capsule shown when no price has been found after a few seconds.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Point at a price tag or menu"
+          }
+        }
+      }
+    },
+    "camera.status.scanning" : {
+      "comment" : "Camera screen status capsule while the camera looks for prices.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanning"
+          }
+        }
+      }
+    },
+    "currencyPicker.currency.accessibilityLabel" : {
+      "comment" : "VoiceOver label for a currency in the currency picker. code: currency code such as EUR. name: localized currency name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@, %2$(name)@"
+          }
+        }
+      }
+    },
+    "currencyPicker.done" : {
+      "comment" : "Button that closes the currency picker.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "currencyPicker.search.prompt" : {
+      "comment" : "Search field placeholder in the currency picker.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search currency code or name"
+          }
+        }
+      }
+    },
+    "currencyPicker.title" : {
+      "comment" : "Navigation title of the currency picker used by the converter and camera screens.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Currency"
+          }
+        }
+      }
+    },
+    "error.cameraCapture.message" : {
+      "comment" : "Error alert message when the camera frame cannot be captured for scanning.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't capture the frame. Please try again."
+          }
+        }
+      }
+    },
+    "error.cameraCapture.title" : {
+      "comment" : "Error alert title when the camera frame cannot be captured for scanning.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capture Failed"
+          }
+        }
+      }
+    },
+    "error.dataValidation.message" : {
+      "comment" : "Error alert message when exchange rate data fails validation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The exchange rate data could not be validated. Please try again."
+          }
+        }
+      }
+    },
+    "error.dataValidation.title" : {
+      "comment" : "Error alert title when exchange rate data fails validation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data Validation Error"
+          }
+        }
+      }
+    },
+    "error.dateCalculation.message" : {
+      "comment" : "Error alert message when the date range for historical rates cannot be calculated.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to calculate the date range for historical data. Please try again."
+          }
+        }
+      }
+    },
+    "error.dateCalculation.title" : {
+      "comment" : "Error alert title when the date range for historical rates cannot be calculated.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date Processing Error"
+          }
+        }
+      }
+    },
+    "error.decoding.message" : {
+      "comment" : "Error alert message when exchange rate data cannot be read.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to read the exchange rate data. Please try again later."
+          }
+        }
+      }
+    },
+    "error.decoding.title" : {
+      "comment" : "Error alert title when exchange rate data cannot be read.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data Error"
+          }
+        }
+      }
+    },
+    "error.http.message" : {
+      "comment" : "Error alert message when the exchange rate server returns an HTTP error.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The exchange rate server returned an error. Please try again later."
+          }
+        }
+      }
+    },
+    "error.http.title" : {
+      "comment" : "Error alert title when the exchange rate server returns an HTTP error.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server Error"
+          }
+        }
+      }
+    },
+    "error.network.message" : {
+      "comment" : "Error alert message for a connection failure with no more specific cause.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to connect to the server. Please try again later."
+          }
+        }
+      }
+    },
+    "error.network.title" : {
+      "comment" : "Error alert title when a request to the exchange rate server fails.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network Error"
+          }
+        }
+      }
+    },
+    "error.noInternet.message" : {
+      "comment" : "Error alert message when the device is offline.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to connect to the internet. Please check your connection."
+          }
+        }
+      }
+    },
+    "error.noInternet.title" : {
+      "comment" : "Error alert title when the device is offline.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Internet Connection"
+          }
+        }
+      }
+    },
+    "error.photoImport.message" : {
+      "comment" : "Error alert message when a photo picked from the library cannot be loaded.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load that photo. Please try again."
+          }
+        }
+      }
+    },
+    "error.photoImport.title" : {
+      "comment" : "Error alert title when a photo picked from the library cannot be loaded.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Import Failed"
+          }
+        }
+      }
+    },
+    "error.request.badServerResponse.message" : {
+      "comment" : "Error alert message when the server sends a response the app cannot use.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid server response. Please try again."
+          }
+        }
+      }
+    },
+    "error.request.cannotConnectToHost.message" : {
+      "comment" : "Error alert message when the exchange rate server refuses the connection.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cannot connect to server. Please try again later."
+          }
+        }
+      }
+    },
+    "error.request.cannotFindHost.message" : {
+      "comment" : "Error alert message when the exchange rate server host cannot be found.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cannot find server. Please check your internet connection."
+          }
+        }
+      }
+    },
+    "error.request.connectionLost.message" : {
+      "comment" : "Error alert message when the network connection drops during a request.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network connection lost. Please check your connection."
+          }
+        }
+      }
+    },
+    "error.request.dnsLookupFailed.message" : {
+      "comment" : "Error alert message when the server address cannot be resolved.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DNS lookup failed. Please check your internet connection."
+          }
+        }
+      }
+    },
+    "error.request.resourceUnavailable.message" : {
+      "comment" : "Error alert message when the requested exchange rate data is unavailable.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resource unavailable. Please try again later."
+          }
+        }
+      }
+    },
+    "error.request.timedOut.message" : {
+      "comment" : "Error alert message when a request to the exchange rate server times out.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The request timed out. Please check your internet connection and try again."
+          }
+        }
+      }
+    },
+    "error.request.tooManyRedirects.message" : {
+      "comment" : "Error alert message when the server redirects too many times.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many redirects. Please try again later."
+          }
+        }
+      }
+    },
+    "error.retryExhausted.message" : {
+      "comment" : "Error alert message when every retry of a request has failed. attempts: number of attempts made.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Unable to connect after %1$(attempts)lld attempt. Please check your internet connection and try again."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Unable to connect after %1$(attempts)lld attempts. Please check your internet connection and try again."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "error.retryExhausted.title" : {
+      "comment" : "Error alert title when every retry of a request has failed.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connection Failed"
+          }
+        }
+      }
+    },
+    "error.storage.message" : {
+      "comment" : "Error alert message when on-device storage cannot be opened and the app runs without saving.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exchange rates can't be saved on this device. The app works normally, but data will not be saved after closing."
+          }
+        }
+      }
+    },
+    "error.storage.title" : {
+      "comment" : "Error alert title when on-device storage cannot be opened and the app runs without saving.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storage Unavailable"
+          }
+        }
+      }
+    },
+    "error.textRecognition.message" : {
+      "comment" : "Error alert message when text recognition on a captured image fails.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't read text in this image. Please try again."
+          }
+        }
+      }
+    },
+    "error.textRecognition.title" : {
+      "comment" : "Error alert title when text recognition on a captured image fails.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan Failed"
+          }
+        }
+      }
+    },
+    "error.unexpected.message" : {
+      "comment" : "Error alert message for an error with no specific cause.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An unexpected error occurred. Please try again."
+          }
+        }
+      }
+    },
+    "error.unexpected.title" : {
+      "comment" : "Error alert title for an error with no specific cause.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unexpected Error"
+          }
+        }
+      }
+    },
+    "history.chart.accessibilityHint" : {
+      "comment" : "VoiceOver hint of the currency history chart.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe up or down to move between data points"
+          }
+        }
+      }
+    },
+    "history.chart.accessibilityLabel" : {
+      "comment" : "VoiceOver label of the currency history chart. base: base currency code. target: target currency code.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exchange rate chart for %1$(base)@ to %2$(target)@"
+          }
+        }
+      }
+    },
+    "history.chart.accessibilityValue.empty" : {
+      "comment" : "VoiceOver value of the currency history chart when it has no data points.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No data available"
+          }
+        }
+      }
+    },
+    "history.chart.accessibilityValue.selectedPoint" : {
+      "comment" : "VoiceOver value of the currency history chart while a data point is selected. date: formatted date. rate: formatted rate.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(date)@, %2$(rate)@"
+          }
+        }
+      }
+    },
+    "history.chart.accessibilityValue.summary.down" : {
+      "comment" : "VoiceOver value of a falling currency history chart. count: number of data points. startDate, endDate: formatted dates. rate: formatted latest rate.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Showing %1$(count)lld data point from %2$(startDate)@ to %3$(endDate)@. Current rate: %4$(rate)@. Trend: down"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Showing %1$(count)lld data points from %2$(startDate)@ to %3$(endDate)@. Current rate: %4$(rate)@. Trend: down"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "history.chart.accessibilityValue.summary.stable" : {
+      "comment" : "VoiceOver value of a stable currency history chart. count: number of data points. startDate, endDate: formatted dates. rate: formatted latest rate.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Showing %1$(count)lld data point from %2$(startDate)@ to %3$(endDate)@. Current rate: %4$(rate)@. Trend: stable"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Showing %1$(count)lld data points from %2$(startDate)@ to %3$(endDate)@. Current rate: %4$(rate)@. Trend: stable"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "history.chart.accessibilityValue.summary.up" : {
+      "comment" : "VoiceOver value of a rising currency history chart. count: number of data points. startDate, endDate: formatted dates. rate: formatted latest rate.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Showing %1$(count)lld data point from %2$(startDate)@ to %3$(endDate)@. Current rate: %4$(rate)@. Trend: up"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Showing %1$(count)lld data points from %2$(startDate)@ to %3$(endDate)@. Current rate: %4$(rate)@. Trend: up"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "history.chart.empty" : {
+      "comment" : "Currency history chart placeholder when the selected period has no data.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No data available for this period"
+          }
+        }
+      }
+    },
+    "history.chart.empty.accessibilityLabel" : {
+      "comment" : "VoiceOver label of the currency history chart placeholder when the selected period has no data.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chart data not available"
+          }
+        }
+      }
+    },
+    "history.chart.empty.announcement" : {
+      "comment" : "VoiceOver announcement when a currency's history chart finishes loading with no data.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No historical data available for this currency"
+          }
+        }
+      }
+    },
+    "history.chart.failed" : {
+      "comment" : "Currency history chart placeholder when loading the chart failed.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to load chart data"
+          }
+        }
+      }
+    },
+    "history.chart.failed.retry" : {
+      "comment" : "Button under the failed currency history chart that loads the chart again.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Again"
+          }
+        }
+      }
+    },
+    "history.chart.loaded.announcement" : {
+      "comment" : "VoiceOver announcement when a currency's history chart finishes loading.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exchange rate chart loaded"
+          }
+        }
+      }
+    },
+    "history.chart.loading.accessibilityLabel" : {
+      "comment" : "VoiceOver label of the currency history chart while it loads.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading chart data"
+          }
+        }
+      }
+    },
+    "history.chart.plot.average" : {
+      "comment" : "Chart data label for the average rate line, read by VoiceOver chart descriptions.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average"
+          }
+        }
+      }
+    },
+    "history.chart.plot.day" : {
+      "comment" : "Chart data label for the day axis of a watchlist row's mini chart, read by VoiceOver chart descriptions.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day"
+          }
+        }
+      }
+    },
+    "history.header.change" : {
+      "comment" : "Currency history header: rate change over the selected period. change: formatted absolute rate change. percent: formatted percentage, for example 1.5%.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(change)@ (%2$(percent)@)"
+          }
+        }
+      }
+    },
+    "history.header.change.accessibilityLabel.down" : {
+      "comment" : "Currency history header, VoiceOver label of a falling rate change. change: formatted absolute rate change. percent: formatted percentage.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate change: down %1$(change)@, %2$(percent)@"
+          }
+        }
+      }
+    },
+    "history.header.change.accessibilityLabel.stable" : {
+      "comment" : "Currency history header, VoiceOver label of a stable rate change. change: formatted absolute rate change. percent: formatted percentage.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate change: stable %1$(change)@, %2$(percent)@"
+          }
+        }
+      }
+    },
+    "history.header.change.accessibilityLabel.up" : {
+      "comment" : "Currency history header, VoiceOver label of a rising rate change. change: formatted absolute rate change. percent: formatted percentage.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate change: up %1$(change)@, %2$(percent)@"
+          }
+        }
+      }
+    },
+    "history.header.change.accessibilityValue.down" : {
+      "comment" : "Currency history header, VoiceOver value of a falling rate change. percent: formatted percentage.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "down %1$(percent)@"
+          }
+        }
+      }
+    },
+    "history.header.change.accessibilityValue.stable" : {
+      "comment" : "Currency history header, VoiceOver value of a stable rate change. percent: formatted percentage.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "stable %1$(percent)@"
+          }
+        }
+      }
+    },
+    "history.header.change.accessibilityValue.up" : {
+      "comment" : "Currency history header, VoiceOver value of a rising rate change. percent: formatted percentage.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "up %1$(percent)@"
+          }
+        }
+      }
+    },
+    "history.header.currency.accessibilityLabel" : {
+      "comment" : "Currency history header, VoiceOver label of the currency title. code: ISO currency code. name: localized currency name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@, %2$(name)@"
+          }
+        }
+      }
+    },
+    "history.header.currentRate" : {
+      "comment" : "Currency history header: current exchange rate. base: base currency code. rate: formatted rate. target: target currency code.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 %1$(base)@ = %2$(rate)@ %3$(target)@"
+          }
+        }
+      }
+    },
+    "history.header.currentRate.accessibilityLabel" : {
+      "comment" : "Currency history header, VoiceOver label of the current rate. rate: the visible rate text, for example 1 USD = 0.92 EUR.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current rate: %1$(rate)@"
+          }
+        }
+      }
+    },
+    "history.list.done" : {
+      "comment" : "Toolbar button that ends editing the watchlist on the History tab.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "history.list.editWatchlist" : {
+      "comment" : "History tab options menu item that starts editing the watchlist.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Watchlist"
+          }
+        }
+      }
+    },
+    "history.list.empty.description" : {
+      "comment" : "Body of the History tab's empty state when the watchlist has no currencies.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search above to add currencies to your watchlist."
+          }
+        }
+      }
+    },
+    "history.list.empty.title" : {
+      "comment" : "Title of the History tab's empty state when the watchlist has no currencies.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Currencies"
+          }
+        }
+      }
+    },
+    "history.list.indicator" : {
+      "comment" : "History tab options menu: label of the picker that chooses how each row shows its weekly change.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indicator"
+          }
+        }
+      }
+    },
+    "history.list.options" : {
+      "comment" : "Accessibility label of the History tab's options menu button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Options"
+          }
+        }
+      }
+    },
+    "history.list.searchPrompt" : {
+      "comment" : "Placeholder in the History tab's search field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search currencies"
+          }
+        }
+      }
+    },
+    "history.list.searchResults" : {
+      "comment" : "VoiceOver announcement after the History search results change. count: number of matching currencies.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$(count)lld currency found"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$(count)lld currencies found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "history.list.sortBy" : {
+      "comment" : "History tab options menu: label of the sort order picker.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort By"
+          }
+        }
+      }
+    },
+    "history.list.title" : {
+      "comment" : "Navigation title of the History tab's watchlist screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        }
+      }
+    },
+    "history.row.accessibilityLabel" : {
+      "comment" : "VoiceOver label of a History row while editing the watchlist. code: ISO currency code. name: localized currency name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@, %2$(name)@"
+          }
+        }
+      }
+    },
+    "history.row.accessibilityLabel.down" : {
+      "comment" : "VoiceOver label of a History row whose rate fell this week. code, target: the row's ISO currency code. name: localized currency name. base: base currency code. rate: formatted rate. change: formatted weekly change.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@, %2$(name)@, 1 %3$(base)@ equals %4$(rate)@ %5$(target)@, down %6$(change)@"
+          }
+        }
+      }
+    },
+    "history.row.accessibilityLabel.rate" : {
+      "comment" : "VoiceOver label of a History row without weekly trend data. code, target: the row's ISO currency code. name: localized currency name. base: base currency code. rate: formatted rate.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@, %2$(name)@, 1 %3$(base)@ equals %4$(rate)@ %5$(target)@"
+          }
+        }
+      }
+    },
+    "history.row.accessibilityLabel.stable" : {
+      "comment" : "VoiceOver label of a History row whose rate was stable this week. code, target: the row's ISO currency code. name: localized currency name. base: base currency code. rate: formatted rate. change: formatted weekly change.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@, %2$(name)@, 1 %3$(base)@ equals %4$(rate)@ %5$(target)@, stable %6$(change)@"
+          }
+        }
+      }
+    },
+    "history.row.accessibilityLabel.up" : {
+      "comment" : "VoiceOver label of a History row whose rate rose this week. code, target: the row's ISO currency code. name: localized currency name. base: base currency code. rate: formatted rate. change: formatted weekly change.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@, %2$(name)@, 1 %3$(base)@ equals %4$(rate)@ %5$(target)@, up %6$(change)@"
+          }
+        }
+      }
+    },
+    "history.sort.currencyCode" : {
+      "comment" : "History sort option: alphabetically by ISO currency code.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currency Code"
+          }
+        }
+      }
+    },
+    "history.sort.manual" : {
+      "comment" : "History sort option: the order the user arranged.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual"
+          }
+        }
+      }
+    },
+    "history.sort.name" : {
+      "comment" : "History sort option: alphabetically by currency name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        }
+      }
+    },
+    "history.sort.percentChange" : {
+      "comment" : "History sort option: by the weekly percentage change.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Percentage Change"
+          }
+        }
+      }
+    },
+    "history.sort.rateChange" : {
+      "comment" : "History sort option: by the size of the weekly exchange rate change.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate Change"
+          }
+        }
+      }
+    },
+    "history.statistics.average" : {
+      "comment" : "Statistics card label: average rate in the selected period. Also used on the chart onboarding demo.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average"
+          }
+        }
+      }
+    },
+    "history.statistics.highest" : {
+      "comment" : "Statistics card label: highest rate in the selected period. Also used on the chart onboarding demo.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Highest"
+          }
+        }
+      }
+    },
+    "history.statistics.lowest" : {
+      "comment" : "Statistics card label: lowest rate in the selected period. Also used on the chart onboarding demo.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lowest"
+          }
+        }
+      }
+    },
+    "history.statistics.volatility" : {
+      "comment" : "Statistics card label: volatility level of the selected period. Also used on the chart onboarding demo.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volatility"
+          }
+        }
+      }
+    },
+    "history.statistics.volatility.accessibilityLabel" : {
+      "comment" : "VoiceOver label of the volatility statistics card. value: volatility level name or N/A.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volatility: %1$(value)@"
+          }
+        }
+      }
+    },
+    "history.statistics.volatility.unavailable" : {
+      "comment" : "Volatility statistics value when there is not enough data to compute it.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N/A"
+          }
+        }
+      }
+    },
+    "history.statistics.volatilityInfo" : {
+      "comment" : "VoiceOver label of the button that opens the volatility explanation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volatility information"
+          }
+        }
+      }
+    },
+    "history.timeRange.picker" : {
+      "comment" : "VoiceOver label of the time range picker above the currency history chart.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time range"
+          }
+        }
+      }
+    },
+    "history.trendDisplay.percentChange" : {
+      "comment" : "History indicator option: each row shows its weekly percentage change.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Percentage Change"
+          }
+        }
+      }
+    },
+    "history.trendDisplay.rateChange" : {
+      "comment" : "History indicator option: each row shows its weekly exchange rate change.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate Change"
+          }
+        }
+      }
+    },
+    "history.trendIndicator.down" : {
+      "comment" : "VoiceOver label of a falling weekly change badge. change: formatted change, for example 0.28% or 0.0123.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "down %1$(change)@"
+          }
+        }
+      }
+    },
+    "history.trendIndicator.stable" : {
+      "comment" : "VoiceOver label of a stable weekly change badge. change: formatted change, for example 0.00%.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "stable %1$(change)@"
+          }
+        }
+      }
+    },
+    "history.trendIndicator.up" : {
+      "comment" : "VoiceOver label of a rising weekly change badge. change: formatted change, for example 0.28% or 0.0123.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "up %1$(change)@"
+          }
+        }
+      }
+    },
+    "history.volatilityInfo.body" : {
+      "comment" : "Volatility explanation popover: introduction.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volatility measures how much the exchange rate fluctuates over time."
+          }
+        }
+      }
+    },
+    "history.volatilityInfo.close" : {
+      "comment" : "VoiceOver label of the close button in the volatility explanation popover.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close volatility information"
+          }
+        }
+      }
+    },
+    "history.volatilityInfo.footnote" : {
+      "comment" : "Volatility explanation popover: closing note under the level list.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lower volatility means more stable exchange rates, while higher volatility indicates larger price swings."
+          }
+        }
+      }
+    },
+    "history.volatilityInfo.level.accessibilityLabel" : {
+      "comment" : "Volatility explanation popover, VoiceOver label of one level row. level: level name, for example Very Low. range: its range, for example < 5% annual variation.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(level)@ volatility: %2$(range)@"
+          }
+        }
+      }
+    },
+    "history.volatilityInfo.title" : {
+      "comment" : "Title of the volatility explanation popover.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What is Volatility?"
+          }
+        }
+      }
+    },
+    "history.watchlistToggle.add" : {
+      "comment" : "VoiceOver label of the History search result button that adds the currency to the watchlist.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to watchlist"
+          }
+        }
+      }
+    },
+    "history.watchlistToggle.remove" : {
+      "comment" : "VoiceOver label of the History search result button that removes the currency from the watchlist.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from watchlist"
+          }
+        }
+      }
+    },
+    "onboarding.chart.accessibilityLabel" : {
+      "comment" : "VoiceOver label of the chart onboarding sheet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chart features onboarding"
+          }
+        }
+      }
+    },
+    "onboarding.chart.average.subtitle" : {
+      "comment" : "Chart onboarding feature description under View Average Line. Average is the statistics card label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap 'Average' to display the average rate line on the chart."
+          }
+        }
+      }
+    },
+    "onboarding.chart.average.title" : {
+      "comment" : "Chart onboarding feature title: showing the average rate line.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View Average Line"
+          }
+        }
+      }
+    },
+    "onboarding.chart.continue" : {
+      "comment" : "Chart onboarding button that moves to the next page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+    "onboarding.chart.drag.subtitle" : {
+      "comment" : "Chart onboarding feature description under Drag to Explore.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move your finger across the chart to explore different data points."
+          }
+        }
+      }
+    },
+    "onboarding.chart.drag.title" : {
+      "comment" : "Chart onboarding feature title: dragging across the chart.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to Explore"
+          }
+        }
+      }
+    },
+    "onboarding.chart.pageAnnouncement" : {
+      "comment" : "VoiceOver announcement when the chart onboarding page changes. page: current page number. total: number of pages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page %1$(page)lld of %2$(total)lld"
+          }
+        }
+      }
+    },
+    "onboarding.chart.select.subtitle" : {
+      "comment" : "Chart onboarding feature description under Touch to Select.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touch and hold on the chart to see detailed information for any date."
+          }
+        }
+      }
+    },
+    "onboarding.chart.select.title" : {
+      "comment" : "Chart onboarding feature title: touching the chart selects a day.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touch to Select"
+          }
+        }
+      }
+    },
+    "onboarding.chart.start" : {
+      "comment" : "Chart onboarding button on the last page that closes the onboarding.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Let's Start!"
+          }
+        }
+      }
+    },
+    "onboarding.chart.toggle.subtitle" : {
+      "comment" : "Chart onboarding feature description under Toggle Chart Elements.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap on statistics to show or hide chart markers."
+          }
+        }
+      }
+    },
+    "onboarding.chart.toggle.title" : {
+      "comment" : "Chart onboarding feature title: tapping statistics toggles chart markers.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toggle Chart Elements"
+          }
+        }
+      }
+    },
+    "onboarding.chartInteraction.accessibilityLabel" : {
+      "comment" : "VoiceOver label of the touch demo on the second chart onboarding page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chart touch interaction demonstration"
+          }
+        }
+      }
+    },
+    "onboarding.chartInteraction.animatedHint" : {
+      "comment" : "VoiceOver hint of the animated touch demo on the second chart onboarding page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watch the animated finger showing how to touch and drag on charts to explore data"
+          }
+        }
+      }
+    },
+    "onboarding.chartInteraction.staticHint" : {
+      "comment" : "VoiceOver hint of the touch demo when Reduce Motion shows a still frame.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows how touching a chart reveals the rate on that day"
+          }
+        }
+      }
+    },
+    "onboarding.chartInteraction.title" : {
+      "comment" : "Title of the second chart onboarding page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explore Data Points"
+          }
+        }
+      }
+    },
+    "onboarding.chartPreview.accessibilityHint" : {
+      "comment" : "VoiceOver hint of the animated statistics demo on the first chart onboarding page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watch the chart markers toggle as statistics are selected"
+          }
+        }
+      }
+    },
+    "onboarding.chartPreview.accessibilityLabel" : {
+      "comment" : "VoiceOver label of the animated statistics demo on the first chart onboarding page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interactive chart statistics demonstration"
+          }
+        }
+      }
+    },
+    "onboarding.chartPreview.title" : {
+      "comment" : "Title of the first chart onboarding page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interactive Chart"
+          }
+        }
+      }
+    },
+    "onboarding.header.back" : {
+      "comment" : "VoiceOver label of the chart onboarding back button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go back"
+          }
+        }
+      }
+    },
+    "onboarding.header.page" : {
+      "comment" : "VoiceOver label of the chart onboarding progress bar. page: current page number. total: number of pages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page %1$(page)lld of %2$(total)lld"
+          }
+        }
+      }
+    },
+    "onboarding.header.skip" : {
+      "comment" : "Button that closes the chart onboarding.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
+          }
+        }
+      }
+    },
+    "onboarding.welcome.continue" : {
+      "comment" : "Button that closes the welcome screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+    "onboarding.welcome.footer" : {
+      "comment" : "Welcome screen footer naming the source of the exchange rates.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exchange rates are aggregated from central banks worldwide."
+          }
+        }
+      }
+    },
+    "onboarding.welcome.history.subtitle" : {
+      "comment" : "Welcome screen feature description under Historical Tracking.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visualize currency performance with interactive charts."
+          }
+        }
+      }
+    },
+    "onboarding.welcome.history.title" : {
+      "comment" : "Welcome screen feature title: historical rate charts.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historical Tracking"
+          }
+        }
+      }
+    },
+    "onboarding.welcome.offline.subtitle" : {
+      "comment" : "Welcome screen feature description under Offline Support.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue converting with cached rates when offline."
+          }
+        }
+      }
+    },
+    "onboarding.welcome.offline.title" : {
+      "comment" : "Welcome screen feature title: conversion without a connection.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline Support"
+          }
+        }
+      }
+    },
+    "onboarding.welcome.rates.subtitle" : {
+      "comment" : "Welcome screen feature description under Daily Exchange Rates.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Convert between currencies using the latest exchange rates."
+          }
+        }
+      }
+    },
+    "onboarding.welcome.rates.title" : {
+      "comment" : "Welcome screen feature title: currency conversion with daily rates.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daily Exchange Rates"
+          }
+        }
+      }
+    },
+    "onboarding.welcome.title" : {
+      "comment" : "Title of the first-launch welcome screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome to CurrencySpot"
+          }
+        }
+      }
+    },
+    "rateChart.axis.date" : {
+      "comment" : "Chart axis name read by VoiceOver and Audio Graphs for the date of each exchange rate point.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date"
+          }
+        }
+      }
+    },
+    "rateChart.axis.rate" : {
+      "comment" : "Chart axis name read by VoiceOver and Audio Graphs for the exchange rate value of each point.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate"
+          }
+        }
+      }
+    },
+    "rates.banner.offlineSaved" : {
+      "comment" : "Rate status banner on the converter screen when offline and showing saved rates.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No internet. Showing saved rates."
+          }
+        }
+      }
+    },
+    "rates.banner.offlineSaved.accessibilityLabel" : {
+      "comment" : "VoiceOver label and announcement for the converter rate status banner when offline with saved rates.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No internet. Showing saved exchange rates."
+          }
+        }
+      }
+    },
+    "rates.banner.retry" : {
+      "comment" : "VoiceOver label for the icon-only retry button in the converter rate status banner.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try loading exchange rates again"
+          }
+        }
+      }
+    },
+    "rates.banner.sample" : {
+      "comment" : "Banner on the converter and camera screens when made-up sample rates are in use.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing sample rates."
+          }
+        }
+      }
+    },
+    "rates.banner.sample.accessibilityLabel" : {
+      "comment" : "VoiceOver label and announcement for the converter rate status banner when sample rates are in use.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing sample exchange rates."
+          }
+        }
+      }
+    },
+    "rates.banner.updateFailed" : {
+      "comment" : "Rate status banner on the converter screen when a refresh failed and saved rates are shown.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't update. Showing saved rates."
+          }
+        }
+      }
+    },
+    "rates.banner.updateFailed.accessibilityLabel" : {
+      "comment" : "VoiceOver label and announcement for the converter rate status banner when a refresh failed.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't update. Showing saved exchange rates."
+          }
+        }
+      }
+    },
+    "rates.banner.updating" : {
+      "comment" : "Rate status banner on the converter screen while exchange rates refresh.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating…"
+          }
+        }
+      }
+    },
+    "rates.banner.updating.accessibilityLabel" : {
+      "comment" : "VoiceOver label and announcement for the converter rate status banner while rates refresh.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating exchange rates"
+          }
+        }
+      }
+    },
+    "settings.about.legal.footer" : {
+      "comment" : "About screen footer naming the source of the exchange rates.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exchange rates are aggregated from central banks worldwide."
+          }
+        }
+      }
+    },
+    "settings.about.legal.header" : {
+      "comment" : "About screen section header for the privacy policy and licenses.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legal"
+          }
+        }
+      }
+    },
+    "settings.about.licenses" : {
+      "comment" : "About screen row that opens the open source licenses list.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Source Licenses"
+          }
+        }
+      }
+    },
+    "settings.about.privacyPolicy" : {
+      "comment" : "About screen link to the privacy policy website.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy Policy"
+          }
+        }
+      }
+    },
+    "settings.about.privacyPolicy.hint" : {
+      "comment" : "VoiceOver hint of the Privacy Policy link on the About screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens privacy policy in your web browser"
+          }
+        }
+      }
+    },
+    "settings.about.row" : {
+      "comment" : "Settings row that opens the About screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
+    },
+    "settings.about.title" : {
+      "comment" : "Navigation title of the About screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
+    },
+    "settings.about.version" : {
+      "comment" : "About screen: app version under the app name. version: version and build, for example 1.1.2 (42).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %1$(version)@"
+          }
+        }
+      }
+    },
+    "settings.accentColor.accessibilityLabel" : {
+      "comment" : "VoiceOver label of the Settings button that opens the accent color picker. color: current color name, for example Blue.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accent color: %1$(color)@"
+          }
+        }
+      }
+    },
+    "settings.accentColor.blue" : {
+      "comment" : "Accent color option name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blue"
+          }
+        }
+      }
+    },
+    "settings.accentColor.cyan" : {
+      "comment" : "Accent color option name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cyan"
+          }
+        }
+      }
+    },
+    "settings.accentColor.done" : {
+      "comment" : "Button that closes the accent color picker sheet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "settings.accentColor.green" : {
+      "comment" : "Accent color option name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Green"
+          }
+        }
+      }
+    },
+    "settings.accentColor.hint" : {
+      "comment" : "VoiceOver hint of the Settings button that opens the accent color picker.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the accent color picker"
+          }
+        }
+      }
+    },
+    "settings.accentColor.indigo" : {
+      "comment" : "Accent color option name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indigo"
+          }
+        }
+      }
+    },
+    "settings.accentColor.label" : {
+      "comment" : "Settings row label of the accent color picker.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accent Color"
+          }
+        }
+      }
+    },
+    "settings.accentColor.mint" : {
+      "comment" : "Accent color option name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mint"
+          }
+        }
+      }
+    },
+    "settings.accentColor.orange" : {
+      "comment" : "Accent color option name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orange"
+          }
+        }
+      }
+    },
+    "settings.accentColor.pink" : {
+      "comment" : "Accent color option name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pink"
+          }
+        }
+      }
+    },
+    "settings.accentColor.title" : {
+      "comment" : "Navigation title of the accent color picker sheet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accent Color"
+          }
+        }
+      }
+    },
+    "settings.accentColor.yellow" : {
+      "comment" : "Accent color option name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yellow"
+          }
+        }
+      }
+    },
+    "settings.acknowledgements.title" : {
+      "comment" : "Navigation title of the open source licenses list.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Source Licenses"
+          }
+        }
+      }
+    },
+    "settings.addCurrency.cancel" : {
+      "comment" : "Button that closes the add favorite currency sheet without adding.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "settings.addCurrency.searchPrompt" : {
+      "comment" : "Placeholder in the add favorite currency search field.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search currency code or name"
+          }
+        }
+      }
+    },
+    "settings.addCurrency.searchResults" : {
+      "comment" : "VoiceOver announcement after the add favorite currency search results change. count: number of matching currencies.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$(count)lld currency found"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$(count)lld currencies found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "settings.addCurrency.title" : {
+      "comment" : "Navigation title of the sheet that adds a favorite currency.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Currency"
+          }
+        }
+      }
+    },
+    "settings.alert.cancel" : {
+      "comment" : "Cancel button of the Settings confirmation alerts.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "settings.appearance.colorScheme" : {
+      "comment" : "Settings row label of the light, dark, or system appearance picker.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color Scheme"
+          }
+        }
+      }
+    },
+    "settings.appearance.header" : {
+      "comment" : "Settings section header for accent color and color scheme.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
+          }
+        }
+      }
+    },
+    "settings.appearance.mode.dark" : {
+      "comment" : "Color scheme option: always dark.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark"
+          }
+        }
+      }
+    },
+    "settings.appearance.mode.light" : {
+      "comment" : "Color scheme option: always light.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        }
+      }
+    },
+    "settings.appearance.mode.system" : {
+      "comment" : "Color scheme option that follows the device appearance.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        }
+      }
+    },
+    "settings.currencies.defaultBase" : {
+      "comment" : "Settings row that picks the base currency used at launch.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Base Currency"
+          }
+        }
+      }
+    },
+    "settings.currencies.defaultTarget" : {
+      "comment" : "Settings row that picks the target currency used at launch.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Target Currency"
+          }
+        }
+      }
+    },
+    "settings.currencies.favorites" : {
+      "comment" : "Settings row that opens the favorite currencies list.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorite Currencies"
+          }
+        }
+      }
+    },
+    "settings.currencies.footer" : {
+      "comment" : "Settings footer under the currency preferences section.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These settings determine the default values used when you open the app."
+          }
+        }
+      }
+    },
+    "settings.currencies.header" : {
+      "comment" : "Settings section header for default and favorite currencies.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currency Preferences"
+          }
+        }
+      }
+    },
+    "settings.data.refreshAll" : {
+      "comment" : "Destructive Settings button that erases stored rates and history, then downloads them again.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh All Data"
+          }
+        }
+      }
+    },
+    "settings.data.refreshAll.hint" : {
+      "comment" : "VoiceOver hint of the Refresh All Data button in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erases all stored exchange rates and historical data, then downloads fresh data"
+          }
+        }
+      }
+    },
+    "settings.data.resetPreferences" : {
+      "comment" : "Destructive Settings button that resets all preferences to their defaults.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset All Preferences"
+          }
+        }
+      }
+    },
+    "settings.data.resetPreferences.hint" : {
+      "comment" : "VoiceOver hint of the Reset All Preferences button in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resets all settings to their default values"
+          }
+        }
+      }
+    },
+    "settings.favorites.add" : {
+      "comment" : "Toolbar button on the favorite currencies list that opens the add currency sheet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add currency"
+          }
+        }
+      }
+    },
+    "settings.favorites.title" : {
+      "comment" : "Navigation title of the favorite currencies list in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorite Currencies"
+          }
+        }
+      }
+    },
+    "settings.license.sourceRepository" : {
+      "comment" : "License detail screen link to the library's source code repository.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source Repository"
+          }
+        }
+      }
+    },
+    "settings.license.sourceRepository.hint" : {
+      "comment" : "VoiceOver hint of the Source Repository link on the license detail screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the project on GitHub in your web browser"
+          }
+        }
+      }
+    },
+    "settings.refreshAll.alert.message" : {
+      "comment" : "Message of the alert confirming Refresh All Data in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will erase all locally stored exchange rates and historical data, then download fresh data from the network."
+          }
+        }
+      }
+    },
+    "settings.refreshAll.alert.title" : {
+      "comment" : "Title of the alert confirming Refresh All Data in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh All Data"
+          }
+        }
+      }
+    },
+    "settings.refreshAll.confirm" : {
+      "comment" : "Destructive confirm button of the Refresh All Data alert in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase and Refresh"
+          }
+        }
+      }
+    },
+    "settings.resetPreferences.alert.message" : {
+      "comment" : "Message of the alert confirming Reset All Preferences in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will reset all settings to their default values. Your stored data will not be affected."
+          }
+        }
+      }
+    },
+    "settings.resetPreferences.alert.title" : {
+      "comment" : "Title of the alert confirming Reset All Preferences in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Preferences"
+          }
+        }
+      }
+    },
+    "settings.resetPreferences.confirm" : {
+      "comment" : "Destructive confirm button of the Reset Preferences alert in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        }
+      }
+    },
+    "statCard.accessibilityLabel" : {
+      "comment" : "VoiceOver label for a chart statistic card. label: statistic name such as Highest. value: formatted statistic value.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(label)@: %2$(value)@"
+          }
+        }
+      }
+    },
+    "statCard.average.hide.accessibilityHint" : {
+      "comment" : "VoiceOver hint for the Average statistic card while its chart marker is shown.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hides the average marker on the chart"
+          }
+        }
+      }
+    },
+    "statCard.average.show.accessibilityHint" : {
+      "comment" : "VoiceOver hint for the Average statistic card while its chart marker is hidden.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the average marker on the chart"
+          }
+        }
+      }
+    },
+    "statCard.highest.hide.accessibilityHint" : {
+      "comment" : "VoiceOver hint for the Highest statistic card while its chart marker is shown.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hides the highest marker on the chart"
+          }
+        }
+      }
+    },
+    "statCard.highest.show.accessibilityHint" : {
+      "comment" : "VoiceOver hint for the Highest statistic card while its chart marker is hidden.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the highest marker on the chart"
+          }
+        }
+      }
+    },
+    "statCard.lowest.hide.accessibilityHint" : {
+      "comment" : "VoiceOver hint for the Lowest statistic card while its chart marker is shown.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hides the lowest marker on the chart"
+          }
+        }
+      }
+    },
+    "statCard.lowest.show.accessibilityHint" : {
+      "comment" : "VoiceOver hint for the Lowest statistic card while its chart marker is hidden.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the lowest marker on the chart"
+          }
+        }
+      }
+    },
+    "timeRange.fiveYears.name" : {
+      "comment" : "History chart time range picker: full name of the five-year range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 Years"
+          }
+        }
+      }
+    },
+    "timeRange.fiveYears.shortName" : {
+      "comment" : "History chart time range picker: abbreviated segment label for five years.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5Y"
+          }
+        }
+      }
+    },
+    "timeRange.fiveYears.voiceInput.numeral" : {
+      "comment" : "Voice Control phrase that selects the five-year range, written with a numeral.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5 years"
+          }
+        }
+      }
+    },
+    "timeRange.fiveYears.voiceInput.spelledOut" : {
+      "comment" : "Voice Control phrase that selects the five-year range, with the number spelled out.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "five years"
+          }
+        }
+      }
+    },
+    "timeRange.oneMonth.name" : {
+      "comment" : "History chart time range picker: full name of the one-month range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Month"
+          }
+        }
+      }
+    },
+    "timeRange.oneMonth.shortName" : {
+      "comment" : "History chart time range picker: abbreviated segment label for one month.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1M"
+          }
+        }
+      }
+    },
+    "timeRange.oneMonth.voiceInput.alternative" : {
+      "comment" : "Voice Control alternative phrase that selects the one-month range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 days"
+          }
+        }
+      }
+    },
+    "timeRange.oneMonth.voiceInput.numeral" : {
+      "comment" : "Voice Control phrase that selects the one-month range, written with a numeral.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 month"
+          }
+        }
+      }
+    },
+    "timeRange.oneMonth.voiceInput.spelledOut" : {
+      "comment" : "Voice Control phrase that selects the one-month range, with the number spelled out.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "one month"
+          }
+        }
+      }
+    },
+    "timeRange.oneWeek.name" : {
+      "comment" : "History chart time range picker: full name of the one-week range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Week"
+          }
+        }
+      }
+    },
+    "timeRange.oneWeek.shortName" : {
+      "comment" : "History chart time range picker: abbreviated segment label for one week.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1W"
+          }
+        }
+      }
+    },
+    "timeRange.oneWeek.voiceInput.alternative" : {
+      "comment" : "Voice Control alternative phrase that selects the one-week range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 days"
+          }
+        }
+      }
+    },
+    "timeRange.oneWeek.voiceInput.numeral" : {
+      "comment" : "Voice Control phrase that selects the one-week range, written with a numeral.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 week"
+          }
+        }
+      }
+    },
+    "timeRange.oneWeek.voiceInput.spelledOut" : {
+      "comment" : "Voice Control phrase that selects the one-week range, with the number spelled out.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "one week"
+          }
+        }
+      }
+    },
+    "timeRange.oneYear.name" : {
+      "comment" : "History chart time range picker: full name of the one-year range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Year"
+          }
+        }
+      }
+    },
+    "timeRange.oneYear.shortName" : {
+      "comment" : "History chart time range picker: abbreviated segment label for one year.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1Y"
+          }
+        }
+      }
+    },
+    "timeRange.oneYear.voiceInput.alternative" : {
+      "comment" : "Voice Control alternative phrase that selects the one-year range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 months"
+          }
+        }
+      }
+    },
+    "timeRange.oneYear.voiceInput.numeral" : {
+      "comment" : "Voice Control phrase that selects the one-year range, written with a numeral.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 year"
+          }
+        }
+      }
+    },
+    "timeRange.oneYear.voiceInput.spelledOut" : {
+      "comment" : "Voice Control phrase that selects the one-year range, with the number spelled out.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "one year"
+          }
+        }
+      }
+    },
+    "timeRange.sixMonths.name" : {
+      "comment" : "History chart time range picker: full name of the six-month range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 Months"
+          }
+        }
+      }
+    },
+    "timeRange.sixMonths.shortName" : {
+      "comment" : "History chart time range picker: abbreviated segment label for six months.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6M"
+          }
+        }
+      }
+    },
+    "timeRange.sixMonths.voiceInput.alternative" : {
+      "comment" : "Voice Control alternative phrase that selects the six-month range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "half year"
+          }
+        }
+      }
+    },
+    "timeRange.sixMonths.voiceInput.numeral" : {
+      "comment" : "Voice Control phrase that selects the six-month range, written with a numeral.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 months"
+          }
+        }
+      }
+    },
+    "timeRange.sixMonths.voiceInput.spelledOut" : {
+      "comment" : "Voice Control phrase that selects the six-month range, with the number spelled out.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "six months"
+          }
+        }
+      }
+    },
+    "timeRange.threeMonths.name" : {
+      "comment" : "History chart time range picker: full name of the three-month range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 Months"
+          }
+        }
+      }
+    },
+    "timeRange.threeMonths.shortName" : {
+      "comment" : "History chart time range picker: abbreviated segment label for three months.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3M"
+          }
+        }
+      }
+    },
+    "timeRange.threeMonths.voiceInput.alternative" : {
+      "comment" : "Voice Control alternative phrase that selects the three-month range.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "quarter"
+          }
+        }
+      }
+    },
+    "timeRange.threeMonths.voiceInput.numeral" : {
+      "comment" : "Voice Control phrase that selects the three-month range, written with a numeral.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 months"
+          }
+        }
+      }
+    },
+    "timeRange.threeMonths.voiceInput.spelledOut" : {
+      "comment" : "Voice Control phrase that selects the three-month range, with the number spelled out.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "three months"
+          }
+        }
+      }
+    },
+    "toast.dataRefreshing.message" : {
+      "comment" : "Settings toast and VoiceOver announcement shown while all data is being refreshed.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refreshing Data"
+          }
+        }
+      }
+    },
+    "toast.preferencesReset.message" : {
+      "comment" : "Settings toast and VoiceOver announcement shown after preferences are reset to their defaults.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preferences Reset to Default"
+          }
+        }
+      }
+    },
+    "volatilityLevel.high.name" : {
+      "comment" : "History screen volatility level name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High"
+          }
+        }
+      }
+    },
+    "volatilityLevel.low.name" : {
+      "comment" : "History screen volatility level name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low"
+          }
+        }
+      }
+    },
+    "volatilityLevel.moderate.name" : {
+      "comment" : "History screen volatility level name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moderate"
+          }
+        }
+      }
+    },
+    "volatilityLevel.range.above" : {
+      "comment" : "Volatility info row: range for the highest level. limit: formatted percentage, for example 25%.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "> %1$(limit)@ annual variation"
+          }
+        }
+      }
+    },
+    "volatilityLevel.range.below" : {
+      "comment" : "Volatility info row: range for the lowest level. limit: formatted percentage, for example 5%.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "< %1$(limit)@ annual variation"
+          }
+        }
+      }
+    },
+    "volatilityLevel.range.between" : {
+      "comment" : "Volatility info row: range for a middle level. lower: whole number of the lower bound, for example 5. upper: formatted percentage of the upper bound, for example 10%.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(lower)lld-%2$(upper)@ annual variation"
+          }
+        }
+      }
+    },
+    "volatilityLevel.veryHigh.name" : {
+      "comment" : "History screen volatility level name for an annual variation above the highest threshold.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very High"
+          }
+        }
+      }
+    },
+    "volatilityLevel.veryLow.name" : {
+      "comment" : "History screen volatility level name for an annual variation under the lowest threshold.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very Low"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

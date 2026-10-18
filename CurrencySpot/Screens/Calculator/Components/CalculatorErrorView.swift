@@ -10,7 +10,7 @@ struct CalculatorErrorView: View {
                 .foregroundStyle(Color.secondaryAccent)
                 .accessibilityHidden(true)
 
-            Text("Unable to Load Exchange Rates")
+            Text(.calculatorErrorTitle)
                 .font(.appTitle3.bold())
                 .accessibilityAddTraits(.isHeader)
 
@@ -21,14 +21,13 @@ struct CalculatorErrorView: View {
 
             switch calculatorViewModel.failureRecovery {
             case .retry:
-                Button("Try Again") { calculatorViewModel.retryFetch() }
+                Button(.calculatorErrorTryAgain) { calculatorViewModel.retryFetch() }
                     .buttonStyle(.primaryAction)
             case .sampleRates:
-                Button("Use Sample Rates") { calculatorViewModel.showSampleRates() }
+                Button(.calculatorErrorUseSampleRates) { calculatorViewModel.showSampleRates() }
                     .buttonStyle(.primaryAction)
-                    .accessibilityLabel("Use sample rates")
 
-                Text("Sample rates are made up, not real exchange rates.")
+                Text(.calculatorErrorSampleRatesNote)
                     .font(.appCaption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
@@ -36,15 +35,13 @@ struct CalculatorErrorView: View {
         }
         .padding()
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Couldn't load exchange rates")
+        .accessibilityLabel(.calculatorErrorAccessibilityLabel)
     }
 
-    private var message: String {
+    private var message: LocalizedStringResource {
         switch calculatorViewModel.failureRecovery {
-        case .retry:
-            "Something went wrong loading the latest rates. Please try again."
-        case .sampleRates:
-            "You're offline and there are no saved rates yet. Connect to the internet to get the latest rates."
+        case .retry: .calculatorErrorMessageOnline
+        case .sampleRates: .calculatorErrorMessageOffline
         }
     }
 }

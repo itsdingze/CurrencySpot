@@ -47,14 +47,14 @@ private enum NumberPadButton: Identifiable, Equatable {
         }
     }
 
-    var accessibilityLabel: String {
+    var accessibilityLabel: LocalizedStringResource {
         switch self {
         case let .number(value):
-            "Number \(value)"
+            .calculatorNumberPadDigitAccessibilityLabel(digit: value)
         case .clear:
-            "Clear all"
+            .calculatorNumberPadClearAccessibilityLabel
         case .delete:
-            "Delete last digit"
+            .calculatorNumberPadDeleteAccessibilityLabel
         }
     }
 
@@ -92,7 +92,7 @@ struct NumberPadView: View {
         .sensoryFeedback(.selection, trigger: clearPressed)
         .sensoryFeedback(.decrease, trigger: deletePressed)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Number pad")
+        .accessibilityLabel(.calculatorNumberPadAccessibilityLabel)
     }
 
     // MARK: - Private Views

@@ -1,16 +1,16 @@
 import SwiftUI
 
 struct OnboardingScaffoldView<Icon: View, Footer: View>: View {
-    private let title: String
+    private let title: LocalizedStringResource
     private let icon: Icon
     private let cards: [OnboardingCard]
     private let footer: Footer
-    private let buttonTitle: String
+    private let buttonTitle: LocalizedStringResource
     private let onContinue: () -> Void
 
     init(
-        title: String,
-        buttonTitle: String = "Continue",
+        title: LocalizedStringResource,
+        buttonTitle: LocalizedStringResource = .onboardingWelcomeContinue,
         @ViewBuilder icon: @escaping () -> Icon,
         cards: [OnboardingCard],
         @ViewBuilder footer: @escaping () -> Footer,
@@ -108,7 +108,7 @@ struct OnboardingScaffoldView<Icon: View, Footer: View>: View {
 #if DEBUG
 #Preview {
     OnboardingScaffoldView(
-        title: "Welcome",
+        title: .onboardingWelcomeTitle,
         icon: {
             Image(systemName: "sparkles")
                 .font(.appTitle)
@@ -116,12 +116,12 @@ struct OnboardingScaffoldView<Icon: View, Footer: View>: View {
         cards: [
             OnboardingCard(
                 symbol: "dollarsign.arrow.circlepath",
-                title: "Real-time Exchange Rates",
-                subTitle: "Convert between currencies using the latest exchange rates."
+                title: .onboardingWelcomeRatesTitle,
+                subTitle: .onboardingWelcomeRatesSubtitle
             ),
         ],
         footer: {
-            Text("Footer copy")
+            Text(.onboardingWelcomeFooter)
                 .font(.appCaption)
                 .foregroundStyle(.secondary)
                 .padding(.vertical, Spacing.block)

@@ -44,7 +44,7 @@ struct SwapButtonDivider: View {
         }
         .buttonStyle(.controlButton)
         .accessibilityIdentifier("SwapButtonDivider")
-        .accessibilityLabel("Swap currencies")
+        .accessibilityLabel(.calculatorSwapAccessibilityLabel)
     }
 
     // MARK: - Private Methods
@@ -53,8 +53,15 @@ struct SwapButtonDivider: View {
         withAnimation(.appFlip) {
             isFlipped.toggle()
             viewModel.swapCurrencies()
-            AccessibilityNotification.Announcement("Swapped. \(viewModel.baseCurrency.rawValue) to \(viewModel.targetCurrency.rawValue)").post()
+            AccessibilityNotification.Announcement(String(localized: swapAnnouncement)).post()
         }
+    }
+
+    private var swapAnnouncement: LocalizedStringResource {
+        .calculatorSwapAnnouncement(
+            base: viewModel.baseCurrency.rawValue,
+            target: viewModel.targetCurrency.rawValue
+        )
     }
 }
 

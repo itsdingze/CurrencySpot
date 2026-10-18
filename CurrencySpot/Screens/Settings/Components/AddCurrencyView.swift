@@ -26,21 +26,21 @@ struct AddCurrencyView: View {
                 .listSectionSeparator(.hidden)
             }
             .listStyle(.plain)
-            .navigationTitle("Add Currency")
+            .navigationTitle(.settingsAddCurrencyTitle)
             .toolbarTitleDisplayMode(.inline)
             .searchable(
                 text: $searchText,
                 placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Search currency code or name"
+                prompt: .settingsAddCurrencySearchPrompt
             )
             .autocorrectionDisabled()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Cancel", action: viewModel.dismissDestination)
+                    Button(.settingsAddCurrencyCancel, action: viewModel.dismissDestination)
                 }
             }
             .onChange(of: currencies.count) { _, count in
-                AccessibilityNotification.Announcement("\(count) currencies found").post()
+                AccessibilityNotification.Announcement(String(localized: .settingsAddCurrencySearchResults(count: count))).post()
             }
         }
     }

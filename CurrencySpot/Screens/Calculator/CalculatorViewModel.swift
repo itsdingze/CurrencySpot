@@ -126,8 +126,8 @@ final class CalculatorViewModel {
     // MARK: - Computed Properties (Formatted Display Values)
 
     var formattedLastUpdated: String {
-        guard let lastUpdated else { return "Not updated yet" }
-        return "Last updated: \(lastUpdated.lastUpdatedDisplay)"
+        guard let lastUpdated else { return String(localized: .calculatorRateInfoNotUpdated) }
+        return String(localized: .calculatorRateInfoLastUpdated(date: lastUpdated.lastUpdatedDisplay))
     }
 
     // MARK: - Input Intents

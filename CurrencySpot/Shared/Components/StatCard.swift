@@ -25,21 +25,36 @@ struct StatCard: View {
             case .compact: 5
             }
         }
+    }
 
-        fileprivate func hint(for label: String, isToggled: Bool) -> String {
-            let indicator = label.lowercased()
-            switch (self, isToggled) {
-            case (.regular, true): return "Hides the \(indicator) marker on the chart"
-            case (.regular, false): return "Shows the \(indicator) marker on the chart"
-            case (.compact, true): return "Tap to hide \(indicator) indicator on chart"
-            case (.compact, false): return "Tap to show \(indicator) indicator on chart"
+    enum Marker {
+        case highest
+        case lowest
+        case average
+
+        fileprivate var color: Color {
+            switch self {
+            case .highest: .success
+            case .lowest: .failure
+            case .average: .gray
+            }
+        }
+
+        fileprivate func hint(isShown: Bool) -> LocalizedStringResource {
+            switch (self, isShown) {
+            case (.highest, true): .statCardHighestHideAccessibilityHint
+            case (.highest, false): .statCardHighestShowAccessibilityHint
+            case (.lowest, true): .statCardLowestHideAccessibilityHint
+            case (.lowest, false): .statCardLowestShowAccessibilityHint
+            case (.average, true): .statCardAverageHideAccessibilityHint
+            case (.average, false): .statCardAverageShowAccessibilityHint
             }
         }
     }
 
-    let label: String
+    let label: LocalizedStringResource
     let value: String
-    let indicatorColor: Color?
+    let marker: Marker?
     let isToggled: Bool
     let size: Size
     let action: () -> Void
@@ -54,9 +69,9 @@ struct StatCard: View {
                         .font(size.labelFont)
                         .foregroundStyle(.secondary)
 
-                    if let indicatorColor {
+                    if let marker {
                         Circle()
-                            .fill(indicatorColor.opacity(isToggled ? 1.0 : 0.3))
+                            .fill(marker.color.opacity(isToggled ? 1.0 : 0.3))
                             .frame(width: size.indicatorDiameter, height: size.indicatorDiameter)
                             .animation(.appToggle, value: isToggled)
                     }
@@ -71,8 +86,8 @@ struct StatCard: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .disabled(indicatorColor == nil)
-        .accessibilityLabel("\(label): \(value)")
+        .disabled(marker == nil)
+        .accessibilityLabel(.statCardAccessibilityLabel(label: String(localized: label), value: value))
         .accessibilityHint(accessibilityHint)
         .accessibilityAddTraits(isToggled ? .isSelected : [])
     }
@@ -80,21 +95,21 @@ struct StatCard: View {
     private var background: Color {
         switch size {
         case .regular: .clear
-        case .compact: isToggled && indicatorColor != nil ? accent.opacity(0.08) : Color.gray.opacity(0.05)
+        case .compact: isToggled && marker != nil ? accent.opacity(0.08) : Color.gray.opacity(0.05)
         }
     }
 
-    private var accessibilityHint: String {
-        guard indicatorColor != nil else { return "" }
-        return size.hint(for: label, isToggled: isToggled)
+    private var accessibilityHint: Text {
+        guard let marker else { return Text(verbatim: "") }
+        return Text(marker.hint(isShown: isToggled))
     }
 }
 
 #Preview {
     VStack {
-        StatCard(label: "Highest", value: "1.1800", indicatorColor: .success, isToggled: true, size: .regular) {}
-        StatCard(label: "Lowest", value: "1.1400", indicatorColor: .failure, isToggled: false, size: .compact) {}
-        StatCard(label: "Volatility", value: "Low", indicatorColor: nil, isToggled: false, size: .compact) {}
+        StatCard(label: .historyStatisticsHighest, value: "1.1800", marker: .highest, isToggled: true, size: .regular) {}
+        StatCard(label: .historyStatisticsLowest, value: "1.1400", marker: .lowest, isToggled: false, size: .compact) {}
+        StatCard(label: .historyStatisticsVolatility, value: "Low", marker: nil, isToggled: false, size: .compact) {}
     }
     .padding()
 }

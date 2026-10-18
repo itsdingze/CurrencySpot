@@ -70,7 +70,7 @@ struct CurrencyChart: View {
     var body: some View {
         Chart {
             if isChartReady, !viewModel.displayedChartDataPoints.isEmpty {
-                RuleMark(y: .value("Average", statistics.averageRate))
+                RuleMark(y: .value(.historyChartPlotAverage, statistics.averageRate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
                     .foregroundStyle(Color.gray.opacity(viewModel.showAverageLine ? 0.5 : 0.0))
                     .zIndex(-1)
@@ -88,8 +88,8 @@ struct CurrencyChart: View {
 
             if let highestPoint, isChartReady {
                 PointMark(
-                    x: .value("Date", highestPoint.date, unit: .day),
-                    y: .value("Rate", highestPoint.rate)
+                    x: .value(.rateChartAxisDate, highestPoint.date, unit: .day),
+                    y: .value(.rateChartAxisRate, highestPoint.rate)
                 )
                 .symbol {
                     ZStack {
@@ -104,8 +104,8 @@ struct CurrencyChart: View {
 
             if let lowestPoint, isChartReady {
                 PointMark(
-                    x: .value("Date", lowestPoint.date, unit: .day),
-                    y: .value("Rate", lowestPoint.rate)
+                    x: .value(.rateChartAxisDate, lowestPoint.date, unit: .day),
+                    y: .value(.rateChartAxisRate, lowestPoint.rate)
                 )
                 .symbol {
                     ZStack {
@@ -119,7 +119,7 @@ struct CurrencyChart: View {
             }
 
             if let selectedDate {
-                RuleMark(x: .value("Date", selectedDate.date, unit: .day))
+                RuleMark(x: .value(.rateChartAxisDate, selectedDate.date, unit: .day))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
                     .zIndex(-1)
                     .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
@@ -135,8 +135,8 @@ struct CurrencyChart: View {
                     }
 
                 PointMark(
-                    x: .value("Date", selectedDate.date, unit: .day),
-                    y: .value("Rate", selectedDate.rate)
+                    x: .value(.rateChartAxisDate, selectedDate.date, unit: .day),
+                    y: .value(.rateChartAxisRate, selectedDate.rate)
                 )
                 .symbol {
                     ChartPointMarker(color: .tint, outerSize: 14, innerSize: 10)
@@ -186,29 +186,49 @@ struct CurrencyChart: View {
 
     // MARK: - Accessibility Helpers
 
-    private var chartAccessibilityLabel: String {
-        "Exchange rate chart for \(viewModel.baseCurrency.rawValue) to \(viewModel.targetCurrency.rawValue)"
+    private var chartAccessibilityLabel: LocalizedStringResource {
+        .historyChartAccessibilityLabel(
+            base: viewModel.baseCurrency.rawValue,
+            target: viewModel.targetCurrency.rawValue
+        )
     }
 
-    private var chartAccessibilityValue: String {
+    private var chartAccessibilityValue: LocalizedStringResource {
         let dataPoints = viewModel.displayedChartDataPoints
 
         if let index = axSelectionIndex, dataPoints.indices.contains(index) {
             let point = dataPoints[index]
-            return "\(point.date.chartDisplay) , \(point.rate.toStringMax4Decimals)"
+            return .historyChartAccessibilityValueSelectedPoint(
+                date: point.date.chartDisplay,
+                rate: point.rate.toStringMax4Decimals
+            )
         }
 
-        guard !dataPoints.isEmpty else { return "No data available" }
+        guard let first = dataPoints.first, let last = dataPoints.last else {
+            return .historyChartAccessibilityValueEmpty
+        }
 
-        let dateRange = "\(dataPoints.first?.date.chartDisplay ?? "") to \(dataPoints.last?.date.chartDisplay ?? "")"
-        let currentRate = dataPoints.last?.rate.toStringMax4Decimals ?? "Unknown"
-        let trend = statistics.trendDirection.description
-
-        return "Showing \(dataPoints.count) data points from \(dateRange). Current rate: \(currentRate). Trend: \(trend)"
+        return chartSummary(
+            count: dataPoints.count,
+            startDate: first.date.chartDisplay,
+            endDate: last.date.chartDisplay,
+            rate: last.rate.toStringMax4Decimals
+        )
     }
 
-    private var chartAccessibilityHint: String {
-        "Swipe up or down to move between data points"
+    private func chartSummary(count: Int, startDate: String, endDate: String, rate: String) -> LocalizedStringResource {
+        switch statistics.trendDirection {
+        case .up:
+            .historyChartAccessibilityValueSummaryUp(count: count, startDate: startDate, endDate: endDate, rate: rate)
+        case .down:
+            .historyChartAccessibilityValueSummaryDown(count: count, startDate: startDate, endDate: endDate, rate: rate)
+        case .stable:
+            .historyChartAccessibilityValueSummaryStable(count: count, startDate: startDate, endDate: endDate, rate: rate)
+        }
+    }
+
+    private var chartAccessibilityHint: LocalizedStringResource {
+        .historyChartAccessibilityHint
     }
 
     private func adjustSelection(_ direction: AccessibilityAdjustmentDirection) {

@@ -10,9 +10,9 @@ struct RateAreaLineMarks<LineStyle: ShapeStyle>: ChartContent {
 
     var body: some ChartContent {
         AreaMark(
-            x: .value("Date", date, unit: .day),
-            yStart: .value("Rate", rate),
-            yEnd: .value("Rate", lowestRate * 0.99)
+            x: .value(.rateChartAxisDate, date, unit: .day),
+            yStart: .value(.rateChartAxisRate, rate),
+            yEnd: .value(.rateChartAxisRate, lowestRate * 0.99)
         )
         .interpolationMethod(.cardinal(tension: 0.8))
         .foregroundStyle(
@@ -24,8 +24,8 @@ struct RateAreaLineMarks<LineStyle: ShapeStyle>: ChartContent {
         )
 
         LineMark(
-            x: .value("Date", date, unit: .day),
-            y: .value("Rate", rate)
+            x: .value(.rateChartAxisDate, date, unit: .day),
+            y: .value(.rateChartAxisRate, rate)
         )
         .interpolationMethod(.cardinal(tension: 0.8))
         .lineStyle(.init(lineWidth: 2, lineCap: .round, lineJoin: .round))

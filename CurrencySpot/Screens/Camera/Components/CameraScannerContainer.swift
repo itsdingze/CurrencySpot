@@ -65,17 +65,17 @@ struct CameraScannerContainer: View {
         }
         .onChange(of: viewModel.frozenImage != nil && viewModel.hasPrices) { _, detected in
             if detected {
-                AccessibilityNotification.Announcement("Prices detected. Swipe to explore.").post()
+                AccessibilityNotification.Announcement(String(localized: .cameraAnnouncementStillPricesDetected)).post()
             }
         }
         .onChange(of: viewModel.frozenImage == nil && viewModel.hasPrices) { _, detected in
             if detected {
-                AccessibilityNotification.Announcement("Price detected. Swipe right to hear the conversion, or tap the shutter to freeze and review.").post()
+                AccessibilityNotification.Announcement(String(localized: .cameraAnnouncementLivePriceDetected)).post()
             }
         }
         .onChange(of: viewModel.frozenImage != nil && !viewModel.isRecognizingStill && !viewModel.hasPrices) { _, empty in
             if empty {
-                AccessibilityNotification.Announcement("No prices found. Tap Resume camera to try again.").post()
+                AccessibilityNotification.Announcement(String(localized: .cameraAnnouncementNoPricesFound)).post()
             }
         }
         .onChange(of: scenePhase) { _, phase in

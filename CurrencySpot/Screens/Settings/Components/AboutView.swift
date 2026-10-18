@@ -9,14 +9,14 @@ struct AboutView: View {
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
 
-            Section(header: Text("Legal"),
-                    footer: Text("Exchange rates are aggregated from central banks worldwide.")) {
+            Section(header: Text(.settingsAboutLegalHeader),
+                    footer: Text(.settingsAboutLegalFooter)) {
                 privacyPolicyLink
                 openSourceLicensesLink
             }
         }
         .contentMargins(.top, 0, for: .scrollContent)
-        .navigationTitle("About")
+        .navigationTitle(.settingsAboutTitle)
         .toolbarTitleDisplayMode(.inline)
     }
 
@@ -36,7 +36,7 @@ struct AboutView: View {
             Text(Bundle.main.appName)
                 .font(.appTitle3)
 
-            Text("Version \(Bundle.main.appVersionWithBuild)")
+            Text(.settingsAboutVersion(version: Bundle.main.appVersionWithBuild))
                 .font(.appSubheadline)
                 .foregroundStyle(.secondary)
         }
@@ -52,7 +52,7 @@ struct AboutView: View {
             Link(destination: privacyPolicyURL) {
                 HStack {
                     Label(title: {
-                        Text("Privacy Policy")
+                        Text(.settingsAboutPrivacyPolicy)
                     }, icon: {
                         Image(systemName: "lock.circle.fill")
                             .symbolRenderingMode(.palette)
@@ -68,14 +68,14 @@ struct AboutView: View {
                 }
             }
             .tint(.primary)
-            .accessibilityHint("Opens privacy policy in your web browser")
+            .accessibilityHint(.settingsAboutPrivacyPolicyHint)
         }
     }
 
     private var openSourceLicensesLink: some View {
         NavigationLink(value: SettingsRoute.acknowledgements) {
             Label(title: {
-                Text("Open Source Licenses")
+                Text(.settingsAboutLicenses)
             }, icon: {
                 Image(systemName: "document.circle.fill")
                     .symbolRenderingMode(.palette)

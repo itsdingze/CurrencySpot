@@ -8,10 +8,10 @@ nonisolated struct ToastData: Identifiable, Sendable {
     let id = UUID()
     let type: ToastType
 
-    var message: String {
+    var message: LocalizedStringResource {
         switch type {
-        case .dataRefreshing: "Refreshing Data"
-        case .preferencesReset: "Settings Reset to Default"
+        case .dataRefreshing: .toastDataRefreshingMessage
+        case .preferencesReset: .toastPreferencesResetMessage
         }
     }
 

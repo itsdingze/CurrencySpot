@@ -12,6 +12,19 @@ enum AccentColorOption: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var displayName: LocalizedStringResource {
+        switch self {
+        case .pink: .settingsAccentColorPink
+        case .orange: .settingsAccentColorOrange
+        case .yellow: .settingsAccentColorYellow
+        case .green: .settingsAccentColorGreen
+        case .mint: .settingsAccentColorMint
+        case .cyan: .settingsAccentColorCyan
+        case .blue: .settingsAccentColorBlue
+        case .indigo: .settingsAccentColorIndigo
+        }
+    }
+
     var color: Color {
         switch self {
         case .pink: .pink.mix(with: .purple, by: 0.22)

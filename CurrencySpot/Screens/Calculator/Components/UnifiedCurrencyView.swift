@@ -5,12 +5,12 @@ struct UnifiedCurrencyView: View {
         case source
         case converted
 
-        fileprivate var title: String {
+        fileprivate var title: LocalizedStringResource {
             switch self {
             case .source:
-                "From"
+                .calculatorCurrencyFrom
             case .converted:
-                "To"
+                .calculatorCurrencyTo
             }
         }
 
@@ -97,18 +97,17 @@ struct UnifiedCurrencyView: View {
             .accessibilityAddTraits(.updatesFrequently)
     }
 
-    private var accessibilityAmountLabel: String {
+    private var accessibilityAmountLabel: LocalizedStringResource {
         switch type {
         case .source:
-            "Amount to convert"
+            .calculatorCurrencyAmountSourceAccessibilityLabel
         case .converted:
-            "Converted amount"
+            .calculatorCurrencyAmountConvertedAccessibilityLabel
         }
     }
 
-    private var accessibilityAmountValue: String {
-        let currency = currencyCode.localizedName
-        return "\(amount) \(currency)"
+    private var accessibilityAmountValue: LocalizedStringResource {
+        .calculatorCurrencyAmountAccessibilityValue(amount: amount, currency: currencyCode.localizedName)
     }
 
     @ViewBuilder
@@ -129,18 +128,17 @@ struct UnifiedCurrencyView: View {
         .accessibilityInputLabels(accessibilityInputLabels)
     }
 
-    private var accessibilityButtonLabel: String {
+    private var accessibilityButtonLabel: LocalizedStringResource {
         switch type {
         case .source:
-            "Select source currency"
+            .calculatorCurrencyPickerSourceAccessibilityLabel
         case .converted:
-            "Select target currency"
+            .calculatorCurrencyPickerTargetAccessibilityLabel
         }
     }
 
-    private var accessibilityButtonValue: String {
-        let currencyName = currencyCode.localizedName
-        return "Currently selected: \(currencyName), \(currencyCode.rawValue)"
+    private var accessibilityButtonValue: LocalizedStringResource {
+        .calculatorCurrencyPickerAccessibilityValue(name: currencyCode.localizedName, code: currencyCode.rawValue)
     }
 
     private var accessibilityInputLabels: [String] {

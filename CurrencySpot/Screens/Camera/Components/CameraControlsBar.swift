@@ -46,14 +46,18 @@ struct CameraControlsBar: View {
                     Circle().stroke(.white, lineWidth: 3)
                 }
         }
-        .accessibilityLabel(viewModel.frozenImage == nil ? "Freeze frame" : "Resume camera")
+        .accessibilityLabel(shutterLabel)
         .accessibilityShowsLargeContentViewer {
             if viewModel.frozenImage == nil {
-                Label("Freeze frame", systemImage: "circle.fill")
+                Label(.cameraShutterFreeze, systemImage: "circle.fill")
             } else {
-                Label("Resume camera", systemImage: "xmark")
+                Label(.cameraShutterResume, systemImage: "xmark")
             }
         }
+    }
+
+    private var shutterLabel: LocalizedStringResource {
+        viewModel.frozenImage == nil ? .cameraShutterFreeze : .cameraShutterResume
     }
 
     @ViewBuilder
@@ -74,27 +78,31 @@ struct CameraControlsBar: View {
     }
 
     private var torchButton: some View {
-        Button("Flashlight", systemImage: torchSymbol) {
+        Button(.cameraFlashlight, systemImage: torchSymbol) {
             viewModel.toggleTorch()
         }
         .labelStyle(.iconOnly)
         .foregroundStyle(viewModel.isTorchOn ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.primary))
         .buttonStyle(.controlButton)
-        .accessibilityValue(viewModel.isTorchOn ? "On" : "Off")
+        .accessibilityValue(torchState)
         .accessibilityAddTraits(.isToggle)
         .accessibilityShowsLargeContentViewer {
-            Label("Flashlight", systemImage: torchSymbol)
+            Label(.cameraFlashlight, systemImage: torchSymbol)
         }
+    }
+
+    private var torchState: LocalizedStringResource {
+        viewModel.isTorchOn ? .cameraFlashlightOn : .cameraFlashlightOff
     }
 
     private var photoImportButton: some View {
         PhotosPicker(selection: $pickedPhoto, matching: .images) {
-            Label("Import photo", systemImage: "photo.on.rectangle")
+            Label(.cameraImportPhoto, systemImage: "photo.on.rectangle")
                 .labelStyle(.iconOnly)
         }
         .buttonStyle(.controlButton)
         .accessibilityShowsLargeContentViewer {
-            Label("Import photo", systemImage: "photo.on.rectangle")
+            Label(.cameraImportPhoto, systemImage: "photo.on.rectangle")
         }
     }
 }

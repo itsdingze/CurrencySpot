@@ -10,12 +10,12 @@ struct CurrencyListView: View {
         @Bindable var viewModel = viewModel
         NavigationStack(path: $viewModel.path) {
             content
-            .navigationTitle("History")
+            .navigationTitle(.historyListTitle)
             .toolbarTitleDisplayMode(.inlineLarge)
             .searchable(
                 text: $viewModel.searchText,
                 placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Search currencies"
+                prompt: .historyListSearchPrompt
             )
             .autocorrectionDisabled()
             .navigationDestination(for: CurrencyCode.self) { code in
@@ -26,7 +26,7 @@ struct CurrencyListView: View {
             }
             .onChange(of: viewModel.displayedCurrencies.count) { _, count in
                 guard viewModel.isSearching else { return }
-                AccessibilityNotification.Announcement("\(count) currencies found").post()
+                AccessibilityNotification.Announcement(String(localized: .historyListSearchResults(count: count))).post()
             }
             .onChange(of: viewModel.isSearching || viewModel.isWatchlistEmpty) { _, cannotEdit in
                 if cannotEdit { editMode = .inactive }
@@ -97,16 +97,16 @@ struct CurrencyListView: View {
 
     private var emptyWatchlist: some View {
         ContentUnavailableView {
-            Label("No Currencies", systemImage: "chart.line.uptrend.xyaxis")
+            Label(.historyListEmptyTitle, systemImage: "chart.line.uptrend.xyaxis")
         } description: {
-            Text("Search above to add currencies to your list.")
+            Text(.historyListEmptyDescription)
         }
     }
 
     private var trailingToolbarItems: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             if isEditing {
-                Button("Done", action: finishEditing)
+                Button(.historyListDone, action: finishEditing)
                     .fontWeight(.semibold)
             } else {
                 optionsMenu
@@ -131,31 +131,31 @@ struct CurrencyListView: View {
         return Menu {
             if !viewModel.isSearching && !viewModel.isWatchlistEmpty {
                 Button(action: startEditing) {
-                    Label("Edit Watchlist", systemImage: "pencil")
+                    Label(.historyListEditWatchlist, systemImage: "pencil")
                 }
             }
 
             Picker(selection: $viewModel.sortOption) {
                 ForEach(CurrencySortOption.allCases, id: \.self) { option in
-                    Text(option.description).tag(option)
+                    Text(option.displayName).tag(option)
                 }
             } label: {
-                Label("Sort By", systemImage: "arrow.up.arrow.down")
-                Text(viewModel.sortOption.description)
+                Label(.historyListSortBy, systemImage: "arrow.up.arrow.down")
+                Text(viewModel.sortOption.displayName)
             }
             .pickerStyle(.menu)
 
             Picker(selection: $viewModel.trendDisplayMode) {
                 ForEach(TrendDisplayMode.allCases, id: \.self) { mode in
-                    Text(mode.description).tag(mode)
+                    Text(mode.displayName).tag(mode)
                 }
             } label: {
-                Label("Indicator", systemImage: "chart.line.uptrend.xyaxis")
-                Text(viewModel.trendDisplayMode.description)
+                Label(.historyListIndicator, systemImage: "chart.line.uptrend.xyaxis")
+                Text(viewModel.trendDisplayMode.displayName)
             }
             .pickerStyle(.menu)
         } label: {
-            Label("Options", systemImage: optionsIcon)
+            Label(.historyListOptions, systemImage: optionsIcon)
         }
     }
 }

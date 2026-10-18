@@ -15,14 +15,14 @@ struct ChartInteractionSection: View {
                 .frame(maxHeight: .infinity, alignment: .center)
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Chart touch interaction demonstration")
+        .accessibilityLabel(.onboardingChartInteractionAccessibilityLabel)
         .accessibilityHint(interactionHint)
     }
 
-    private var interactionHint: LocalizedStringKey {
+    private var interactionHint: LocalizedStringResource {
         reduceMotion
-            ? "Shows how touching a chart reveals the rate on that day"
-            : "Watch the animated finger showing how to touch and drag on charts to explore data"
+            ? .onboardingChartInteractionStaticHint
+            : .onboardingChartInteractionAnimatedHint
     }
 
     @ViewBuilder
@@ -75,7 +75,7 @@ struct ChartInteractionSection: View {
             }
 
             if let selectedDataPoint {
-                RuleMark(x: .value("Date", selectedDataPoint.date, unit: .day))
+                RuleMark(x: .value(.rateChartAxisDate, selectedDataPoint.date, unit: .day))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
                     .zIndex(-1)
                     .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
@@ -91,8 +91,8 @@ struct ChartInteractionSection: View {
                     }
 
                 PointMark(
-                    x: .value("Date", selectedDataPoint.date, unit: .day),
-                    y: .value("Rate", selectedDataPoint.rate)
+                    x: .value(.rateChartAxisDate, selectedDataPoint.date, unit: .day),
+                    y: .value(.rateChartAxisRate, selectedDataPoint.rate)
                 )
                 .symbol {
                     ChartPointMarker(color: .tint, outerSize: 14, innerSize: 10)

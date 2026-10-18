@@ -35,7 +35,7 @@ struct CurrencyPickerView: View {
                                     Text(currency.rawValue)
                                 }
                                 .buttonStyle(.currencyChip(isSelected: selectedCurrency == currency))
-                                .accessibilityLabel("\(currency.rawValue), \(currency.localizedName)")
+                                .accessibilityLabel(spokenName(of: currency))
                                 .accessibilityAddTraits(selectedCurrency == currency ? [.isButton, .isSelected] : .isButton)
                             }
                         }
@@ -59,7 +59,7 @@ struct CurrencyPickerView: View {
                             dismiss()
                         }
                     )
-                    .accessibilityLabel("\(currency.currencyCode.rawValue), \(currency.currencyCode.localizedName)")
+                    .accessibilityLabel(spokenName(of: currency.currencyCode))
                     .accessibilityValue(currency.rate.toStringMax4Decimals)
                     .accessibilityAddTraits(selectedCurrency == currency.currencyCode ? [.isButton, .isSelected] : .isButton)
                 }
@@ -67,19 +67,23 @@ struct CurrencyPickerView: View {
             }
             .listStyle(.plain)
         }
-        .navigationTitle("Select Currency")
+        .navigationTitle(.currencyPickerTitle)
         .toolbarTitleDisplayMode(.inline)
         .searchable(
             text: $searchText,
             placement: .navigationBarDrawer(displayMode: .always),
-            prompt: "Search currency code or name"
+            prompt: .currencyPickerSearchPrompt
         )
         .autocorrectionDisabled()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Done") { dismiss() }
+                Button(.currencyPickerDone) { dismiss() }
             }
         }
+    }
+
+    private func spokenName(of currency: CurrencyCode) -> LocalizedStringResource {
+        .currencyPickerCurrencyAccessibilityLabel(code: currency.rawValue, name: currency.localizedName)
     }
 }
 

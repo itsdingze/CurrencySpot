@@ -10,31 +10,42 @@ nonisolated enum TimeRange: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var displayName: String {
+    var displayName: LocalizedStringResource {
         switch self {
-        case .oneWeek: "1 Week"
-        case .oneMonth: "1 Month"
-        case .threeMonths: "3 Months"
-        case .sixMonths: "6 Months"
-        case .oneYear: "1 Year"
-        case .fiveYears: "5 Years"
+        case .oneWeek: .timeRangeOneWeekName
+        case .oneMonth: .timeRangeOneMonthName
+        case .threeMonths: .timeRangeThreeMonthsName
+        case .sixMonths: .timeRangeSixMonthsName
+        case .oneYear: .timeRangeOneYearName
+        case .fiveYears: .timeRangeFiveYearsName
         }
     }
 
-    var accessibilityInputLabels: [String] {
+    var shortName: LocalizedStringResource {
+        switch self {
+        case .oneWeek: .timeRangeOneWeekShortName
+        case .oneMonth: .timeRangeOneMonthShortName
+        case .threeMonths: .timeRangeThreeMonthsShortName
+        case .sixMonths: .timeRangeSixMonthsShortName
+        case .oneYear: .timeRangeOneYearShortName
+        case .fiveYears: .timeRangeFiveYearsShortName
+        }
+    }
+
+    var accessibilityInputLabels: [LocalizedStringResource] {
         switch self {
         case .oneWeek:
-            ["1 week", "one week", "7 days"]
+            [.timeRangeOneWeekVoiceInputNumeral, .timeRangeOneWeekVoiceInputSpelledOut, .timeRangeOneWeekVoiceInputAlternative]
         case .oneMonth:
-            ["1 month", "one month", "30 days"]
+            [.timeRangeOneMonthVoiceInputNumeral, .timeRangeOneMonthVoiceInputSpelledOut, .timeRangeOneMonthVoiceInputAlternative]
         case .threeMonths:
-            ["3 months", "three months", "quarter"]
+            [.timeRangeThreeMonthsVoiceInputNumeral, .timeRangeThreeMonthsVoiceInputSpelledOut, .timeRangeThreeMonthsVoiceInputAlternative]
         case .sixMonths:
-            ["6 months", "six months", "half year"]
+            [.timeRangeSixMonthsVoiceInputNumeral, .timeRangeSixMonthsVoiceInputSpelledOut, .timeRangeSixMonthsVoiceInputAlternative]
         case .oneYear:
-            ["1 year", "one year", "12 months"]
+            [.timeRangeOneYearVoiceInputNumeral, .timeRangeOneYearVoiceInputSpelledOut, .timeRangeOneYearVoiceInputAlternative]
         case .fiveYears:
-            ["5 years", "five years"]
+            [.timeRangeFiveYearsVoiceInputNumeral, .timeRangeFiveYearsVoiceInputSpelledOut]
         }
     }
 

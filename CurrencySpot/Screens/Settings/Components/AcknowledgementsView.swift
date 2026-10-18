@@ -18,7 +18,7 @@ struct AcknowledgementsView: View {
             .listSectionSeparator(.hidden)
         }
         .listStyle(.plain)
-        .navigationTitle("Open Source Licenses")
+        .navigationTitle(.settingsAcknowledgementsTitle)
         .toolbarTitleDisplayMode(.inline)
     }
 }
@@ -42,7 +42,7 @@ struct LicenseDetailView: View {
                 if let repositoryURL = acknowledgement.repositoryURL {
                     Link(destination: repositoryURL) {
                         HStack {
-                            Label("Source Repository", systemImage: "link")
+                            Label(.settingsLicenseSourceRepository, systemImage: "link")
 
                             Spacer()
 
@@ -52,7 +52,7 @@ struct LicenseDetailView: View {
                         .font(.appFootnote)
                     }
                     .tint(.blue)
-                    .accessibilityHint("Opens the project on GitHub in your web browser")
+                    .accessibilityHint(.settingsLicenseSourceRepositoryHint)
                 }
 
                 Text(acknowledgement.licenseText)

@@ -6,10 +6,10 @@ struct CameraAccessDeniedView: View {
     var body: some View {
         CameraStateScreen(
             icon: "video.slash",
-            title: "Camera Access Is Off",
-            message: "Turn on camera access in Settings to convert prices with your camera.",
-            buttonTitle: "Open Settings",
-            buttonHint: "Opens the Settings app to enable camera access",
+            title: .cameraAccessDeniedTitle,
+            message: .cameraAccessDeniedMessage,
+            buttonTitle: .cameraAccessDeniedAction,
+            buttonHint: .cameraAccessDeniedActionAccessibilityHint,
             action: openSettings
         )
     }

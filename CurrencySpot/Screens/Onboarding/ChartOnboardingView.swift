@@ -22,9 +22,13 @@ struct ChartOnboardingView: View {
         .interactiveDismissDisabled()
         .allowsHitTesting(isRevealComplete || voiceOverEnabled)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Chart features onboarding")
+        .accessibilityLabel(.onboardingChartAccessibilityLabel)
         .onChange(of: currentOnboardingPage) {
-            AccessibilityNotification.Announcement("Page \(currentOnboardingPage + 1) of \(totalPages)").post()
+            let announcement = LocalizedStringResource.onboardingChartPageAnnouncement(
+                page: currentOnboardingPage + 1,
+                total: totalPages
+            )
+            AccessibilityNotification.Announcement(String(localized: announcement)).post()
         }
         .onChange(of: currentOnboardingPage, initial: true) {
             revealPageInStages()
@@ -85,13 +89,13 @@ struct ChartOnboardingView: View {
     private var titleSection: some View {
         Group {
             if currentOnboardingPage == 0 {
-                Text("Interactive Chart")
+                Text(.onboardingChartPreviewTitle)
                     .font(.appTitle)
                     .multilineTextAlignment(.center)
                     .blurSlide(shouldAnimateTitle)
                     .accessibilityAddTraits(.isHeader)
             } else {
-                Text("Explore Data Points")
+                Text(.onboardingChartInteractionTitle)
                     .font(.appTitle)
                     .multilineTextAlignment(.center)
                     .blurSlide(shouldAnimateTitle)
@@ -116,14 +120,14 @@ struct ChartOnboardingView: View {
         VStack(alignment: .leading, spacing: Spacing.onboarding) {
             FeatureRow(
                 symbol: "hand.tap",
-                title: "Toggle Chart Elements",
-                subtitle: "Tap on statistics to show or hide chart indicators."
+                title: .onboardingChartToggleTitle,
+                subtitle: .onboardingChartToggleSubtitle
             )
 
             FeatureRow(
                 symbol: "chart.line.flattrend.xyaxis",
-                title: "View Average Line",
-                subtitle: "Tap 'Average' to display the average rate line on the chart."
+                title: .onboardingChartAverageTitle,
+                subtitle: .onboardingChartAverageSubtitle
             )
         }
     }
@@ -132,14 +136,14 @@ struct ChartOnboardingView: View {
         VStack(alignment: .leading, spacing: Spacing.onboarding) {
             FeatureRow(
                 symbol: "hand.point.up.left",
-                title: "Touch to Select",
-                subtitle: "Touch and hold on the chart to see detailed information for any date."
+                title: .onboardingChartSelectTitle,
+                subtitle: .onboardingChartSelectSubtitle
             )
 
             FeatureRow(
                 symbol: "arrow.left.and.right",
-                title: "Drag to Explore",
-                subtitle: "Move your finger across the chart to explore different data points."
+                title: .onboardingChartDragTitle,
+                subtitle: .onboardingChartDragSubtitle
             )
         }
     }
@@ -159,7 +163,7 @@ struct ChartOnboardingView: View {
     }
 
     private var continueButtonLabel: some View {
-        Text(currentOnboardingPage == totalPages - 1 ? "Let's Start!" : "Continue")
+        Text(currentOnboardingPage == totalPages - 1 ? LocalizedStringResource.onboardingChartStart : .onboardingChartContinue)
             .frame(maxWidth: .infinity)
     }
 

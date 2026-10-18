@@ -24,12 +24,4 @@ nonisolated enum TrendDirection: Sendable {
         case .stable: "equal"
         }
     }
-
-    var description: String {
-        switch self {
-        case .up: "up"
-        case .down: "down"
-        case .stable: "stable"
-        }
-    }
 }

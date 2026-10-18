@@ -1,3 +1,5 @@
+import Foundation
+
 enum CurrencySortOption: CaseIterable {
     case manual
     case priceChange
@@ -5,13 +7,13 @@ enum CurrencySortOption: CaseIterable {
     case symbol
     case name
 
-    var description: String {
+    var displayName: LocalizedStringResource {
         switch self {
-        case .manual: "Manual"
-        case .priceChange: "Price Change"
-        case .percentChange: "Percentage Change"
-        case .symbol: "Symbol"
-        case .name: "Name"
+        case .manual: .historySortManual
+        case .priceChange: .historySortRateChange
+        case .percentChange: .historySortPercentChange
+        case .symbol: .historySortCurrencyCode
+        case .name: .historySortName
         }
     }
 }

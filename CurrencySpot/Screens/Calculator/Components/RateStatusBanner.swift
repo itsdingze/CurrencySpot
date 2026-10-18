@@ -6,32 +6,34 @@ struct RateStatusBanner: View {
     var refreshAction: () -> Void
 
     var body: some View {
-        HStack {
-            icon
+        if let message, let spokenMessage {
+            HStack {
+                icon
 
-            Text(message)
-                .font(.appSubheadline)
-                .foregroundStyle(.secondary)
+                Text(message)
+                    .font(.appSubheadline)
+                    .foregroundStyle(.secondary)
 
-            Spacer()
+                Spacer()
 
-            if status == .updating {
-                ProgressView()
-                    .controlSize(.small)
-                    .accessibilityLabel("Updating exchange rates")
-            } else if showsRetry {
-                Button(action: refreshAction) {
-                    Label("Try loading exchange rates again", systemImage: "arrow.clockwise")
-                        .labelStyle(.iconOnly)
-                        .foregroundStyle(.tint)
-                        .minimumHitTarget()
+                if status == .updating {
+                    ProgressView()
+                        .controlSize(.small)
+                        .accessibilityLabel(.ratesBannerUpdatingAccessibilityLabel)
+                } else if showsRetry {
+                    Button(action: refreshAction) {
+                        Label(.ratesBannerRetry, systemImage: "arrow.clockwise")
+                            .labelStyle(.iconOnly)
+                            .foregroundStyle(.tint)
+                            .minimumHitTarget()
+                    }
                 }
             }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(accessibilityText)
-        .onAppear {
-            AccessibilityNotification.Announcement(accessibilityText).post()
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(spokenMessage)
+            .onAppear {
+                AccessibilityNotification.Announcement(String(localized: spokenMessage)).post()
+            }
         }
     }
 
@@ -55,23 +57,23 @@ struct RateStatusBanner: View {
             .accessibilityHidden(true)
     }
 
-    private var message: String {
+    private var message: LocalizedStringResource? {
         switch status {
-        case .updating: "Updating…"
-        case .offlineSaved: "No internet. Showing saved rates."
-        case .updateFailed: "Couldn't update. Showing saved rates."
-        case .sample: "Showing sample rates."
-        case .hidden: ""
+        case .updating: .ratesBannerUpdating
+        case .offlineSaved: .ratesBannerOfflineSaved
+        case .updateFailed: .ratesBannerUpdateFailed
+        case .sample: .ratesBannerSample
+        case .hidden: nil
         }
     }
 
-    private var accessibilityText: String {
+    private var spokenMessage: LocalizedStringResource? {
         switch status {
-        case .updating: "Updating exchange rates"
-        case .offlineSaved: "No internet. Showing saved exchange rates."
-        case .updateFailed: "Couldn't update. Showing saved exchange rates."
-        case .sample: "Showing sample exchange rates."
-        case .hidden: ""
+        case .updating: .ratesBannerUpdatingAccessibilityLabel
+        case .offlineSaved: .ratesBannerOfflineSavedAccessibilityLabel
+        case .updateFailed: .ratesBannerUpdateFailedAccessibilityLabel
+        case .sample: .ratesBannerSampleAccessibilityLabel
+        case .hidden: nil
         }
     }
 }

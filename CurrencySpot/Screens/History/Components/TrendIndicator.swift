@@ -28,7 +28,15 @@ struct TrendIndicator: View {
                 .strokeBorder(direction.color.opacity(0.05), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(direction.description) \(value)")
+        .accessibilityLabel(changeAccessibilityLabel)
+    }
+
+    private var changeAccessibilityLabel: LocalizedStringResource {
+        switch direction {
+        case .up: .historyTrendIndicatorUp(change: value)
+        case .down: .historyTrendIndicatorDown(change: value)
+        case .stable: .historyTrendIndicatorStable(change: value)
+        }
     }
 }
 

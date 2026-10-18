@@ -25,11 +25,11 @@ struct FavoriteCurrenciesView: View {
             .onMove { viewModel.moveFavorites(fromOffsets: $0, toOffset: $1) }
         }
         .listStyle(.plain)
-        .navigationTitle("Favorite Currencies")
+        .navigationTitle(.settingsFavoritesTitle)
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Add currency", systemImage: "plus", action: viewModel.addFavoriteTapped)
+                Button(.settingsFavoritesAdd, systemImage: "plus", action: viewModel.addFavoriteTapped)
             }
 
             ToolbarItem(placement: .topBarTrailing) {

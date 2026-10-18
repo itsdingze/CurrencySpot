@@ -9,9 +9,9 @@ struct StatisticsSection: View {
         VStack(alignment: .leading, spacing: Spacing.hairline) {
             HStack(spacing: 0) {
                 StatCard(
-                    label: "Highest",
+                    label: .historyStatisticsHighest,
                     value: viewModel.formattedHighestRate,
-                    indicatorColor: .success,
+                    marker: .highest,
                     isToggled: viewModel.showHighestPoint,
                     size: .regular,
                     action: toggleHighestPoint
@@ -20,9 +20,9 @@ struct StatisticsSection: View {
                 Spacer()
 
                 StatCard(
-                    label: "Lowest",
+                    label: .historyStatisticsLowest,
                     value: viewModel.formattedLowestRate,
-                    indicatorColor: .failure,
+                    marker: .lowest,
                     isToggled: viewModel.showLowestPoint,
                     size: .regular,
                     action: toggleLowestPoint
@@ -33,9 +33,9 @@ struct StatisticsSection: View {
 
             HStack(spacing: 0) {
                 StatCard(
-                    label: "Average",
+                    label: .historyStatisticsAverage,
                     value: viewModel.formattedAverageRate,
-                    indicatorColor: .gray,
+                    marker: .average,
                     isToggled: viewModel.showAverageLine,
                     size: .regular,
                     action: toggleAverageLine
@@ -43,7 +43,7 @@ struct StatisticsSection: View {
 
                 Spacer()
 
-                volatilityCard(label: "Volatility", value: viewModel.formattedVolatility)
+                volatilityCard(value: viewModel.formattedVolatility)
             }
         }
     }
@@ -70,11 +70,11 @@ struct StatisticsSection: View {
 
     // MARK: - Private Views
 
-    private func volatilityCard(label: String, value: String) -> some View {
+    private func volatilityCard(value: String) -> some View {
         VStack(alignment: .leading, spacing: Spacing.hairline) {
             Button(action: viewModel.volatilityInfoTapped) {
                 HStack(spacing: Spacing.hairline) {
-                    Text(label)
+                    Text(.historyStatisticsVolatility)
                         .font(.appSubheadline)
                         .foregroundStyle(.secondary)
 
@@ -86,7 +86,7 @@ struct StatisticsSection: View {
                 .minimumHitTarget()
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Volatility information")
+            .accessibilityLabel(.historyStatisticsVolatilityInfo)
 
             Text(value)
                 .font(.appSubheadline.weight(.medium))
@@ -95,7 +95,7 @@ struct StatisticsSection: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.chipPadding)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Volatility: \(value)")
+        .accessibilityLabel(.historyStatisticsVolatilityAccessibilityLabel(value: value))
         .popover(isPresented: Bindable(viewModel).destination.isPresenting(.volatilityInfo)) {
             VolatilityInfoView()
                 .presentationCompactAdaptation(.popover)

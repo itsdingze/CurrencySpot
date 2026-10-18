@@ -20,10 +20,10 @@ struct CalculatorView: View {
         return false
     }
 
-    private var failureAnnouncement: String {
+    private var failureAnnouncement: LocalizedStringResource {
         switch calculatorViewModel.failureRecovery {
-        case .retry: "Couldn't load exchange rates. Try again."
-        case .sampleRates: "Couldn't load exchange rates. Use sample rates."
+        case .retry: .calculatorAnnouncementFailedRetry
+        case .sampleRates: .calculatorAnnouncementFailedSampleRates
         }
     }
 
@@ -42,7 +42,7 @@ struct CalculatorView: View {
 
                 switch calculatorViewModel.loadState {
                 case .idle, .loading(previous: nil):
-                    ProgressView("Loading exchange rates…")
+                    ProgressView(.calculatorLoading)
                 case .loaded, .loading(previous: .some):
                     mainContentView()
                 case .failed:
@@ -61,12 +61,12 @@ struct CalculatorView: View {
         }
         .onChange(of: ratesAreLoaded) { _, loaded in
             if loaded {
-                AccessibilityNotification.Announcement("Exchange rates loaded").post()
+                AccessibilityNotification.Announcement(String(localized: .calculatorAnnouncementLoaded)).post()
             }
         }
         .onChange(of: ratesDidFail) { _, failed in
             if failed {
-                AccessibilityNotification.Announcement(failureAnnouncement).post()
+                AccessibilityNotification.Announcement(String(localized: failureAnnouncement)).post()
             }
         }
         .onAppear {

@@ -25,7 +25,10 @@ struct HeaderSection: View {
             HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
                 Text(viewModel.targetCurrency.rawValue)
                     .font(.appTitle)
-                    .accessibilityLabel("\(viewModel.targetCurrency.rawValue), \(viewModel.targetCurrency.localizedName)")
+                    .accessibilityLabel(.historyHeaderCurrencyAccessibilityLabel(
+                        code: viewModel.targetCurrency.rawValue,
+                        name: viewModel.targetCurrency.localizedName
+                    ))
 
                 Text(viewModel.targetCurrency.localizedName)
                     .font(.appHeadline.weight(.medium))
@@ -39,7 +42,7 @@ struct HeaderSection: View {
                 HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
                     Text(viewModel.formattedCurrentRate)
                         .font(.appTitle3)
-                        .accessibilityLabel("Current rate: \(viewModel.formattedCurrentRate)")
+                        .accessibilityLabel(.historyHeaderCurrentRateAccessibilityLabel(rate: viewModel.formattedCurrentRate))
                         .accessibilityAddTraits(.updatesFrequently)
 
                     if let percentChange = statistics.percentChange,
@@ -55,7 +58,7 @@ struct HeaderSection: View {
                     VStack(alignment: .leading, spacing: Spacing.hairline) {
                         Text(viewModel.formattedCurrentRate)
                             .font(.appTitle3)
-                            .accessibilityLabel("Current rate: \(viewModel.formattedCurrentRate)")
+                            .accessibilityLabel(.historyHeaderCurrentRateAccessibilityLabel(rate: viewModel.formattedCurrentRate))
                             .accessibilityAddTraits(.updatesFrequently)
 
                         if let percentChange = statistics.percentChange,
@@ -73,23 +76,36 @@ struct HeaderSection: View {
 
     @ViewBuilder
     private func percentChangeIndicator(priceChange: Double, percentChange: Double) -> some View {
+        let change = abs(priceChange).formatted(.number.precision(.fractionLength(0 ... 4)))
+        let percent = (abs(percentChange) / 100).formatted(.percent.precision(.fractionLength(0 ... 2)))
+
         HStack(spacing: Spacing.hairline) {
             Image(systemName: statistics.trendDirection.systemImage)
                 .accessibilityHidden(true)
 
-            Text("\(priceChange.formatted(.number.precision(.fractionLength(0 ... 4)).sign(strategy: .never))) (\(abs(percentChange).toStringMax2Decimals)%)")
+            Text(.historyHeaderChange(change: change, percent: percent))
         }
         .font(.appSubheadline.weight(.medium))
         .foregroundStyle(statistics.trendDirection.color)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityChangeLabel(priceChange: priceChange, percentChange: percentChange))
-        .accessibilityValue("\(statistics.trendDirection.description) \(abs(percentChange).toStringMax2Decimals) percent")
+        .accessibilityLabel(accessibilityChangeLabel(change: change, percent: percent))
+        .accessibilityValue(accessibilityChangeValue(percent: percent))
     }
 
-    private func accessibilityChangeLabel(priceChange: Double, percentChange: Double) -> String {
-        let direction = statistics.trendDirection.description
-        let changeText = "\(abs(priceChange).formatted(.number.precision(.fractionLength(0 ... 4))))"
-        return "Price change: \(direction) \(changeText), \(abs(percentChange).toStringMax2Decimals) percent"
+    private func accessibilityChangeLabel(change: String, percent: String) -> LocalizedStringResource {
+        switch statistics.trendDirection {
+        case .up: .historyHeaderChangeAccessibilityLabelUp(change: change, percent: percent)
+        case .down: .historyHeaderChangeAccessibilityLabelDown(change: change, percent: percent)
+        case .stable: .historyHeaderChangeAccessibilityLabelStable(change: change, percent: percent)
+        }
+    }
+
+    private func accessibilityChangeValue(percent: String) -> LocalizedStringResource {
+        switch statistics.trendDirection {
+        case .up: .historyHeaderChangeAccessibilityValueUp(percent: percent)
+        case .down: .historyHeaderChangeAccessibilityValueDown(percent: percent)
+        case .stable: .historyHeaderChangeAccessibilityValueStable(percent: percent)
+        }
     }
 }
 

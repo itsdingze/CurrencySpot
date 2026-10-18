@@ -2,8 +2,8 @@ import SwiftUI
 
 struct FeatureRow: View {
     let symbol: String
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringResource
+    let subtitle: LocalizedStringResource
     @ScaledMetric(relativeTo: .title) private var symbolColumnWidth: CGFloat = 32
 
     var body: some View {
@@ -32,26 +32,26 @@ struct FeatureRow: View {
     VStack(alignment: .leading, spacing: 20) {
         FeatureRow(
             symbol: "hand.tap",
-            title: "Toggle Chart Elements",
-            subtitle: "Tap on statistics to show or hide chart indicators."
+            title: .onboardingChartToggleTitle,
+            subtitle: .onboardingChartToggleSubtitle
         )
 
         FeatureRow(
             symbol: "chart.line.flattrend.xyaxis",
-            title: "View Average Line",
-            subtitle: "Tap 'Average' to display the average rate line on the chart."
+            title: .onboardingChartAverageTitle,
+            subtitle: .onboardingChartAverageSubtitle
         )
 
         FeatureRow(
             symbol: "hand.point.up.left",
-            title: "Touch to Select",
-            subtitle: "Touch and hold on the chart to see detailed information for any date."
+            title: .onboardingChartSelectTitle,
+            subtitle: .onboardingChartSelectSubtitle
         )
 
         FeatureRow(
             symbol: "arrow.left.and.right",
-            title: "Drag to Explore",
-            subtitle: "Move your finger across the chart to explore different data points."
+            title: .onboardingChartDragTitle,
+            subtitle: .onboardingChartDragSubtitle
         )
     }
     .padding()

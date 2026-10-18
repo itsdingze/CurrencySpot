@@ -26,10 +26,10 @@ struct CurrencyHistoryView: View {
         .safeAreaPadding()
         .onChange(of: chartIsLoaded) { _, loaded in
             if loaded {
-                let message = viewModel.displayedChartDataPoints.isEmpty
-                    ? "No historical data available for this currency"
-                    : "Exchange rate chart loaded"
-                AccessibilityNotification.Announcement(message).post()
+                let message: LocalizedStringResource = viewModel.displayedChartDataPoints.isEmpty
+                    ? .historyChartEmptyAnnouncement
+                    : .historyChartLoadedAnnouncement
+                AccessibilityNotification.Announcement(String(localized: message)).post()
             }
         }
         .sheet(isPresented: $viewModel.destination.isPresenting(.chartOnboarding)) {

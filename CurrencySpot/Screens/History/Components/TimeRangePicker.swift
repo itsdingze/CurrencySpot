@@ -50,11 +50,11 @@ struct TimeRangePicker: View {
             .contentShape(Rectangle())
             .gesture(slideGesture)
             .accessibilityRepresentation {
-                Picker("Time range", selection: $selectedTimeRange) {
+                Picker(.historyTimeRangePicker, selection: $selectedTimeRange) {
                     ForEach(timeRanges, id: \.self) { timeRange in
                         Text(timeRange.displayName)
                             .tag(timeRange)
-                            .accessibilityInputLabels(timeRange.accessibilityInputLabels)
+                            .accessibilityInputLabels(timeRange.accessibilityInputLabels.map { Text($0) })
                     }
                 }
                 .pickerStyle(.segmented)
@@ -66,7 +66,7 @@ struct TimeRangePicker: View {
     private func labelRow(selected: Bool) -> some View {
         HStack(spacing: 0) {
             ForEach(timeRanges, id: \.self) { timeRange in
-                Text(timeRange.rawValue)
+                Text(timeRange.shortName)
                     .font(.appHeadline.weight(selected ? .semibold : .regular))
                     .foregroundStyle(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                     .padding(Spacing.chipPadding)

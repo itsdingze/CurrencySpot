@@ -5,7 +5,7 @@ struct FixedWidthCurrencyLabel: View {
 
     var body: some View {
         ZStack(alignment: .center) {
-            Text("WWI")
+            Text(verbatim: "WWI")
                 .foregroundStyle(.clear)
 
             Text(code.rawValue)

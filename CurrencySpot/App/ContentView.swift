@@ -7,39 +7,47 @@ struct ContentView: View {
     var body: some View {
         @Bindable var appState = appState
         TabView(selection: $appState.selectedTab) {
-            Tab("Convert", systemImage: "arrow.left.arrow.right", value: AppTab.convert) {
+            Tab(value: AppTab.convert) {
                 CalculatorView()
                     .toolbarBackground(.visible, for: .tabBar)
+            } label: {
+                Label(.appTabConvert, systemImage: "arrow.left.arrow.right")
             }
 
             if CameraScanAvailability.isSupported {
-                Tab("Camera", systemImage: "camera.viewfinder", value: AppTab.camera) {
+                Tab(value: AppTab.camera) {
                     CameraView()
                         .toolbarBackground(.visible, for: .tabBar)
                         .toolbarColorScheme(.dark, for: .tabBar)
+                } label: {
+                    Label(.appTabCamera, systemImage: "camera.viewfinder")
                 }
             }
 
-            Tab("History", systemImage: "chart.line.uptrend.xyaxis", value: AppTab.history) {
+            Tab(value: AppTab.history) {
                 CurrencyListView()
                     .toolbarBackground(.visible, for: .tabBar)
+            } label: {
+                Label(.appTabHistory, systemImage: "chart.line.uptrend.xyaxis")
             }
 
-            Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
+            Tab(value: AppTab.settings) {
                 NavigationStack {
                     SettingsView()
                 }
                 .toolbarBackground(.visible, for: .tabBar)
+            } label: {
+                Label(.appTabSettings, systemImage: "gearshape")
             }
         }
         .alert(
-            "Error: \(appState.errorHandler.currentError?.title ?? "")",
+            errorAlertTitle,
             isPresented: Bindable(appState.errorHandler).isPresentingError,
             presenting: appState.errorHandler.currentError
         ) { _ in
-            Button("OK", action: appState.errorHandler.dismiss)
+            Button(.appErrorAlertDismiss, action: appState.errorHandler.dismiss)
         } message: { error in
-            Text("Error details: \(error.message)")
+            Text(error.message)
         }
         .onAppear {
             settingsViewModel.presentOnboardingIfNeeded()
@@ -50,6 +58,13 @@ struct ContentView: View {
                     settingsViewModel.completeOnboarding()
                 }
         }
+    }
+
+    // MARK: - Error Alert
+
+    private var errorAlertTitle: Text {
+        guard let error = appState.errorHandler.currentError else { return Text(verbatim: "") }
+        return Text(error.title)
     }
 
     // MARK: - Presentation Bindings

@@ -53,24 +53,24 @@ struct ChartSection: View {
         .padding()
         .frame(maxWidth: .infinity, maxHeight: ChartMetrics.height)
         .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
-        .accessibilityLabel("Loading chart data")
+        .accessibilityLabel(.historyChartLoadingAccessibilityLabel)
         .accessibilityAddTraits(.updatesFrequently)
     }
 
     private var noDataView: some View {
-        Text("No data available")
+        Text(.historyChartEmpty)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, maxHeight: ChartMetrics.height)
             .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
-            .accessibilityLabel("Chart data not available")
+            .accessibilityLabel(.historyChartEmptyAccessibilityLabel)
     }
 
     private var failedView: some View {
         VStack(spacing: Spacing.element) {
-            Text("Unable to load chart data")
+            Text(.historyChartFailed)
                 .foregroundStyle(.secondary)
 
-            Button("Try Again", action: viewModel.retry)
+            Button(.historyChartFailedRetry, action: viewModel.retry)
                 .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity, maxHeight: ChartMetrics.height)

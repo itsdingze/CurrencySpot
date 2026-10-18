@@ -13,24 +13,23 @@ nonisolated enum VolatilityLevel: CaseIterable, Sendable {
         }
     }
 
-    var displayName: String {
+    var displayName: LocalizedStringResource {
         switch self {
-        case .veryLow: "Very Low"
-        case .low: "Low"
-        case .moderate: "Moderate"
-        case .high: "High"
-        case .veryHigh: "Very High"
+        case .veryLow: .volatilityLevelVeryLowName
+        case .low: .volatilityLevelLowName
+        case .moderate: .volatilityLevelModerateName
+        case .high: .volatilityLevelHighName
+        case .veryHigh: .volatilityLevelVeryHighName
         }
     }
 
-    var rangeDescription: String {
+    var rangeDescription: LocalizedStringResource {
         switch self {
-        case .veryLow: "< 5% variation"
-        case .low: "5-10% variation"
-        case .moderate: "10-15% variation"
-        case .high: "15-25% variation"
-        case .veryHigh: "> 25% variation"
+        case .veryLow: .volatilityLevelRangeBelow(limit: 5.formatted(.percent))
+        case .low: .volatilityLevelRangeBetween(lower: 5, upper: 10.formatted(.percent))
+        case .moderate: .volatilityLevelRangeBetween(lower: 10, upper: 15.formatted(.percent))
+        case .high: .volatilityLevelRangeBetween(lower: 15, upper: 25.formatted(.percent))
+        case .veryHigh: .volatilityLevelRangeAbove(limit: 25.formatted(.percent))
         }
     }
-
 }

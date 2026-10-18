@@ -2,10 +2,10 @@ import SwiftUI
 
 struct CameraStateScreen: View {
     let icon: String
-    let title: LocalizedStringKey
-    let message: LocalizedStringKey
-    let buttonTitle: LocalizedStringKey
-    var buttonHint: LocalizedStringKey? = nil
+    let title: LocalizedStringResource
+    let message: LocalizedStringResource
+    let buttonTitle: LocalizedStringResource
+    var buttonHint: LocalizedStringResource? = nil
     let action: () -> Void
 
     var body: some View {
@@ -56,9 +56,9 @@ struct CameraStateScreen: View {
 #Preview {
     CameraStateScreen(
         icon: "camera.viewfinder",
-        title: "Convert Prices with Your Camera",
-        message: "Point your camera at a price tag or menu and see every price in your currency.",
-        buttonTitle: "Get Started",
+        title: .cameraPermissionTitle,
+        message: .cameraPermissionMessage,
+        buttonTitle: .cameraPermissionAction,
         action: {}
     )
 }

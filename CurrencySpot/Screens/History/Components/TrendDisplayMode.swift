@@ -1,11 +1,13 @@
+import Foundation
+
 enum TrendDisplayMode: CaseIterable {
     case percentChange
     case priceChange
 
-    var description: String {
+    var displayName: LocalizedStringResource {
         switch self {
-        case .percentChange: "Percentage Change"
-        case .priceChange: "Price Change"
+        case .percentChange: .historyTrendDisplayPercentChange
+        case .priceChange: .historyTrendDisplayRateChange
         }
     }
 }

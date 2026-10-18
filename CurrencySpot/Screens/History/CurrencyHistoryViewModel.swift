@@ -286,7 +286,11 @@ final class CurrencyHistoryViewModel {
 
 extension CurrencyHistoryViewModel {
     var formattedCurrentRate: String {
-        "1 \(baseCurrency.rawValue) = \(chartStatistics.currentRate.toStringMax4Decimals) \(targetCurrency.rawValue)"
+        String(localized: .historyHeaderCurrentRate(
+            base: baseCurrency.rawValue,
+            rate: chartStatistics.currentRate.toStringMax4Decimals,
+            target: targetCurrency.rawValue
+        ))
     }
 
     var formattedHighestRate: String {
@@ -306,6 +310,6 @@ extension CurrencyHistoryViewModel {
     }
 
     var formattedVolatility: String {
-        volatilityLevel?.displayName ?? "N/A"
+        String(localized: volatilityLevel?.displayName ?? .historyStatisticsVolatilityUnavailable)
     }
 }

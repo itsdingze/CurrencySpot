@@ -7,7 +7,7 @@ struct AppOnboardingView: View {
 
     var body: some View {
         OnboardingScaffoldView(
-            title: "Welcome to CurrencySpot",
+            title: .onboardingWelcomeTitle,
             icon: {
                 let iconShape = RoundedRectangle(cornerRadius: AppIconArtwork.cornerRadius(forSide: iconSide))
 
@@ -24,22 +24,22 @@ struct AppOnboardingView: View {
             cards: [
                 OnboardingCard(
                     symbol: "dollarsign.arrow.circlepath",
-                    title: "Real-time Exchange Rates",
-                    subTitle: "Convert between currencies using the latest exchange rates."
+                    title: .onboardingWelcomeRatesTitle,
+                    subTitle: .onboardingWelcomeRatesSubtitle
                 ),
                 OnboardingCard(
                     symbol: "chart.line.uptrend.xyaxis",
-                    title: "Historical Tracking",
-                    subTitle: "Visualize currency performance with interactive charts."
+                    title: .onboardingWelcomeHistoryTitle,
+                    subTitle: .onboardingWelcomeHistorySubtitle
                 ),
                 OnboardingCard(
                     symbol: "wifi.slash",
-                    title: "Offline Support",
-                    subTitle: "Continue converting with cached rates when offline."
+                    title: .onboardingWelcomeOfflineTitle,
+                    subTitle: .onboardingWelcomeOfflineSubtitle
                 ),
             ],
             footer: {
-                Text("Exchange rates are aggregated from central banks worldwide.")
+                Text(.onboardingWelcomeFooter)
                     .font(.appCaption)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)

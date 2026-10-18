@@ -51,7 +51,7 @@ struct DetectionOverlayView: View {
             if isLive && !priceItems.isEmpty {
                 Color.clear
                     .accessibilityElement()
-                    .accessibilityLabel("\(priceItems.count) prices detected. Double-tap the shutter to freeze and review.")
+                    .accessibilityLabel(.cameraDetectionSummaryAccessibilityLabel(count: priceItems.count))
             }
         }
     }
@@ -76,9 +76,9 @@ struct DetectionOverlayView: View {
         .zIndex(zIndex(forDepth: depth, plateCount: plateCount))
         .accessibilityHidden(isLive)
         if depth > 0 {
-            button.accessibilityHint("Brings this conversion to the front")
+            button.accessibilityHint(.cameraDetectionPlatePromoteAccessibilityHint)
         } else {
-            button.accessibilityHint("Opens conversion details")
+            button.accessibilityHint(.cameraDetectionPlateDetailsAccessibilityHint)
         }
     }
 
@@ -155,8 +155,8 @@ private struct DetectionOutline: View {
         }
         .buttonStyle(.plain)
         .position(x: item.bounds.midX, y: item.bounds.midY)
-        .accessibilityLabel("Number \(item.transcript)")
-        .accessibilityHint("Convert this number")
+        .accessibilityLabel(.cameraDetectionOutlineAccessibilityLabel(number: item.transcript))
+        .accessibilityHint(.cameraDetectionOutlineAccessibilityHint)
     }
 }
 
@@ -179,7 +179,7 @@ private struct ConvertedPlate: View {
             )
             .background(.black.mix(with: .white, by: 0.15).opacity(0.9), in: .rect(cornerRadius: cornerRadius))
             .overlay { RoundedRectangle(cornerRadius: cornerRadius).stroke(.white.opacity(0.25), lineWidth: 0.5) }
-            .accessibilityLabel("Converted price \(amount.formatted(.currency(code: currencyCode.rawValue)))")
+            .accessibilityLabel(.cameraDetectionPlateAccessibilityLabel(price: amount.formatted(.currency(code: currencyCode.rawValue))))
             .accessibilityAddTraits(.updatesFrequently)
     }
 

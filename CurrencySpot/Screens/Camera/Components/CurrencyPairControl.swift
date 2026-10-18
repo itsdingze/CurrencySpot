@@ -8,18 +8,18 @@ struct CurrencyPairControl: View {
         HStack(spacing: Spacing.element) {
             currencyButton(
                 code: viewModel.baseCurrency,
-                caption: "From",
+                caption: .cameraCurrencyPairFrom,
                 destination: .basePicker,
-                accessibilityLabel: "Price tag currency"
+                accessibilityLabel: .cameraCurrencyPairBaseAccessibilityLabel
             )
 
             swapButton
 
             currencyButton(
                 code: viewModel.targetCurrency,
-                caption: "To",
+                caption: .cameraCurrencyPairTo,
                 destination: .targetPicker,
-                accessibilityLabel: "Converted currency"
+                accessibilityLabel: .cameraCurrencyPairTargetAccessibilityLabel
             )
         }
         .padding(.horizontal, Spacing.cardPadding)
@@ -29,9 +29,9 @@ struct CurrencyPairControl: View {
 
     private func currencyButton(
         code: CurrencyCode,
-        caption: String,
+        caption: LocalizedStringResource,
         destination: CameraViewModel.Destination,
-        accessibilityLabel: String
+        accessibilityLabel: LocalizedStringResource
     ) -> some View {
         Button {
             viewModel.destination = destination
@@ -71,7 +71,7 @@ struct CurrencyPairControl: View {
                 )
         }
         .buttonStyle(.controlButton(glass: false))
-        .accessibilityLabel("Swap currencies")
+        .accessibilityLabel(.cameraCurrencyPairSwapAccessibilityLabel)
     }
 }
 
