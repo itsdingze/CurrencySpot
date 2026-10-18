@@ -9,6 +9,7 @@ struct SettingsViewModelTests {
     private let preferences = InMemoryPreferencesStore()
     private let favorites: CurrencyCodeListStore
     private let watchlist: CurrencyCodeListStore
+    private let language = InMemoryAppLanguageStore(systemIdentifier: "en")
     private let appState = AppState(networkMonitor: NetworkMonitor(isConnected: true))
     private let viewModel: SettingsViewModel
 
@@ -25,6 +26,7 @@ struct SettingsViewModelTests {
             preferences: preferences,
             favorites: favorites,
             watchlist: watchlist,
+            language: language,
             appState: appState,
             clock: ImmediateClock()
         )
@@ -35,6 +37,7 @@ struct SettingsViewModelTests {
         preferences: PreferencesStore,
         favorites: CurrencyCodeListStore,
         watchlist: CurrencyCodeListStore,
+        language: AppLanguageStore,
         appState: AppState,
         clock: ClockService
     ) -> SettingsViewModel {
@@ -43,10 +46,12 @@ struct SettingsViewModelTests {
             resetPreferencesUseCase: ResetPreferencesUseCase(
                 preferences: preferences,
                 favorites: favorites,
-                watchlist: watchlist
+                watchlist: watchlist,
+                language: language
             ),
             manageFavoritesUseCase: ManageFavoritesUseCase(favorites: favorites),
             preferences: preferences,
+            languageStore: language,
             appState: appState,
             clock: clock
         )
@@ -58,6 +63,7 @@ struct SettingsViewModelTests {
             preferences: preferences,
             favorites: favorites,
             watchlist: watchlist,
+            language: language,
             appState: appState,
             clock: toastClock
         )
@@ -226,5 +232,35 @@ struct SettingsViewModelTests {
         ]
 
         #expect(viewModel.addableCurrencies(from: rates, matching: "").map(\.currencyCode) == ["CHF"])
+    }
+
+    @Test("the language row starts on the language the app runs in")
+    func languageStartsOnRunningLanguage() {
+        #expect(viewModel.language == AppLanguage(identifier: "en"))
+    }
+
+    @Test("choosing another language saves it and tells the user it applies on the next launch")
+    func choosingLanguageSavesAndNotifies() {
+        viewModel.language = AppLanguage(identifier: "zh-Hans")
+
+        #expect(language.selectedLanguage == AppLanguage(identifier: "zh-Hans"))
+        #expect(viewModel.destination == .languageChangeNotice)
+    }
+
+    @Test("picking the language already selected shows no notice")
+    func pickingSameLanguageIsSilent() {
+        viewModel.language = AppLanguage(identifier: "en")
+
+        #expect(viewModel.destination == nil)
+    }
+
+    @Test("resetting preferences moves the language row back to the system language")
+    func resetMovesLanguageBackToSystem() {
+        viewModel.language = AppLanguage(identifier: "zh-Hans")
+        viewModel.dismissDestination()
+
+        viewModel.confirmAlert(.resetPreferences)
+
+        #expect(viewModel.language == AppLanguage(identifier: "en"))
     }
 }

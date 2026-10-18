@@ -17,13 +17,15 @@ struct ResetPreferencesUseCaseTests {
     )
     private let favorites: CurrencyCodeListStore
     private let watchlist: CurrencyCodeListStore
+    private let language = InMemoryAppLanguageStore(systemIdentifier: "en")
     private let useCase: ResetPreferencesUseCase
 
     init() throws {
         defaults = try isolatedDefaults.make()
         favorites = CurrencyCodeListStore(defaults: defaults, key: UserDefaultsKeys.favoriteCurrencies, seed: ["CHF"])
         watchlist = CurrencyCodeListStore(defaults: defaults, key: UserDefaultsKeys.historyWatchlist, seed: ["NZD", "SEK"])
-        useCase = ResetPreferencesUseCase(preferences: preferences, favorites: favorites, watchlist: watchlist)
+        language.selectedLanguage = AppLanguage(identifier: "zh-Hans")
+        useCase = ResetPreferencesUseCase(preferences: preferences, favorites: favorites, watchlist: watchlist, language: language)
     }
 
     @Test("every preference returns to its out-of-box value")
@@ -52,5 +54,12 @@ struct ResetPreferencesUseCaseTests {
 
         #expect(watchlist.codes.elements == CurrencyDefaults.favoriteCurrencies)
         #expect(defaults.stringArray(forKey: UserDefaultsKeys.historyWatchlist) == CurrencyDefaults.favoriteCurrencies.map(\.rawValue))
+    }
+
+    @Test("a chosen app language goes back to the system language")
+    func languageReturnsToSystem() {
+        useCase.execute()
+
+        #expect(language.selectedLanguage == AppLanguage(identifier: "en"))
     }
 }

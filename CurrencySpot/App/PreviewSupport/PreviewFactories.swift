@@ -26,6 +26,7 @@
                 appState: AppState(networkMonitor: NetworkMonitor(isConnected: true)),
                 userDefaults: .previewSuite,
                 preferences: InMemoryPreferencesStore(),
+                languageStore: InMemoryAppLanguageStore(),
                 networkService: PreviewNetworkService(today: .now),
                 syncStore: InMemoryHistoricalSyncStore(),
                 fetchDateStore: InMemoryRatesFetchDateStore(),

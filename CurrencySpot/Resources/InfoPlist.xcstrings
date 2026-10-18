@@ -10,6 +10,18 @@
             "state" : "new",
             "value" : "CurrencySpot"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇见"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯見"
+          }
         }
       }
     },
@@ -22,6 +34,18 @@
             "state" : "new",
             "value" : "CurrencySpot"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇见"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯見"
+          }
         }
       }
     },
@@ -33,9 +57,21 @@
             "state" : "translated",
             "value" : "CurrencySpot uses the camera to detect prices and show them converted to your currency."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇见使用相机识别价格，并换算成你选择的币种。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯見使用相機辨識價格，並換算成你選擇的幣別。"
+          }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version" : "1.3"
 }

@@ -36,6 +36,11 @@ struct SettingsView: View {
             isPresented: bindableViewModel.destination.isPresenting(.alert(.resetPreferences)),
             onConfirm: { settingsViewModel.confirmAlert(.resetPreferences) }
         )
+        .alert(.settingsLanguageChangedTitle, isPresented: bindableViewModel.destination.isPresenting(.languageChangeNotice)) {
+            Button(.settingsLanguageChangedOk) {}
+        } message: {
+            Text(.settingsLanguageChangedMessage(language: settingsViewModel.language.displayName))
+        }
         .overlay { toastOverlay }
         .onChange(of: settingsViewModel.toast?.id) {
             if let toast = settingsViewModel.toast {
@@ -75,18 +80,23 @@ struct SettingsView: View {
     private var appearanceSection: some View {
         Section(header: Text(.settingsAppearanceHeader)) {
             AccentColorPickerSheet()
+            pickerRow(label: colorSchemeLabel, picker: colorSchemePicker)
+            pickerRow(label: languageLabel, picker: languagePicker)
+        }
+    }
 
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading) {
-                    colorSchemeLabel
-                        .accessibilityHidden(true)
+    @ViewBuilder
+    private func pickerRow(label: some View, picker: some View) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading) {
+                label
+                    .accessibilityHidden(true)
 
-                    colorSchemePicker
-                        .labelsHidden()
-                }
-            } else {
-                colorSchemePicker
+                picker
+                    .labelsHidden()
             }
+        } else {
+            picker
         }
     }
 
@@ -108,6 +118,27 @@ struct SettingsView: View {
         }, icon: {
             Image(systemName: "moon.circle.fill")
                 .symbolRenderingMode(.multicolor)
+        })
+    }
+
+    private var languagePicker: some View {
+        Picker(selection: bindableViewModel.language) {
+            ForEach(settingsViewModel.availableLanguages) { language in
+                Text(language.displayName)
+                    .fontDesign(.rounded)
+                    .tag(language)
+            }
+        } label: {
+            languageLabel
+        }
+    }
+
+    private var languageLabel: some View {
+        Label(title: {
+            Text(.settingsLanguageLabel)
+        }, icon: {
+            Image(systemName: "globe")
+                .foregroundStyle(.blue)
         })
     }
 

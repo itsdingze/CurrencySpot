@@ -2,8 +2,8 @@ import Foundation
 
 extension Bundle {
     var appName: String {
-        infoDictionary?["CFBundleDisplayName"] as? String
-            ?? infoDictionary?["CFBundleName"] as? String
+        object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? object(forInfoDictionaryKey: "CFBundleName") as? String
             ?? "CurrencySpot"
     }
 

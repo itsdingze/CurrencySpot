@@ -13,6 +13,7 @@ final class SettingsViewModel {
         case accentColorPicker
         case addFavoriteCurrency
         case onboarding
+        case languageChangeNotice
     }
 
     nonisolated enum SettingsAlert {
@@ -49,12 +50,15 @@ final class SettingsViewModel {
 
     private var refreshTask: Task<Void, Never>?
 
+    private var selectedLanguage: AppLanguage
+
     // MARK: - Private Properties
 
     private let refreshAllDataUseCase: AllDataRefreshing
     private let resetPreferencesUseCase: ResetPreferencesUseCase
     private let manageFavoritesUseCase: ManageFavoritesUseCase
     private let preferences: PreferencesStore
+    private let languageStore: AppLanguageStore
     private let appState: AppState
     private let clock: ClockService
     private let logger = Logger(category: .viewModel)
@@ -66,6 +70,7 @@ final class SettingsViewModel {
         resetPreferencesUseCase: ResetPreferencesUseCase,
         manageFavoritesUseCase: ManageFavoritesUseCase,
         preferences: PreferencesStore,
+        languageStore: AppLanguageStore,
         appState: AppState,
         clock: ClockService
     ) {
@@ -73,6 +78,8 @@ final class SettingsViewModel {
         self.resetPreferencesUseCase = resetPreferencesUseCase
         self.manageFavoritesUseCase = manageFavoritesUseCase
         self.preferences = preferences
+        self.languageStore = languageStore
+        selectedLanguage = languageStore.selectedLanguage
         self.appState = appState
         self.clock = clock
     }
@@ -115,6 +122,7 @@ final class SettingsViewModel {
             }
         case .resetPreferences:
             resetPreferencesUseCase.execute()
+            selectedLanguage = languageStore.selectedLanguage
             showToast(.preferencesReset)
         }
     }
@@ -167,6 +175,22 @@ final class SettingsViewModel {
     var defaultTargetCurrency: CurrencyCode {
         get { preferences.defaultTargetCurrency }
         set { preferences.defaultTargetCurrency = newValue }
+    }
+
+    // MARK: - Language
+
+    var availableLanguages: [AppLanguage] {
+        languageStore.availableLanguages
+    }
+
+    var language: AppLanguage {
+        get { selectedLanguage }
+        set {
+            guard newValue != selectedLanguage else { return }
+            languageStore.selectedLanguage = newValue
+            selectedLanguage = newValue
+            destination = .languageChangeNotice
+        }
     }
 
     // MARK: - Favorites

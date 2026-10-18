@@ -10,6 +10,18 @@
             "state" : "translated",
             "value" : "OK"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好的"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好的"
+          }
         }
       }
     },
@@ -21,6 +33,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Camera"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相机"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相機"
           }
         }
       }
@@ -34,6 +58,18 @@
             "state" : "translated",
             "value" : "Convert"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算"
+          }
         }
       }
     },
@@ -45,6 +81,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "History"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "走势"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "走勢"
           }
         }
       }
@@ -58,6 +106,18 @@
             "state" : "translated",
             "value" : "Settings"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
+          }
         }
       }
     },
@@ -69,6 +129,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't load exchange rates. Try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法加载汇率，请重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法載入匯率，請再試一次。"
           }
         }
       }
@@ -82,6 +154,18 @@
             "state" : "translated",
             "value" : "Couldn't load exchange rates. Use sample rates."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法加载汇率，可选择“使用示例汇率”。示例汇率为虚构数据。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法載入匯率，可選取「使用範例匯率」。範例匯率為虛構資料。"
+          }
         }
       }
     },
@@ -94,6 +178,18 @@
             "state" : "translated",
             "value" : "Exchange rates loaded"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率加载完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率載入完成"
+          }
         }
       }
     },
@@ -102,6 +198,18 @@
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(amount)@ %2$(currency)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(amount)@ %2$(currency)@"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$(amount)@ %2$(currency)@"
@@ -118,6 +226,18 @@
             "state" : "translated",
             "value" : "Converted amount"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算后金额"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算後金額"
+          }
         }
       }
     },
@@ -129,6 +249,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Amount to convert"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算前金额"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算前金額"
           }
         }
       }
@@ -142,6 +274,18 @@
             "state" : "translated",
             "value" : "From"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算前"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算前"
+          }
         }
       }
     },
@@ -153,6 +297,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Currently selected: %1$(name)@, %2$(code)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选：%1$(name)@，%2$(code)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選取：%1$(name)@，%2$(code)@"
           }
         }
       }
@@ -166,6 +322,18 @@
             "state" : "translated",
             "value" : "Select source currency"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择换算前的币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇換算前的幣別"
+          }
         }
       }
     },
@@ -177,6 +345,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select target currency"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择换算后的币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇換算後的幣別"
           }
         }
       }
@@ -190,6 +370,18 @@
             "state" : "translated",
             "value" : "To"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算后"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算後"
+          }
         }
       }
     },
@@ -201,6 +393,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't load exchange rates"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法加载汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法載入匯率"
           }
         }
       }
@@ -214,6 +418,18 @@
             "state" : "translated",
             "value" : "You're offline and there are no saved rates yet. Connect to the internet to get the latest rates."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未连接网络，也没有已保存的汇率。请连接网络，获取最新汇率。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未連上網路，也沒有已儲存的匯率。請連上網路，取得最新匯率。"
+          }
         }
       }
     },
@@ -225,6 +441,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unable to load the latest exchange rates. Please try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法加载最新汇率，请重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法載入最新匯率，請再試一次。"
           }
         }
       }
@@ -238,6 +466,18 @@
             "state" : "translated",
             "value" : "Sample rates are made up, not real exchange rates."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示例汇率为虚构数据，并非真实汇率。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "範例匯率為虛構資料，並非真實匯率。"
+          }
         }
       }
     },
@@ -249,6 +489,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unable to Load Exchange Rates"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法加载汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法載入匯率"
           }
         }
       }
@@ -262,6 +514,18 @@
             "state" : "translated",
             "value" : "Try Again"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重试"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再試一次"
+          }
         }
       }
     },
@@ -273,6 +537,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use Sample Rates"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用示例汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用範例匯率"
           }
         }
       }
@@ -286,6 +562,18 @@
             "state" : "translated",
             "value" : "Loading exchange rates…"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在加载汇率…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在載入匯率…"
+          }
         }
       }
     },
@@ -297,6 +585,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Number pad"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数字键盘"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "數字鍵盤"
           }
         }
       }
@@ -310,6 +610,18 @@
             "state" : "translated",
             "value" : "Clear all"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部清除"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部清除"
+          }
         }
       }
     },
@@ -321,6 +633,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete last digit"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除最后一位数字"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除最後一位數字"
           }
         }
       }
@@ -334,6 +658,18 @@
             "state" : "translated",
             "value" : "Number %(digit)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数字 %(digit)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "數字 %(digit)@"
+          }
         }
       }
     },
@@ -345,6 +681,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exchange rate information. Not updated yet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率信息。尚未更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率資訊。尚未更新。"
           }
         }
       }
@@ -358,6 +706,18 @@
             "state" : "translated",
             "value" : "Exchange rate information. Current rate: %(rate)@. Not updated yet"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前汇率：%(rate)@。尚未更新。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前匯率：%(rate)@。尚未更新。"
+          }
         }
       }
     },
@@ -369,6 +729,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exchange rate information. Current rate: %1$(rate)@. Last updated: %2$(date)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前汇率：%1$(rate)@。上次更新：%2$(date)@。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前匯率：%1$(rate)@。上次更新：%2$(date)@。"
           }
         }
       }
@@ -382,6 +754,18 @@
             "state" : "translated",
             "value" : "Exchange rate information. Last updated: %(date)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率信息。上次更新：%(date)@。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率資訊。上次更新：%(date)@。"
+          }
         }
       }
     },
@@ -390,6 +774,18 @@
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 %1$(base)@ = %2$(rate)@ %3$(target)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 %1$(base)@ = %2$(rate)@ %3$(target)@"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 %1$(base)@ = %2$(rate)@ %3$(target)@"
@@ -406,6 +802,18 @@
             "state" : "translated",
             "value" : "Last updated: %(date)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上次更新：%(date)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上次更新：%(date)@"
+          }
         }
       }
     },
@@ -417,6 +825,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not updated yet"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未更新"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未更新"
           }
         }
       }
@@ -430,6 +850,18 @@
             "state" : "translated",
             "value" : "Swap currencies"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "互换币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "互換幣別"
+          }
         }
       }
     },
@@ -441,6 +873,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Swapped. %1$(base)@ to %2$(target)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已互换，从 %1$(base)@ 换算为 %2$(target)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已互換，從 %1$(base)@ 換算為 %2$(target)@"
           }
         }
       }
@@ -454,6 +898,18 @@
             "state" : "translated",
             "value" : "Open Settings"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟設定"
+          }
         }
       }
     },
@@ -465,6 +921,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opens the Settings app to enable camera access"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开系统“设置”，允许访问相机"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟系統「設定」，允許取用相機"
           }
         }
       }
@@ -478,6 +946,18 @@
             "state" : "translated",
             "value" : "Turn on camera access in Settings to convert prices with your camera."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在系统“设置”中允许汇见访问相机，即可扫描并换算价格。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在系統「設定」中允許匯見取用相機，即可掃描並換算價格。"
+          }
         }
       }
     },
@@ -489,6 +969,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Camera Access Is Off"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未开启相机权限"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未開啟相機權限"
           }
         }
       }
@@ -502,6 +994,18 @@
             "state" : "translated",
             "value" : "Price detected. Swipe right to hear the conversion, or tap the shutter to freeze and review."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已识别到价格。向右轻扫可听取换算结果，或选择“定格画面”并轻点两下查看。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已辨識到價格。向右滑動可聽取換算結果，或選取「定格畫面」並點兩下查看。"
+          }
         }
       }
     },
@@ -513,6 +1017,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No prices found. Tap Resume camera to try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未识别到价格。选择“恢复实时画面”并轻点两下，即可重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未辨識到價格。選取「恢復即時畫面」並點兩下，即可再試一次。"
           }
         }
       }
@@ -526,6 +1042,18 @@
             "state" : "translated",
             "value" : "Point the camera at a price tag."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将相机对准价签。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將相機對準價格標籤。"
+          }
         }
       }
     },
@@ -537,6 +1065,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Camera ready. Point at a price tag."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相机已就绪，请对准价签。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "相機已就緒，請對準價格標籤。"
           }
         }
       }
@@ -550,6 +1090,18 @@
             "state" : "translated",
             "value" : "Prices detected. Swipe to explore."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已识别到价格，轻扫即可浏览。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已辨識到價格，滑動即可瀏覽。"
+          }
         }
       }
     },
@@ -561,6 +1113,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Close"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉"
           }
         }
       }
@@ -574,6 +1138,18 @@
             "state" : "translated",
             "value" : "Hide this conversion"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏这条结果"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏這筆結果"
+          }
         }
       }
     },
@@ -585,6 +1161,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open in Convert"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在“换算”中打开"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在「換算」中開啟"
           }
         }
       }
@@ -598,6 +1186,18 @@
             "state" : "translated",
             "value" : "Conversion"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算结果"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算結果"
+          }
         }
       }
     },
@@ -609,6 +1209,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Price tag currency"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "价签上的币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "價格標籤上的幣別"
           }
         }
       }
@@ -622,6 +1234,18 @@
             "state" : "translated",
             "value" : "From"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算前"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算前"
+          }
         }
       }
     },
@@ -633,6 +1257,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Swap currencies"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "互换币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "互換幣別"
           }
         }
       }
@@ -646,6 +1282,18 @@
             "state" : "translated",
             "value" : "Converted currency"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算后的币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算後的幣別"
+          }
         }
       }
     },
@@ -657,6 +1305,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "To"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算后"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算後"
           }
         }
       }
@@ -670,6 +1330,18 @@
             "state" : "translated",
             "value" : "Convert this number"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算这个数字"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算這個數字"
+          }
         }
       }
     },
@@ -681,6 +1353,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Number %(number)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数字 %(number)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "數字 %(number)@"
           }
         }
       }
@@ -694,6 +1378,18 @@
             "state" : "translated",
             "value" : "Converted price %(price)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算后的价格 %(price)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算後的價格 %(price)@"
+          }
         }
       }
     },
@@ -706,6 +1402,18 @@
             "state" : "translated",
             "value" : "Opens conversion details"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开换算详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟換算詳情"
+          }
         }
       }
     },
@@ -717,6 +1425,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Brings this conversion to the front"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将这条结果移到最前面"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將這筆結果移到最前面"
           }
         }
       }
@@ -742,6 +1462,42 @@
               }
             }
           }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已识别到 %(count)lld 个价格。选择“定格画面”并轻点两下，即可查看。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已识别到 %(count)lld 个价格。选择“定格画面”并轻点两下，即可查看。"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已辨識到 %(count)lld 個價格。選取「定格畫面」並點兩下，即可查看。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已辨識到 %(count)lld 個價格。選取「定格畫面」並點兩下，即可查看。"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -753,6 +1509,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Flashlight"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手电筒"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手電筒"
           }
         }
       }
@@ -766,6 +1534,18 @@
             "state" : "translated",
             "value" : "Off"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關"
+          }
         }
       }
     },
@@ -777,6 +1557,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "On"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開"
           }
         }
       }
@@ -790,6 +1582,18 @@
             "state" : "translated",
             "value" : "Import photo"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇照片"
+          }
         }
       }
     },
@@ -801,6 +1605,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Get Started"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启相机"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟相機"
           }
         }
       }
@@ -814,6 +1630,18 @@
             "state" : "translated",
             "value" : "Point your camera at a price tag or menu and see every price in your currency."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对准价签或菜单，即可将价格换算成你选择的币种。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對準價格標籤或菜單，即可將價格換算成你選擇的幣別。"
+          }
         }
       }
     },
@@ -825,6 +1653,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Convert Prices with Your Camera"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用相机换算价格"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用相機換算價格"
           }
         }
       }
@@ -838,6 +1678,18 @@
             "state" : "translated",
             "value" : "Freeze frame"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定格画面"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定格畫面"
+          }
         }
       }
     },
@@ -849,6 +1701,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Resume camera"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复实时画面"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢復即時畫面"
           }
         }
       }
@@ -862,6 +1726,18 @@
             "state" : "translated",
             "value" : "No prices found"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未识别到价格"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未辨識到價格"
+          }
         }
       }
     },
@@ -873,6 +1749,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Point at a price tag or menu"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "对准价签或菜单"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "對準價格標籤或菜單"
           }
         }
       }
@@ -886,6 +1774,18 @@
             "state" : "translated",
             "value" : "Scanning"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在扫描"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在掃描"
+          }
         }
       }
     },
@@ -897,6 +1797,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$(code)@, %2$(name)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@"
           }
         }
       }
@@ -910,6 +1822,18 @@
             "state" : "translated",
             "value" : "Done"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
         }
       }
     },
@@ -921,6 +1845,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search currency code or name"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索币种代码或名称"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋幣別代碼或名稱"
           }
         }
       }
@@ -934,6 +1870,18 @@
             "state" : "translated",
             "value" : "Select Currency"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇幣別"
+          }
         }
       }
     },
@@ -945,6 +1893,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't capture the frame. Please try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法获取相机画面，请重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法擷取相機畫面，請再試一次。"
           }
         }
       }
@@ -958,6 +1918,18 @@
             "state" : "translated",
             "value" : "Capture Failed"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法获取画面"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法擷取畫面"
+          }
         }
       }
     },
@@ -969,6 +1941,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The exchange rate data could not be validated. Please try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收到的汇率数据无法使用，请重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收到的匯率資料無法使用，請再試一次。"
           }
         }
       }
@@ -982,6 +1966,18 @@
             "state" : "translated",
             "value" : "Data Validation Error"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率数据异常"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率資料異常"
+          }
         }
       }
     },
@@ -993,6 +1989,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unable to calculate the date range for historical data. Please try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法确定历史汇率的日期范围，请重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法確定歷史匯率的日期範圍，請再試一次。"
           }
         }
       }
@@ -1006,6 +2014,18 @@
             "state" : "translated",
             "value" : "Date Processing Error"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法确定日期范围"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法確定日期範圍"
+          }
         }
       }
     },
@@ -1017,6 +2037,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unable to read the exchange rate data. Please try again later."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取汇率数据，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法讀取匯率資料，請稍後再試一次。"
           }
         }
       }
@@ -1030,6 +2062,18 @@
             "state" : "translated",
             "value" : "Data Error"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取汇率数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法讀取匯率資料"
+          }
         }
       }
     },
@@ -1041,6 +2085,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The exchange rate server returned an error. Please try again later."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率服务出现错误，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率服務出現錯誤，請稍後再試一次。"
           }
         }
       }
@@ -1054,6 +2110,18 @@
             "state" : "translated",
             "value" : "Server Error"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器错误"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器錯誤"
+          }
         }
       }
     },
@@ -1065,6 +2133,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unable to connect to the server. Please try again later."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接到服务器，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法連線到伺服器，請稍後再試一次。"
           }
         }
       }
@@ -1078,6 +2158,18 @@
             "state" : "translated",
             "value" : "Network Error"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接服务器"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法連線伺服器"
+          }
         }
       }
     },
@@ -1089,6 +2181,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unable to connect to the internet. Please check your connection."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接网络，请检查网络连接。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法連上網路，請檢查網路連線。"
           }
         }
       }
@@ -1102,6 +2206,18 @@
             "state" : "translated",
             "value" : "No Internet Connection"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无网络连接"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無網路連線"
+          }
         }
       }
     },
@@ -1113,6 +2229,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't load that photo. Please try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法加载这张照片，请重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法載入這張照片，請再試一次。"
           }
         }
       }
@@ -1126,6 +2254,18 @@
             "state" : "translated",
             "value" : "Photo Import Failed"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片导入失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片匯入失敗"
+          }
         }
       }
     },
@@ -1137,6 +2277,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invalid server response. Please try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "服务器响应异常，请重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "伺服器回應異常，請再試一次。"
           }
         }
       }
@@ -1150,6 +2302,18 @@
             "state" : "translated",
             "value" : "Cannot connect to server. Please try again later."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接到服务器，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法連線到伺服器，請稍後再試一次。"
+          }
         }
       }
     },
@@ -1161,6 +2325,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cannot find server. Please check your internet connection."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接汇率服务，请检查网络连接。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法連線匯率服務，請檢查網路連線。"
           }
         }
       }
@@ -1174,6 +2350,18 @@
             "state" : "translated",
             "value" : "Network connection lost. Please check your connection."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "网络连接已中断，请检查网络后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網路連線已中斷，請檢查網路後再試一次。"
+          }
         }
       }
     },
@@ -1185,6 +2373,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DNS lookup failed. Please check your internet connection."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法连接汇率服务，请检查网络连接。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法連線匯率服務，請檢查網路連線。"
           }
         }
       }
@@ -1198,6 +2398,18 @@
             "state" : "translated",
             "value" : "Resource unavailable. Please try again later."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂时无法获取汇率数据，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫時無法取得匯率資料，請稍後再試一次。"
+          }
         }
       }
     },
@@ -1210,6 +2422,18 @@
             "state" : "translated",
             "value" : "The request timed out. Please check your internet connection and try again."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请求超时，请检查网络连接后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連線逾時，請檢查網路連線後再試一次。"
+          }
         }
       }
     },
@@ -1221,6 +2445,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Too many redirects. Please try again later."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂时无法访问汇率服务，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫時無法存取匯率服務，請稍後再試一次。"
           }
         }
       }
@@ -1246,6 +2482,42 @@
               }
             }
           }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已尝试连接 %1$(attempts)lld 次，仍未成功。请检查网络连接后重试。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已尝试连接 %1$(attempts)lld 次，仍未成功。请检查网络连接后重试。"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已嘗試連線 %1$(attempts)lld 次，仍未成功。請檢查網路連線後再試一次。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已嘗試連線 %1$(attempts)lld 次，仍未成功。請檢查網路連線後再試一次。"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1257,6 +2529,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Connection Failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連線失敗"
           }
         }
       }
@@ -1270,6 +2554,18 @@
             "state" : "translated",
             "value" : "Exchange rates can't be saved on this device. The app works normally, but data will not be saved after closing."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法在此设备上保存汇率。应用仍可正常使用，但关闭后不会保留数据。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法在此裝置上儲存匯率。App 仍可正常使用，但關閉後不會保留資料。"
+          }
         }
       }
     },
@@ -1281,6 +2577,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Storage Unavailable"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法保存数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法儲存資料"
           }
         }
       }
@@ -1294,6 +2602,18 @@
             "state" : "translated",
             "value" : "Couldn't read text in this image. Please try again."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法识别图片中的文字，请重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法辨識影像中的文字，請再試一次。"
+          }
         }
       }
     },
@@ -1305,6 +2625,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Scan Failed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "掃描失敗"
           }
         }
       }
@@ -1318,6 +2650,18 @@
             "state" : "translated",
             "value" : "An unexpected error occurred. Please try again."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法完成操作，请重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法完成操作，請再試一次。"
+          }
         }
       }
     },
@@ -1329,6 +2673,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unexpected Error"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作未完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作未完成"
           }
         }
       }
@@ -1342,6 +2698,18 @@
             "state" : "translated",
             "value" : "Swipe up or down to move between data points"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向上或向下轻扫，查看不同日期的汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向上或向下滑動，查看不同日期的匯率"
+          }
         }
       }
     },
@@ -1353,6 +2721,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exchange rate chart for %1$(base)@ to %2$(target)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(base)@ 兑 %2$(target)@ 汇率走势图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(base)@ 兌 %2$(target)@ 匯率走勢圖"
           }
         }
       }
@@ -1366,6 +2746,18 @@
             "state" : "translated",
             "value" : "No data available"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无汇率数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無匯率資料"
+          }
         }
       }
     },
@@ -1377,6 +2769,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$(date)@, %2$(rate)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(date)@，%2$(rate)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(date)@，%2$(rate)@"
           }
         }
       }
@@ -1398,6 +2802,42 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "Showing %1$(count)lld data points from %2$(startDate)@ to %3$(endDate)@. Current rate: %4$(rate)@. Trend: down"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 个数据点。当前汇率：%4$(rate)@。趋势：下跌。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 个数据点。当前汇率：%4$(rate)@。趋势：下跌。"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 個資料點。目前匯率：%4$(rate)@。趨勢：下跌。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 個資料點。目前匯率：%4$(rate)@。趨勢：下跌。"
                 }
               }
             }
@@ -1426,6 +2866,42 @@
               }
             }
           }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 个数据点。当前汇率：%4$(rate)@。趋势：持平。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 个数据点。当前汇率：%4$(rate)@。趋势：持平。"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 個資料點。目前匯率：%4$(rate)@。趨勢：持平。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 個資料點。目前匯率：%4$(rate)@。趨勢：持平。"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1450,6 +2926,42 @@
               }
             }
           }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 个数据点。当前汇率：%4$(rate)@。趋势：上涨。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 个数据点。当前汇率：%4$(rate)@。趋势：上涨。"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 個資料點。目前匯率：%4$(rate)@。趨勢：上漲。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%2$(startDate)@至%3$(endDate)@，共 %1$(count)lld 個資料點。目前匯率：%4$(rate)@。趨勢：上漲。"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1461,6 +2973,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No data available for this period"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选时段暂无汇率数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所選時段暫無匯率資料"
           }
         }
       }
@@ -1474,6 +2998,18 @@
             "state" : "translated",
             "value" : "Chart data not available"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所选时段暂无汇率数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所選時段暫無匯率資料"
+          }
         }
       }
     },
@@ -1485,6 +3021,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No historical data available for this currency"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该币种暂无历史汇率数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "該幣別暫無歷史匯率資料"
           }
         }
       }
@@ -1498,6 +3046,18 @@
             "state" : "translated",
             "value" : "Unable to load chart data"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法加载图表数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法載入圖表資料"
+          }
         }
       }
     },
@@ -1509,6 +3069,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try Again"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重试"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再試一次"
           }
         }
       }
@@ -1522,6 +3094,18 @@
             "state" : "translated",
             "value" : "Exchange rate chart loaded"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率图表加载完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率圖表載入完成"
+          }
         }
       }
     },
@@ -1533,6 +3117,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading chart data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在加载图表数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在載入圖表資料"
           }
         }
       }
@@ -1546,6 +3142,18 @@
             "state" : "translated",
             "value" : "Average"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均"
+          }
         }
       }
     },
@@ -1557,6 +3165,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Day"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期"
           }
         }
       }
@@ -1570,6 +3190,18 @@
             "state" : "translated",
             "value" : "%1$(change)@ (%2$(percent)@)"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(change)@（%2$(percent)@）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(change)@（%2$(percent)@）"
+          }
         }
       }
     },
@@ -1581,6 +3213,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rate change: down %1$(change)@, %2$(percent)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率下跌 %1$(change)@，跌幅 %2$(percent)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率下跌 %1$(change)@，跌幅 %2$(percent)@"
           }
         }
       }
@@ -1594,6 +3238,18 @@
             "state" : "translated",
             "value" : "Rate change: stable %1$(change)@, %2$(percent)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率持平，变动值 %1$(change)@，变动幅度 %2$(percent)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率持平，變動值 %1$(change)@，變動幅度 %2$(percent)@"
+          }
         }
       }
     },
@@ -1605,6 +3261,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rate change: up %1$(change)@, %2$(percent)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率上涨 %1$(change)@，涨幅 %2$(percent)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率上漲 %1$(change)@，漲幅 %2$(percent)@"
           }
         }
       }
@@ -1618,6 +3286,18 @@
             "state" : "translated",
             "value" : "down %1$(percent)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下跌 %1$(percent)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下跌 %1$(percent)@"
+          }
         }
       }
     },
@@ -1629,6 +3309,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "stable %1$(percent)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "持平，变动幅度 %1$(percent)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "持平，變動幅度 %1$(percent)@"
           }
         }
       }
@@ -1642,6 +3334,18 @@
             "state" : "translated",
             "value" : "up %1$(percent)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上涨 %1$(percent)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上漲 %1$(percent)@"
+          }
         }
       }
     },
@@ -1654,6 +3358,18 @@
             "state" : "translated",
             "value" : "%1$(code)@, %2$(name)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@"
+          }
         }
       }
     },
@@ -1662,6 +3378,18 @@
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 %1$(base)@ = %2$(rate)@ %3$(target)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 %1$(base)@ = %2$(rate)@ %3$(target)@"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 %1$(base)@ = %2$(rate)@ %3$(target)@"
@@ -1678,6 +3406,18 @@
             "state" : "translated",
             "value" : "Current rate: %1$(rate)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前汇率：%1$(rate)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前匯率：%1$(rate)@"
+          }
         }
       }
     },
@@ -1686,6 +3426,18 @@
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 %1$(base)@ = — %2$(target)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 %1$(base)@ = — %2$(target)@"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 %1$(base)@ = — %2$(target)@"
@@ -1702,6 +3454,18 @@
             "state" : "translated",
             "value" : "Current rate: not available"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前汇率：暂无数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前匯率：暫無資料"
+          }
         }
       }
     },
@@ -1713,6 +3477,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Done"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
           }
         }
       }
@@ -1726,6 +3502,18 @@
             "state" : "translated",
             "value" : "Edit Watchlist"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑关注列表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯追蹤清單"
+          }
         }
       }
     },
@@ -1737,6 +3525,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search above to add currencies to your watchlist."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在上方搜索，添加你想关注的币种。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在上方搜尋，加入你想追蹤的幣別。"
           }
         }
       }
@@ -1750,6 +3550,18 @@
             "state" : "translated",
             "value" : "No Currencies"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有关注的币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有追蹤的幣別"
+          }
         }
       }
     },
@@ -1761,6 +3573,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Indicator"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "涨跌显示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漲跌顯示"
           }
         }
       }
@@ -1774,6 +3598,18 @@
             "state" : "translated",
             "value" : "Options"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選項"
+          }
         }
       }
     },
@@ -1785,6 +3621,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search currencies"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋幣別"
           }
         }
       }
@@ -1810,6 +3658,42 @@
               }
             }
           }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "找到 %1$(count)lld 个币种"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "找到 %1$(count)lld 个币种"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "找到 %1$(count)lld 個幣別"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "找到 %1$(count)lld 個幣別"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1821,6 +3705,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sort By"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序方式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序方式"
           }
         }
       }
@@ -1834,6 +3730,18 @@
             "state" : "translated",
             "value" : "History"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率走势"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率走勢"
+          }
         }
       }
     },
@@ -1845,6 +3753,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$(code)@, %2$(name)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@"
           }
         }
       }
@@ -1858,6 +3778,18 @@
             "state" : "translated",
             "value" : "%1$(code)@, %2$(name)@, 1 %3$(base)@ equals %4$(rate)@ %5$(target)@, down %6$(change)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@，1 %3$(base)@ 等于 %4$(rate)@ %5$(target)@，近一周下跌 %6$(change)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@，1 %3$(base)@ 等於 %4$(rate)@ %5$(target)@，近一週下跌 %6$(change)@"
+          }
         }
       }
     },
@@ -1869,6 +3801,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$(code)@, %2$(name)@, 1 %3$(base)@ equals %4$(rate)@ %5$(target)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@，1 %3$(base)@ 等于 %4$(rate)@ %5$(target)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@，1 %3$(base)@ 等於 %4$(rate)@ %5$(target)@"
           }
         }
       }
@@ -1882,6 +3826,18 @@
             "state" : "translated",
             "value" : "%1$(code)@, %2$(name)@, 1 %3$(base)@ equals %4$(rate)@ %5$(target)@, stable %6$(change)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@，1 %3$(base)@ 等于 %4$(rate)@ %5$(target)@，近一周持平，变动 %6$(change)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@，1 %3$(base)@ 等於 %4$(rate)@ %5$(target)@，近一週持平，變動 %6$(change)@"
+          }
         }
       }
     },
@@ -1893,6 +3849,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$(code)@, %2$(name)@, 1 %3$(base)@ equals %4$(rate)@ %5$(target)@, up %6$(change)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@，1 %3$(base)@ 等于 %4$(rate)@ %5$(target)@，近一周上涨 %6$(change)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(code)@，%2$(name)@，1 %3$(base)@ 等於 %4$(rate)@ %5$(target)@，近一週上漲 %6$(change)@"
           }
         }
       }
@@ -1906,6 +3874,18 @@
             "state" : "translated",
             "value" : "Currency Code"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "币种代码"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幣別代碼"
+          }
         }
       }
     },
@@ -1917,6 +3897,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Manual"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "手動"
           }
         }
       }
@@ -1930,6 +3922,18 @@
             "state" : "translated",
             "value" : "Name"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "币种名称"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幣別名稱"
+          }
         }
       }
     },
@@ -1941,6 +3945,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Percentage Change"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "涨跌幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漲跌幅"
           }
         }
       }
@@ -1954,6 +3970,18 @@
             "state" : "translated",
             "value" : "Rate Change"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率变动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率變動"
+          }
         }
       }
     },
@@ -1965,6 +3993,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Average"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平均"
           }
         }
       }
@@ -1978,6 +4018,18 @@
             "state" : "translated",
             "value" : "Highest"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最高"
+          }
         }
       }
     },
@@ -1989,6 +4041,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lowest"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最低"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最低"
           }
         }
       }
@@ -2002,6 +4066,18 @@
             "state" : "translated",
             "value" : "Volatility"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波动率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波動率"
+          }
         }
       }
     },
@@ -2014,6 +4090,18 @@
             "state" : "translated",
             "value" : "Volatility: %1$(value)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波动率：%1$(value)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波動率：%1$(value)@"
+          }
         }
       }
     },
@@ -2022,6 +4110,18 @@
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "—"
@@ -2038,6 +4138,18 @@
             "state" : "translated",
             "value" : "Volatility: not available"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波动率：暂无数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波動率：暫無資料"
+          }
         }
       }
     },
@@ -2049,6 +4161,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "N/A"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数据不足"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料不足"
           }
         }
       }
@@ -2062,6 +4186,18 @@
             "state" : "translated",
             "value" : "Volatility information"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看波动率说明"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看波動率說明"
+          }
         }
       }
     },
@@ -2073,6 +4209,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Time range"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "时间范围"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間範圍"
           }
         }
       }
@@ -2086,6 +4234,18 @@
             "state" : "translated",
             "value" : "Percentage Change"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "涨跌幅"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漲跌幅"
+          }
         }
       }
     },
@@ -2097,6 +4257,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rate Change"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率变动"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率變動"
           }
         }
       }
@@ -2110,6 +4282,18 @@
             "state" : "translated",
             "value" : "down %1$(change)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下跌 %1$(change)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下跌 %1$(change)@"
+          }
         }
       }
     },
@@ -2121,6 +4305,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "stable %1$(change)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "持平，变动 %1$(change)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "持平，變動 %1$(change)@"
           }
         }
       }
@@ -2134,6 +4330,18 @@
             "state" : "translated",
             "value" : "up %1$(change)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上涨 %1$(change)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上漲 %1$(change)@"
+          }
         }
       }
     },
@@ -2145,6 +4353,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Volatility measures how much the exchange rate fluctuates over time."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波动率反映汇率在一段时间内的波动程度。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波動率反映匯率在一段時間內的波動程度。"
           }
         }
       }
@@ -2158,6 +4378,18 @@
             "state" : "translated",
             "value" : "Close volatility information"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭波动率说明"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉波動率說明"
+          }
         }
       }
     },
@@ -2170,17 +4402,41 @@
             "state" : "translated",
             "value" : "Lower volatility means more stable exchange rates, while higher volatility indicates larger price swings."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波动率越低，汇率越稳定。波动率越高，汇率波动越大。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波動率越低，匯率越穩定。波動率越高，匯率波動越大。"
+          }
         }
       }
     },
     "history.volatilityInfo.level.accessibilityLabel" : {
-      "comment" : "Volatility explanation popover, VoiceOver label of one level row. level: level name, for example Very Low. range: its range, for example < 5% annual variation.",
+      "comment" : "Volatility explanation popover, VoiceOver label of one level row. level: level name, for example Very Low. range: its range, for example Below 5% annualized volatility.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$(level)@ volatility: %2$(range)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波动率：%1$(level)@。%2$(range)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "波動率：%1$(level)@。%2$(range)@"
           }
         }
       }
@@ -2194,6 +4450,18 @@
             "state" : "translated",
             "value" : "What is Volatility?"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "什么是波动率？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "什麼是波動率？"
+          }
         }
       }
     },
@@ -2205,6 +4473,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add to watchlist"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加到关注列表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入追蹤清單"
           }
         }
       }
@@ -2218,6 +4498,18 @@
             "state" : "translated",
             "value" : "Remove from watchlist"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从关注列表中移除"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從追蹤清單中移除"
+          }
         }
       }
     },
@@ -2229,6 +4521,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chart features onboarding"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图表功能介绍"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖表功能介紹"
           }
         }
       }
@@ -2242,6 +4546,18 @@
             "state" : "translated",
             "value" : "Tap 'Average' to display the average rate line on the chart."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点“平均”，显示图表中的平均汇率线。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點選「平均」，顯示圖表中的平均匯率線。"
+          }
         }
       }
     },
@@ -2253,6 +4569,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "View Average Line"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示平均汇率线"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示平均匯率線"
           }
         }
       }
@@ -2266,6 +4594,18 @@
             "state" : "translated",
             "value" : "Continue"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續"
+          }
         }
       }
     },
@@ -2277,6 +4617,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move your finger across the chart to explore different data points."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在图表上拖动手指，查看不同日期的汇率。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在圖表上拖移手指，查看不同日期的匯率。"
           }
         }
       }
@@ -2290,6 +4642,18 @@
             "state" : "translated",
             "value" : "Drag to Explore"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖动切换日期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖移切換日期"
+          }
         }
       }
     },
@@ -2301,6 +4665,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Page %1$(page)lld of %2$(total)lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$(page)lld 页，共 %2$(total)lld 页"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$(page)lld 頁，共 %2$(total)lld 頁"
           }
         }
       }
@@ -2314,6 +4690,18 @@
             "state" : "translated",
             "value" : "Touch and hold on the chart to see detailed information for any date."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住图表，查看所选日期的汇率。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住圖表，查看所選日期的匯率。"
+          }
         }
       }
     },
@@ -2325,6 +4713,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Touch to Select"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住查看详情"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按住查看詳情"
           }
         }
       }
@@ -2338,6 +4738,18 @@
             "state" : "translated",
             "value" : "Let's Start!"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始使用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始使用"
+          }
         }
       }
     },
@@ -2349,6 +4761,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap on statistics to show or hide chart markers."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点统计卡片，即可显示或隐藏对应的图表标记。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點選統計卡片，即可顯示或隱藏對應的圖表標記。"
           }
         }
       }
@@ -2362,6 +4786,18 @@
             "state" : "translated",
             "value" : "Toggle Chart Elements"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示或隐藏标记"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示或隱藏標記"
+          }
         }
       }
     },
@@ -2373,6 +4809,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chart touch interaction demonstration"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图表触控操作演示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖表觸控操作示範"
           }
         }
       }
@@ -2386,6 +4834,18 @@
             "state" : "translated",
             "value" : "Watch the animated finger showing how to touch and drag on charts to explore data"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "演示如何在图表上按住并拖动，查看不同日期的汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示範如何在圖表上按住並拖移，查看不同日期的匯率"
+          }
         }
       }
     },
@@ -2397,6 +4857,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shows how touching a chart reveals the rate on that day"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "演示如何按住图表，查看所选日期的汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示範如何按住圖表，查看所選日期的匯率"
           }
         }
       }
@@ -2410,6 +4882,18 @@
             "state" : "translated",
             "value" : "Explore Data Points"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看每日汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看每日匯率"
+          }
         }
       }
     },
@@ -2421,6 +4905,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Watch the chart markers toggle as statistics are selected"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "演示选择统计卡片后，图表如何显示或隐藏对应标记"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示範選擇統計卡片後，圖表如何顯示或隱藏對應標記"
           }
         }
       }
@@ -2434,6 +4930,18 @@
             "state" : "translated",
             "value" : "Interactive chart statistics demonstration"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图表统计卡片操作演示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖表統計卡片操作示範"
+          }
         }
       }
     },
@@ -2445,6 +4953,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Interactive Chart"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看图表标记"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看圖表標記"
           }
         }
       }
@@ -2458,6 +4978,18 @@
             "state" : "translated",
             "value" : "Go back"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "返回"
+          }
         }
       }
     },
@@ -2469,6 +5001,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Page %1$(page)lld of %2$(total)lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$(page)lld 页，共 %2$(total)lld 页"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$(page)lld 頁，共 %2$(total)lld 頁"
           }
         }
       }
@@ -2482,6 +5026,18 @@
             "state" : "translated",
             "value" : "Skip"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳过"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跳過"
+          }
         }
       }
     },
@@ -2493,6 +5049,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continue"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "继续"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續"
           }
         }
       }
@@ -2506,6 +5074,18 @@
             "state" : "translated",
             "value" : "Exchange rates are aggregated from central banks worldwide."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率数据来自全球各地的中央银行。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率資料來自全球各地的中央銀行。"
+          }
         }
       }
     },
@@ -2517,6 +5097,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Visualize currency performance with interactive charts."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通过图表直观查看汇率涨跌。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "透過圖表直觀查看匯率漲跌。"
           }
         }
       }
@@ -2530,6 +5122,18 @@
             "state" : "translated",
             "value" : "Historical Tracking"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率走势"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率走勢"
+          }
         }
       }
     },
@@ -2541,6 +5145,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continue converting with cached rates when offline."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有网络，也能用已保存的汇率继续换算。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有網路，也能用已儲存的匯率繼續換算。"
           }
         }
       }
@@ -2554,6 +5170,18 @@
             "state" : "translated",
             "value" : "Offline Support"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "离线使用"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "離線使用"
+          }
         }
       }
     },
@@ -2565,6 +5193,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Convert between currencies using the latest exchange rates."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按最新汇率换算不同币种。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "按最新匯率換算不同幣別。"
           }
         }
       }
@@ -2578,6 +5218,18 @@
             "state" : "translated",
             "value" : "Daily Exchange Rates"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每日匯率"
+          }
         }
       }
     },
@@ -2589,6 +5241,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Welcome to CurrencySpot"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "欢迎使用汇见"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歡迎使用匯見"
           }
         }
       }
@@ -2602,6 +5266,18 @@
             "state" : "translated",
             "value" : "Date"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "日期"
+          }
         }
       }
     },
@@ -2613,6 +5289,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rate"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率"
           }
         }
       }
@@ -2626,6 +5314,18 @@
             "state" : "translated",
             "value" : "No internet. Showing saved rates."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未连接网络，使用已保存的汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未連上網路，使用已儲存的匯率"
+          }
         }
       }
     },
@@ -2637,6 +5337,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No internet. Showing saved exchange rates."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未连接网络，使用已保存的汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未連上網路，使用已儲存的匯率"
           }
         }
       }
@@ -2650,6 +5362,18 @@
             "state" : "translated",
             "value" : "Try loading exchange rates again"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新加载汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新載入匯率"
+          }
         }
       }
     },
@@ -2661,6 +5385,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Showing sample rates."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "示例汇率，非真实数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "範例匯率，非真實資料"
           }
         }
       }
@@ -2674,6 +5410,18 @@
             "state" : "translated",
             "value" : "Showing sample exchange rates."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在使用示例汇率，非真实数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在使用範例匯率，非真實資料"
+          }
         }
       }
     },
@@ -2685,6 +5433,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't update. Showing saved rates."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新失败，使用已保存的汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新失敗，使用已儲存的匯率"
           }
         }
       }
@@ -2698,6 +5458,18 @@
             "state" : "translated",
             "value" : "Couldn't update. Showing saved exchange rates."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率更新失败，使用已保存的汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率更新失敗，使用已儲存的匯率"
+          }
         }
       }
     },
@@ -2709,6 +5481,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Updating…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在更新…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在更新…"
           }
         }
       }
@@ -2722,6 +5506,18 @@
             "state" : "translated",
             "value" : "Updating exchange rates"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在更新汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在更新匯率"
+          }
         }
       }
     },
@@ -2733,6 +5529,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exchange rates are aggregated from central banks worldwide."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "汇率数据来自全球各地的中央银行。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯率資料來自全球各地的中央銀行。"
           }
         }
       }
@@ -2746,6 +5554,18 @@
             "state" : "translated",
             "value" : "Legal"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "法律信息"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "法律資訊"
+          }
         }
       }
     },
@@ -2757,6 +5577,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open Source Licenses"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开源许可"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開放原始碼授權"
           }
         }
       }
@@ -2770,6 +5602,18 @@
             "state" : "translated",
             "value" : "Privacy Policy"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐私政策"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱私權政策"
+          }
         }
       }
     },
@@ -2781,6 +5625,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Opens privacy policy in your web browser"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在浏览器中打开隐私政策"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在瀏覽器中開啟隱私權政策"
           }
         }
       }
@@ -2794,6 +5650,18 @@
             "state" : "translated",
             "value" : "About"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關於"
+          }
         }
       }
     },
@@ -2805,6 +5673,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "About"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關於"
           }
         }
       }
@@ -2818,6 +5698,18 @@
             "state" : "translated",
             "value" : "Version %1$(version)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本 %1$(version)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本 %1$(version)@"
+          }
         }
       }
     },
@@ -2829,6 +5721,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Accent color: %1$(color)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主题色：%1$(color)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主題色：%1$(color)@"
           }
         }
       }
@@ -2842,6 +5746,18 @@
             "state" : "translated",
             "value" : "Blue"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "蓝色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "藍色"
+          }
         }
       }
     },
@@ -2853,6 +5769,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cyan"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "青色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "青色"
           }
         }
       }
@@ -2866,6 +5794,18 @@
             "state" : "translated",
             "value" : "Done"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
+          }
         }
       }
     },
@@ -2877,6 +5817,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Green"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "绿色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "綠色"
           }
         }
       }
@@ -2890,6 +5842,18 @@
             "state" : "translated",
             "value" : "Opens the accent color picker"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开主题色选项"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟主題色選項"
+          }
         }
       }
     },
@@ -2901,6 +5865,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Indigo"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "靛蓝色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "靛藍色"
           }
         }
       }
@@ -2914,6 +5890,18 @@
             "state" : "translated",
             "value" : "Accent Color"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主题色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主題色"
+          }
         }
       }
     },
@@ -2925,6 +5913,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mint"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "薄荷绿"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "薄荷綠"
           }
         }
       }
@@ -2938,6 +5938,18 @@
             "state" : "translated",
             "value" : "Orange"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "橙色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "橙色"
+          }
         }
       }
     },
@@ -2949,6 +5961,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pink"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粉红色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "粉紅色"
           }
         }
       }
@@ -2962,6 +5986,18 @@
             "state" : "translated",
             "value" : "Accent Color"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主题色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "主題色"
+          }
         }
       }
     },
@@ -2973,6 +6009,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Yellow"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "黄色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "黃色"
           }
         }
       }
@@ -2986,6 +6034,18 @@
             "state" : "translated",
             "value" : "Open Source Licenses"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开源许可"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開放原始碼授權"
+          }
         }
       }
     },
@@ -2998,6 +6058,18 @@
             "state" : "translated",
             "value" : "Cancel"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
         }
       }
     },
@@ -3009,6 +6081,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search currency code or name"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索币种代码或名称"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋幣別代碼或名稱"
           }
         }
       }
@@ -3034,6 +6118,42 @@
               }
             }
           }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "找到 %1$(count)lld 个币种"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "找到 %1$(count)lld 个币种"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "找到 %1$(count)lld 個幣別"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "找到 %1$(count)lld 個幣別"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -3045,6 +6165,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Currency"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入幣別"
           }
         }
       }
@@ -3058,6 +6190,18 @@
             "state" : "translated",
             "value" : "Cancel"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
         }
       }
     },
@@ -3069,6 +6213,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Color Scheme"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观模式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外觀模式"
           }
         }
       }
@@ -3082,6 +6238,18 @@
             "state" : "translated",
             "value" : "Appearance"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外观"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "外觀"
+          }
         }
       }
     },
@@ -3093,6 +6261,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dark"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "深色"
           }
         }
       }
@@ -3106,6 +6286,18 @@
             "state" : "translated",
             "value" : "Light"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "浅色"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "淺色"
+          }
         }
       }
     },
@@ -3117,6 +6309,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "System"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟随系统"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟隨系統"
           }
         }
       }
@@ -3130,6 +6334,18 @@
             "state" : "translated",
             "value" : "Default Base Currency"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认基准币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設基準幣別"
+          }
         }
       }
     },
@@ -3141,6 +6357,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Default Target Currency"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "默认目标币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設目標幣別"
           }
         }
       }
@@ -3154,6 +6382,18 @@
             "state" : "translated",
             "value" : "Favorite Currencies"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用幣別"
+          }
         }
       }
     },
@@ -3165,6 +6405,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "These settings determine the default values used when you open the app."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开应用时，默认使用这里设置的币种。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟 App 時，預設使用這裡設定的幣別。"
           }
         }
       }
@@ -3178,6 +6430,18 @@
             "state" : "translated",
             "value" : "Currency Preferences"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "币种设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幣別設定"
+          }
         }
       }
     },
@@ -3189,6 +6453,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Refresh All Data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新所有数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新整理所有資料"
           }
         }
       }
@@ -3202,6 +6478,18 @@
             "state" : "translated",
             "value" : "Erases all stored exchange rates and historical data, then downloads fresh data"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除已保存的所有汇率和历史数据，再下载最新数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除已儲存的所有匯率和歷史資料，再下載最新資料"
+          }
         }
       }
     },
@@ -3213,6 +6501,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset All Preferences"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复默认设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回復預設設定"
           }
         }
       }
@@ -3226,6 +6526,18 @@
             "state" : "translated",
             "value" : "Resets all settings to their default values"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将所有设置恢复为默认值"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將所有設定回復為預設值"
+          }
         }
       }
     },
@@ -3237,6 +6549,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add currency"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入幣別"
           }
         }
       }
@@ -3250,6 +6574,114 @@
             "state" : "translated",
             "value" : "Favorite Currencies"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "常用幣別"
+          }
+        }
+      }
+    },
+    "settings.language.changed.message" : {
+      "comment" : "Message of the alert shown after picking a different app language in Settings. language: the chosen language's name in that language, for example 简体中文.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot will switch to %1$(language)@ the next time you restart it."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下次重启汇见时将切换为“%1$(language)@”。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下次重新啟動匯見時將切換為「%1$(language)@」。"
+          }
+        }
+      }
+    },
+    "settings.language.changed.ok" : {
+      "comment" : "Button that dismisses the alert shown after picking a different app language in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好的"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "好的"
+          }
+        }
+      }
+    },
+    "settings.language.changed.title" : {
+      "comment" : "Title of the alert shown after picking a different app language in Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language Changed"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言已更改"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語言已更改"
+          }
+        }
+      }
+    },
+    "settings.language.label" : {
+      "comment" : "Settings row label of the app language picker.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語言"
+          }
         }
       }
     },
@@ -3261,6 +6693,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Source Repository"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "源代码仓库"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始碼儲存庫"
           }
         }
       }
@@ -3274,6 +6718,18 @@
             "state" : "translated",
             "value" : "Opens the project on GitHub in your web browser"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在浏览器中打开该项目的 GitHub 页面"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在瀏覽器中開啟該專案的 GitHub 頁面"
+          }
         }
       }
     },
@@ -3285,6 +6741,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This will erase all locally stored exchange rates and historical data, then download fresh data from the network."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将清除本地保存的所有汇率和历史数据，再联网下载最新数据。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將清除本機儲存的所有匯率和歷史資料，再連上網路下載最新資料。"
           }
         }
       }
@@ -3298,6 +6766,18 @@
             "state" : "translated",
             "value" : "Refresh All Data"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新所有数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新整理所有資料"
+          }
         }
       }
     },
@@ -3309,6 +6789,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Erase and Refresh"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除并刷新"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除並重新整理"
           }
         }
       }
@@ -3322,6 +6814,18 @@
             "state" : "translated",
             "value" : "This will reset all settings to their default values. Your stored data will not be affected."
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将所有设置恢复为默认值。已保存的数据不受影响。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將所有設定回復為預設值。已儲存的資料不受影響。"
+          }
         }
       }
     },
@@ -3333,6 +6837,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset Preferences"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复默认设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回復預設設定"
           }
         }
       }
@@ -3346,6 +6862,18 @@
             "state" : "translated",
             "value" : "Reset"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复默认设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回復預設設定"
+          }
         }
       }
     },
@@ -3357,6 +6885,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Settings"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
           }
         }
       }
@@ -3370,6 +6910,18 @@
             "state" : "translated",
             "value" : "%1$(label)@: %2$(value)@"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(label)@：%2$(value)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(label)@：%2$(value)@"
+          }
         }
       }
     },
@@ -3381,6 +6933,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hides the average marker on the chart"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏图表中的平均汇率线"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏圖表中的平均匯率線"
           }
         }
       }
@@ -3394,6 +6958,18 @@
             "state" : "translated",
             "value" : "Shows the average marker on the chart"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示图表中的平均汇率线"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示圖表中的平均匯率線"
+          }
         }
       }
     },
@@ -3405,6 +6981,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hides the highest marker on the chart"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏图表中的最高值标记"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏圖表中的最高值標記"
           }
         }
       }
@@ -3418,6 +7006,18 @@
             "state" : "translated",
             "value" : "Shows the highest marker on the chart"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示图表中的最高值标记"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示圖表中的最高值標記"
+          }
         }
       }
     },
@@ -3429,6 +7029,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hides the lowest marker on the chart"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐藏图表中的最低值标记"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏圖表中的最低值標記"
           }
         }
       }
@@ -3442,6 +7054,18 @@
             "state" : "translated",
             "value" : "Shows the lowest marker on the chart"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示图表中的最低值标记"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示圖表中的最低值標記"
+          }
         }
       }
     },
@@ -3454,6 +7078,18 @@
             "state" : "translated",
             "value" : "%1$(label)@: not available"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(label)@：暂无数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(label)@：暫無資料"
+          }
         }
       }
     },
@@ -3462,6 +7098,18 @@
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "—"
@@ -3478,6 +7126,18 @@
             "state" : "translated",
             "value" : "5 Years"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5年"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5年"
+          }
         }
       }
     },
@@ -3489,6 +7149,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "5Y"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5年"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5年"
           }
         }
       }
@@ -3502,6 +7174,18 @@
             "state" : "translated",
             "value" : "5 years"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5年"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "5年"
+          }
         }
       }
     },
@@ -3513,6 +7197,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "five years"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "五年"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "五年"
           }
         }
       }
@@ -3526,6 +7222,18 @@
             "state" : "translated",
             "value" : "1 Month"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1個月"
+          }
         }
       }
     },
@@ -3537,6 +7245,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1M"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1個月"
           }
         }
       }
@@ -3550,6 +7270,18 @@
             "state" : "translated",
             "value" : "30 days"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30天"
+          }
         }
       }
     },
@@ -3561,6 +7293,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 month"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1個月"
           }
         }
       }
@@ -3574,6 +7318,18 @@
             "state" : "translated",
             "value" : "one month"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一個月"
+          }
         }
       }
     },
@@ -3585,6 +7341,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 Week"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1周"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1週"
           }
         }
       }
@@ -3598,6 +7366,18 @@
             "state" : "translated",
             "value" : "1W"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1周"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1週"
+          }
         }
       }
     },
@@ -3609,6 +7389,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "7 days"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7天"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7天"
           }
         }
       }
@@ -3622,6 +7414,18 @@
             "state" : "translated",
             "value" : "1 week"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1周"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1週"
+          }
         }
       }
     },
@@ -3633,6 +7437,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "one week"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一周"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一週"
           }
         }
       }
@@ -3646,6 +7462,18 @@
             "state" : "translated",
             "value" : "1 Year"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1年"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1年"
+          }
         }
       }
     },
@@ -3657,6 +7485,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1Y"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1年"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1年"
           }
         }
       }
@@ -3670,6 +7510,18 @@
             "state" : "translated",
             "value" : "12 months"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12個月"
+          }
         }
       }
     },
@@ -3681,6 +7533,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 year"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1年"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1年"
           }
         }
       }
@@ -3694,6 +7558,18 @@
             "state" : "translated",
             "value" : "one year"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一年"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一年"
+          }
         }
       }
     },
@@ -3705,6 +7581,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "6 Months"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6個月"
           }
         }
       }
@@ -3718,6 +7606,18 @@
             "state" : "translated",
             "value" : "6M"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6個月"
+          }
         }
       }
     },
@@ -3729,6 +7629,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "half year"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "半年"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "半年"
           }
         }
       }
@@ -3742,6 +7654,18 @@
             "state" : "translated",
             "value" : "6 months"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6個月"
+          }
         }
       }
     },
@@ -3753,6 +7677,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "six months"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "六个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "六個月"
           }
         }
       }
@@ -3766,6 +7702,18 @@
             "state" : "translated",
             "value" : "3 Months"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3個月"
+          }
         }
       }
     },
@@ -3777,6 +7725,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "3M"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3個月"
           }
         }
       }
@@ -3790,6 +7750,18 @@
             "state" : "translated",
             "value" : "quarter"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一个季度"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一個季度"
+          }
         }
       }
     },
@@ -3801,6 +7773,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "3 months"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3個月"
           }
         }
       }
@@ -3814,6 +7798,18 @@
             "state" : "translated",
             "value" : "three months"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "三个月"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "三個月"
+          }
         }
       }
     },
@@ -3825,6 +7821,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Refreshing Data"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在刷新数据"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在重新整理資料"
           }
         }
       }
@@ -3838,6 +7846,18 @@
             "state" : "translated",
             "value" : "Preferences Reset to Default"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已恢复默认设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已回復預設設定"
+          }
         }
       }
     },
@@ -3849,6 +7869,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "High"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "高"
           }
         }
       }
@@ -3862,6 +7894,18 @@
             "state" : "translated",
             "value" : "Low"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "低"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "低"
+          }
         }
       }
     },
@@ -3874,6 +7918,18 @@
             "state" : "translated",
             "value" : "Moderate"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中等"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "中等"
+          }
         }
       }
     },
@@ -3884,7 +7940,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "> %1$(limit)@ annual variation"
+            "value" : "At least %1$(limit)@ annualized volatility"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年化波动率不低于 %1$(limit)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年化波動率不低於 %1$(limit)@"
           }
         }
       }
@@ -3896,7 +7964,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "< %1$(limit)@ annual variation"
+            "value" : "Below %1$(limit)@ annualized volatility"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年化波动率低于 %1$(limit)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年化波動率低於 %1$(limit)@"
           }
         }
       }
@@ -3908,13 +7988,25 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$(lower)lld-%2$(upper)@ annual variation"
+            "value" : "%1$(lower)lld to %2$(upper)@ annualized volatility"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年化波动率：%1$(lower)lld 至 %2$(upper)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "年化波動率：%1$(lower)lld 至 %2$(upper)@"
           }
         }
       }
     },
     "volatilityLevel.veryHigh.name" : {
-      "comment" : "History screen volatility level name for an annual variation above the highest threshold.",
+      "comment" : "History screen volatility level name for annualized volatility at or above the highest threshold.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -3922,11 +8014,23 @@
             "state" : "translated",
             "value" : "Very High"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "极高"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "極高"
+          }
         }
       }
     },
     "volatilityLevel.veryLow.name" : {
-      "comment" : "History screen volatility level name for an annual variation under the lowest threshold.",
+      "comment" : "History screen volatility level name for annualized volatility below the lowest threshold.",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -3934,9 +8038,21 @@
             "state" : "translated",
             "value" : "Very Low"
           }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "极低"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "極低"
+          }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version" : "1.3"
 }

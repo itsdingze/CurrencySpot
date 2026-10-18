@@ -22,6 +22,7 @@ final class DependencyContainer {
         appState: AppState = .shared,
         userDefaults: UserDefaults = .standard,
         preferences: PreferencesStore? = nil,
+        languageStore: AppLanguageStore? = nil,
         retryPolicy: RetryPolicy = RetryPolicy(),
         networkService: NetworkService? = nil,
         persistenceService: PersistenceService? = nil,
@@ -37,6 +38,11 @@ final class DependencyContainer {
         torchService: TorchService = AVTorchService()
     ) {
         let preferences = preferences ?? UserDefaultsPreferencesStore(userDefaults: userDefaults)
+        let languageStore = languageStore ?? UserDefaultsAppLanguageStore(
+            userDefaults: userDefaults,
+            domainName: Bundle.main.bundleIdentifier ?? "",
+            availableIdentifiers: Bundle.main.localizations.filter { $0 != "Base" }.sorted()
+        )
         let dataCoordinator = DataCoordinator(
             networkService: networkService ?? FrankfurterNetworkService(
                 api: FrankfurterAPI(
@@ -137,10 +143,12 @@ final class DependencyContainer {
             resetPreferencesUseCase: ResetPreferencesUseCase(
                 preferences: preferences,
                 favorites: favoritesStore,
-                watchlist: watchlistStore
+                watchlist: watchlistStore,
+                language: languageStore
             ),
             manageFavoritesUseCase: ManageFavoritesUseCase(favorites: favoritesStore),
             preferences: preferences,
+            languageStore: languageStore,
             appState: appState,
             clock: clockService
         )
