@@ -248,9 +248,12 @@ extension DataCoordinator: DataClearing {
     func clearAllData() async throws {
         clearEpoch += 1
 
-        pendingHistoricalWrite?.cancel()
-        await pendingHistoricalWrite?.value
-        pendingHistoricalWrite = nil
+        let pending = pendingHistoricalWrite
+        pending?.cancel()
+        await pending?.value
+        if pendingHistoricalWrite == pending {
+            pendingHistoricalWrite = nil
+        }
 
         try await persistenceService.clearAllData()
 

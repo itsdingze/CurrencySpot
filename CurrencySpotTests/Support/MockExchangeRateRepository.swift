@@ -27,8 +27,11 @@ final class MockExchangeRateRepository: ExchangeRateRepository {
         return rates
     }
 
+    var loadBarrier: (() async -> Void)?
+
     func loadExchangeRates() async throws -> [ExchangeRate] {
         loadExchangeRatesCallCount += 1
+        await loadBarrier?()
         return try loadExchangeRatesResult.get()
     }
 

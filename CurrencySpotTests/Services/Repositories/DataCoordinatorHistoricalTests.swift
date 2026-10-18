@@ -261,6 +261,37 @@ struct DataCoordinatorHistoricalTests {
         #expect(syncStore.through == nil)
     }
 
+    @Test("a write scheduled while clearAllData waits is still awaited afterwards", .timeLimit(.minutes(1)))
+    func clearAllDataKeepsWritesScheduledDuringTheClear() async throws {
+        let network = MockNetworkService()
+        network.historicalRatesResult = .success(Self.response(rates: [
+            "2025-01-14": ["EUR": 0.85],
+        ]))
+        let persistence = MockPersistenceService()
+        let (firstSave, openFirstSave) = AsyncStream.makeStream(of: Void.self)
+        let (secondSave, openSecondSave) = AsyncStream.makeStream(of: Void.self)
+        await persistence.gateHistoricalSave(number: 1, on: firstSave)
+        await persistence.gateHistoricalSave(number: 2, on: secondSave)
+        let syncStore = MockHistoricalSyncStore()
+        let coordinator = Self.makeCoordinator(network: network, persistence: persistence, syncStore: syncStore)
+
+        _ = try await coordinator.fetchHistoricalRates(in: Self.dateRange)
+        while await persistence.historicalSaveAttempts < 1 { await Task.yield() }
+        let clear = Task { try await coordinator.clearAllData() }
+        await Task.yield()
+        _ = try await coordinator.fetchHistoricalRates(in: Self.dateRange)
+        openFirstSave.finish()
+        try await clear.value
+
+        Task {
+            while await persistence.historicalSaveAttempts < 2 { await Task.yield() }
+            openSecondSave.finish()
+        }
+        await coordinator.waitForPendingHistoricalWrites()
+
+        #expect(syncStore.from == Self.startDate)
+    }
+
     @Test("a fetch in flight when clearAllData runs cannot persist, record, or surface data", .timeLimit(.minutes(1)))
     func clearAllDataFencesInFlightFetches() async throws {
         let network = MockNetworkService()

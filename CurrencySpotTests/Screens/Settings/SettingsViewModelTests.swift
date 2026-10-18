@@ -52,6 +52,69 @@ struct SettingsViewModelTests {
         #expect(viewModel.destination == nil)
     }
 
+    private final class GatedClearing: DataClearing {
+        private(set) var clearCallCount = 0
+        var failure: Error?
+        private let gate: AsyncStream<Void>
+        private let openGate: AsyncStream<Void>.Continuation
+
+        init() {
+            (gate, openGate) = AsyncStream.makeStream(of: Void.self)
+        }
+
+        func open() {
+            openGate.finish()
+        }
+
+        func clearAllData() async throws {
+            clearCallCount += 1
+            for await _ in gate {}
+            if let failure { throw failure }
+        }
+    }
+
+    private func makeOnlineViewModel(clearing: DataClearing, appState: AppState) throws -> SettingsViewModel {
+        let defaults = try #require(UserDefaults(suiteName: "SettingsViewModelTests.online.\(UUID().uuidString)"))
+        return SettingsViewModel(
+            refreshAllDataUseCase: RefreshAllDataUseCase(repository: clearing),
+            watchlist: WatchlistStore(userDefaults: defaults),
+            preferences: InMemoryPreferencesStore(),
+            appState: appState,
+            clock: ImmediateClock()
+        )
+    }
+
+    @Test("confirming Refresh All Data again while a wipe is running starts no second wipe", .timeLimit(.minutes(1)))
+    func secondConfirmDuringRefreshIsIgnored() async throws {
+        let clearing = GatedClearing()
+        let viewModel = try makeOnlineViewModel(
+            clearing: clearing,
+            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))
+        )
+
+        viewModel.confirmAlert(.refreshAllData)
+        await waitUntil { clearing.clearCallCount == 1 }
+        viewModel.confirmAlert(.refreshAllData)
+        clearing.open()
+        await waitUntil { viewModel.toast != nil }
+
+        #expect(clearing.clearCallCount == 1)
+    }
+
+    @Test("a failed online wipe surfaces the error and shows no refresh toast", .timeLimit(.minutes(1)))
+    func failedRefreshShowsErrorWithoutToast() async throws {
+        let clearing = GatedClearing()
+        clearing.failure = AppError.unknownError("disk full")
+        let appState = AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))
+        let viewModel = try makeOnlineViewModel(clearing: clearing, appState: appState)
+
+        viewModel.confirmAlert(.refreshAllData)
+        clearing.open()
+        await waitUntil { appState.errorHandler.currentError != nil }
+
+        #expect(viewModel.toast == nil)
+    }
+
     @Test("offline Refresh All Data refuses to wipe and shows no refresh toast")
     func offlineRefreshRefusesToWipe() async {
         final class SpyClearing: DataClearing {

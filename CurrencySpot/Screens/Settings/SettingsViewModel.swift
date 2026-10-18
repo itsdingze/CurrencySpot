@@ -54,6 +54,8 @@ final class SettingsViewModel {
 
     private var toastDismissTask: Task<Void, Never>?
 
+    private var refreshTask: Task<Void, Never>?
+
     // MARK: - Private Properties
 
     private let preferences: PreferencesStore
@@ -110,10 +112,12 @@ final class SettingsViewModel {
                 appState.errorHandler.handle(AppError.noInternetConnection)
                 return
             }
-            Task {
+            guard refreshTask == nil else { return }
+            refreshTask = Task {
                 if await refreshAllData() {
                     showToast(.dataRefreshing)
                 }
+                refreshTask = nil
             }
         case .resetPreferences:
             resetSettingsToDefault()

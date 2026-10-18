@@ -369,6 +369,29 @@ struct CalculatorViewModelTests {
         }
     }
 
+    @Test("a saved-rates lookup that resolves after a reconnect fetch never overwrites the fresh rates", .timeLimit(.minutes(1)))
+    func lateSavedResultDoesNotOverwriteReconnectFetch() async throws {
+        let viewModel = makeViewModel()
+        appState.networkMonitor.isConnected = false
+        repository.ratesAreStale = true
+        repository.loadExchangeRatesResult = .failure(.noCachedData)
+        let (gate, openGate) = AsyncStream.makeStream(of: Void.self)
+        repository.loadBarrier = { for await _ in gate {} }
+        let check = Task { await viewModel.checkIfShouldFetch() }
+        await waitUntil { repository.loadExchangeRatesCallCount == 1 }
+
+        let fresh = [ExchangeRate(currencyCode: "EUR", rate: 0.95)]
+        repository.fetchExchangeRatesResult = .success(fresh)
+        appState.networkMonitor.isConnected = true
+        await viewModel.handleReconnect()
+        await waitUntil { viewModel.loadState == .loaded(fresh) }
+        openGate.finish()
+        await check.value
+
+        #expect(viewModel.loadState == .loaded(fresh))
+        #expect(viewModel.rateBanner == .hidden)
+    }
+
     @Test("handleReconnect refreshes stale saved rates", .timeLimit(.minutes(1)))
     func reconnectRefreshesStaleRates() async throws {
         let viewModel = makeViewModel()

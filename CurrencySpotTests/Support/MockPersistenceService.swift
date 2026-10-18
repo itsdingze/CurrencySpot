@@ -14,7 +14,18 @@ actor MockPersistenceService: PersistenceService {
 
     func saveExchangeRates(_: [String: Double]) async throws {}
 
+    private var historicalSaveGates: [Int: AsyncStream<Void>] = [:]
+    private(set) var historicalSaveAttempts = 0
+
+    func gateHistoricalSave(number: Int, on gate: AsyncStream<Void>) {
+        historicalSaveGates[number] = gate
+    }
+
     func saveHistoricalExchangeRates(_ rates: [String: [String: Double]]) async throws {
+        historicalSaveAttempts += 1
+        if let gate = historicalSaveGates[historicalSaveAttempts] {
+            for await _ in gate {}
+        }
         if let saveHistoricalError {
             throw saveHistoricalError
         }

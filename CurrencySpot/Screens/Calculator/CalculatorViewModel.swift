@@ -154,7 +154,10 @@ final class CalculatorViewModel {
             guard fetchTask == nil else { return }
             startFetchTask()
         } else {
-            apply(await loadExchangeRatesUseCase.saved())
+            let generation = fetchGeneration
+            let outcome = await loadExchangeRatesUseCase.saved()
+            guard generation == fetchGeneration else { return }
+            apply(outcome)
         }
     }
 
