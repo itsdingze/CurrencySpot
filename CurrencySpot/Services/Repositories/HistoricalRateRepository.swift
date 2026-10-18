@@ -14,6 +14,8 @@ protocol HistoricalRateRepository {
     func earliestStoredDate() async throws -> Date?
     func latestStoredDate() async throws -> Date?
 
+    func pruneHistoricalRates(before cutoff: Date) async throws
+
     func cachedHistoricalRates() async -> [HistoricalRateSnapshot]
 
     func mergeCachedHistoricalRates(_ new: [HistoricalRateSnapshot]) async -> [HistoricalRateSnapshot]

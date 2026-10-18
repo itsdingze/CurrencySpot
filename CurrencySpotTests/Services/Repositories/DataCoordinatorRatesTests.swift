@@ -207,6 +207,30 @@ struct DataCoordinatorRatesTests {
         #expect(reloaded.count == 2)
     }
 
+    @Test("purging an undecodable row reopens the covered window so the next backfill refills it")
+    func corruptRowPurgeResetsCoverage() async throws {
+        let corruptDay = try #require(TimeZoneManager.parseAPIDate("2025-03-15"))
+        let context = container.mainContext
+        context.insert(HistoricalRateData(date: corruptDay, ratesData: Data("garbage".utf8)))
+        try context.save()
+        syncStore.record(from: try cetDate(2025, 3, 1), through: try cetDate(2025, 3, 31), at: Date(timeIntervalSince1970: 0))
+
+        _ = try? await service.loadHistoricalRates(from: try cetDate(2025, 3, 1), to: try cetDate(2025, 3, 31))
+
+        #expect(syncStore.from == nil)
+        #expect(syncStore.through == nil)
+    }
+
+    @Test("pruning removes only the days before the cutoff")
+    func pruneRemovesOnlyOlderDays() async throws {
+        try await setupHistoricalData(["2025-03-10", "2025-03-11", "2025-03-12"])
+
+        try await service.pruneHistoricalRates(before: try cetDate(2025, 3, 11))
+
+        let remaining = try await persistence.loadHistoricalRates(from: try cetDate(2025, 3, 1), to: try cetDate(2025, 3, 31))
+        #expect(remaining.map(\.date) == [try cetDate(2025, 3, 11), try cetDate(2025, 3, 12)])
+    }
+
     @Test("re-saving a stored day keeps the stored row and still adds the new days")
     func resaveKeepsStoredDayAndAddsNewOnes() async throws {
         try await persistence.saveHistoricalExchangeRates(["2025-03-15": ["EUR": 1.21]])

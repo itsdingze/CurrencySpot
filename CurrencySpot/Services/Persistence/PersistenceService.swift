@@ -16,11 +16,17 @@ nonisolated protocol PersistenceService: Sendable {
 
     func getLatestStoredDate() async throws -> Date?
 
+    func deleteHistoricalRates(before cutoff: Date) async throws
+
     func loadTrendData() async throws -> [Trend]
 
     func saveTrendData(_ trends: [Trend]) async throws
 
     func clearAllData() async throws
+}
+
+nonisolated enum PersistenceError: Error, Equatable {
+    case undecodableRowsPurged
 }
 
 // MARK: - SwiftDataPersistenceService
@@ -133,8 +139,8 @@ actor SwiftDataPersistenceService: PersistenceService {
             let broken = swiftDataObjects.filter { (try? $0.toDomain()) == nil }
             broken.forEach { modelContext.delete($0) }
             try? modelContext.save()
-            logger.warning("Purged \(broken.count) undecodable historical rows", category: .persistence)
-            throw error
+            logger.warning("Purged \(broken.count) undecodable historical rows: \(error.localizedDescription)", category: .persistence)
+            throw PersistenceError.undecodableRowsPurged
         }
     }
 
@@ -145,6 +151,7 @@ actor SwiftDataPersistenceService: PersistenceService {
             sortBy: [SortDescriptor(\.date, order: .forward)]
         )
         descriptor.fetchLimit = 1
+        descriptor.propertiesToFetch = [\.date]
 
         guard let earliestRecord = try modelContext.fetch(descriptor).first else {
             return nil
@@ -158,12 +165,20 @@ actor SwiftDataPersistenceService: PersistenceService {
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
         descriptor.fetchLimit = 1
+        descriptor.propertiesToFetch = [\.date]
 
         guard let latestRecord = try modelContext.fetch(descriptor).first else {
             return nil
         }
 
         return latestRecord.date
+    }
+
+    func deleteHistoricalRates(before cutoff: Date) async throws {
+        try modelContext.transaction {
+            try modelContext.delete(model: HistoricalRateData.self, where: #Predicate { $0.date < cutoff })
+            try modelContext.save()
+        }
     }
 
     // MARK: - Trend Data Methods

@@ -32,6 +32,8 @@ actor MockPersistenceService: PersistenceService {
 
     func getLatestStoredDate() async throws -> Date? { nil }
 
+    func deleteHistoricalRates(before _: Date) async throws {}
+
     func loadTrendData() async throws -> [Trend] { [] }
 
     func saveTrendData(_: [Trend]) async throws {}

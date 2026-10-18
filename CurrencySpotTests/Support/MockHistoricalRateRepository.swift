@@ -96,6 +96,11 @@ final class MockHistoricalRateRepository: HistoricalRateRepository {
         earliestStoredDateResult
     }
 
+    func pruneHistoricalRates(before cutoff: Date) async throws {
+        guard let earliest = earliestStoredDateResult, earliest < cutoff else { return }
+        earliestStoredDateResult = cutoff
+    }
+
     func latestStoredDate() async throws -> Date? {
         latestStoredDateResult
     }

@@ -257,13 +257,24 @@ final class DataOrchestrationUseCase {
                 backfillTask = nil
             }
         }
-        if await task.value == false, generation == backfillGeneration {
-            if backfillRetriesRemaining > 0 {
-                scheduleBackfillRetry()
-            } else {
-                backfillExhausted = true
-                logger.warning("Backfill retry budget exhausted; archive views bridge until the next launch or refresh", category: .network)
-            }
+        let completed = await task.value
+        guard generation == backfillGeneration else { return }
+        if completed {
+            await pruneDaysBeforeArchiveWindow()
+        } else if backfillRetriesRemaining > 0 {
+            scheduleBackfillRetry()
+        } else {
+            backfillExhausted = true
+            logger.warning("Backfill retry budget exhausted; archive views bridge until the next launch or refresh", category: .network)
+        }
+    }
+
+    private func pruneDaysBeforeArchiveWindow() async {
+        let archiveStart = historicalDataAnalysisUseCase.calculateDateRange(for: .fiveYears).start
+        do {
+            try await repository.pruneHistoricalRates(before: archiveStart)
+        } catch {
+            logger.warning("Pruning days before the archive window failed: \(error.localizedDescription)", category: .persistence)
         }
     }
 

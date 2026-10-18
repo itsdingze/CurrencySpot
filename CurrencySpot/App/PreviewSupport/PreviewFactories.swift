@@ -130,6 +130,8 @@
             return nil
         }
 
+        func pruneHistoricalRates(before _: Date) async throws {}
+
         func cachedHistoricalRates() async -> [HistoricalRateSnapshot] {
             try? await stall()
             return []

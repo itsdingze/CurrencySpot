@@ -547,6 +547,35 @@ struct DataOrchestrationUseCaseTests {
         #expect(repository.cachedData.allSatisfy { $0.date >= Self.testDateRange.start && $0.date <= Self.testDateRange.end })
     }
 
+    @Test("a complete backfill drops stored days older than the five-year window")
+    func backfillArchive_prunesDaysBeforeTheWindow() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-2000)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-2000), through: Self.day(0), checkedAt: Self.day(0))
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        #expect(try await repository.earliestStoredDate() == Self.archiveRange.start)
+    }
+
+    @Test("a failed backfill keeps every stored day", .timeLimit(.minutes(1)))
+    func backfillArchive_failureKeepsOldDays() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(0)
+        repository.shouldThrowErrorOnFetch = true
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-365), through: Self.day(0), checkedAt: Self.day(0))
+
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        #expect(try await repository.earliestStoredDate() == Self.day(-365))
+    }
+
     @Test("backfillArchive repairs a watermark that under-claims persisted rows")
     func backfillArchive_repairsUnderClaimingWatermark() async throws {
         let repository = MockHistoricalRateRepository()

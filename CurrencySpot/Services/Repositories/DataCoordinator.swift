@@ -172,10 +172,7 @@ extension DataCoordinator: HistoricalRateRepository {
 
     func loadHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
         do {
-            return try await persistenceService.loadHistoricalRates(
-                from: range.start,
-                to: range.end
-            )
+            return try await loadStoredHistory(from: range.start, to: range.end)
         } catch {
             logger.warning("Failed to load historical data from persistence: \(error.localizedDescription)", category: .persistence)
 
@@ -191,12 +188,25 @@ extension DataCoordinator: HistoricalRateRepository {
         }
     }
 
+    private func loadStoredHistory(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
+        do {
+            return try await persistenceService.loadHistoricalRates(from: startDate, to: endDate)
+        } catch PersistenceError.undecodableRowsPurged {
+            syncStore.reset()
+            throw PersistenceError.undecodableRowsPurged
+        }
+    }
+
     func earliestStoredDate() async throws -> Date? {
         try await persistenceService.getEarliestStoredDate()
     }
 
     func latestStoredDate() async throws -> Date? {
         try await persistenceService.getLatestStoredDate()
+    }
+
+    func pruneHistoricalRates(before cutoff: Date) async throws {
+        try await persistenceService.deleteHistoricalRates(before: cutoff)
     }
 
     func cachedHistoricalRates() async -> [HistoricalRateSnapshot] {
@@ -228,7 +238,7 @@ extension DataCoordinator: TrendRepository {
     }
 
     func loadHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
-        try await persistenceService.loadHistoricalRates(from: startDate, to: endDate)
+        try await loadStoredHistory(from: startDate, to: endDate)
     }
 }
 
