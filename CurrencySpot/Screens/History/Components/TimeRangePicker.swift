@@ -135,8 +135,8 @@ struct TimeRangePicker: View {
     private func commit(at x: CGFloat) {
         guard segmentWidth > 0 else { return }
         let index = min(max(Int(x / segmentWidth), 0), timeRanges.count - 1)
+        selectedTimeRange = timeRanges[index]
         withAnimation(.appSelect) {
-            selectedTimeRange = timeRanges[index]
             dragOffset = nil
             isDragging = false
             snappedIndex = nil

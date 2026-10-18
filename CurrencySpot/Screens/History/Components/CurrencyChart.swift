@@ -173,7 +173,6 @@ struct CurrencyChart: View {
         .environment(\.calendar, CETCalendar.calendar)
         .environment(\.timeZone, CETCalendar.timeZone)
         .chartXSelection(value: isSelectionEnabled ? $rawSelectedDate : .constant(nil))
-        .animation(.appStageReveal, value: viewModel.displayedChartDataPoints)
         .accessibilityLabel(chartAccessibilityLabel)
         .accessibilityValue(chartAccessibilityValue)
         .accessibilityHint(chartAccessibilityHint)
