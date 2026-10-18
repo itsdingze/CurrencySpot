@@ -77,7 +77,7 @@ struct CurrencyPairControl: View {
         .buttonStyle(.controlButton(glass: false))
         .accessibilityLabel(.cameraCurrencyPairSwapAccessibilityLabel)
         .accessibilityShowsLargeContentViewer {
-            Label(.cameraCurrencyPairSwapAccessibilityLabel, systemImage: "arrow.trianglehead.swap")
+            Label(.cameraCurrencyPairSwapAccessibilityLabel, systemImage: "arrow.left.arrow.right")
         }
     }
 }
