@@ -9,6 +9,7 @@ enum DataMigration {
 
     static func runIfNeeded(modelContainer: ModelContainer, defaults: UserDefaults) {
         migrateToV2IfNeeded(modelContainer: modelContainer, defaults: defaults)
+        PartialHistoricalRowRepair.runIfNeeded(modelContainer: modelContainer, defaults: defaults)
     }
 
     private static func migrateToV2IfNeeded(modelContainer: ModelContainer, defaults: UserDefaults) {

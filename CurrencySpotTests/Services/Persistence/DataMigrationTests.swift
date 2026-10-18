@@ -57,6 +57,22 @@ struct DataMigrationTests {
         #expect(store.checkedAt == nil)
     }
 
+    @Test("repairs partial historical rows on an already migrated store")
+    func repairsPartialHistoricalRows() throws {
+        defer { removeDefaults() }
+        defaults.set(true, forKey: "DidMigrateToFrankfurterV2")
+        let context = container.mainContext
+        for (day, rates) in [("2026-10-05", ["KPW": 130.02]), ("2026-10-06", ["EUR": 0.86, "GBP": 0.75])] {
+            context.insert(try HistoricalRateData(date: try #require(CETCalendar.date(fromDayString: day)), rates: rates))
+        }
+        try context.save()
+
+        DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
+
+        let remaining = try context.fetch(FetchDescriptor<HistoricalRateData>()).map { CETCalendar.dayString(for: $0.date) }
+        #expect(remaining == ["2026-10-06"])
+    }
+
     @Test("does nothing once migration has already run")
     func skipsWhenAlreadyMigrated() throws {
         defer { removeDefaults() }
