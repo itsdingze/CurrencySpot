@@ -19,7 +19,7 @@ enum CurrencySearch {
         return available.filter { rate in
             matches(
                 code: rate.currencyCode,
-                name: CurrencyNameLookup.name(for: rate.currencyCode),
+                name: rate.currencyCode.localizedName,
                 searchText: searchText
             )
         }

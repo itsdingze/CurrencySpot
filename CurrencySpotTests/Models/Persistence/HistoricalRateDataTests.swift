@@ -5,7 +5,7 @@ import Testing
 @Suite("HistoricalRateData Validation Tests")
 struct HistoricalRateDataTests {
     private func assertIsMarch15CET(_ date: Date) {
-        let components = TimeZoneManager.cetCalendar.dateComponents(
+        let components = CETCalendar.calendar.dateComponents(
             [.year, .month, .day, .hour, .minute], from: date
         )
         #expect(components.year == 2025)
@@ -33,7 +33,7 @@ struct HistoricalRateDataTests {
 
     @Test("rates round-trip through the blob into validated domain points")
     func blobRoundTripsToDomain() throws {
-        let date = try #require(TimeZoneManager.parseAPIDate("2025-03-15"))
+        let date = try #require(CETCalendar.date(fromDayString: "2025-03-15"))
         let model = try HistoricalRateData(date: date, rates: ["EUR": 1.21, "GBP": 0.85])
 
         let snapshot = try model.toDomain()
@@ -47,7 +47,7 @@ struct HistoricalRateDataTests {
     @Test("a corrupt blob fails loudly instead of yielding an empty day")
     func corruptBlobThrows() throws {
         let model = HistoricalRateData(
-            date: try #require(TimeZoneManager.parseAPIDate("2025-03-15")),
+            date: try #require(CETCalendar.date(fromDayString: "2025-03-15")),
             ratesData: Data("not json".utf8)
         )
 

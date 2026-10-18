@@ -10,7 +10,7 @@ nonisolated struct ChartDataPoint: Identifiable, Equatable, Sendable {
 // MARK: - Nearest-Point Lookup
 
 nonisolated extension RandomAccessCollection<ChartDataPoint> where Index == Int {
-    func closestPoint(to date: Date, calendar: Calendar = TimeZoneManager.cetCalendar) -> ChartDataPoint? {
+    func closestPoint(to date: Date, calendar: Calendar = CETCalendar.calendar) -> ChartDataPoint? {
         guard !isEmpty else { return nil }
 
         let targetDay = calendar.startOfDay(for: date)

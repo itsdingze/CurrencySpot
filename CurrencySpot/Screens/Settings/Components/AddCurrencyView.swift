@@ -16,7 +16,7 @@ struct AddCurrencyView: View {
                 ForEach(currencies, id: \.currencyCode) { currency in
                     CurrencyRowButton(
                         code: currency.currencyCode,
-                        name: CurrencyNameLookup.name(for: currency.currencyCode),
+                        name: currency.currencyCode.localizedName,
                         action: {
                             viewModel.addFavorite(currency.currencyCode)
                             viewModel.dismissDestination()

@@ -94,7 +94,7 @@
         // MARK: - Fixtures
 
         private func generatedHistoricalRates() async throws -> [HistoricalRateSnapshot] {
-            let calendar = TimeZoneManager.cetCalendar
+            let calendar = CETCalendar.calendar
             var historicalData: [HistoricalRateSnapshot] = []
 
             for i in 0 ..< 30 {

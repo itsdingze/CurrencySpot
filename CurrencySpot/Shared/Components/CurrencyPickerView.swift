@@ -35,7 +35,7 @@ struct CurrencyPickerView: View {
                                     Text(currency.rawValue)
                                 }
                                 .buttonStyle(.currencyChip(isSelected: selectedCurrency == currency))
-                                .accessibilityLabel("\(currency.rawValue), \(CurrencyNameLookup.name(for: currency))")
+                                .accessibilityLabel("\(currency.rawValue), \(currency.localizedName)")
                                 .accessibilityAddTraits(selectedCurrency == currency ? [.isButton, .isSelected] : .isButton)
                             }
                         }
@@ -52,14 +52,14 @@ struct CurrencyPickerView: View {
                 ForEach(filteredCurrencies, id: \.currencyCode) { currency in
                     CurrencyRowButton(
                         code: currency.currencyCode,
-                        name: CurrencyNameLookup.name(for: currency.currencyCode),
+                        name: currency.currencyCode.localizedName,
                         isSelected: selectedCurrency == currency.currencyCode,
                         action: {
                             selectedCurrency = currency.currencyCode
                             dismiss()
                         }
                     )
-                    .accessibilityLabel("\(currency.currencyCode.rawValue), \(CurrencyNameLookup.name(for: currency.currencyCode))")
+                    .accessibilityLabel("\(currency.currencyCode.rawValue), \(currency.currencyCode.localizedName)")
                     .accessibilityValue(currency.rate.toStringMax4Decimals)
                     .accessibilityAddTraits(selectedCurrency == currency.currencyCode ? [.isButton, .isSelected] : .isButton)
                 }

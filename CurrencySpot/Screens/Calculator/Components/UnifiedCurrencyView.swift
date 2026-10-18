@@ -114,7 +114,7 @@ struct UnifiedCurrencyView: View {
     }
 
     private var accessibilityAmountValue: String {
-        let currency = CurrencyNameLookup.name(for: currencyCode)
+        let currency = currencyCode.localizedName
         return "\(amount) \(currency)"
     }
 
@@ -146,12 +146,12 @@ struct UnifiedCurrencyView: View {
     }
 
     private var accessibilityButtonValue: String {
-        let currencyName = CurrencyNameLookup.name(for: currencyCode)
+        let currencyName = currencyCode.localizedName
         return "Currently selected: \(currencyName), \(currencyCode.rawValue)"
     }
 
     private var accessibilityInputLabels: [String] {
-        let currencyName = CurrencyNameLookup.name(for: currencyCode)
+        let currencyName = currencyCode.localizedName
         return [currencyCode.rawValue, currencyName]
     }
 }

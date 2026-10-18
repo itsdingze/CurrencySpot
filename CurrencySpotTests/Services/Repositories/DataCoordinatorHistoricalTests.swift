@@ -6,7 +6,7 @@ import Testing
 struct DataCoordinatorHistoricalTests {
     // MARK: - Fixtures
 
-    private static let calendar = TimeZoneManager.cetCalendar
+    private static let calendar = CETCalendar.calendar
     private static let now = createCETDate(year: 2025, month: 1, day: 15)!
     private static let startDate = calendar.date(byAdding: .day, value: -7, to: now)!
     private static let endDate = now
@@ -15,8 +15,8 @@ struct DataCoordinatorHistoricalTests {
     private static func response(rates: [String: [String: Double]]) -> HistoricalRatesResponse {
         HistoricalRatesResponse(
             base: "USD",
-            startDate: TimeZoneManager.formatForAPI(startDate),
-            endDate: TimeZoneManager.formatForAPI(endDate),
+            startDate: CETCalendar.dayString(for:startDate),
+            endDate: CETCalendar.dayString(for:endDate),
             rates: rates
         )
     }

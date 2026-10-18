@@ -14,7 +14,7 @@ nonisolated struct HistoricalRateSnapshot: Identifiable, Equatable, Sendable {
     var id: Date { date }
 
     init(dateString: String, rates: [HistoricalRatePoint]) throws {
-        guard let date = TimeZoneManager.parseAPIDate(dateString) else {
+        guard let date = CETCalendar.date(fromDayString: dateString) else {
             throw AppError.dataValidationError("Invalid date string: \(dateString)")
         }
         self.date = date
@@ -29,7 +29,7 @@ nonisolated struct HistoricalRateSnapshot: Identifiable, Equatable, Sendable {
 
 nonisolated extension HistoricalRateSnapshot {
     static func merge(existing: [HistoricalRateSnapshot], new: [HistoricalRateSnapshot]) -> [HistoricalRateSnapshot] {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         var byDay: [Date: HistoricalRateSnapshot] = [:]
         for item in existing {
             byDay[calendar.startOfDay(for: item.date)] = item

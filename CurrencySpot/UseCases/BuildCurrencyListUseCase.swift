@@ -18,7 +18,7 @@ struct BuildCurrencyListUseCase {
             .map { rate in
                 CurrencyListEntry(
                     code: rate.currencyCode,
-                    name: CurrencyNameLookup.name(for: rate.currencyCode),
+                    name: rate.currencyCode.localizedName,
                     rate: table.crossRate(from: base, to: rate.currencyCode)
                 )
             }

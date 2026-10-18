@@ -46,7 +46,7 @@ private func createTestHistoricalData(
 }
 
 private func createTestChartDataPoints(count: Int = 5, startRate: Double = 1.0) -> [ChartDataPoint] {
-    let calendar = TimeZoneManager.cetCalendar
+    let calendar = CETCalendar.calendar
     let baseDate = createCETDate(year: 2020, month: 9, day: 13)!
 
     return (0 ..< count).map { index in
@@ -66,7 +66,7 @@ struct ChartDataPreparationUseCaseTests {
         func largerDatasetNotShadowedByProcessedCache() async throws {
             let chartCache = InMemoryChartDataCache()
             let useCase = ChartDataPreparationUseCase(chartCache: chartCache)
-            let calendar = TimeZoneManager.cetCalendar
+            let calendar = CETCalendar.calendar
             let end = try #require(createCETDate(year: 2025, month: 6, day: 6))
             let range = DateRange.spanning(try #require(calendar.date(byAdding: .day, value: -90, to: end)), end)
 

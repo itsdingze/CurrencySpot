@@ -54,11 +54,11 @@ final class DataOrchestrationUseCase {
     }
 
     private func fetchJoiningInFlight(_ range: DateRange) async throws -> [HistoricalRateSnapshot] {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         let key = FetchKey(start: calendar.startOfDay(for: range.start), end: calendar.startOfDay(for: range.end))
 
         if let covering = inFlightFetches.first(where: { $0.key.start <= key.start && $0.key.end >= key.end })?.value {
-            logger.debug("Joining in-flight fetch covering \(TimeZoneManager.formatForAPI(range.start)) to \(TimeZoneManager.formatForAPI(range.end))", category: .network)
+            logger.debug("Joining in-flight fetch covering \(CETCalendar.dayString(for:range.start)) to \(CETCalendar.dayString(for:range.end))", category: .network)
             let superset = try await covering.value
             return superset.filter { $0.date >= key.start && $0.date <= key.end }
         }
@@ -81,7 +81,7 @@ final class DataOrchestrationUseCase {
     private static let residentWindowDays = 370
 
     static func isArchiveRange(_ range: DateRange) -> Bool {
-        let days = TimeZoneManager.cetCalendar.dateComponents([.day], from: range.start, to: range.end).day ?? 0
+        let days = CETCalendar.calendar.dateComponents([.day], from: range.start, to: range.end).day ?? 0
         return days > residentWindowDays
     }
 
@@ -108,7 +108,7 @@ final class DataOrchestrationUseCase {
         base: CurrencyCode,
         dateRange: DateRange
     ) async throws -> HistoricalLoadResult {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         let coverageEnd = calendar.date(byAdding: .day, value: -1, to: dateRange.end) ?? dateRange.end
         if historicalDataAnalysisUseCase.isRangeCovered(try DateRange.make(start: dateRange.start, end: coverageEnd)) {
             do {
@@ -146,7 +146,7 @@ final class DataOrchestrationUseCase {
     }
 
     private static func emptyDayGrid(for range: DateRange) -> [HistoricalRateSnapshot] {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         var snapshots: [HistoricalRateSnapshot] = []
         var date = calendar.startOfDay(for: range.start)
         let end = calendar.startOfDay(for: range.end)
@@ -208,7 +208,7 @@ final class DataOrchestrationUseCase {
                         let fetched = try await fetchJoiningInFlight(gap)
                         actuallyFetchedRanges.append(gap)
                         newDataPoints.append(contentsOf: fetched)
-                        logger.info("Fetched new data from API for range: \(TimeZoneManager.formatForAPI(gap.start)) to \(TimeZoneManager.formatForAPI(gap.end))", category: .network)
+                        logger.info("Fetched new data from API for range: \(CETCalendar.dayString(for:gap.start)) to \(CETCalendar.dayString(for:gap.end))", category: .network)
                         if gap.start <= missingRange.start, gap.end >= missingRange.end {
                             continue
                         }
@@ -216,7 +216,7 @@ final class DataOrchestrationUseCase {
                         logger.warning("Failed to fetch from API: \(error.localizedDescription)", category: .network)
                     }
                 } else {
-                    logger.debug("Loading existing data from SwiftData for range: \(TimeZoneManager.formatForAPI(missingRange.start)) to \(TimeZoneManager.formatForAPI(missingRange.end))", category: .persistence)
+                    logger.debug("Loading existing data from SwiftData for range: \(CETCalendar.dayString(for:missingRange.start)) to \(CETCalendar.dayString(for:missingRange.end))", category: .persistence)
                 }
 
                 let rangeData = try await repository.loadHistoricalRates(in: missingRange)
@@ -314,7 +314,7 @@ final class DataOrchestrationUseCase {
                 logger.warning("Archive backfill fetched but coverage did not land; re-run needed", category: .network)
                 return false
             }
-            logger.info("Archive backfill complete: \(TimeZoneManager.formatForAPI(gap.start)) to \(TimeZoneManager.formatForAPI(gap.end))", category: .network)
+            logger.info("Archive backfill complete: \(CETCalendar.dayString(for:gap.start)) to \(CETCalendar.dayString(for:gap.end))", category: .network)
             return true
         } catch {
             logger.warning("Archive backfill did not complete: \(error.localizedDescription)", category: .network)
@@ -323,7 +323,7 @@ final class DataOrchestrationUseCase {
     }
 
     private func fetchArchiveInChunks(_ gap: DateRange) async throws -> Bool {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         var chunkEnd = gap.end
         while chunkEnd >= gap.start {
             let chunkStart = Swift.max(
@@ -370,7 +370,7 @@ final class DataOrchestrationUseCase {
             return shouldFetch ? missingRange : nil
         }
 
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         guard let gap = Self.unstoredGap(
             required: DateRange.spanning(calendar.startOfDay(for: missingRange.start), calendar.startOfDay(for: missingRange.end)),
             stored: DateRange.spanning(calendar.startOfDay(for: earliestStoredDate), calendar.startOfDay(for: latestStoredDate))

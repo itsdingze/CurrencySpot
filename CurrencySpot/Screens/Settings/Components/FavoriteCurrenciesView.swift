@@ -13,7 +13,7 @@ struct FavoriteCurrenciesView: View {
 
                     Spacer()
 
-                    Text(CurrencyNameLookup.name(for: currency))
+                    Text(currency.localizedName)
                         .font(.appSubheadline)
                         .foregroundStyle(.secondary)
                 }

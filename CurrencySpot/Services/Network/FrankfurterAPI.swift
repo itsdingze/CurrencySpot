@@ -39,8 +39,8 @@ nonisolated final class FrankfurterAPI: Sendable {
 
     @concurrent
     func fetchHistoricalRatesForRange(baseCurrency: String = "USD", startDate: Date, endDate: Date, quotes: [String] = []) async throws -> HistoricalRatesResponse {
-        let startDateString = TimeZoneManager.formatForAPI(startDate)
-        let endDateString = TimeZoneManager.formatForAPI(endDate)
+        let startDateString = CETCalendar.dayString(for: startDate)
+        let endDateString = CETCalendar.dayString(for: endDate)
 
         var queryItems = [
             URLQueryItem(name: "base", value: baseCurrency),

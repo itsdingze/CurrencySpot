@@ -9,7 +9,7 @@ struct TrendDataUpdateTests {
     private static let fixedToday = createCETDate(year: 2025, month: 1, day: 15)!
 
     private func makeHistoricalData(for currency: CurrencyCode, days: Int, endingOn today: Date = fixedToday) -> [HistoricalRateSnapshot] {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         return (0 ..< days).reversed().compactMap { dayOffset in
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { return nil }
             let baseRate = currency == "EUR" ? 0.92 : (currency == "GBP" ? 0.79 : 1.5)
@@ -35,7 +35,7 @@ struct TrendDataUpdateTests {
             dateProvider: FixedDateProvider(Self.fixedToday)
         )
 
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         let endDate = Self.fixedToday
         let startDate = try #require(calendar.date(byAdding: .month, value: -3, to: endDate))
         let requestedRange = DateRange.spanning(startDate, endDate)
@@ -63,7 +63,7 @@ struct TrendDataUpdateTests {
 
         _ = await mockService.mergeCachedHistoricalRates(makeHistoricalData(for: "EUR", days: 90))
 
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         let endDate = Self.fixedToday
         let startDate = try #require(calendar.date(byAdding: .day, value: -7, to: endDate))
         let requestedRange = DateRange.spanning(startDate, endDate)
@@ -88,7 +88,7 @@ struct TrendDataUpdateTests {
         )
 
         let affectingRange = DateRange.spanning(
-            try #require(TimeZoneManager.cetCalendar.date(byAdding: .day, value: -2, to: Self.fixedToday)),
+            try #require(CETCalendar.calendar.date(byAdding: .day, value: -2, to: Self.fixedToday)),
             Self.fixedToday
         )
 

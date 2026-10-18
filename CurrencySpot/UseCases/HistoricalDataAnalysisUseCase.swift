@@ -23,7 +23,7 @@ final class HistoricalDataAnalysisUseCase {
 
     func calculateDateRange(for timeRange: TimeRange) -> DateRange {
         let now = dateProvider.now()
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
 
         let endDate = calendar.startOfDay(for: now)
         let rawStartDate = timeRange.startDate(from: now)
@@ -45,7 +45,7 @@ final class HistoricalDataAnalysisUseCase {
             return [requiredRange]
         }
 
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         let cachedEarliest = calendar.startOfDay(for: earliestDate)
         let cachedLatest = calendar.startOfDay(for: latestDate)
 
@@ -56,7 +56,7 @@ final class HistoricalDataAnalysisUseCase {
                 throw AppError.dateCalculationError("Could not calculate end date for gap detection. Failed to subtract 1 day from \(cachedEarliest)")
             }
             missingRanges.append(try DateRange.make(start: requiredRange.start, end: endDate))
-            logger.warning("Gap BEFORE cache: need \(TimeZoneManager.formatForAPI(requiredRange.start)) to \(TimeZoneManager.formatForAPI(endDate))", category: .useCase)
+            logger.warning("Gap BEFORE cache: need \(CETCalendar.dayString(for:requiredRange.start)) to \(CETCalendar.dayString(for:endDate))", category: .useCase)
         }
 
         if requiredRange.end > cachedLatest {
@@ -64,13 +64,13 @@ final class HistoricalDataAnalysisUseCase {
                 throw AppError.dateCalculationError("Could not calculate start date for gap detection. Failed to add 1 day to \(cachedLatest)")
             }
             missingRanges.append(try DateRange.make(start: startDate, end: requiredRange.end))
-            logger.warning("Gap AFTER cache: need \(TimeZoneManager.formatForAPI(startDate)) to \(TimeZoneManager.formatForAPI(requiredRange.end))", category: .useCase)
+            logger.warning("Gap AFTER cache: need \(CETCalendar.dayString(for:startDate)) to \(CETCalendar.dayString(for:requiredRange.end))", category: .useCase)
         }
         return missingRanges
     }
 
     func shouldFetchGap(_ gap: DateRange, now: Date) -> Bool {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
 
         guard let from = syncCoverage.coveredFrom, let through = syncCoverage.coveredThrough else {
             return true
@@ -95,7 +95,7 @@ final class HistoricalDataAnalysisUseCase {
 
     func isRangeCovered(_ range: DateRange) -> Bool {
         guard let from = syncCoverage.coveredFrom, let through = syncCoverage.coveredThrough else { return false }
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         return calendar.startOfDay(for: from) <= calendar.startOfDay(for: range.start)
             && calendar.startOfDay(for: through) >= calendar.startOfDay(for: range.end)
     }

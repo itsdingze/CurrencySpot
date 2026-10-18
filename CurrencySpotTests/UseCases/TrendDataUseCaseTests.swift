@@ -7,7 +7,7 @@ struct TrendDataUseCaseTests {
     // MARK: - Test Data Constants
 
     private static let fixedNow = createCETDate(year: 2025, month: 1, day: 15)!
-    private static let calendar = TimeZoneManager.cetCalendar
+    private static let calendar = CETCalendar.calendar
 
     private static let sampleTrendData: [Trend] = [
         Trend(currencyCode: "EUR", weeklyChange: 2.5, miniChartData: [1.0, 1.01, 1.02, 1.025, 1.025]),

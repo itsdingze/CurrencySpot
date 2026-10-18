@@ -13,7 +13,7 @@ final class ExchangeRatesStore {
 
     var formattedLastUpdated: String {
         guard let date = lastUpdated else { return "Not updated yet" }
-        return "Last updated: \(TimeZoneManager.formatLastUpdated(date))"
+        return "Last updated: \(date.lastUpdatedDisplay)"
     }
 
     func update(rates: [ExchangeRate], lastUpdated: Date?, isShowingSampleRates: Bool) {

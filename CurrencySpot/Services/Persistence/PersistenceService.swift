@@ -87,7 +87,7 @@ actor SwiftDataPersistenceService: PersistenceService {
         try modelContext.transaction {
             var incoming: [Date: [String: Double]] = [:]
             for (dateString, currencyRates) in rates {
-                guard let date = TimeZoneManager.parseAPIDate(dateString) else {
+                guard let date = CETCalendar.date(fromDayString:dateString) else {
                     logger.warning("Skipping invalid date: \(dateString)", category: .persistence)
                     continue
                 }
@@ -106,7 +106,7 @@ actor SwiftDataPersistenceService: PersistenceService {
                 do {
                     modelContext.insert(try HistoricalRateData(date: date, rates: currencyRates))
                 } catch {
-                    logger.warning("Skipping unencodable rates for \(TimeZoneManager.formatForAPI(date)) - \(error)", category: .persistence)
+                    logger.warning("Skipping unencodable rates for \(CETCalendar.dayString(for:date)) - \(error)", category: .persistence)
                     continue
                 }
             }

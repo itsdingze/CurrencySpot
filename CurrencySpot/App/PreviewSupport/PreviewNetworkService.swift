@@ -12,7 +12,7 @@
         func fetchExchangeRates() async throws -> ExchangeRatesResponse {
             ExchangeRatesResponse(
                 base: CurrencyCode.usd.rawValue,
-                date: TimeZoneManager.formatForAPI(today),
+                date: CETCalendar.dayString(for: today),
                 rates: Self.sampleRates
             )
         }
@@ -22,7 +22,7 @@
         }
 
         func fetchHistoricalRates(from startDate: Date, to endDate: Date, quotes: [String]) async throws -> HistoricalRatesResponse {
-            let calendar = TimeZoneManager.cetCalendar
+            let calendar = CETCalendar.calendar
             let requested = quotes.isEmpty ? Set(Self.sampleRates.keys) : Set(quotes)
             var rates: [String: [String: Double]] = [:]
 
@@ -31,7 +31,7 @@
             var offset = 0
             while day <= last {
                 let drift = 0.95 + Double(offset) / 290.0
-                rates[TimeZoneManager.formatForAPI(day)] = Self.sampleRates
+                rates[CETCalendar.dayString(for: day)] = Self.sampleRates
                     .filter { requested.contains($0.key) }
                     .mapValues { $0 * drift }
                 guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
@@ -41,8 +41,8 @@
 
             return HistoricalRatesResponse(
                 base: CurrencyCode.usd.rawValue,
-                startDate: TimeZoneManager.formatForAPI(startDate),
-                endDate: TimeZoneManager.formatForAPI(endDate),
+                startDate: CETCalendar.dayString(for: startDate),
+                endDate: CETCalendar.dayString(for: endDate),
                 rates: rates
             )
         }

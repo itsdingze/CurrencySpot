@@ -27,7 +27,7 @@ final class TrendDataUseCase {
     // MARK: - Trend Window
 
     private func trendWindow(now: Date) -> DateRange {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         let endDate = calendar.startOfDay(for: now)
         let startDate = calendar.date(byAdding: .day, value: -7, to: endDate) ?? endDate
         return DateRange.spanning(startDate, endDate)
@@ -116,7 +116,7 @@ final class TrendDataUseCase {
     }
 
     func dateRangeAffectsTrends(startDate: Date, endDate: Date, now: Date) -> Bool {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         let window = trendWindow(now: now)
 
         let normalizedStartDate = calendar.startOfDay(for: startDate)

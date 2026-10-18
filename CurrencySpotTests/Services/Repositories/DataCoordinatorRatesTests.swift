@@ -31,8 +31,8 @@ struct DataCoordinatorRatesTests {
 
     private func range(_ start: String, _ end: String) throws -> DateRange {
         try DateRange.make(
-            start: #require(TimeZoneManager.parseAPIDate(start)),
-            end: #require(TimeZoneManager.parseAPIDate(end))
+            start: #require(CETCalendar.date(fromDayString: start)),
+            end: #require(CETCalendar.date(fromDayString: end))
         )
     }
 
@@ -147,7 +147,7 @@ struct DataCoordinatorRatesTests {
 
         let earliestDate = try #require(try await service.earliestStoredDate())
 
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         let expectedDate = try cetDate(2025, 3, 1)
         let earliestComponents = calendar.dateComponents([.year, .month, .day], from: earliestDate)
         let expectedComponents = calendar.dateComponents([.year, .month, .day], from: expectedDate)
@@ -164,7 +164,7 @@ struct DataCoordinatorRatesTests {
 
         let latestDate = try await service.latestStoredDate()
 
-        let expectedDate = try #require(TimeZoneManager.parseAPIDate("2025-03-15"))
+        let expectedDate = try #require(CETCalendar.date(fromDayString: "2025-03-15"))
         #expect(latestDate == expectedDate)
     }
 
@@ -187,29 +187,29 @@ struct DataCoordinatorRatesTests {
     @Test("an undecodable blob row is purged so the next save can repair its date")
     func corruptBlobRowIsPurgedAndRepairable() async throws {
         let context = container.mainContext
-        context.insert(HistoricalRateData(date: try #require(TimeZoneManager.parseAPIDate("2025-03-15")), ratesData: Data("garbage".utf8)))
-        context.insert(try HistoricalRateData(date: #require(TimeZoneManager.parseAPIDate("2025-03-16")), rates: ["EUR": 1.22]))
+        context.insert(HistoricalRateData(date: try #require(CETCalendar.date(fromDayString: "2025-03-15")), ratesData: Data("garbage".utf8)))
+        context.insert(try HistoricalRateData(date: #require(CETCalendar.date(fromDayString: "2025-03-16")), rates: ["EUR": 1.22]))
         try context.save()
 
         await #expect(throws: (any Error).self) {
             _ = try await persistence.loadHistoricalRates(
-                from: try #require(TimeZoneManager.parseAPIDate("2025-03-15")),
-                to: try #require(TimeZoneManager.parseAPIDate("2025-03-16"))
+                from: try #require(CETCalendar.date(fromDayString: "2025-03-15")),
+                to: try #require(CETCalendar.date(fromDayString: "2025-03-16"))
             )
         }
 
         try await persistence.saveHistoricalExchangeRates(["2025-03-15": ["EUR": 1.21]])
 
         let reloaded = try await persistence.loadHistoricalRates(
-            from: try #require(TimeZoneManager.parseAPIDate("2025-03-15")),
-            to: try #require(TimeZoneManager.parseAPIDate("2025-03-16"))
+            from: try #require(CETCalendar.date(fromDayString: "2025-03-15")),
+            to: try #require(CETCalendar.date(fromDayString: "2025-03-16"))
         )
         #expect(reloaded.count == 2)
     }
 
     @Test("purging an undecodable row reopens the covered window so the next backfill refills it")
     func corruptRowPurgeResetsCoverage() async throws {
-        let corruptDay = try #require(TimeZoneManager.parseAPIDate("2025-03-15"))
+        let corruptDay = try #require(CETCalendar.date(fromDayString: "2025-03-15"))
         let context = container.mainContext
         context.insert(HistoricalRateData(date: corruptDay, ratesData: Data("garbage".utf8)))
         try context.save()
@@ -240,8 +240,8 @@ struct DataCoordinatorRatesTests {
         ])
 
         let stored = try await persistence.loadHistoricalRates(
-            from: try #require(TimeZoneManager.parseAPIDate("2025-03-15")),
-            to: try #require(TimeZoneManager.parseAPIDate("2025-03-16"))
+            from: try #require(CETCalendar.date(fromDayString: "2025-03-15")),
+            to: try #require(CETCalendar.date(fromDayString: "2025-03-16"))
         )
 
         #expect(stored.count == 2)

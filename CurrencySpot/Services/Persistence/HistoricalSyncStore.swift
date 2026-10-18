@@ -36,7 +36,7 @@ final class UserDefaultsHistoricalSyncStore: HistoricalSyncStore {
     }
 
     private static func overlapsOrAdjacent(from: Date, through: Date, newFrom: Date, newThrough: Date) -> Bool {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         guard let throughPlusDay = calendar.date(byAdding: .day, value: 1, to: through),
               let fromMinusDay = calendar.date(byAdding: .day, value: -1, to: from)
         else {

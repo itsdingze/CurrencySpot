@@ -185,7 +185,7 @@ struct HistoryViewModelTests {
     }
 
     private static func randomWalk(from: Date, to: Date, dailyMove: Double) -> [HistoricalRateSnapshot] {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
         var state: UInt64 = 42
         var rate = 1.0
         var day = calendar.startOfDay(for: from)
@@ -233,7 +233,7 @@ struct HistoryViewModelTests {
         #expect(viewModel.chartData == .idle)
 
         let call = try #require(repository.fetchHistoricalRatesCalls.first)
-        let days = TimeZoneManager.cetCalendar.dateComponents([.day], from: call.from, to: call.to).day ?? 0
+        let days = CETCalendar.calendar.dateComponents([.day], from: call.from, to: call.to).day ?? 0
         #expect(days >= 364 && days <= 366)
         #expect(repository.cachedData.isEmpty == false)
     }

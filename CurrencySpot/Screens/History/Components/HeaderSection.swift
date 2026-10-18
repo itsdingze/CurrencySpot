@@ -23,9 +23,9 @@ struct HeaderSection: View {
             HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
                 Text(historyViewModel.targetCurrency.rawValue)
                     .font(.appTitle)
-                    .accessibilityLabel("\(historyViewModel.targetCurrency.rawValue), \(CurrencyNameLookup.name(for: historyViewModel.targetCurrency))")
+                    .accessibilityLabel("\(historyViewModel.targetCurrency.rawValue), \(historyViewModel.targetCurrency.localizedName)")
 
-                Text(CurrencyNameLookup.name(for: historyViewModel.targetCurrency))
+                Text(historyViewModel.targetCurrency.localizedName)
                     .font(.appHeadline.weight(.medium))
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)

@@ -70,8 +70,8 @@ struct IntegrationTests {
 
         let earliest = try #require(try await service.earliestStoredDate())
         let latest = try #require(try await service.latestStoredDate())
-        #expect(earliest == TimeZoneManager.parseAPIDate("2025-03-01"))
-        #expect(latest == TimeZoneManager.parseAPIDate("2025-03-15"))
+        #expect(earliest == CETCalendar.date(fromDayString:"2025-03-01"))
+        #expect(latest == CETCalendar.date(fromDayString:"2025-03-15"))
 
         try await service.clearAllData()
         let clearedEarliest = try await service.earliestStoredDate()

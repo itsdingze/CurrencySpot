@@ -39,7 +39,7 @@ nonisolated enum TimeRange: String, CaseIterable, Identifiable {
     }
 
     func startDate(from endDate: Date) -> Date {
-        let calendar = TimeZoneManager.cetCalendar
+        let calendar = CETCalendar.calendar
 
         switch self {
         case .oneWeek:

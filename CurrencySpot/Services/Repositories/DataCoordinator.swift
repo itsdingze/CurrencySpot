@@ -161,7 +161,7 @@ extension DataCoordinator: HistoricalRateRepository {
     @concurrent
     private nonisolated static func snapshots(from rates: [String: [String: Double]]) async -> [HistoricalRateSnapshot] {
         rates.compactMap { dateString, currencyRates -> HistoricalRateSnapshot? in
-            guard let date = TimeZoneManager.parseAPIDate(dateString) else { return nil }
+            guard let date = CETCalendar.date(fromDayString:dateString) else { return nil }
             let points = currencyRates.compactMap { code, rate in
                 CurrencyCode(code).map { HistoricalRatePoint(currencyCode: $0, rate: rate) }
             }

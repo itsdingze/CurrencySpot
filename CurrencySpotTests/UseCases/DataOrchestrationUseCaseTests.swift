@@ -10,7 +10,7 @@ struct DataOrchestrationUseCaseTests {
 
     static let testCurrency: CurrencyCode = "EUR"
     static let baseDate = createCETDate(year: 2025, month: 1, day: 15)!
-    static let calendar = TimeZoneManager.cetCalendar
+    static let calendar = CETCalendar.calendar
 
     static let startDate = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -7, to: baseDate) ?? baseDate)
     static let endDate = calendar.startOfDay(for: baseDate)
