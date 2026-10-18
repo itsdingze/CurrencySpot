@@ -185,6 +185,16 @@ struct CameraViewModelTests {
         #expect(viewModel.detectedItems.first?.conversion.converted == 10)
     }
 
+    @Test func showingSampleRatesFollowsTheSharedRatesStore() {
+        let ratesStore = Self.makeRatesStore()
+        let viewModel = Self.makeViewModel(ratesStore: ratesStore)
+        #expect(!viewModel.isShowingSampleRates)
+
+        ratesStore.update(rates: ratesStore.rates, lastUpdated: nil, isShowingSampleRates: true)
+
+        #expect(viewModel.isShowingSampleRates)
+    }
+
     @Test func swappingExchangesBaseAndTarget() {
         let viewModel = Self.makeViewModel()
 

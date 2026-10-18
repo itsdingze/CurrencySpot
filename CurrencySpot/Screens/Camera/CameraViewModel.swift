@@ -215,6 +215,7 @@ final class CameraViewModel {
     // MARK: - Shared Rates for the Overlay UI
 
     var availableRates: [ExchangeRate] { ratesStore.rates }
+    var isShowingSampleRates: Bool { ratesStore.isShowingSampleRates }
 
     func openInConverter(_ item: DetectedItem) {
         appState.pendingConversion = PendingConversion(

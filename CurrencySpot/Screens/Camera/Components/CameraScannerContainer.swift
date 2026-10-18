@@ -44,8 +44,13 @@ struct CameraScannerContainer: View {
             }
             .clipShape(.rect(cornerRadius: 32))
             .overlay(alignment: .top) {
-                CurrencyPairControl()
-                    .padding(.top, Spacing.screenInset)
+                VStack(spacing: Spacing.element) {
+                    CurrencyPairControl()
+                    if viewModel.isShowingSampleRates {
+                        SampleRatesCapsule()
+                    }
+                }
+                .padding(.top, Spacing.screenInset)
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: Spacing.section) {
