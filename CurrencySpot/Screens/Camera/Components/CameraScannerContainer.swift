@@ -1,3 +1,4 @@
+import IdentifiedCollections
 import SwiftUI
 
 struct CameraScannerContainer: View {

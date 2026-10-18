@@ -1,4 +1,5 @@
 import UIKit
+import VisionKit
 
 final class DataScannerProxy {
     weak var host: ScannerHostController?

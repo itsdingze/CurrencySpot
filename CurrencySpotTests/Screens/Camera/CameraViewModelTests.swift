@@ -1,4 +1,5 @@
 import Foundation
+import IdentifiedCollections
 import Testing
 import UIKit
 @testable import CurrencySpot

@@ -1,5 +1,6 @@
 @testable import CurrencySpot
 import Foundation
+import IdentifiedCollections
 import Testing
 
 @Suite("SettingsViewModel Tests")
