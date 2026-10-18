@@ -3,6 +3,9 @@ import Foundation
 
 extension CurrencyCode: @retroactive ExpressibleByStringLiteral {
     public init(stringLiteral value: String) {
-        self = try! CurrencyCode(validating: value)
+        guard let code = CurrencyCode(value) else {
+            preconditionFailure("Test fixture uses an invalid currency code literal: \"\(value)\"")
+        }
+        self = code
     }
 }

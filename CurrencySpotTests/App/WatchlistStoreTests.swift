@@ -4,16 +4,15 @@ import Testing
 
 @Suite("WatchlistStore Tests")
 struct WatchlistStoreTests {
-    private func makeDefaults() -> UserDefaults {
-        let suiteName = "WatchlistStoreTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
-        defaults.removePersistentDomain(forName: suiteName)
-        return defaults
+    private let isolatedDefaults = IsolatedDefaults()
+
+    private func makeDefaults() throws -> UserDefaults {
+        try isolatedDefaults.make()
     }
 
     @Test("seeds from the explicit seed on first launch and persists it")
-    func seedsFromExplicitSeed() {
-        let defaults = makeDefaults()
+    func seedsFromExplicitSeed() throws {
+        let defaults = try makeDefaults()
         let store = WatchlistStore(userDefaults: defaults, seed: ["EUR", "GBP"])
 
         #expect(store.codes.elements == ["EUR", "GBP"])
@@ -21,8 +20,8 @@ struct WatchlistStoreTests {
     }
 
     @Test("seeds from persisted Settings favorites when no explicit seed is given")
-    func seedsFromFavorites() {
-        let defaults = makeDefaults()
+    func seedsFromFavorites() throws {
+        let defaults = try makeDefaults()
         defaults.set(["JPY", "CAD"], forKey: UserDefaultsKeys.favoriteCurrencies)
 
         let store = WatchlistStore(userDefaults: defaults)
@@ -31,15 +30,15 @@ struct WatchlistStoreTests {
     }
 
     @Test("falls back to the out-of-box default when nothing is persisted")
-    func seedsFromDefault() {
-        let store = WatchlistStore(userDefaults: makeDefaults())
+    func seedsFromDefault() throws {
+        let store = WatchlistStore(userDefaults: try makeDefaults())
 
         #expect(store.codes.elements == CurrencyDefaults.favoriteCurrencies)
     }
 
     @Test("reads the persisted watchlist instead of reseeding")
-    func readsPersistedWatchlist() {
-        let defaults = makeDefaults()
+    func readsPersistedWatchlist() throws {
+        let defaults = try makeDefaults()
         defaults.set(["CHF"], forKey: UserDefaultsKeys.historyWatchlist)
         defaults.set(["EUR"], forKey: UserDefaultsKeys.favoriteCurrencies)
 
@@ -49,8 +48,8 @@ struct WatchlistStoreTests {
     }
 
     @Test("stays independent of later favorites changes across a reopen")
-    func independentAfterSeed() {
-        let defaults = makeDefaults()
+    func independentAfterSeed() throws {
+        let defaults = try makeDefaults()
         let store = WatchlistStore(userDefaults: defaults, seed: ["EUR"])
         store.add("CHF")
 
@@ -61,8 +60,8 @@ struct WatchlistStoreTests {
     }
 
     @Test("add deduplicates and persists")
-    func add() {
-        let defaults = makeDefaults()
+    func add() throws {
+        let defaults = try makeDefaults()
         let store = WatchlistStore(userDefaults: defaults, seed: [])
 
         #expect(store.add("EUR") == true)
@@ -72,8 +71,8 @@ struct WatchlistStoreTests {
     }
 
     @Test("remove and contains operate by code identity")
-    func removeAndContains() {
-        let store = WatchlistStore(userDefaults: makeDefaults(), seed: ["EUR", "GBP"])
+    func removeAndContains() throws {
+        let store = WatchlistStore(userDefaults: try makeDefaults(), seed: ["EUR", "GBP"])
 
         #expect(store.contains("EUR") == true)
         #expect(store.remove("EUR") == true)
@@ -83,8 +82,8 @@ struct WatchlistStoreTests {
     }
 
     @Test("toggle adds when absent and removes when present")
-    func toggle() {
-        let store = WatchlistStore(userDefaults: makeDefaults(), seed: [])
+    func toggle() throws {
+        let store = WatchlistStore(userDefaults: try makeDefaults(), seed: [])
 
         store.toggle("EUR")
         #expect(store.contains("EUR") == true)
@@ -94,8 +93,8 @@ struct WatchlistStoreTests {
     }
 
     @Test("reorder applies the displayed order while leaving hidden codes in place")
-    func reorder() {
-        let store = WatchlistStore(userDefaults: makeDefaults(), seed: ["USD", "EUR", "GBP", "JPY"])
+    func reorder() throws {
+        let store = WatchlistStore(userDefaults: try makeDefaults(), seed: ["USD", "EUR", "GBP", "JPY"])
 
         store.reorder(displayedOrder: ["JPY", "EUR", "GBP"])
 
@@ -103,8 +102,8 @@ struct WatchlistStoreTests {
     }
 
     @Test("reset replaces the whole watchlist with the seed and persists it")
-    func reset() {
-        let defaults = makeDefaults()
+    func reset() throws {
+        let defaults = try makeDefaults()
         let store = WatchlistStore(userDefaults: defaults, seed: ["EUR", "GBP"])
         store.add("CHF")
 

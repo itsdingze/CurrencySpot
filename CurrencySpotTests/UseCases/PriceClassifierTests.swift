@@ -15,9 +15,9 @@ struct PriceClassifierTests {
         #expect(result == PriceClassification(amount: 1200, isPrice: true))
     }
 
-    @Test func decimalCommaParsesAsFraction() {
+    @Test func decimalCommaParsesAsFraction() throws {
         let result = classifier.classify("€12,50")
-        #expect(result == PriceClassification(amount: Decimal(string: "12.5")!, isPrice: true))
+        #expect(result == PriceClassification(amount: try #require(Decimal(string: "12.5")), isPrice: true))
     }
 
     @Test func multiNumberTranscriptPicksThePriceShapedToken() {
@@ -67,9 +67,9 @@ struct PriceClassifierTests {
     }
 
     @Test(arguments: ["8", "80", "680", "1200", "150000"])
-    func bareUnmarkedIntegerIsNotAPrice(transcript: String) {
+    func bareUnmarkedIntegerIsNotAPrice(transcript: String) throws {
         let result = classifier.classify(transcript)
-        #expect(result == PriceClassification(amount: Decimal(string: transcript)!, isPrice: false))
+        #expect(result == PriceClassification(amount: try #require(Decimal(string: transcript)), isPrice: false))
     }
 
     @Test(arguments: ["Open daily", "MENU", ""])

@@ -145,11 +145,8 @@ struct DataOrchestrationUseCaseTests {
         let repository = MockHistoricalRateRepository()
         repository.earliestStoredDateResult = nil
 
-        func day(_ offset: Int) -> Date {
-            Self.calendar.startOfDay(for: Self.calendar.date(byAdding: .day, value: offset, to: Self.baseDate)!)
-        }
-        let oldRange = DateRange.spanning(day(-30), day(-20))
-        let recentRange = DateRange.spanning(day(-7), day(0))
+        let oldRange = DateRange.spanning(Self.day(-30), Self.day(-20))
+        let recentRange = DateRange.spanning(Self.day(-7), Self.day(0))
         repository.fetchedDataProvider = { from, _ in
             Self.createTestHistoricalData(dates: [from])
         }
@@ -182,10 +179,7 @@ struct DataOrchestrationUseCaseTests {
 
         let useCase = Self.makeUseCase(repository: repository)
 
-        let wideRange = DateRange.spanning(
-            Self.calendar.date(byAdding: .day, value: -30, to: Self.endDate)!,
-            Self.endDate
-        )
+        let wideRange = DateRange.spanning(Self.day(-30), Self.endDate)
         async let wide = useCase.loadHistoricalData(for: "USD", dateRange: wideRange)
         async let narrow = useCase.loadHistoricalData(for: "EUR", dateRange: Self.testDateRange)
 
@@ -224,7 +218,7 @@ struct DataOrchestrationUseCaseTests {
         let repository = MockHistoricalRateRepository()
 
         func day(_ offset: Int) -> Date {
-            Self.calendar.startOfDay(for: Self.calendar.date(byAdding: .day, value: offset, to: Self.baseDate)!)
+            Self.day(offset)
         }
         repository.earliestStoredDateResult = day(-365)
         repository.latestStoredDateResult = day(-1)
@@ -268,7 +262,7 @@ struct DataOrchestrationUseCaseTests {
         let repository = MockHistoricalRateRepository()
 
         func day(_ offset: Int) -> Date {
-            Self.calendar.startOfDay(for: Self.calendar.date(byAdding: .day, value: offset, to: Self.baseDate)!)
+            Self.day(offset)
         }
         let requiredRange = DateRange.spanning(day(-20), day(0))
         let cacheDates = [day(-10), day(-9), day(-8)]
@@ -298,7 +292,7 @@ struct DataOrchestrationUseCaseTests {
         let repository = MockHistoricalRateRepository()
 
         func day(_ offset: Int) -> Date {
-            Self.calendar.startOfDay(for: Self.calendar.date(byAdding: .day, value: offset, to: Self.baseDate)!)
+            Self.day(offset)
         }
         let requiredRange = DateRange.spanning(day(-20), day(0))
         let cachedData = Self.createTestHistoricalData(dates: [day(-10), day(-9), day(-8)])

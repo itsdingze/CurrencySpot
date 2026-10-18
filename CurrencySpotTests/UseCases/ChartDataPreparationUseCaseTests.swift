@@ -63,19 +63,18 @@ struct ChartDataPreparationUseCaseTests {
     @Suite("processHistoricalRateData Method Tests")
     struct ProcessHistoricalRateDataTests {
         @Test("A larger dataset is not shadowed by a smaller dataset's processed cache (same pair/range)")
-        func largerDatasetNotShadowedByProcessedCache() async {
+        func largerDatasetNotShadowedByProcessedCache() async throws {
             let chartCache = InMemoryChartDataCache()
             let useCase = ChartDataPreparationUseCase(chartCache: chartCache)
             let calendar = TimeZoneManager.cetCalendar
-            let end = createCETDate(year: 2025, month: 6, day: 6)!
-            let range = DateRange.spanning(calendar.date(byAdding: .day, value: -90, to: end)!, end)
+            let end = try #require(createCETDate(year: 2025, month: 6, day: 6))
+            let range = DateRange.spanning(try #require(calendar.date(byAdding: .day, value: -90, to: end)), end)
 
             func rows(_ days: Int) -> [HistoricalRateSnapshot] {
-                (0 ..< days).map { offset in
-                    HistoricalRateSnapshot(
-                        date: calendar.date(byAdding: .day, value: -offset, to: end)!,
-                        rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.1)]
-                    )
+                (0 ..< days).compactMap { offset in
+                    calendar.date(byAdding: .day, value: -offset, to: end).map {
+                        HistoricalRateSnapshot(date: $0, rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.1)])
+                    }
                 }
             }
 

@@ -4,16 +4,14 @@ import Testing
 
 @Suite("SettingsViewModel Tests")
 struct SettingsViewModelTests {
+    private let isolatedDefaults = IsolatedDefaults()
     private let preferences = InMemoryPreferencesStore()
     private let viewModel: SettingsViewModel
 
-    init() {
-        let suiteName = "SettingsViewModelTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
-        defaults.removePersistentDomain(forName: suiteName)
+    init() throws {
         viewModel = SettingsViewModel(
             refreshAllDataUseCase: RefreshAllDataUseCase(repository: PreviewExchangeRateRepository()),
-            watchlist: WatchlistStore(userDefaults: defaults),
+            watchlist: WatchlistStore(userDefaults: try isolatedDefaults.make()),
             preferences: preferences,
             appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
             clock: ImmediateClock()
@@ -74,10 +72,9 @@ struct SettingsViewModelTests {
     }
 
     private func makeOnlineViewModel(clearing: DataClearing, appState: AppState) throws -> SettingsViewModel {
-        let defaults = try #require(UserDefaults(suiteName: "SettingsViewModelTests.online.\(UUID().uuidString)"))
-        return SettingsViewModel(
+        SettingsViewModel(
             refreshAllDataUseCase: RefreshAllDataUseCase(repository: clearing),
-            watchlist: WatchlistStore(userDefaults: defaults),
+            watchlist: WatchlistStore(userDefaults: try isolatedDefaults.make()),
             preferences: InMemoryPreferencesStore(),
             appState: appState,
             clock: ImmediateClock()
@@ -116,7 +113,7 @@ struct SettingsViewModelTests {
     }
 
     @Test("offline Refresh All Data refuses to wipe and shows no refresh toast")
-    func offlineRefreshRefusesToWipe() async {
+    func offlineRefreshRefusesToWipe() async throws {
         final class SpyClearing: DataClearing {
             private(set) var clearCallCount = 0
             func clearAllData() async throws { clearCallCount += 1 }
@@ -125,12 +122,9 @@ struct SettingsViewModelTests {
         let spy = SpyClearing()
         let monitor = NetworkMonitor(monitorsPathUpdates: false)
         monitor.isConnected = false
-        let suiteName = "SettingsViewModelTests.offline.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
-        defaults.removePersistentDomain(forName: suiteName)
         let offlineViewModel = SettingsViewModel(
             refreshAllDataUseCase: RefreshAllDataUseCase(repository: spy),
-            watchlist: WatchlistStore(userDefaults: defaults),
+            watchlist: WatchlistStore(userDefaults: try isolatedDefaults.make()),
             preferences: InMemoryPreferencesStore(),
             appState: AppState(networkMonitor: monitor),
             clock: ImmediateClock()
@@ -173,11 +167,8 @@ struct SettingsViewModelTests {
     }
 
     @Test("confirming a preferences reset re-seeds the History watchlist from the default favorites")
-    func resetPreferencesReseedsWatchlist() {
-        let suiteName = "SettingsViewModelTests.watchlist.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName) ?? .standard
-        defaults.removePersistentDomain(forName: suiteName)
-
+    func resetPreferencesReseedsWatchlist() throws {
+        let defaults = try isolatedDefaults.make()
         let watchlist = WatchlistStore(userDefaults: defaults, seed: ["CHF", "NZD"])
         let viewModel = SettingsViewModel(
             refreshAllDataUseCase: RefreshAllDataUseCase(repository: PreviewExchangeRateRepository()),

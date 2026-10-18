@@ -4,24 +4,23 @@ import Testing
 
 @Suite("HistoricalSyncStore")
 struct HistoricalSyncStoreTests {
-    private static func makeDefaults() -> UserDefaults {
-        let name = "HistoricalSyncStoreTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: name)!
-        defaults.removePersistentDomain(forName: name)
-        return defaults
+    private let isolatedDefaults = IsolatedDefaults()
+
+    private func makeStore() throws -> UserDefaultsHistoricalSyncStore {
+        UserDefaultsHistoricalSyncStore(defaults: try isolatedDefaults.make())
     }
 
     @Test("starts empty")
-    func startsEmpty() {
-        let store = UserDefaultsHistoricalSyncStore(defaults: Self.makeDefaults())
+    func startsEmpty() throws {
+        let store = try makeStore()
         #expect(store.from == nil)
         #expect(store.through == nil)
         #expect(store.checkedAt == nil)
     }
 
     @Test("record widens the window monotonically and stamps the check time")
-    func recordWidensWindow() {
-        let store = UserDefaultsHistoricalSyncStore(defaults: Self.makeDefaults())
+    func recordWidensWindow() throws {
+        let store = try makeStore()
         let jan10 = Date(timeIntervalSince1970: 1_000_000)
         let jan20 = Date(timeIntervalSince1970: 2_000_000)
         let jan05 = Date(timeIntervalSince1970: 500_000)
@@ -43,8 +42,8 @@ struct HistoricalSyncStoreTests {
     }
 
     @Test("a disjoint record that reaches further forward replaces the window instead of uniting")
-    func disjointForwardRecordReplaces() {
-        let store = UserDefaultsHistoricalSyncStore(defaults: Self.makeDefaults())
+    func disjointForwardRecordReplaces() throws {
+        let store = try makeStore()
         let day = 86_400.0
         let t1 = Date(timeIntervalSince1970: 100 * day)
         let t2 = Date(timeIntervalSince1970: 101 * day)
@@ -60,8 +59,8 @@ struct HistoricalSyncStoreTests {
     }
 
     @Test("a disjoint record behind the window is dropped entirely")
-    func disjointBackwardRecordDropped() {
-        let store = UserDefaultsHistoricalSyncStore(defaults: Self.makeDefaults())
+    func disjointBackwardRecordDropped() throws {
+        let store = try makeStore()
         let day = 86_400.0
         let t1 = Date(timeIntervalSince1970: 100 * day)
         let from = Date(timeIntervalSince1970: 20 * day)
@@ -80,8 +79,8 @@ struct HistoricalSyncStoreTests {
     }
 
     @Test("an adjacent record (gap of one day) still unions")
-    func adjacentRecordUnions() {
-        let store = UserDefaultsHistoricalSyncStore(defaults: Self.makeDefaults())
+    func adjacentRecordUnions() throws {
+        let store = try makeStore()
         let day = 86_400.0
         let through = Date(timeIntervalSince1970: 10 * day)
         store.record(from: Date(timeIntervalSince1970: 5 * day), through: through, at: Date(timeIntervalSince1970: 100 * day))
@@ -93,8 +92,8 @@ struct HistoricalSyncStoreTests {
     }
 
     @Test("reset clears the window")
-    func resetClears() {
-        let store = UserDefaultsHistoricalSyncStore(defaults: Self.makeDefaults())
+    func resetClears() throws {
+        let store = try makeStore()
         store.record(from: Date(timeIntervalSince1970: 1), through: Date(timeIntervalSince1970: 2), at: Date(timeIntervalSince1970: 3))
 
         store.reset()

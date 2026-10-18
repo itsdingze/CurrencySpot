@@ -11,11 +11,17 @@ struct RefreshAllDataRewarmTests {
         network.exchangeRatesResult = .success(ExchangeRatesResponse(base: "USD", date: "2026-06-12", rates: ["EUR": 0.9]))
         network.historicalRatesResult = .success(HistoricalRatesResponse(base: "USD", startDate: "", endDate: "", rates: [:]))
 
+        let isolatedDefaults = IsolatedDefaults()
         let container = DependencyContainer(
             modelContainer: try ModelContainer.inMemoryCurrencySpot(),
             appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
+            userDefaults: try isolatedDefaults.make(),
+            preferences: InMemoryPreferencesStore(),
             networkService: network,
-            syncStore: MockHistoricalSyncStore()
+            syncStore: MockHistoricalSyncStore(),
+            fetchDateStore: InMemoryRatesFetchDateStore(),
+            dateProvider: FixedDateProvider(try #require(createCETDate(year: 2026, month: 6, day: 12))),
+            clockService: ImmediateClock()
         )
 
         try await container.refreshAllDataUseCase.execute()

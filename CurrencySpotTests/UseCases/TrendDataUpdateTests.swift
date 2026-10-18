@@ -77,7 +77,7 @@ struct TrendDataUpdateTests {
     // MARK: - Trend Recalculation Tests
 
     @Test("Trends recalculate when a fetched range affects the trend window")
-    func trendRecalculatesWhenRangeAffectsTrends() async {
+    func trendRecalculatesWhenRangeAffectsTrends() async throws {
         let existing = [Trend(currencyCode: "EUR", weeklyChange: 1.0, miniChartData: [1.0, 1.1])]
         let trendRepository = MockTrendRepository(trends: existing)
         trendRepository.historicalWindowData = makeHistoricalData(for: "EUR", days: 7)
@@ -88,7 +88,7 @@ struct TrendDataUpdateTests {
         )
 
         let affectingRange = DateRange.spanning(
-            TimeZoneManager.cetCalendar.date(byAdding: .day, value: -2, to: Self.fixedToday)!,
+            try #require(TimeZoneManager.cetCalendar.date(byAdding: .day, value: -2, to: Self.fixedToday)),
             Self.fixedToday
         )
 
@@ -123,7 +123,7 @@ struct TrendDataUpdateTests {
     // MARK: - Base Currency Conversion Tests (exact values from the fixture)
 
     @Test("EUR-base GBP trend is GBP/EUR per point with the derived weekly change")
-    func trendConversionNonUSDBase() async {
+    func trendConversionNonUSDBase() async throws {
         let viewModel = Self.makeFixtureBackedViewModel()
         await viewModel.initializeTrendData()
         viewModel.configure(base: "EUR", target: viewModel.targetCurrency)
@@ -138,12 +138,13 @@ struct TrendDataUpdateTests {
         for (actual, want) in zip(trend.miniChartData, expected) {
             #expect(abs(actual - want) < 0.0001)
         }
-        let expectedChange = ((expected.last! - expected.first!) / expected.first!) * 100
-        #expect(abs(trend.weeklyChange - expectedChange) < 0.001)
+        let first = try #require(expected.first)
+        let last = try #require(expected.last)
+        #expect(abs(trend.weeklyChange - (last - first) / first * 100) < 0.001)
     }
 
     @Test("EUR-base USD trend is the inverted EUR fixture with the derived weekly change")
-    func trendConversionUSDInversion() async {
+    func trendConversionUSDInversion() async throws {
         let viewModel = Self.makeFixtureBackedViewModel()
         await viewModel.initializeTrendData()
         viewModel.configure(base: "EUR", target: viewModel.targetCurrency)
@@ -160,8 +161,9 @@ struct TrendDataUpdateTests {
         for (actual, want) in zip(usd.miniChartData, expected) {
             #expect(abs(actual - want) < 0.0001)
         }
-        let expectedChange = ((expected.last! - expected.first!) / expected.first!) * 100
-        #expect(abs(usd.weeklyChange - expectedChange) < 0.001)
+        let first = try #require(expected.first)
+        let last = try #require(expected.last)
+        #expect(abs(usd.weeklyChange - (last - first) / first * 100) < 0.001)
     }
 
     // MARK: - Integration

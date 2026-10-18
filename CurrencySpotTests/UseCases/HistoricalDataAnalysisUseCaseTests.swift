@@ -6,9 +6,13 @@ import Testing
 struct HistoricalDataAnalysisUseCaseTests {
     // MARK: - Test Data Constants
 
-    private let useCase = HistoricalDataAnalysisUseCase(syncCoverage: MockHistoricalSyncStore())
-
     private static let testBaseDate = createCETDate(year: 2025, month: 1, day: 15)!
+    private static let testNow = testBaseDate.addingTimeInterval(14.5 * 3600)
+
+    private let useCase = HistoricalDataAnalysisUseCase(
+        syncCoverage: MockHistoricalSyncStore(),
+        dateProvider: FixedDateProvider(testNow)
+    )
     private static let testWeekdayBefore = createCETDate(year: 2025, month: 1, day: 10)!
     private static let testWeekendBefore = createCETDate(year: 2025, month: 1, day: 12)!
     private static let testWeekdayAfter = createCETDate(year: 2025, month: 1, day: 20)!
@@ -68,14 +72,8 @@ struct HistoricalDataAnalysisUseCaseTests {
     func calculateDateRange_oneWeek_shouldReturnCorrectRange() {
         let result = useCase.calculateDateRange(for: .oneWeek)
 
-        let calendar = TimeZoneManager.cetCalendar
-        let expectedEnd = calendar.startOfDay(for: Date())
-
-        let timeDifference = abs(result.end.timeIntervalSince(expectedEnd))
-        #expect(timeDifference < 60, "End date should be close to expected (within 1 minute)")
-
+        #expect(result.end == Self.testBaseDate, "End date should be the start of today")
         #expect(result.start < result.end, "Start date should be before end date")
-        #expect(result.start < Date(), "Start date should be in the past")
     }
 
     @Test("calculateDateRange should return correct range for one month", arguments: [
@@ -85,8 +83,6 @@ struct HistoricalDataAnalysisUseCaseTests {
         let result = useCase.calculateDateRange(for: timeRange)
 
         let calendar = TimeZoneManager.cetCalendar
-        let now = Date()
-        let expectedEnd = calendar.startOfDay(for: now)
 
         let startComponents = calendar.dateComponents([.hour, .minute, .second], from: result.start)
         #expect(startComponents.hour == 0 && startComponents.minute == 0 && startComponents.second == 0,
@@ -97,9 +93,7 @@ struct HistoricalDataAnalysisUseCaseTests {
                 "End date should be start of day")
 
         #expect(result.start <= result.end, "Start date should be before or equal to end date")
-
-        let timeDifference = abs(result.end.timeIntervalSince(expectedEnd))
-        #expect(timeDifference < 60, "End date should be close to now (within 1 minute)")
+        #expect(result.end == Self.testBaseDate, "End date should be the start of today")
     }
 
     @Test("calculateDateRange should handle start of day calculations correctly")
@@ -212,8 +206,8 @@ struct HistoricalDataAnalysisUseCaseTests {
 
     @Test("calculateMissingDateRanges with few business days after cache should detect gap")
     func calculateMissingDateRanges_fewBusinessDaysAfterCache_shouldDetectGap() async throws {
-        let cacheWednesdayEnd = createCETDate(year: 2025, month: 1, day: 15)!
-        let requiredMondayEnd = createCETDate(year: 2025, month: 1, day: 20)!
+        let cacheWednesdayEnd = Self.testBaseDate
+        let requiredMondayEnd = Self.testWeekdayAfter
         let requiredRange = DateRange.spanning(Self.testWeekdayBefore, requiredMondayEnd)
         let cache = createMockCache(startDate: Self.testWeekdayBefore, endDate: cacheWednesdayEnd)
 
@@ -458,7 +452,7 @@ struct HistoricalDataAnalysisUseCaseTests {
     @Test("Full workflow integration test with realistic data")
     func fullWorkflowIntegration_withRealisticData_shouldWorkCorrectly() async throws {
         let calendar = TimeZoneManager.cetCalendar
-        let today = Date()
+        let today = Self.testBaseDate
 
         let dateRange = useCase.calculateDateRange(for: .threeMonths)
 

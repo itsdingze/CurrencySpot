@@ -37,27 +37,27 @@ struct CalculateConversionUseCaseTests {
     }
 
     @Test("impliedCentsDigits round-trips an amount back to its digit string")
-    func impliedCentsRoundTrip() {
-        #expect(useCase.impliedCentsDigits(for: Decimal(string: "123.45")!) == "12345")
+    func impliedCentsRoundTrip() throws {
+        #expect(useCase.impliedCentsDigits(for: try #require(Decimal(string: "123.45"))) == "12345")
         #expect(useCase.impliedCentsDigits(for: 0) == "0")
-        #expect(useCase.impliedCentsDigits(for: Decimal(string: "0.07")!) == "7")
+        #expect(useCase.impliedCentsDigits(for: try #require(Decimal(string: "0.07"))) == "7")
     }
 
     @Test("impliedCentsDigits rounds a sub-cent fraction to the nearest cent")
-    func impliedCentsRounds() {
-        #expect(useCase.impliedCentsDigits(for: Decimal(string: "1.005")!) == "101")
-        #expect(useCase.impliedCentsDigits(for: Decimal(string: "1.004")!) == "100")
+    func impliedCentsRounds() throws {
+        #expect(useCase.impliedCentsDigits(for: try #require(Decimal(string: "1.005"))) == "101")
+        #expect(useCase.impliedCentsDigits(for: try #require(Decimal(string: "1.004"))) == "100")
     }
 
     @Test("impliedCentsDigits survives amounts beyond Int32 cents")
-    func impliedCentsBeyondInt32() {
-        #expect(useCase.impliedCentsDigits(for: Decimal(string: "30000000")!) == "3000000000")
-        #expect(useCase.impliedCentsDigits(for: Decimal(string: "999999999.99")!) == "99999999999")
+    func impliedCentsBeyondInt32() throws {
+        #expect(useCase.impliedCentsDigits(for: try #require(Decimal(string: "30000000"))) == "3000000000")
+        #expect(useCase.impliedCentsDigits(for: try #require(Decimal(string: "999999999.99"))) == "99999999999")
     }
 
     @Test("a digit string produced by impliedCentsDigits reproduces the amount")
-    func roundTripThroughUseCase() {
-        let amount = Decimal(string: "4321.09")!
+    func roundTripThroughUseCase() throws {
+        let amount = try #require(Decimal(string: "4321.09"))
         let digits = useCase.impliedCentsDigits(for: amount)
 
         #expect(useCase(impliedCentsDigits: digits, from: .usd, to: .usd, in: table).amount == amount)

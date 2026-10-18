@@ -5,7 +5,7 @@ import Testing
 @MainActor
 @Suite("NetworkMonitor")
 struct NetworkMonitorTests {
-    @Test("a monitoring instance publishes the system path status", .timeLimit(.minutes(1)))
+    @Test("a monitoring instance publishes the system path status", .tags(.integration), .timeLimit(.minutes(1)))
     func publishesSystemPathStatus() async {
         let expected = await Self.currentPathIsSatisfied()
 

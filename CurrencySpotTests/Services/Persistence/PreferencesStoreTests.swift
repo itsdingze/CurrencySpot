@@ -4,14 +4,12 @@ import Testing
 
 @Suite("UserDefaultsPreferencesStore Tests")
 struct PreferencesStoreTests {
+    private let isolatedDefaults = IsolatedDefaults()
     private let defaults: UserDefaults
-    private let suiteName: String
     private let store: UserDefaultsPreferencesStore
 
     init() throws {
-        suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
-        defaults = try #require(UserDefaults(suiteName: suiteName))
-        defaults.removePersistentDomain(forName: suiteName)
+        defaults = try isolatedDefaults.make()
         store = UserDefaultsPreferencesStore(userDefaults: defaults)
     }
 
@@ -28,9 +26,7 @@ struct PreferencesStoreTests {
 
     @Test("a seeded store reads the persisted values")
     func readsPersistedValues() throws {
-        let seededSuiteName = "PreferencesStoreTests.seeded.\(UUID().uuidString)"
-        let seeded = try #require(UserDefaults(suiteName: seededSuiteName))
-        seeded.removePersistentDomain(forName: seededSuiteName)
+        let seeded = try isolatedDefaults.make()
         seeded.set("CHF", forKey: UserDefaultsKeys.defaultBaseCurrency)
         seeded.set(["JPY", "CAD"], forKey: UserDefaultsKeys.favoriteCurrencies)
 

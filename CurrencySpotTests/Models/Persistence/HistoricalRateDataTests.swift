@@ -47,7 +47,7 @@ struct HistoricalRateDataTests {
     @Test("a corrupt blob fails loudly instead of yielding an empty day")
     func corruptBlobThrows() throws {
         let model = HistoricalRateData(
-            date: TimeZoneManager.parseAPIDate("2025-03-15")!,
+            date: try #require(TimeZoneManager.parseAPIDate("2025-03-15")),
             ratesData: Data("not json".utf8)
         )
 

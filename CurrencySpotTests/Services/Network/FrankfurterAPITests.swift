@@ -31,13 +31,13 @@ private nonisolated final class StubURLProtocol: URLProtocol {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        guard let url = request.url, let stub = Self.stub(for: url.absoluteString) else {
+        guard let url = request.url,
+              let stub = Self.stub(for: url.absoluteString),
+              let response = HTTPURLResponse(url: url, statusCode: stub.statusCode, httpVersion: "HTTP/1.1", headerFields: nil)
+        else {
             client?.urlProtocol(self, didFailWithError: URLError(.unsupportedURL))
             return
         }
-        let response = HTTPURLResponse(
-            url: url, statusCode: stub.statusCode, httpVersion: "HTTP/1.1", headerFields: nil
-        )!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: stub.data)
         client?.urlProtocolDidFinishLoading(self)
