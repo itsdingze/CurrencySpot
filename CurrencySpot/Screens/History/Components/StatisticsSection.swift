@@ -83,7 +83,7 @@ struct StatisticsSection: View {
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                 }
-                .minimumHitTarget()
+                .layoutNeutralHitTarget()
             }
             .buttonStyle(.plain)
             .accessibilityLabel(.historyStatisticsVolatilityInfo)

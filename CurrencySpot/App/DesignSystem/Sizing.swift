@@ -37,4 +37,11 @@ extension View {
         frame(minWidth: 44, minHeight: 44)
             .contentShape(.rect)
     }
+
+    func layoutNeutralHitTarget() -> some View {
+        let outset: CGFloat = 12
+        return padding(outset)
+            .contentShape(.rect)
+            .padding(-outset)
+    }
 }

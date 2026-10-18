@@ -13,6 +13,11 @@ struct CurrencyHistoryView: View {
         return false
     }
 
+    private var chartDidFail: Bool {
+        if case .failed = viewModel.chartData { return true }
+        return false
+    }
+
     var body: some View {
         VStack(spacing: Spacing.section) {
             HeaderSection(isChartSelectionActive: $isChartSelectionActive)
@@ -30,6 +35,11 @@ struct CurrencyHistoryView: View {
                     ? .historyChartEmptyAnnouncement
                     : .historyChartLoadedAnnouncement
                 AccessibilityNotification.Announcement(String(localized: message)).post()
+            }
+        }
+        .onChange(of: chartDidFail) { _, failed in
+            if failed {
+                AccessibilityNotification.Announcement(String(localized: .historyChartFailed)).post()
             }
         }
         .sheet(isPresented: $viewModel.destination.isPresenting(.chartOnboarding)) {

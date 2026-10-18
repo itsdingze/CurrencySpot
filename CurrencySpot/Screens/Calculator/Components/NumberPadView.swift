@@ -58,6 +58,15 @@ private enum NumberPadButton: Identifiable, Equatable {
         }
     }
 
+    var accessibilityInputLabels: [Text] {
+        switch self {
+        case .number, .clear:
+            [Text(verbatim: label), Text(accessibilityLabel)]
+        case .delete:
+            [Text(accessibilityLabel)]
+        }
+    }
+
 }
 
 struct NumberPadView: View {
@@ -101,6 +110,7 @@ struct NumberPadView: View {
         Button(button.label) { buttonTapped(button) }
             .buttonStyle(.numberPadKey(fill: button.backgroundColor(accent: accent), foreground: button.foregroundColor))
             .accessibilityLabel(button.accessibilityLabel)
+            .accessibilityInputLabels(button.accessibilityInputLabels)
     }
 
     // MARK: - Private Methods

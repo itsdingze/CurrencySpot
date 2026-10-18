@@ -25,7 +25,7 @@ struct RateStatusBanner: View {
                         Label(.ratesBannerRetry, systemImage: "arrow.clockwise")
                             .labelStyle(.iconOnly)
                             .foregroundStyle(.tint)
-                            .minimumHitTarget()
+                            .layoutNeutralHitTarget()
                     }
                 }
             }
