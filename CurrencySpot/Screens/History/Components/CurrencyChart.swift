@@ -126,7 +126,7 @@ struct CurrencyChart: View {
                     .zIndex(-1)
                     .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
                         VStack {
-                            Text(selectedDate.date.chartDisplay)
+                            Text(selectedDate.date.rateDayDisplay)
 
                             Text(selectedDate.rate.toStringMax4Decimals)
                         }
@@ -170,6 +170,8 @@ struct CurrencyChart: View {
             }
         }
         .chartYScale(domain: statistics.chartYDomain)
+        .environment(\.calendar, CETCalendar.calendar)
+        .environment(\.timeZone, CETCalendar.timeZone)
         .chartXSelection(value: isSelectionEnabled ? $rawSelectedDate : .constant(nil))
         .animation(.appStageReveal, value: viewModel.displayedChartDataPoints)
         .accessibilityLabel(chartAccessibilityLabel)
@@ -208,7 +210,7 @@ struct CurrencyChart: View {
         if let index = axSelectionIndex, dataPoints.indices.contains(index) {
             let point = dataPoints[index]
             return .historyChartAccessibilityValueSelectedPoint(
-                date: point.date.chartDisplay,
+                date: point.date.rateDayDisplay,
                 rate: point.rate.toStringMax4Decimals
             )
         }
@@ -219,8 +221,8 @@ struct CurrencyChart: View {
 
         return chartSummary(
             count: dataPoints.count,
-            startDate: first.date.chartDisplay,
-            endDate: last.date.chartDisplay,
+            startDate: first.date.rateDayDisplay,
+            endDate: last.date.rateDayDisplay,
             rate: last.rate.toStringMax4Decimals
         )
     }

@@ -69,7 +69,7 @@ nonisolated enum TimeRange: String, CaseIterable, Identifiable {
     }
 
     var chartAxisDateFormat: Date.FormatStyle {
-        switch self {
+        var style: Date.FormatStyle = switch self {
         case .oneWeek, .oneMonth:
             .dateTime.month(.abbreviated).day()
         case .threeMonths, .sixMonths, .oneYear:
@@ -77,5 +77,7 @@ nonisolated enum TimeRange: String, CaseIterable, Identifiable {
         case .fiveYears:
             .dateTime.year()
         }
+        style.timeZone = CETCalendar.timeZone
+        return style
     }
 }
