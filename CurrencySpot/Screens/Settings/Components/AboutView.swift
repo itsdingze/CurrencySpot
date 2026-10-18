@@ -37,6 +37,8 @@ struct AboutView: View {
 
             Text(Bundle.main.appName)
                 .font(.appTitle3)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
 
             Text(.settingsAboutVersion(version: Bundle.main.appVersionWithBuild))
                 .font(.appSubheadline)

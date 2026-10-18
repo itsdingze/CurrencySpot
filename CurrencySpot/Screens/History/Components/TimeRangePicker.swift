@@ -8,6 +8,9 @@ struct TimeRangePicker: View {
     @State private var dragOffset: CGFloat?
     @State private var isDragging = false
     @State private var snappedIndex: Int?
+    @State private var labelWidths: [TimeRange: CGFloat] = [:]
+
+    private nonisolated static let minimumLabelScale: CGFloat = 0.5
 
     private let timeRanges = TimeRange.allCases
     private let snapFraction: CGFloat = 0.25
@@ -24,6 +27,18 @@ struct TimeRangePicker: View {
 
     private var boxScale: CGFloat {
         isDragging ? 1.2 : 1
+    }
+
+    private var labelScale: CGFloat {
+        Self.sharedLabelScale(
+            available: segmentWidth - 2 * Spacing.chipPadding,
+            widestLabel: labelWidths.values.max() ?? 0
+        )
+    }
+
+    nonisolated static func sharedLabelScale(available: CGFloat, widestLabel: CGFloat) -> CGFloat {
+        guard widestLabel > 0 else { return 1 }
+        return min(1, max(minimumLabelScale, available / widestLabel))
     }
 
     var body: some View {
@@ -68,12 +83,17 @@ struct TimeRangePicker: View {
             ForEach(timeRanges, id: \.self) { timeRange in
                 Text(timeRange.shortName)
                     .font(.appHeadline.weight(selected ? .semibold : .regular))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
+                    .fixedSize()
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.width
+                    } action: { width in
+                        if selected { labelWidths[timeRange] = width }
+                    }
+                    .scaleEffect(labelScale)
                     .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .foregroundStyle(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                     .padding(Spacing.chipPadding)
-                    .frame(maxWidth: .infinity)
+                    .frame(minWidth: 0, maxWidth: .infinity)
             }
         }
     }

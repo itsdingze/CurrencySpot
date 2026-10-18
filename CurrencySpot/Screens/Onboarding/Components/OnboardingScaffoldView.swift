@@ -45,6 +45,7 @@ struct OnboardingScaffoldView<Icon: View, Footer: View>: View {
                     Text(title)
                         .font(.appTitle)
                         .multilineTextAlignment(.center)
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility3)
                         .blurSlide(animateTitle)
                         .accessibilityAddTraits(.isHeader)
 

@@ -7,6 +7,7 @@ struct VolatilityInfoView: View {
         AccessibilitySizeScrollView {
             content
         }
+        .scrollIndicatorsFlash(onAppear: true)
         .frame(idealWidth: 320, maxWidth: 400)
         .presentationBackground(.regularMaterial)
     }

@@ -52,6 +52,11 @@ struct CalculatorView: View {
                 }
             }
             .safeAreaPadding()
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Color.clear
+                    .frame(height: 0)
+                    .background(Color.background)
+            }
         }
         .task {
             await calculatorViewModel.checkIfShouldFetch()

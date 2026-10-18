@@ -5,6 +5,7 @@ struct ScanStatusCapsule: View {
     let hasPrices: Bool
     let isRecognizingStill: Bool
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var hintElapsed = false
 
     private var phase: ScanStatusPhase {
@@ -24,7 +25,7 @@ struct ScanStatusCapsule: View {
                     .modifier(Shimmer(active: phase == .scanning))
                     .padding(.horizontal, Spacing.cardPadding)
                     .padding(.vertical, Spacing.chipPadding)
-                    .background(.regularMaterial, in: .capsule)
+                    .background(.regularMaterial, in: backgroundShape)
                     .transition(.opacity)
             }
         }
@@ -44,6 +45,10 @@ struct ScanStatusCapsule: View {
     }
 
     private var isAwaitingFirstPrice: Bool { isLive && !hasPrices }
+
+    private var backgroundShape: AnyShape {
+        dynamicTypeSize.isAccessibilitySize ? AnyShape(.rect(cornerRadius: Radius.container)) : AnyShape(.capsule)
+    }
 
     private var message: LocalizedStringResource? {
         switch phase {

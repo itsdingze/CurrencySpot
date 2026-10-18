@@ -9,6 +9,7 @@ struct ChartOnboardingView: View {
     @State private var shouldAnimateContent = false
     @State private var shouldAnimateFooter = false
     @State private var isRevealComplete = false
+    @State private var scrollPosition = ScrollPosition(edge: .top)
 
     private let totalPages = 2
 
@@ -31,7 +32,7 @@ struct ChartOnboardingView: View {
             AccessibilityNotification.Announcement(String(localized: announcement)).post()
         }
         .onChange(of: currentOnboardingPage, initial: true) {
-            revealPageInStages()
+            presentCurrentPage()
         }
     }
 
@@ -63,6 +64,7 @@ struct ChartOnboardingView: View {
                 featuresSection
             }
         }
+        .scrollPosition($scrollPosition)
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize)
     }
@@ -185,6 +187,11 @@ struct ChartOnboardingView: View {
         shouldAnimateContent = false
         shouldAnimateFooter = false
         isRevealComplete = false
+    }
+
+    private func presentCurrentPage() {
+        scrollPosition.scrollTo(edge: .top)
+        revealPageInStages()
     }
 
     private func revealPageInStages() {
