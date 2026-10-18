@@ -7,7 +7,7 @@ protocol RatesFetchDateStore: AnyObject {
 final class UserDefaultsRatesFetchDateStore: RatesFetchDateStore {
     private let defaults: UserDefaults
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults) {
         self.defaults = defaults
     }
 

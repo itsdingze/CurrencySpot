@@ -27,21 +27,21 @@ private enum NumberPadButton: Identifiable, Equatable {
         }
     }
 
-    var backgroundColor: Color {
+    func backgroundColor(accent: Color) -> Color {
         switch self {
         case .number:
             .secondaryBackground
         case .clear:
             .secondaryAccent.opacity(0.8)
         case .delete:
-            .accentColor.opacity(0.8)
+            accent.opacity(0.8)
         }
     }
 
     var foregroundColor: Color {
         switch self {
         case .number:
-            .textPrimary
+            .primary
         case .clear, .delete:
             .white
         }
@@ -62,6 +62,7 @@ private enum NumberPadButton: Identifiable, Equatable {
 
 struct NumberPadView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel
+    @Environment(\.appAccent) private var accent
 
     @State private var buttonPressed = false
     @State private var maxLengthReached = false
@@ -98,7 +99,7 @@ struct NumberPadView: View {
 
     private func numberPadButton(_ button: NumberPadButton) -> some View {
         Button(button.label) { buttonTapped(button) }
-            .buttonStyle(.numberPadKey(fill: button.backgroundColor, foreground: button.foregroundColor))
+            .buttonStyle(.numberPadKey(fill: button.backgroundColor(accent: accent), foreground: button.foregroundColor))
             .accessibilityLabel(button.accessibilityLabel)
     }
 

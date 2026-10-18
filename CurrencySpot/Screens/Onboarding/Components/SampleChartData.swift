@@ -17,7 +17,7 @@ enum SampleChartData {
     static let lowestPoint: SampleDataPoint? = points.min { $0.rate < $1.rate }
     static let averageRate: Double = _rates.reduce(0, +) / Double(_rates.count)
     static let minimumRate: Double = _rates.min() ?? 0
-    static let maximumRate: Double = _rates.max() ?? 1
+    private static let maximumRate: Double = _rates.max() ?? 1
 
     static let chartYDomain: ClosedRange<Double> = (minimumRate * 0.99) ... (maximumRate * 1.01)
 }

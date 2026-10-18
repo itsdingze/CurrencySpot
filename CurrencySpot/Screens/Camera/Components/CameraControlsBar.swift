@@ -8,16 +8,18 @@ struct CameraControlsBar: View {
     @State private var pickedPhoto: PhotosPickerItem?
 
     var body: some View {
-        ZStack {
-            shutterButton
-            HStack {
-                photoImportButton
-                Spacer()
-                if viewModel.frozenImage == nil {
-                    torchButton
+        AdaptiveGlassContainer {
+            ZStack {
+                shutterButton
+                HStack {
+                    photoImportButton
+                    Spacer()
+                    if viewModel.frozenImage == nil {
+                        torchButton
+                    }
                 }
+                .padding(.horizontal, 32)
             }
-            .padding(.horizontal, 32)
         }
         .onChange(of: pickedPhoto) { _, item in
             guard let item else { return }
@@ -38,18 +40,11 @@ struct CameraControlsBar: View {
 
     private var shutterButton: some View {
         Button(action: shutterTapped) {
-            if #available(iOS 26, *) {
-                shutterContent
-                    .frame(width: 64, height: 64)
-                    .glassEffect(.regular, in: .circle)
-            } else {
-                ZStack {
-                    Circle()
-                        .stroke(.white, lineWidth: 3)
-                        .frame(width: 64, height: 64)
-                    shutterContent
+            shutterContent
+                .frame(width: 64, height: 64)
+                .adaptiveGlassBackground(in: .circle, isInteractive: true) {
+                    Circle().stroke(.white, lineWidth: 3)
                 }
-            }
         }
         .accessibilityLabel(viewModel.frozenImage == nil ? "Freeze frame" : "Resume camera")
         .accessibilityShowsLargeContentViewer {
@@ -74,28 +69,30 @@ struct CameraControlsBar: View {
         }
     }
 
+    private var torchSymbol: String {
+        viewModel.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill"
+    }
+
     private var torchButton: some View {
-        Button {
+        Button("Flashlight", systemImage: torchSymbol) {
             viewModel.toggleTorch()
-        } label: {
-            Image(systemName: viewModel.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                .foregroundStyle(viewModel.isTorchOn ? Color.accentColor : .primary)
         }
+        .labelStyle(.iconOnly)
+        .foregroundStyle(viewModel.isTorchOn ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.primary))
         .buttonStyle(.controlButton)
-        .accessibilityLabel("Flashlight")
         .accessibilityValue(viewModel.isTorchOn ? "On" : "Off")
         .accessibilityAddTraits(.isToggle)
         .accessibilityShowsLargeContentViewer {
-            Label("Flashlight", systemImage: viewModel.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+            Label("Flashlight", systemImage: torchSymbol)
         }
     }
 
     private var photoImportButton: some View {
         PhotosPicker(selection: $pickedPhoto, matching: .images) {
-            Image(systemName: "photo.on.rectangle")
+            Label("Import photo", systemImage: "photo.on.rectangle")
+                .labelStyle(.iconOnly)
         }
         .buttonStyle(.controlButton)
-        .accessibilityLabel("Import photo")
         .accessibilityShowsLargeContentViewer {
             Label("Import photo", systemImage: "photo.on.rectangle")
         }

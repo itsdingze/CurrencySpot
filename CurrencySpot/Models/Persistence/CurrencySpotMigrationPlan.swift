@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-nonisolated enum CurrencySpotMigrationPlan: SchemaMigrationPlan {
+private nonisolated enum CurrencySpotMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
         [CurrencySpotSchemaV1.self, CurrencySpotSchemaV2.self]
     }

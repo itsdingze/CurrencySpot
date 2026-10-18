@@ -68,8 +68,7 @@ struct DetectionOverlayView: View {
                 boxSize: item.bounds.size
             )
             .onGeometryChange(for: CGSize.self) { $0.size } action: { plateSizes[item.id] = $0 }
-            .frame(minWidth: 44, minHeight: 44)
-            .contentShape(.rect)
+            .minimumHitTarget()
         }
         .buttonStyle(.plain)
         .position(x: item.bounds.midX, y: item.bounds.midY)
@@ -171,7 +170,7 @@ private struct ConvertedPlate: View {
             .font(.system(size: ConvertedPlateMetrics.fontSize(forBoxHeight: boxSize.height), design: .rounded).weight(.semibold))
             .lineLimit(1)
             .minimumScaleFactor(0.5)
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(.tint)
             .padding(.horizontal, Spacing.badgePaddingHorizontal)
             .padding(.vertical, Spacing.badgePaddingVertical)
             .frame(

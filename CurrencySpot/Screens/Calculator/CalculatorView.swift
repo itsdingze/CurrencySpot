@@ -20,6 +20,13 @@ struct CalculatorView: View {
         return false
     }
 
+    private var failureAnnouncement: String {
+        switch calculatorViewModel.failureRecovery {
+        case .retry: "Couldn't load exchange rates. Try again."
+        case .sampleRates: "Couldn't load exchange rates. Use sample rates."
+        }
+    }
+
     var body: some View {
         ZStack {
             Color.background.ignoresSafeArea()
@@ -59,7 +66,7 @@ struct CalculatorView: View {
         }
         .onChange(of: ratesDidFail) { _, failed in
             if failed {
-                AccessibilityNotification.Announcement("Couldn't load exchange rates. Try again or use sample rates.").post()
+                AccessibilityNotification.Announcement(failureAnnouncement).post()
             }
         }
         .onAppear {
@@ -72,9 +79,7 @@ struct CalculatorView: View {
             }
         }
         .sheet(item: bindableViewModel.destination) { destination in
-            // The picker is also pushed from Settings, so the presentation
-            // context owns the stack (a stack inside a pushed destination
-            // invalidates value-based navigation registration).
+            // A NavigationStack inside the picker breaks value-based navigation when Settings pushes it.
             NavigationStack {
                 CurrencyPickerView(
                     selectedCurrency: destination == .basePicker ? bindableViewModel.baseCurrency : bindableViewModel.targetCurrency,
@@ -107,13 +112,11 @@ struct CalculatorView: View {
 
 #Preview("Loading") {
     CalculatorView()
-        .environment(CalculatorViewModel.preview(.stalled))
-        .withDependencyContainer(.preview())
+        .withDependencyContainer(.preview(exchangeRateRepository: StubExchangeRateRepository(behavior: .stalled)))
 }
 
 #Preview("Failed") {
     CalculatorView()
-        .environment(CalculatorViewModel.preview(.failing))
-        .withDependencyContainer(.preview())
+        .withDependencyContainer(.preview(exchangeRateRepository: StubExchangeRateRepository(behavior: .failing)))
 }
 #endif

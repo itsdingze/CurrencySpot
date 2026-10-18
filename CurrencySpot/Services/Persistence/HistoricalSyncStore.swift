@@ -13,7 +13,7 @@ protocol HistoricalSyncStore: AnyObject {
 final class UserDefaultsHistoricalSyncStore: HistoricalSyncStore {
     private let defaults: UserDefaults
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults) {
         self.defaults = defaults
     }
 

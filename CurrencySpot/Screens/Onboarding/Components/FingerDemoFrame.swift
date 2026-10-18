@@ -8,7 +8,7 @@ nonisolated struct FingerDemoFrame {
     private static let hoverScale = 1.1
     private static let pressedScale = 0.95
 
-    var isTouching: Bool { touch >= 0.5 }
+    private var isTouching: Bool { touch >= 0.5 }
 
     var scale: Double {
         Self.hoverScale + (Self.pressedScale - Self.hoverScale) * touch

@@ -1,45 +1,22 @@
 import Foundation
+import OSLog
 import SwiftData
 
 // MARK: - DependencyContainer
 
 final class DependencyContainer {
-    // MARK: - Core Services
-
-    let modelContainer: ModelContainer
-    let appState: AppState
-    let networkService: NetworkService
-    let persistenceService: PersistenceService
-    let cacheService: CacheService
-    let syncStore: HistoricalSyncStore
-    let dateProvider: DateProvider
-    let clockService: ClockService
-    let logger: LoggerService
-    let cameraPermissionService: CameraPermissionService
-    let stillTextRecognizer: StillTextRecognitionService
-    let torchService: TorchService
-
-    let dataCoordinator: DataCoordinator
-
-    // MARK: - Use Cases
-
-    let historicalDataAnalysisUseCase: HistoricalDataAnalysisUseCase
-    let dataOrchestrationUseCase: DataOrchestrationUseCase
-    let chartDataPreparationUseCase: ChartDataPreparationUseCase
-    let trendDataUseCase: TrendDataUseCase
-    let refreshAllDataUseCase: RefreshAllDataUseCase
-    let loadExchangeRatesUseCase: LoadExchangeRatesUseCase
-    let calculateConversionUseCase: CalculateConversionUseCase
-    let scanConversionUseCase: ScanConversionUseCase
-
     // MARK: - Shared State and ViewModels
 
+    let appState: AppState
     let ratesStore: ExchangeRatesStore
-    let watchlistStore: WatchlistStore
     let calculatorViewModel: CalculatorViewModel
-    let historyViewModel: HistoryViewModel
+    let currencyListViewModel: CurrencyListViewModel
     let settingsViewModel: SettingsViewModel
     let cameraViewModel: CameraViewModel
+
+    private let makeHistoryViewModel: @MainActor (CurrencyCode, CurrencyCode) -> CurrencyHistoryViewModel
+
+    private static let logger = Logger(category: .app)
 
     // MARK: - Initialization
 
@@ -47,189 +24,168 @@ final class DependencyContainer {
         modelContainer: ModelContainer? = nil,
         appState: AppState = .shared,
         userDefaults: UserDefaults = .standard,
-        preferences: PreferencesStore = UserDefaultsPreferencesStore(),
+        preferences: PreferencesStore? = nil,
         retryPolicy: RetryPolicy = RetryPolicy(),
         networkService: NetworkService? = nil,
         persistenceService: PersistenceService? = nil,
         cacheService: CacheService = InMemoryCacheService(),
-        syncStore: HistoricalSyncStore = UserDefaultsHistoricalSyncStore(),
+        syncStore: HistoricalSyncStore? = nil,
         fetchDateStore: RatesFetchDateStore? = nil,
+        exchangeRateRepository: ExchangeRateRepository? = nil,
+        historicalRepository: (any HistoricalRateRepository & ArchiveRepository)? = nil,
         dateProvider: DateProvider = SystemDateProvider(),
         clockService: ClockService = ContinuousClockService(),
-        logger: LoggerService = OSLogLoggerService(),
         cameraPermissionService: CameraPermissionService = AVCameraPermissionService(),
         stillTextRecognizer: StillTextRecognitionService = StillImageTextRecognizer(),
         torchService: TorchService = AVTorchService()
     ) {
-        let resolvedModelContainer = modelContainer ?? Self.inMemoryFallbackContainer()
-        self.modelContainer = resolvedModelContainer
-        self.appState = appState
-        self.networkService = networkService ?? FrankfurterNetworkService(
-            api: FrankfurterAPI(retryPolicy: retryPolicy, clock: clockService)
-        )
-        self.persistenceService = persistenceService ?? SwiftDataPersistenceService(
-            modelContainer: resolvedModelContainer,
-            logger: logger
-        )
-        self.cacheService = cacheService
-        self.syncStore = syncStore
-        self.dateProvider = dateProvider
-        self.clockService = clockService
-        self.logger = logger
-        self.cameraPermissionService = cameraPermissionService
-        self.stillTextRecognizer = stillTextRecognizer
-        self.torchService = torchService
-
-        dataCoordinator = DataCoordinator(
-            networkService: self.networkService,
-            persistenceService: self.persistenceService,
+        let preferences = preferences ?? UserDefaultsPreferencesStore(userDefaults: userDefaults)
+        let dataCoordinator = DataCoordinator(
+            networkService: networkService ?? FrankfurterNetworkService(
+                api: FrankfurterAPI(
+                    session: FrankfurterAPI.makeDefaultSession(),
+                    retryPolicy: retryPolicy,
+                    clock: clockService
+                )
+            ),
+            persistenceService: persistenceService ?? SwiftDataPersistenceService(
+                modelContainer: modelContainer ?? ModelContainerFactory.inMemoryContainer()
+            ),
             cacheService: cacheService,
-            syncStore: syncStore,
+            syncStore: syncStore ?? UserDefaultsHistoricalSyncStore(defaults: userDefaults),
             fetchDateStore: fetchDateStore ?? UserDefaultsRatesFetchDateStore(defaults: userDefaults),
-            dateProvider: dateProvider,
-            logger: logger
+            dateProvider: dateProvider
         )
+        let historicalRepository = historicalRepository ?? dataCoordinator
 
-        historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(
+        let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(
             syncCoverage: dataCoordinator,
-            dateProvider: dateProvider,
-            logger: logger
+            dateProvider: dateProvider
         )
-
-        dataOrchestrationUseCase = DataOrchestrationUseCase(
-            repository: dataCoordinator,
-            historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-            dateProvider: dateProvider,
-            logger: logger,
+        let backfillArchiveUseCase = BackfillArchiveUseCase(
+            archive: historicalRepository,
+            analysis: historicalDataAnalysisUseCase,
             clock: clockService
         )
-
-        chartDataPreparationUseCase = ChartDataPreparationUseCase(
-            chartCache: dataCoordinator,
-            logger: logger
+        let loadHistoricalRatesUseCase = LoadHistoricalRatesUseCase(
+            repository: historicalRepository,
+            archive: historicalRepository,
+            backfill: backfillArchiveUseCase,
+            analysis: historicalDataAnalysisUseCase
         )
-
-        trendDataUseCase = TrendDataUseCase(
+        let chartDataPreparationUseCase = ChartDataPreparationUseCase(chartCache: dataCoordinator)
+        let trendDataUseCase = TrendDataUseCase(
             trendRepository: dataCoordinator,
-            historicalRateRepository: dataCoordinator,
-            dateProvider: dateProvider,
-            logger: logger
+            historicalRateRepository: historicalRepository,
+            dateProvider: dateProvider
         )
-
-        refreshAllDataUseCase = RefreshAllDataUseCase(repository: dataCoordinator)
-        loadExchangeRatesUseCase = LoadExchangeRatesUseCase(repository: dataCoordinator, dateProvider: dateProvider)
-        calculateConversionUseCase = CalculateConversionUseCase()
-        scanConversionUseCase = ScanConversionUseCase()
-
-        ratesStore = ExchangeRatesStore()
-        watchlistStore = WatchlistStore(
-            userDefaults: userDefaults,
-            seed: preferences.favoriteCurrencies.elements
+        let refreshAllDataUseCase = RefreshAllDataUseCase(
+            repository: dataCoordinator,
+            backfill: backfillArchiveUseCase
         )
+        let loadExchangeRatesUseCase = LoadExchangeRatesUseCase(
+            repository: exchangeRateRepository ?? dataCoordinator,
+            dateProvider: dateProvider
+        )
+        let calculateConversionUseCase = CalculateConversionUseCase()
+
+        let ratesStore = ExchangeRatesStore()
+        let trendsStore = TrendsStore()
+        let favoritesStore = CurrencyCodeListStore.favorites(in: userDefaults)
+        let watchlistStore = CurrencyCodeListStore.watchlist(in: userDefaults, seededFrom: favoritesStore)
+
+        let makeHistoryViewModel: @MainActor (CurrencyCode, CurrencyCode) -> CurrencyHistoryViewModel = {
+            [ratesStore, trendsStore, loadHistoricalRatesUseCase, chartDataPreparationUseCase, trendDataUseCase, preferences, appState, clockService] base, target in
+            CurrencyHistoryViewModel(
+                base: base,
+                target: target,
+                ratesStore: ratesStore,
+                trendsStore: trendsStore,
+                loadHistoricalRates: loadHistoricalRatesUseCase,
+                chartDataPreparation: chartDataPreparationUseCase,
+                trendDataUseCase: trendDataUseCase,
+                preferences: preferences,
+                appState: appState,
+                clock: clockService
+            )
+        }
+
+        self.appState = appState
+        self.ratesStore = ratesStore
+        self.makeHistoryViewModel = makeHistoryViewModel
 
         calculatorViewModel = CalculatorViewModel(
             loadExchangeRatesUseCase: loadExchangeRatesUseCase,
             calculateConversionUseCase: calculateConversionUseCase,
             ratesStore: ratesStore,
             preferences: preferences,
+            favorites: favoritesStore,
             appState: appState
         )
 
-        historyViewModel = HistoryViewModel(
+        currencyListViewModel = CurrencyListViewModel(
             ratesStore: ratesStore,
             watchlist: watchlistStore,
-            historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-            dataOrchestrationUseCase: dataOrchestrationUseCase,
-            chartDataPreparationUseCase: chartDataPreparationUseCase,
+            trendsStore: trendsStore,
             trendDataUseCase: trendDataUseCase,
+            loadHistoricalRates: loadHistoricalRatesUseCase,
+            backfillArchive: backfillArchiveUseCase,
             buildCurrencyList: BuildCurrencyListUseCase(),
-            preferences: preferences,
             appState: appState,
-            clock: clockService,
-            logger: logger
+            makeHistoryViewModel: makeHistoryViewModel
         )
 
         settingsViewModel = SettingsViewModel(
             refreshAllDataUseCase: refreshAllDataUseCase,
-            watchlist: watchlistStore,
+            resetPreferencesUseCase: ResetPreferencesUseCase(
+                preferences: preferences,
+                favorites: favoritesStore,
+                watchlist: watchlistStore
+            ),
+            manageFavoritesUseCase: ManageFavoritesUseCase(favorites: favoritesStore),
             preferences: preferences,
             appState: appState,
-            clock: clockService,
-            logger: logger
+            clock: clockService
         )
 
         cameraViewModel = CameraViewModel(
             ratesStore: ratesStore,
             appState: appState,
             permissionService: cameraPermissionService,
-            scanConversionUseCase: scanConversionUseCase,
-            calculateConversionUseCase: calculateConversionUseCase,
-            stillTextRecognizer: stillTextRecognizer,
             torchService: torchService,
+            scanConversionUseCase: ScanConversionUseCase(),
+            recognizeStillImageTextUseCase: RecognizeStillImageTextUseCase(recognizer: stillTextRecognizer),
+            calculateConversionUseCase: calculateConversionUseCase,
+            localeCurrencyCode: Locale.current.currency.flatMap { CurrencyCode($0.identifier) },
             fallbackBaseCurrency: preferences.defaultBaseCurrency,
-            defaultTargetCurrency: preferences.defaultTargetCurrency,
-            logger: logger
+            defaultTargetCurrency: preferences.defaultTargetCurrency
         )
+    }
 
-        refreshAllDataUseCase.registerResetHandler { [calculatorViewModel] in
-            calculatorViewModel.clearAllData()
-        }
-        refreshAllDataUseCase.registerResetHandler { [historyViewModel] in
-            historyViewModel.clearAllData()
-        }
-        refreshAllDataUseCase.registerResetHandler { [dataOrchestrationUseCase, calculatorViewModel, historyViewModel] in
-            dataOrchestrationUseCase.dropInFlightFetches()
-            await calculatorViewModel.checkIfShouldFetch()
-            Task {
-                historyViewModel.loadDataForCurrentConfiguration()
-                await historyViewModel.initializeTrendData()
-                await historyViewModel.prefetchHistoricalWindow()
-            }
-        }
+    // MARK: - Factories
+
+    func makeCurrencyHistoryViewModel(base: CurrencyCode, target: CurrencyCode) -> CurrencyHistoryViewModel {
+        makeHistoryViewModel(base, target)
     }
 
     // MARK: - Bootstrap
 
-    private static func inMemoryFallbackContainer() -> ModelContainer {
-        do {
-            return try ModelContainer.inMemoryCurrencySpot()
-        } catch {
-            fatalError("CurrencySpot cannot start: SwiftData is unavailable (\(error))")
-        }
-    }
-
-    static func bootstrap(appState: AppState = .shared) -> DependencyContainer {
-        let logger = OSLogLoggerService()
-
+    static func bootstrap(appState: AppState) -> DependencyContainer {
         #if DEBUG
             if CommandLine.arguments.contains("enable-testing") {
                 if let testContainer = try? ModelContainer.inMemoryCurrencySpot() {
-                    DataMigration.runIfNeeded(modelContainer: testContainer, logger: logger)
+                    DataMigration.runIfNeeded(modelContainer: testContainer, defaults: .standard)
                     return DependencyContainer(modelContainer: testContainer, appState: appState)
                 }
-                logger.fault("Failed to create test container; continuing with production ladder", category: .app)
+                logger.fault("Failed to create test container; continuing with production ladder")
             }
         #endif
 
-        do {
-            let container = try PersistentStoreLoader(storeURL: ModelConfiguration().url).load {
-                logger.fault("Persistent store could not be opened; rebuilt it empty", category: .app)
-                UserDefaultsHistoricalSyncStore().reset()
-                UserDefaultsRatesFetchDateStore().lastFetchDate = nil
-            }
-            DataMigration.runIfNeeded(modelContainer: container, logger: logger)
-            return DependencyContainer(modelContainer: container, appState: appState)
-        } catch {
-            logger.fault("Failed to create persistent ModelContainer: \(error)", category: .app)
-        }
-
-        do {
-            let fallback = try ModelContainer.inMemoryCurrencySpot()
-            appState.errorHandler.handle(AppError.initializationFailed("Persistent storage failed"))
-            return DependencyContainer(modelContainer: fallback, appState: appState)
-        } catch {
-            logger.fault("Unrecoverable: failed to create an in-memory ModelContainer: \(error)", category: .app)
-            fatalError("CurrencySpot cannot start: SwiftData is unavailable (\(error))")
-        }
+        let container = ModelContainerFactory.persistentContainer(
+            storeURL: ModelConfiguration().url,
+            defaults: .standard,
+            errorHandler: appState.errorHandler
+        )
+        return DependencyContainer(modelContainer: container, appState: appState)
     }
 }

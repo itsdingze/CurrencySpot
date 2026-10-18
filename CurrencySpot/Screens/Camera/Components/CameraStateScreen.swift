@@ -8,8 +8,6 @@ struct CameraStateScreen: View {
     var buttonHint: LocalizedStringKey? = nil
     let action: () -> Void
 
-    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 56
-
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -17,8 +15,9 @@ struct CameraStateScreen: View {
             VStack(spacing: Spacing.block) {
                 VStack(spacing: Spacing.element) {
                     Image(systemName: icon)
-                        .font(.system(size: heroIconSize, weight: .medium))
-                        .foregroundStyle(Color.accentColor)
+                        .font(.appLargeTitle.weight(.medium))
+                        .imageScale(.large)
+                        .foregroundStyle(.tint)
                         .accessibilityHidden(true)
 
                     Text(title)

@@ -4,9 +4,7 @@ protocol TorchService: Sendable {
     func setTorch(enabled: Bool) -> Bool
 }
 
-// Must lock `userPreferredCamera` specifically: locking any other device sharing
-// the same hardware freezes DataScanner's remote session (Apple Developer Forums
-// thread 717017).
+// Locking any device but `userPreferredCamera` freezes DataScanner's session (Apple Developer Forums thread 717017).
 struct AVTorchService: TorchService {
     func setTorch(enabled: Bool) -> Bool {
         guard let device = AVCaptureDevice.userPreferredCamera,

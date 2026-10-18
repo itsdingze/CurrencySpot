@@ -7,7 +7,7 @@ nonisolated final class FrankfurterAPI: Sendable {
     private let retryPolicy: RetryPolicy
     private let clock: ClockService
 
-    init(session: URLSession = FrankfurterAPI.makeDefaultSession(), retryPolicy: RetryPolicy, clock: ClockService) {
+    init(session: URLSession, retryPolicy: RetryPolicy, clock: ClockService) {
         urlSession = session
         self.retryPolicy = retryPolicy
         self.clock = clock

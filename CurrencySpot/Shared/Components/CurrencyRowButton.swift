@@ -16,11 +16,11 @@ struct CurrencyRowButton: View {
 
                 Text(name)
                     .font(.appSubheadline)
-                    .foregroundStyle(Color.textSecondary)
+                    .foregroundStyle(Color.secondary)
 
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(.tint)
                         .accessibilityHidden(true)
                 }
             }

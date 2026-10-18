@@ -2,9 +2,6 @@ import SwiftUI
 
 struct CalculatorErrorView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel: CalculatorViewModel
-    @Environment(AppState.self) private var appState: AppState
-
-    private var isConnected: Bool { appState.networkMonitor.isConnected }
 
     var body: some View {
         VStack(spacing: Spacing.element) {
@@ -19,14 +16,14 @@ struct CalculatorErrorView: View {
 
             Text(message)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(Color.textSecondary)
+                .foregroundStyle(.secondary)
                 .padding(.horizontal)
 
-            if isConnected {
+            switch calculatorViewModel.failureRecovery {
+            case .retry:
                 Button("Try Again") { calculatorViewModel.retryFetch() }
                     .buttonStyle(.primaryAction)
-                    .accessibilityLabel("Try loading exchange rates again")
-            } else {
+            case .sampleRates:
                 Button("Use Sample Rates") { calculatorViewModel.showSampleRates() }
                     .buttonStyle(.primaryAction)
                     .accessibilityLabel("Use sample rates")
@@ -34,7 +31,7 @@ struct CalculatorErrorView: View {
                 Text("Sample rates are made up, not real exchange rates.")
                     .font(.appCaption)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(Color.textSecondary)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding()
@@ -43,9 +40,12 @@ struct CalculatorErrorView: View {
     }
 
     private var message: String {
-        isConnected
-            ? "Something went wrong loading the latest rates. Please try again."
-            : "You're offline and there are no saved rates yet. Connect to the internet to get the latest rates."
+        switch calculatorViewModel.failureRecovery {
+        case .retry:
+            "Something went wrong loading the latest rates. Please try again."
+        case .sampleRates:
+            "You're offline and there are no saved rates yet. Connect to the internet to get the latest rates."
+        }
     }
 }
 

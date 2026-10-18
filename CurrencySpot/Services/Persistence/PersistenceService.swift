@@ -1,10 +1,11 @@
 import Foundation
+import OSLog
 import SwiftData
 
 // MARK: - PersistenceService Protocol
 
 nonisolated protocol PersistenceService: Sendable {
-    func saveExchangeRates(_ rates: [String: Double]) async throws
+    func saveExchangeRates(_ rates: [ExchangeRate]) async throws
 
     func saveHistoricalExchangeRates(_ rates: [String: [String: Double]]) async throws
 
@@ -48,33 +49,25 @@ actor SwiftDataPersistenceService: PersistenceService {
         return context
     }
 
-    private let logger: LoggerService
+    private let logger = Logger(category: .persistence)
 
-    init(modelContainer: ModelContainer, logger: LoggerService = OSLogLoggerService()) {
+    init(modelContainer: ModelContainer) {
         self.modelContainer = modelContainer
-        self.logger = logger
     }
-
-    #if DEBUG
-        func isExecutingOnMainThread() -> Bool {
-            Thread.isMainThread
-        }
-    #endif
 
     // MARK: - Data Persistence Methods
 
-    func saveExchangeRates(_ rates: [String: Double]) async throws {
+    func saveExchangeRates(_ rates: [ExchangeRate]) async throws {
         guard !rates.isEmpty else { return }
 
         try modelContext.transaction {
             try modelContext.delete(model: ExchangeRateData.self)
 
-            for (currencyCode, rate) in rates {
-                let exchangeRate = ExchangeRateData(
-                    currencyCode: currencyCode,
-                    rate: rate
-                )
-                modelContext.insert(exchangeRate)
+            for exchangeRate in rates {
+                modelContext.insert(ExchangeRateData(
+                    currencyCode: exchangeRate.currencyCode.rawValue,
+                    rate: exchangeRate.rate
+                ))
             }
 
             try modelContext.save()
@@ -87,8 +80,8 @@ actor SwiftDataPersistenceService: PersistenceService {
         try modelContext.transaction {
             var incoming: [Date: [String: Double]] = [:]
             for (dateString, currencyRates) in rates {
-                guard let date = CETCalendar.date(fromDayString:dateString) else {
-                    logger.warning("Skipping invalid date: \(dateString)", category: .persistence)
+                guard let date = CETCalendar.date(fromDayString: dateString) else {
+                    logger.warning("Skipping invalid date: \(dateString, privacy: .public)")
                     continue
                 }
                 incoming[date] = currencyRates
@@ -106,7 +99,7 @@ actor SwiftDataPersistenceService: PersistenceService {
                 do {
                     modelContext.insert(try HistoricalRateData(date: date, rates: currencyRates))
                 } catch {
-                    logger.warning("Skipping unencodable rates for \(CETCalendar.dayString(for:date)) - \(error)", category: .persistence)
+                    logger.warning("Skipping unencodable rates for \(CETCalendar.dayString(for: date), privacy: .public): \(error.localizedDescription, privacy: .public)")
                     continue
                 }
             }
@@ -139,7 +132,7 @@ actor SwiftDataPersistenceService: PersistenceService {
             let broken = swiftDataObjects.filter { (try? $0.toDomain()) == nil }
             broken.forEach { modelContext.delete($0) }
             try? modelContext.save()
-            logger.warning("Purged \(broken.count) undecodable historical rows: \(error.localizedDescription)", category: .persistence)
+            logger.warning("Purged \(broken.count, privacy: .public) undecodable historical rows: \(error.localizedDescription, privacy: .public)")
             throw PersistenceError.undecodableRowsPurged
         }
     }

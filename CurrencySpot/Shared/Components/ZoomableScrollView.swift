@@ -17,10 +17,7 @@ struct ZoomableScrollView<Content: View>: UIViewControllerRepresentable {
     }
 }
 
-// Content is erased to AnyView so this controller is concrete, not generic. A
-// generic version crashes the Swift 6.3 Release optimizer (EarlyPerfInliner) on
-// the synthesized deinit, which breaks `archive` while Debug/simulator builds
-// (-Onone, which skips that pass) compile fine.
+// AnyView keeps this concrete: a generic controller crashes the Swift 6.3 Release optimizer (EarlyPerfInliner) on its deinit.
 final class ZoomableScrollViewController: UIViewController, UIScrollViewDelegate, UIGestureRecognizerDelegate {
     private let scrollView = UIScrollView()
     private let hosting: UIHostingController<AnyView>
@@ -40,9 +37,7 @@ final class ZoomableScrollViewController: UIViewController, UIScrollViewDelegate
         scrollView.minimumZoomScale = 1
         scrollView.maximumZoomScale = 5
         scrollView.bouncesZoom = true
-        // Plates are SwiftUI Buttons (not UIControls), so the scroll view would
-        // otherwise withhold their touches while deciding if it's a drag — a
-        // perceptible delay opening the detail sheet.
+        // Plates are SwiftUI Buttons, not UIControls, so the scroll view otherwise delays their touches.
         scrollView.delaysContentTouches = false
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
@@ -57,8 +52,7 @@ final class ZoomableScrollViewController: UIViewController, UIScrollViewDelegate
 
         let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap))
         doubleTap.numberOfTapsRequired = 2
-        // cancelsTouchesInView is off and the recognizer fires simultaneously so a
-        // single tap still reaches the SwiftUI content underneath.
+        // Without this and simultaneous recognition, single taps never reach the SwiftUI content underneath.
         doubleTap.cancelsTouchesInView = false
         doubleTap.delegate = self
         scrollView.addGestureRecognizer(doubleTap)

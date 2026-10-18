@@ -2,7 +2,8 @@ import Charts
 import SwiftUI
 
 struct CurrencyChart: View {
-    @Environment(HistoryViewModel.self) private var viewModel: HistoryViewModel
+    @Environment(CurrencyHistoryViewModel.self) private var viewModel
+    @Environment(\.appAccent) private var accent
     @State private var rawSelectedDate: Date?
     @State private var axSelectionIndex: Int?
     @Binding var isChartSelectionActive: Bool
@@ -23,21 +24,21 @@ struct CurrencyChart: View {
     private let animationDelay: Double = 0.3
     private let animationDuration: Double = 0.5
 
-    private var chartColor: Color {
-        .accentColor
+    private var statistics: ChartStatistics {
+        viewModel.chartStatistics
     }
 
     private var trendColor: Color {
         if rawSelectedDate == nil {
-            viewModel.trendDirection.color
+            statistics.trendDirection.color
         } else {
-            .accentColor
+            accent
         }
     }
 
     private struct SeriesPoint: Identifiable {
         struct ID: Hashable {
-            let series: HistoryViewModel.ChartSeriesID
+            let series: CurrencyHistoryViewModel.ChartSeriesID
             let date: Date
         }
 
@@ -69,37 +70,20 @@ struct CurrencyChart: View {
     var body: some View {
         Chart {
             if isChartReady, !viewModel.displayedChartDataPoints.isEmpty {
-                RuleMark(y: .value("Average", viewModel.averageRate))
+                RuleMark(y: .value("Average", statistics.averageRate))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
                     .foregroundStyle(Color.gray.opacity(viewModel.showAverageLine ? 0.5 : 0.0))
                     .zIndex(-1)
             }
 
             ForEach(seriesPoints) { seriesPoint in
-                let dataPoint = seriesPoint.point
-
-                AreaMark(
-                    x: .value("Date", dataPoint.date, unit: .day),
-                    yStart: .value("Rate", isChartReady ? dataPoint.rate : viewModel.lowestRate),
-                    yEnd: .value("Rate", viewModel.lowestRate * 0.99)
+                RateAreaLineMarks(
+                    date: seriesPoint.point.date,
+                    rate: isChartReady ? seriesPoint.point.rate : statistics.lowestRate,
+                    lowestRate: statistics.lowestRate,
+                    areaColor: trendColor,
+                    lineStyle: trendColor
                 )
-                .interpolationMethod(.cardinal(tension: 0.8))
-                .foregroundStyle(
-                    .linearGradient(
-                        colors: [trendColor.opacity(0.15),
-                                 trendColor.opacity(0)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-
-                LineMark(
-                    x: .value("Date", dataPoint.date, unit: .day),
-                    y: .value("Rate", isChartReady ? dataPoint.rate : viewModel.lowestRate)
-                )
-                .interpolationMethod(.cardinal(tension: 0.8))
-                .lineStyle(.init(lineWidth: 2, lineCap: .round, lineJoin: .round))
-                .foregroundStyle(trendColor)
             }
 
             if let highestPoint, isChartReady {
@@ -141,14 +125,13 @@ struct CurrencyChart: View {
                     .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
                         VStack {
                             Text(selectedDate.date.chartDisplay)
-                                .foregroundStyle(chartColor)
 
                             Text(selectedDate.rate.toStringMax4Decimals)
-                                .foregroundStyle(chartColor)
                         }
+                        .foregroundStyle(.tint)
                         .fontDesign(.rounded)
                         .padding(Spacing.chipPadding)
-                        .background(chartColor.opacity(0.2), in: .rect(cornerRadius: Radius.badge))
+                        .background(.tint.opacity(0.2), in: .rect(cornerRadius: Radius.badge))
                     }
 
                 PointMark(
@@ -156,7 +139,7 @@ struct CurrencyChart: View {
                     y: .value("Rate", selectedDate.rate)
                 )
                 .symbol {
-                    ChartPointMarker(color: chartColor, outerSize: 14, innerSize: 10)
+                    ChartPointMarker(color: .tint, outerSize: 14, innerSize: 10)
                 }
             }
         }
@@ -177,7 +160,7 @@ struct CurrencyChart: View {
                 }
             }
         }
-        .chartYScale(domain: viewModel.chartYDomain)
+        .chartYScale(domain: statistics.chartYDomain)
         .chartXSelection(value: isSelectionEnabled ? $rawSelectedDate : .constant(nil))
         .animation(.appStageReveal, value: viewModel.displayedChartDataPoints)
         .accessibilityLabel(chartAccessibilityLabel)
@@ -219,7 +202,7 @@ struct CurrencyChart: View {
 
         let dateRange = "\(dataPoints.first?.date.chartDisplay ?? "") to \(dataPoints.last?.date.chartDisplay ?? "")"
         let currentRate = dataPoints.last?.rate.toStringMax4Decimals ?? "Unknown"
-        let trend = viewModel.trendDirection.description
+        let trend = statistics.trendDirection.description
 
         return "Showing \(dataPoints.count) data points from \(dateRange). Current rate: \(currentRate). Trend: \(trend)"
     }
@@ -250,11 +233,11 @@ struct CurrencyChart: View {
 
 #if DEBUG
 #Preview {
-    @Previewable @State var viewModel = HistoryViewModel.preview()
+    @Previewable @State var viewModel = CurrencyHistoryViewModel.preview()
 
     CurrencyChart(isChartSelectionActive: .constant(false))
         .environment(viewModel)
-        .task { viewModel.openHistory(for: .eur) }
+        .task { await viewModel.loadChart() }
         .padding()
 }
 #endif

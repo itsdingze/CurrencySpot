@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 // MARK: - ChartDataPreparationUseCase
 
@@ -6,13 +7,12 @@ final class ChartDataPreparationUseCase {
     // MARK: - Dependencies
 
     private let chartCache: ChartDataCacheRepository
-    private let logger: LoggerService
+    private let logger = Logger(category: .cache)
 
     // MARK: - Initialization
 
-    init(chartCache: ChartDataCacheRepository, logger: LoggerService = OSLogLoggerService()) {
+    init(chartCache: ChartDataCacheRepository) {
         self.chartCache = chartCache
-        self.logger = logger
     }
 
     // MARK: - Chart Data Processing
@@ -34,7 +34,7 @@ final class ChartDataPreparationUseCase {
         )
 
         if let cachedData = await chartCache.cachedChartData(for: cacheKey) {
-            logger.debug("Using cached processed chart data for \(baseCurrency) to \(targetCurrency)", category: .cache)
+            logger.debug("Using cached processed chart data for \(baseCurrency.rawValue, privacy: .private) to \(targetCurrency.rawValue, privacy: .private)")
             return cachedData
         }
 

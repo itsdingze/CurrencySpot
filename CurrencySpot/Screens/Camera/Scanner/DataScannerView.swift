@@ -45,8 +45,8 @@ struct DataScannerView: UIViewControllerRepresentable {
     }
 
     final class Coordinator: NSObject, DataScannerViewControllerDelegate {
-        var onItemsChanged: ([RecognizedTextItem]) -> Void
-        var onItemTapped: (UUID) -> Void
+        fileprivate var onItemsChanged: ([RecognizedTextItem]) -> Void
+        fileprivate var onItemTapped: (UUID) -> Void
         private var observationTask: Task<Void, Never>?
 
         init(onItemsChanged: @escaping ([RecognizedTextItem]) -> Void, onItemTapped: @escaping (UUID) -> Void) {
@@ -54,7 +54,7 @@ struct DataScannerView: UIViewControllerRepresentable {
             self.onItemTapped = onItemTapped
         }
 
-        func observeRecognizedItems(of scanner: DataScannerViewController) {
+        fileprivate func observeRecognizedItems(of scanner: DataScannerViewController) {
             observationTask?.cancel()
             observationTask = Task { [weak self, weak scanner] in
                 guard let scanner else { return }
@@ -67,7 +67,7 @@ struct DataScannerView: UIViewControllerRepresentable {
             }
         }
 
-        func stopObserving() {
+        fileprivate func stopObserving() {
             observationTask?.cancel()
             observationTask = nil
         }

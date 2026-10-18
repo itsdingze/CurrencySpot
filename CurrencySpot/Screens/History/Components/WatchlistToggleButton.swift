@@ -10,7 +10,7 @@ struct WatchlistToggleButton: View {
                 .font(.appTitle3)
                 .contentTransition(.identity)
                 .animation(nil, value: isInWatchlist)
-                .contentShape(Rectangle())
+                .minimumHitTarget()
         }
         .buttonStyle(.plain)
         .accessibilityLabel(isInWatchlist ? "Remove from watchlist" : "Add to watchlist")
@@ -21,7 +21,7 @@ struct WatchlistToggleButton: View {
     private var icon: some View {
         if isInWatchlist {
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(.tint)
         } else {
             Image(systemName: "plus.circle.fill")
                 .foregroundStyle(Color.secondary)

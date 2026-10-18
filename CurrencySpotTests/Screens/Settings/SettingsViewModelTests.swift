@@ -6,33 +6,92 @@ import Testing
 struct SettingsViewModelTests {
     private let isolatedDefaults = IsolatedDefaults()
     private let preferences = InMemoryPreferencesStore()
+    private let favorites: CurrencyCodeListStore
+    private let watchlist: CurrencyCodeListStore
+    private let appState = AppState(networkMonitor: NetworkMonitor(isConnected: true))
     private let viewModel: SettingsViewModel
 
     init() throws {
-        viewModel = SettingsViewModel(
-            refreshAllDataUseCase: RefreshAllDataUseCase(repository: PreviewExchangeRateRepository()),
-            watchlist: WatchlistStore(userDefaults: try isolatedDefaults.make()),
+        let defaults = try isolatedDefaults.make()
+        favorites = CurrencyCodeListStore(
+            defaults: defaults,
+            key: UserDefaultsKeys.favoriteCurrencies,
+            seed: ["USD", "EUR", "GBP", "JPY"]
+        )
+        watchlist = CurrencyCodeListStore(defaults: defaults, key: UserDefaultsKeys.historyWatchlist, seed: ["CHF", "NZD"])
+        viewModel = Self.makeViewModel(
+            refresh: GatedRefresh(),
             preferences: preferences,
-            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
+            favorites: favorites,
+            watchlist: watchlist,
+            appState: appState,
             clock: ImmediateClock()
         )
+    }
+
+    private static func makeViewModel(
+        refresh: AllDataRefreshing,
+        preferences: PreferencesStore,
+        favorites: CurrencyCodeListStore,
+        watchlist: CurrencyCodeListStore,
+        appState: AppState,
+        clock: ClockService
+    ) -> SettingsViewModel {
+        SettingsViewModel(
+            refreshAllDataUseCase: refresh,
+            resetPreferencesUseCase: ResetPreferencesUseCase(
+                preferences: preferences,
+                favorites: favorites,
+                watchlist: watchlist
+            ),
+            manageFavoritesUseCase: ManageFavoritesUseCase(favorites: favorites),
+            preferences: preferences,
+            appState: appState,
+            clock: clock
+        )
+    }
+
+    private func makeViewModel(refresh: AllDataRefreshing, appState: AppState, toastClock: ClockService) -> SettingsViewModel {
+        Self.makeViewModel(
+            refresh: refresh,
+            preferences: preferences,
+            favorites: favorites,
+            watchlist: watchlist,
+            appState: appState,
+            clock: toastClock
+        )
+    }
+
+    private final class GatedRefresh: AllDataRefreshing {
+        private(set) var executeCallCount = 0
+        var failure: Error?
+        private let gate: AsyncStream<Void>
+        private let openGate: AsyncStream<Void>.Continuation
+
+        init() {
+            (gate, openGate) = AsyncStream.makeStream(of: Void.self)
+        }
+
+        func open() {
+            openGate.finish()
+        }
+
+        func execute() async throws {
+            executeCallCount += 1
+            for await _ in gate {}
+            if let failure { throw failure }
+        }
     }
 
     @Test("destructive-action taps present the matching alert destination")
     func alertDestinations() {
         #expect(viewModel.destination == nil)
-        #expect(viewModel.pendingAlert == nil)
 
         viewModel.refreshAllDataTapped()
         #expect(viewModel.destination == .alert(.refreshAllData))
-        #expect(viewModel.pendingAlert == .refreshAllData)
 
         viewModel.resetPreferencesTapped()
         #expect(viewModel.destination == .alert(.resetPreferences))
-        #expect(viewModel.pendingAlert == .resetPreferences)
-
-        viewModel.destination = nil
-        #expect(viewModel.pendingAlert == nil)
     }
 
     @Test("accentColorTapped presents the color picker destination")
@@ -50,89 +109,66 @@ struct SettingsViewModelTests {
         #expect(viewModel.destination == nil)
     }
 
-    private final class GatedClearing: DataClearing {
-        private(set) var clearCallCount = 0
-        var failure: Error?
-        private let gate: AsyncStream<Void>
-        private let openGate: AsyncStream<Void>.Continuation
-
-        init() {
-            (gate, openGate) = AsyncStream.makeStream(of: Void.self)
-        }
-
-        func open() {
-            openGate.finish()
-        }
-
-        func clearAllData() async throws {
-            clearCallCount += 1
-            for await _ in gate {}
-            if let failure { throw failure }
-        }
-    }
-
-    private func makeOnlineViewModel(clearing: DataClearing, appState: AppState) throws -> SettingsViewModel {
-        SettingsViewModel(
-            refreshAllDataUseCase: RefreshAllDataUseCase(repository: clearing),
-            watchlist: WatchlistStore(userDefaults: try isolatedDefaults.make()),
-            preferences: InMemoryPreferencesStore(),
-            appState: appState,
-            clock: ImmediateClock()
-        )
-    }
-
     @Test("confirming Refresh All Data again while a wipe is running starts no second wipe", .timeLimit(.minutes(1)))
     func secondConfirmDuringRefreshIsIgnored() async throws {
-        let clearing = GatedClearing()
-        let viewModel = try makeOnlineViewModel(
-            clearing: clearing,
-            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))
-        )
+        let refresh = GatedRefresh()
+        let toastClock = GatedClock()
+        let viewModel = makeViewModel(refresh: refresh, appState: appState, toastClock: toastClock)
 
         viewModel.confirmAlert(.refreshAllData)
-        await waitUntil { clearing.clearCallCount == 1 }
+        await waitUntil { refresh.executeCallCount == 1 }
         viewModel.confirmAlert(.refreshAllData)
-        clearing.open()
+        refresh.open()
         await waitUntil { viewModel.toast != nil }
 
-        #expect(clearing.clearCallCount == 1)
+        #expect(refresh.executeCallCount == 1)
+        toastClock.release()
     }
 
-    @Test("a failed online wipe surfaces the error and shows no refresh toast", .timeLimit(.minutes(1)))
-    func failedRefreshShowsErrorWithoutToast() async throws {
-        let clearing = GatedClearing()
-        clearing.failure = AppError.unknownError("disk full")
-        let appState = AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))
-        let viewModel = try makeOnlineViewModel(clearing: clearing, appState: appState)
+    @Test("a successful online wipe signals the data reset once and shows the refresh toast", .timeLimit(.minutes(1)))
+    func successfulRefreshSignalsDataReset() async throws {
+        let refresh = GatedRefresh()
+        let toastClock = GatedClock()
+        let viewModel = makeViewModel(refresh: refresh, appState: appState, toastClock: toastClock)
 
         viewModel.confirmAlert(.refreshAllData)
-        clearing.open()
-        await waitUntil { appState.errorHandler.currentError != nil }
+        #expect(appState.dataResetCount == 0)
+        refresh.open()
+        await waitUntil { viewModel.toast != nil }
 
-        #expect(viewModel.toast == nil)
+        #expect(viewModel.toast?.type == .dataRefreshing)
+        #expect(appState.dataResetCount == 1)
+        toastClock.release()
     }
 
-    @Test("offline Refresh All Data refuses to wipe and shows no refresh toast")
-    func offlineRefreshRefusesToWipe() async throws {
-        final class SpyClearing: DataClearing {
-            private(set) var clearCallCount = 0
-            func clearAllData() async throws { clearCallCount += 1 }
-        }
+    @Test("a failed online wipe surfaces the error, signals no reset, and shows no refresh toast", .timeLimit(.minutes(1)))
+    func failedRefreshShowsErrorWithoutToast() async throws {
+        let refresh = GatedRefresh()
+        refresh.failure = AppError.unknownError("disk full")
+        let toastClock = GatedClock()
+        let viewModel = makeViewModel(refresh: refresh, appState: appState, toastClock: toastClock)
 
-        let spy = SpyClearing()
-        let monitor = NetworkMonitor(monitorsPathUpdates: false)
-        monitor.isConnected = false
-        let offlineViewModel = SettingsViewModel(
-            refreshAllDataUseCase: RefreshAllDataUseCase(repository: spy),
-            watchlist: WatchlistStore(userDefaults: try isolatedDefaults.make()),
-            preferences: InMemoryPreferencesStore(),
-            appState: AppState(networkMonitor: monitor),
-            clock: ImmediateClock()
-        )
+        viewModel.confirmAlert(.refreshAllData)
+        refresh.open()
+        await waitUntil { appState.errorHandler.currentError != nil }
+
+        #expect(appState.errorHandler.currentError == .unknownError("disk full"))
+        #expect(appState.dataResetCount == 0)
+        #expect(viewModel.toast == nil)
+        toastClock.release()
+    }
+
+    @Test("offline Refresh All Data refuses to wipe, reports no connection, and shows no refresh toast")
+    func offlineRefreshRefusesToWipe() async throws {
+        let refresh = GatedRefresh()
+        let offlineAppState = AppState(networkMonitor: NetworkMonitor(isConnected: false))
+        let offlineViewModel = makeViewModel(refresh: refresh, appState: offlineAppState, toastClock: ImmediateClock())
 
         offlineViewModel.confirmAlert(.refreshAllData)
 
-        #expect(spy.clearCallCount == 0)
+        #expect(offlineAppState.errorHandler.currentError == .noInternetConnection)
+        #expect(refresh.executeCallCount == 0)
+        #expect(offlineAppState.dataResetCount == 0)
         #expect(offlineViewModel.toast == nil)
     }
 
@@ -166,21 +202,28 @@ struct SettingsViewModelTests {
         await waitUntil { viewModel.toast == nil }
     }
 
-    @Test("confirming a preferences reset re-seeds the History watchlist from the default favorites")
-    func resetPreferencesReseedsWatchlist() throws {
-        let defaults = try isolatedDefaults.make()
-        let watchlist = WatchlistStore(userDefaults: defaults, seed: ["CHF", "NZD"])
-        let viewModel = SettingsViewModel(
-            refreshAllDataUseCase: RefreshAllDataUseCase(repository: PreviewExchangeRateRepository()),
-            watchlist: watchlist,
-            preferences: InMemoryPreferencesStore(),
-            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
-            clock: ImmediateClock()
-        )
-
+    @Test("confirming a preferences reset restores the default favorites and re-seeds the History watchlist from them")
+    func resetPreferencesReseedsWatchlist() {
         viewModel.confirmAlert(.resetPreferences)
 
+        #expect(viewModel.favoriteCurrencies == CurrencyDefaults.favoriteCurrencies)
         #expect(watchlist.codes.elements == CurrencyDefaults.favoriteCurrencies)
-        #expect(defaults.stringArray(forKey: UserDefaultsKeys.historyWatchlist) == CurrencyDefaults.favoriteCurrencies.map(\.rawValue))
+    }
+
+    @Test("deleting favorite rows removes the currencies shown in those rows")
+    func removeFavoritesAtDisplayedOffsets() {
+        viewModel.removeFavorites(atOffsets: IndexSet([1, 3]))
+
+        #expect(viewModel.favoriteCurrencies == ["USD", "GBP"])
+    }
+
+    @Test("the add-currency list offers only currencies that are not favorites")
+    func addableCurrenciesExcludeFavorites() {
+        let rates = [
+            ExchangeRate(currencyCode: "USD", rate: 1),
+            ExchangeRate(currencyCode: "CHF", rate: 0.9),
+        ]
+
+        #expect(viewModel.addableCurrencies(from: rates, matching: "").map(\.currencyCode) == ["CHF"])
     }
 }

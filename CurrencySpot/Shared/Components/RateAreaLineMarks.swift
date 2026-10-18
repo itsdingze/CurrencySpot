@@ -1,0 +1,34 @@
+import Charts
+import SwiftUI
+
+struct RateAreaLineMarks<LineStyle: ShapeStyle>: ChartContent {
+    let date: Date
+    let rate: Double
+    let lowestRate: Double
+    let areaColor: Color
+    let lineStyle: LineStyle
+
+    var body: some ChartContent {
+        AreaMark(
+            x: .value("Date", date, unit: .day),
+            yStart: .value("Rate", rate),
+            yEnd: .value("Rate", lowestRate * 0.99)
+        )
+        .interpolationMethod(.cardinal(tension: 0.8))
+        .foregroundStyle(
+            .linearGradient(
+                colors: [areaColor.opacity(0.15), areaColor.opacity(0)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+
+        LineMark(
+            x: .value("Date", date, unit: .day),
+            y: .value("Rate", rate)
+        )
+        .interpolationMethod(.cardinal(tension: 0.8))
+        .lineStyle(.init(lineWidth: 2, lineCap: .round, lineJoin: .round))
+        .foregroundStyle(lineStyle)
+    }
+}

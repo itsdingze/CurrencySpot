@@ -10,6 +10,12 @@ struct PersistenceThreadingTests {
         let container = try ModelContainer.inMemoryCurrencySpot()
         let service = SwiftDataPersistenceService(modelContainer: container)
 
-        #expect(await service.isExecutingOnMainThread() == false)
+        #expect(await service.isRunningOnMainThread() == false)
+    }
+}
+
+private extension SwiftDataPersistenceService {
+    func isRunningOnMainThread() -> Bool {
+        Thread.isMainThread
     }
 }

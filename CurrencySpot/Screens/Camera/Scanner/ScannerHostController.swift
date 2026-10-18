@@ -1,12 +1,11 @@
+import OSLog
 import UIKit
 import VisionKit
 
-// startScanning() must run from viewDidAppear: called earlier it throws because the
-// scanner's view is not in a window yet, and that failure is silent — the live feed
-// stays unrecognized until something retriggers scanning.
+// DataScannerViewController.startScanning() throws silently until its view is in a window, so scanning starts from viewDidAppear.
 final class ScannerHostController: UIViewController {
     let scanner: DataScannerViewController
-    private let logger: LoggerService
+    private let logger = Logger(category: .ui)
     var wantsScanning = true
 
     var onScanningStarted: (() -> Void)?
@@ -14,9 +13,8 @@ final class ScannerHostController: UIViewController {
     private var startTask: Task<Void, Never>?
     private var hasAppliedInitialZoom = false
 
-    init(scanner: DataScannerViewController, logger: LoggerService = OSLogLoggerService()) {
+    init(scanner: DataScannerViewController) {
         self.scanner = scanner
-        self.logger = logger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -65,18 +63,14 @@ final class ScannerHostController: UIViewController {
                         try? await Task.sleep(for: .milliseconds(300))
                     }
                 }
-                logger.error(
-                    "DataScanner failed to start after retries: \(String(describing: lastError))",
-                    category: .ui
-                )
+                logger.error("DataScanner failed to start after retries: \(String(describing: lastError), privacy: .public)")
             }
         } else if scanner.isScanning {
             scanner.stopScanning()
         }
     }
 
-    // Zoom set before scanning starts does not stick, so this runs after the first
-    // successful start, and only once so session restarts keep the user's pinch zoom.
+    // DataScannerViewController drops a zoomFactor set before scanning starts.
     private func applyInitialZoomIfNeeded() {
         guard !hasAppliedInitialZoom else { return }
         hasAppliedInitialZoom = true

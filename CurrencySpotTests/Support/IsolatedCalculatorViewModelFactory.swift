@@ -1,19 +1,16 @@
 @testable import CurrencySpot
 import Foundation
 
-func makeIsolatedCalculatorViewModel(
-    repository: (ExchangeRateRepository)? = nil,
-    ratesStore: ExchangeRatesStore? = nil,
-    appState: AppState? = nil
-) -> CalculatorViewModel {
-    let repository = repository ?? PreviewExchangeRateRepository()
-    return CalculatorViewModel(
+func makeIsolatedCalculatorViewModel(defaults: UserDefaults, appState: AppState) -> CalculatorViewModel {
+    CalculatorViewModel(
         loadExchangeRatesUseCase: LoadExchangeRatesUseCase(
-            repository: repository,
+            repository: PreviewExchangeRateRepository(today: MockExchangeRateRepository.now),
             dateProvider: FixedDateProvider(MockExchangeRateRepository.now)
         ),
-        ratesStore: ratesStore ?? ExchangeRatesStore(),
+        calculateConversionUseCase: CalculateConversionUseCase(),
+        ratesStore: ExchangeRatesStore(),
         preferences: InMemoryPreferencesStore(),
-        appState: appState ?? AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))
+        favorites: .favorites(in: defaults),
+        appState: appState
     )
 }

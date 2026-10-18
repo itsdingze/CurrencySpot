@@ -11,7 +11,6 @@ struct ContentView: View {
                 CalculatorView()
                     .toolbarBackground(.visible, for: .tabBar)
             }
-            .accessibilityLabel("Currency Converter")
 
             if CameraScanAvailability.isSupported {
                 Tab("Camera", systemImage: "camera.viewfinder", value: AppTab.camera) {
@@ -19,14 +18,12 @@ struct ContentView: View {
                         .toolbarBackground(.visible, for: .tabBar)
                         .toolbarColorScheme(.dark, for: .tabBar)
                 }
-                .accessibilityLabel("Camera Price Converter")
             }
 
             Tab("History", systemImage: "chart.line.uptrend.xyaxis", value: AppTab.history) {
                 CurrencyListView()
                     .toolbarBackground(.visible, for: .tabBar)
             }
-            .accessibilityLabel("Exchange Rate History")
 
             Tab("Settings", systemImage: "gearshape", value: AppTab.settings) {
                 NavigationStack {
@@ -34,11 +31,10 @@ struct ContentView: View {
                 }
                 .toolbarBackground(.visible, for: .tabBar)
             }
-            .accessibilityLabel("Settings and Preferences")
         }
         .alert(
             "Error: \(appState.errorHandler.currentError?.title ?? "")",
-            isPresented: errorAlertPresented,
+            isPresented: Bindable(appState.errorHandler).isPresentingError,
             presenting: appState.errorHandler.currentError
         ) { _ in
             Button("OK", action: appState.errorHandler.dismiss)
@@ -57,17 +53,6 @@ struct ContentView: View {
     }
 
     // MARK: - Presentation Bindings
-
-    private var errorAlertPresented: Binding<Bool> {
-        Binding(
-            get: { appState.errorHandler.currentError != nil },
-            set: { isActive in
-                if !isActive {
-                    appState.errorHandler.dismiss()
-                }
-            }
-        )
-    }
 
     private var onboardingPresented: Binding<Bool> {
         Bindable(settingsViewModel).destination.isPresenting(.onboarding)

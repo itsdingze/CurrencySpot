@@ -37,7 +37,22 @@ private nonisolated struct AdaptiveGlassBackground<S: Shape, Fallback: View>: Vi
     }
 }
 
+private nonisolated struct AccentGlassBackground<S: Shape>: ViewModifier {
+    let shape: S
+    let isInteractive: Bool
+
+    @Environment(\.appAccent) private var accent
+
+    func body(content: Content) -> some View {
+        content.adaptiveGlassBackground(in: shape, isInteractive: isInteractive, tintedFallback: accent)
+    }
+}
+
 extension View {
+    nonisolated func accentGlassBackground(in shape: some Shape, isInteractive: Bool = false) -> some View {
+        modifier(AccentGlassBackground(shape: shape, isInteractive: isInteractive))
+    }
+
     nonisolated func adaptiveGlassBackground(
         in shape: some Shape,
         isInteractive: Bool = false,

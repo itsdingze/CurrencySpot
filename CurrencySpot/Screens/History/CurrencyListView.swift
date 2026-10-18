@@ -1,33 +1,34 @@
 import SwiftUI
 
 struct CurrencyListView: View {
-    @Environment(HistoryViewModel.self) private var historyViewModel: HistoryViewModel
+    @Environment(CurrencyListViewModel.self) private var viewModel
     @State private var editMode: EditMode = .inactive
 
     private var isEditing: Bool { editMode == .active }
 
     var body: some View {
-        NavigationStack(path: Bindable(historyViewModel).path) {
+        @Bindable var viewModel = viewModel
+        NavigationStack(path: $viewModel.path) {
             content
             .navigationTitle("History")
             .toolbarTitleDisplayMode(.inlineLarge)
             .searchable(
-                text: Bindable(historyViewModel).searchText,
+                text: $viewModel.searchText,
                 placement: .navigationBarDrawer(displayMode: .always),
                 prompt: "Search currencies"
             )
             .autocorrectionDisabled()
-            .navigationDestination(for: CurrencyCode.self) { _ in
-                CurrencyHistoryView()
+            .navigationDestination(for: CurrencyCode.self) { code in
+                CurrencyHistoryView(viewModel: viewModel.historyViewModel(for: code))
             }
             .toolbar {
                 trailingToolbarItems
             }
-            .onChange(of: historyViewModel.displayedCurrencies.count) { _, count in
-                guard historyViewModel.isSearching else { return }
+            .onChange(of: viewModel.displayedCurrencies.count) { _, count in
+                guard viewModel.isSearching else { return }
                 AccessibilityNotification.Announcement("\(count) currencies found").post()
             }
-            .onChange(of: historyViewModel.isSearching || historyViewModel.isWatchlistEmpty) { _, cannotEdit in
+            .onChange(of: viewModel.isSearching || viewModel.isWatchlistEmpty) { _, cannotEdit in
                 if cannotEdit { editMode = .inactive }
             }
             .environment(\.editMode, $editMode)
@@ -38,13 +39,13 @@ struct CurrencyListView: View {
 
     @ViewBuilder
     private var content: some View {
-        if historyViewModel.isSearching {
-            if historyViewModel.displayedCurrencies.isEmpty {
-                ContentUnavailableView.search(text: historyViewModel.searchText)
+        if viewModel.isSearching {
+            if viewModel.displayedCurrencies.isEmpty {
+                ContentUnavailableView.search(text: viewModel.searchText)
             } else {
                 searchResultsList
             }
-        } else if historyViewModel.isWatchlistEmpty {
+        } else if viewModel.isWatchlistEmpty {
             emptyWatchlist
         } else {
             watchlistList
@@ -53,9 +54,9 @@ struct CurrencyListView: View {
 
     private var watchlistList: some View {
         List {
-            let currencies = historyViewModel.displayedCurrencies
+            let currencies = viewModel.displayedCurrencies
             ForEach(currencies) { entry in
-                Button(action: { historyViewModel.openHistory(for: entry.code) }) {
+                Button(action: { viewModel.openHistory(for: entry.code) }) {
                     CurrencyRow(entry: entry, metricsHidden: isEditing)
                         .padding(.vertical, Spacing.element)
                         .padding(.horizontal, Spacing.cardPadding)
@@ -65,9 +66,9 @@ struct CurrencyListView: View {
                 .buttonStyle(.plain)
                 .rowSeparator(isLast: entry.id == currencies.last?.id)
             }
-            .onDelete { historyViewModel.removeFromWatchlist(atOffsets: $0) }
-            .onMove(perform: historyViewModel.sortOption == .manual
-                ? { historyViewModel.moveWatchlist(fromOffsets: $0, toOffset: $1) }
+            .onDelete { viewModel.removeFromWatchlist(atOffsets: $0) }
+            .onMove(perform: viewModel.sortOption == .manual
+                ? { viewModel.moveWatchlist(fromOffsets: $0, toOffset: $1) }
                 : nil)
         }
         .listStyle(.plain)
@@ -75,14 +76,14 @@ struct CurrencyListView: View {
 
     private var searchResultsList: some View {
         List {
-            ForEach(historyViewModel.displayedCurrencies) { entry in
+            ForEach(viewModel.displayedCurrencies) { entry in
                 HStack(spacing: Spacing.element) {
                     WatchlistToggleButton(
-                        isInWatchlist: historyViewModel.isInWatchlist(entry.code),
-                        action: { historyViewModel.toggleWatchlist(entry.code) }
+                        isInWatchlist: viewModel.isInWatchlist(entry.code),
+                        action: { viewModel.toggleWatchlist(entry.code) }
                     )
 
-                    Button { historyViewModel.openHistory(for: entry.code) } label: {
+                    Button { viewModel.openHistory(for: entry.code) } label: {
                         CurrencyRow(entry: entry, showsTrendChart: false)
                             .contentShape(Rectangle())
                     }
@@ -105,11 +106,20 @@ struct CurrencyListView: View {
     private var trailingToolbarItems: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             if isEditing {
-                EditButton()
+                Button("Done", action: finishEditing)
+                    .fontWeight(.semibold)
             } else {
                 optionsMenu
             }
         }
+    }
+
+    private func startEditing() {
+        withAnimation { editMode = .active }
+    }
+
+    private func finishEditing() {
+        withAnimation { editMode = .inactive }
     }
 
     private var optionsIcon: String {
@@ -117,51 +127,36 @@ struct CurrencyListView: View {
     }
 
     private var optionsMenu: some View {
-        Menu {
-            if !historyViewModel.isSearching && !historyViewModel.isWatchlistEmpty {
-                Button {
-                    withAnimation { editMode = .active }
-                } label: {
+        @Bindable var viewModel = viewModel
+        return Menu {
+            if !viewModel.isSearching && !viewModel.isWatchlistEmpty {
+                Button(action: startEditing) {
                     Label("Edit Watchlist", systemImage: "pencil")
                 }
             }
 
-            Picker(selection: sortSelection) {
+            Picker(selection: $viewModel.sortOption) {
                 ForEach(CurrencySortOption.allCases, id: \.self) { option in
                     Text(option.description).tag(option)
                 }
             } label: {
                 Label("Sort By", systemImage: "arrow.up.arrow.down")
-                Text(historyViewModel.sortOption.description)
+                Text(viewModel.sortOption.description)
             }
             .pickerStyle(.menu)
 
-            Picker(selection: trendSelection) {
+            Picker(selection: $viewModel.trendDisplayMode) {
                 ForEach(TrendDisplayMode.allCases, id: \.self) { mode in
                     Text(mode.description).tag(mode)
                 }
             } label: {
                 Label("Indicator", systemImage: "chart.line.uptrend.xyaxis")
-                Text(historyViewModel.trendDisplayMode.description)
+                Text(viewModel.trendDisplayMode.description)
             }
             .pickerStyle(.menu)
         } label: {
             Label("Options", systemImage: optionsIcon)
         }
-    }
-
-    private var sortSelection: Binding<CurrencySortOption> {
-        Binding(
-            get: { historyViewModel.sortOption },
-            set: { historyViewModel.selectSortOption($0) }
-        )
-    }
-
-    private var trendSelection: Binding<TrendDisplayMode> {
-        Binding(
-            get: { historyViewModel.trendDisplayMode },
-            set: { historyViewModel.selectTrendDisplayMode($0) }
-        )
     }
 }
 

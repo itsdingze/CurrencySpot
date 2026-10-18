@@ -5,9 +5,12 @@ import Testing
 
 @Suite("Integration Tests")
 struct IntegrationTests {
+    private static let now = createCETDate(year: 2025, month: 3, day: 14)!
+
     private let container: ModelContainer
     private let persistence: SwiftDataPersistenceService
     private let service: DataCoordinator
+    private let isolatedDefaults = IsolatedDefaults()
 
     init() throws {
         container = try ModelContainer.inMemoryCurrencySpot()
@@ -17,7 +20,8 @@ struct IntegrationTests {
             persistenceService: persistence,
             cacheService: InMemoryCacheService(),
             syncStore: MockHistoricalSyncStore(),
-            fetchDateStore: InMemoryRatesFetchDateStore()
+            fetchDateStore: InMemoryRatesFetchDateStore(),
+            dateProvider: FixedDateProvider(Self.now)
         )
     }
 
@@ -28,17 +32,22 @@ struct IntegrationTests {
             try await persistence.saveHistoricalExchangeRates([dateString: ["EUR": 1.0 + Double(index) * 0.01]])
         }
 
-        let analysisUseCase = HistoricalDataAnalysisUseCase(syncCoverage: MockHistoricalSyncStore())
-        let orchestrationUseCase = DataOrchestrationUseCase(
+        let analysisUseCase = HistoricalDataAnalysisUseCase(
+            syncCoverage: MockHistoricalSyncStore(),
+            dateProvider: FixedDateProvider(Self.now)
+        )
+        let loadUseCase = LoadHistoricalRatesUseCase(
             repository: service,
-            historicalDataAnalysisUseCase: analysisUseCase
+            archive: service,
+            backfill: BackfillArchiveUseCase(archive: service, analysis: analysisUseCase, clock: GatedClock()),
+            analysis: analysisUseCase
         )
         let chartUseCase = ChartDataPreparationUseCase(chartCache: InMemoryChartDataCache())
 
         let rangeStart = try #require(createCETDate(year: 2025, month: 3, day: 5))
         let rangeEnd = try #require(createCETDate(year: 2025, month: 3, day: 12))
         let dateRange = DateRange.spanning(rangeStart, rangeEnd)
-        let loaded = try await orchestrationUseCase.loadHistoricalData(for: "EUR", dateRange: dateRange)
+        let loaded = try await loadUseCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: dateRange)
 
         #expect(loaded.newDataFetched == false)
         #expect(loaded.fetchedRanges.isEmpty)
@@ -70,8 +79,8 @@ struct IntegrationTests {
 
         let earliest = try #require(try await service.earliestStoredDate())
         let latest = try #require(try await service.latestStoredDate())
-        #expect(earliest == CETCalendar.date(fromDayString:"2025-03-01"))
-        #expect(latest == CETCalendar.date(fromDayString:"2025-03-15"))
+        #expect(earliest == CETCalendar.date(fromDayString: "2025-03-01"))
+        #expect(latest == CETCalendar.date(fromDayString: "2025-03-15"))
 
         try await service.clearAllData()
         let clearedEarliest = try await service.earliestStoredDate()
@@ -80,39 +89,46 @@ struct IntegrationTests {
 
     @Test("CalculatorViewModel default currencies come from the injected defaults, not the environment")
     func calculatorDefaultsAreEnvironmentIndependent() throws {
-        let suiteName = "IntegrationTests.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suiteName))
-        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let defaults = try isolatedDefaults.make()
         defaults.set("GBP", forKey: UserDefaultsKeys.defaultBaseCurrency)
         defaults.set("JPY", forKey: UserDefaultsKeys.defaultTargetCurrency)
 
         let viewModel = CalculatorViewModel(
             loadExchangeRatesUseCase: LoadExchangeRatesUseCase(
-                repository: PreviewExchangeRateRepository(),
+                repository: PreviewExchangeRateRepository(today: MockExchangeRateRepository.now),
                 dateProvider: FixedDateProvider(MockExchangeRateRepository.now)
             ),
+            calculateConversionUseCase: CalculateConversionUseCase(),
             ratesStore: ExchangeRatesStore(),
             preferences: UserDefaultsPreferencesStore(userDefaults: defaults),
-            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))
+            favorites: CurrencyCodeListStore(
+                defaults: defaults,
+                key: UserDefaultsKeys.favoriteCurrencies,
+                seed: CurrencyDefaults.favoriteCurrencies
+            ),
+            appState: AppState(networkMonitor: NetworkMonitor(isConnected: true))
         )
 
         #expect(viewModel.baseCurrency == "GBP")
         #expect(viewModel.targetCurrency == "JPY")
     }
 
-    @Test("RefreshAllDataUseCase wipes the repository and signals registered feature resets")
-    func refreshAllDataUseCaseClearsAndSignals() async throws {
-        try await persistence.saveExchangeRates(["EUR": 0.9])
+    @Test("RefreshAllDataUseCase wipes the repository and resets the archive backfill")
+    func refreshAllDataUseCaseClearsAndResets() async throws {
+        try await persistence.saveExchangeRates([ExchangeRate(currencyCode: "EUR", rate: 0.9)])
+        let backfill = SpyBackfillReset()
 
-        let useCase = RefreshAllDataUseCase(repository: service)
-        var resetSignals = 0
-        useCase.registerResetHandler { resetSignals += 1 }
-        useCase.registerResetHandler { resetSignals += 1 }
+        try await RefreshAllDataUseCase(repository: service, backfill: backfill).execute()
 
-        try await useCase.execute()
+        #expect(backfill.resetCount == 1)
+        #expect(try await persistence.loadExchangeRates().isEmpty)
+    }
+}
 
-        #expect(resetSignals == 2)
-        let persisted = try await persistence.loadExchangeRates()
-        #expect(persisted.isEmpty)
+private final class SpyBackfillReset: ArchiveBackfillResetting {
+    private(set) var resetCount = 0
+
+    func reset() {
+        resetCount += 1
     }
 }

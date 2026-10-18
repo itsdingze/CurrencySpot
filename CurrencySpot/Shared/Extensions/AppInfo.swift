@@ -7,11 +7,11 @@ extension Bundle {
             ?? "CurrencySpot"
     }
 
-    var appVersion: String {
+    private var appVersion: String {
         infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
 
-    var buildNumber: String {
+    private var buildNumber: String {
         infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }
 

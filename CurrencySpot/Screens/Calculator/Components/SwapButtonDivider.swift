@@ -36,7 +36,7 @@ struct SwapButtonDivider: View {
     private var swapButton: some View {
         Button(action: performSwap) {
             Image(systemName: "arrow.trianglehead.swap")
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(.tint)
                 .rotation3DEffect(
                     .degrees(isFlipped ? 180 : 0),
                     axis: (x: 1, y: 0, z: 0)

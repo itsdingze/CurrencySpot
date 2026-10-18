@@ -10,6 +10,9 @@ struct DataCoordinatorRatesTests {
     let syncStore: MockHistoricalSyncStore
     let persistence: SwiftDataPersistenceService
     let service: DataCoordinator
+    private let isolatedDefaults = IsolatedDefaults()
+
+    private static let now = Date(timeIntervalSince1970: 1_750_000_000)
 
     init() throws {
         container = try ModelContainer.inMemoryCurrencySpot()
@@ -21,7 +24,8 @@ struct DataCoordinatorRatesTests {
             persistenceService: persistence,
             cacheService: InMemoryCacheService(),
             syncStore: syncStore,
-            fetchDateStore: InMemoryRatesFetchDateStore()
+            fetchDateStore: InMemoryRatesFetchDateStore(),
+            dateProvider: FixedDateProvider(Self.now)
         )
     }
 
@@ -43,16 +47,9 @@ struct DataCoordinatorRatesTests {
         }
     }
 
-    private static func makeDefaults() throws -> (defaults: UserDefaults, name: String) {
-        let name = "DataCoordinatorRatesTests.\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: name))
-        defaults.removePersistentDomain(forName: name)
-        return (defaults, name)
-    }
-
     @Test("clearAllData resets the historical sync coverage window")
     func clearAllDataResetsSyncCoverage() async throws {
-        syncStore.record(from: try cetDate(2025, 1, 1), through: try cetDate(2025, 1, 10), at: Date())
+        syncStore.record(from: try cetDate(2025, 1, 1), through: try cetDate(2025, 1, 10), at: Self.now)
 
         try await service.clearAllData()
 
@@ -61,15 +58,16 @@ struct DataCoordinatorRatesTests {
         #expect(syncStore.checkedAt == nil)
     }
 
-    @Test("loadHistoricalRates reads persistence, not a narrower stale in-memory cache")
-    func loadHistoricalReadsPersistenceNotStaleCache() async throws {
+    @Test("a stored read returns persisted days beyond a narrower series and widens the series with them")
+    func storedReadServesPersistenceNotTheNarrowerSeries() async throws {
         let cacheService = InMemoryCacheService()
         let coordinator = DataCoordinator(
             networkService: MockNetworkService(),
             persistenceService: persistence,
             cacheService: cacheService,
             syncStore: MockHistoricalSyncStore(),
-            fetchDateStore: InMemoryRatesFetchDateStore()
+            fetchDateStore: InMemoryRatesFetchDateStore(),
+            dateProvider: FixedDateProvider(Self.now)
         )
 
         let wideDates = (3 ... 12).map { String(format: "2025-03-%02d", $0) }
@@ -81,16 +79,30 @@ struct DataCoordinatorRatesTests {
             HistoricalRateSnapshot(dateString: "2025-03-11", rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.21)]),
             HistoricalRateSnapshot(dateString: "2025-03-12", rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.21)]),
         ]
-        _ = await coordinator.mergeCachedHistoricalRates(narrow)
+        await cacheService.cacheHistoricalData(narrow)
 
-        let result = try await coordinator.loadHistoricalRates(in: try range("2025-03-01", "2025-03-31"))
+        let result = try await coordinator.loadAndMergeStoredHistoricalRates(in: try range("2025-03-01", "2025-03-31"))
+
         #expect(result.count == wideDates.count)
+        #expect(await coordinator.cachedHistoricalRates().count == wideDates.count)
+    }
+
+    @Test("processed chart data round-trips by key and misses for any other key")
+    func chartDataRoundTripsByKey() async throws {
+        let points = [ChartDataPoint(date: try cetDate(2025, 3, 12), rate: 0.92)]
+        let window = try range("2025-03-01", "2025-03-12")
+        let key = ChartCacheKey(base: "USD", target: "EUR", range: window, snapshotCount: 1, firstSnapshot: nil, lastSnapshot: nil)
+        let otherKey = ChartCacheKey(base: "USD", target: "GBP", range: window, snapshotCount: 1, firstSnapshot: nil, lastSnapshot: nil)
+
+        await service.storeChartData(points, for: key)
+
+        #expect(await service.cachedChartData(for: key) == points)
+        #expect(await service.cachedChartData(for: otherKey) == nil)
     }
 
     @Test("the fetch date store starts empty and round-trips a date through its injected defaults")
     func lastFetchDateRoundTrip() async throws {
-        let (defaults, name) = try Self.makeDefaults()
-        defer { defaults.removePersistentDomain(forName: name) }
+        let defaults = try isolatedDefaults.make()
         let store = UserDefaultsRatesFetchDateStore(defaults: defaults)
         #expect(store.lastFetchDate == nil)
 
@@ -131,7 +143,7 @@ struct DataCoordinatorRatesTests {
 
     @Test("fetchExchangeRates throws on network failure instead of silently substituting saved rates")
     func fetchThrowsOnNetworkFailureWithoutSilentFallback() async throws {
-        try await persistence.saveExchangeRates(["EUR": 0.9])
+        try await persistence.saveExchangeRates([ExchangeRate(currencyCode: "EUR", rate: 0.9)])
         networkService.exchangeRatesResult = .failure(AppError.networkError("server down"))
 
         await #expect(throws: AppError.self) {
@@ -177,7 +189,7 @@ struct DataCoordinatorRatesTests {
 
         try await persistence.saveHistoricalExchangeRates(testRates)
 
-        let loadedRates = try await service.loadHistoricalRates(in: try range("2025-03-15", "2025-03-16"))
+        let loadedRates = try await service.loadStoredHistoricalRates(in: try range("2025-03-15", "2025-03-16"))
 
         #expect(loadedRates.count == 2)
         #expect(loadedRates[0].rates.first(where: { $0.currencyCode == "EUR" })?.rate == 1.21)
@@ -215,7 +227,7 @@ struct DataCoordinatorRatesTests {
         try context.save()
         syncStore.record(from: try cetDate(2025, 3, 1), through: try cetDate(2025, 3, 31), at: Date(timeIntervalSince1970: 0))
 
-        _ = try? await service.loadHistoricalRates(from: try cetDate(2025, 3, 1), to: try cetDate(2025, 3, 31))
+        _ = try? await service.loadStoredHistoricalRates(in: try range("2025-03-01", "2025-03-31"))
 
         #expect(syncStore.from == nil)
         #expect(syncStore.through == nil)
@@ -250,7 +262,11 @@ struct DataCoordinatorRatesTests {
 
     @Test("Save and load current exchange rates")
     func saveAndLoadCurrentExchangeRates() async throws {
-        let testRates = ["EUR": 1.21, "GBP": 0.85, "JPY": 110.0]
+        let testRates = [
+            ExchangeRate(currencyCode: "EUR", rate: 1.21),
+            ExchangeRate(currencyCode: "GBP", rate: 0.85),
+            ExchangeRate(currencyCode: "JPY", rate: 110.0),
+        ]
 
         try await persistence.saveExchangeRates(testRates)
 
@@ -264,7 +280,7 @@ struct DataCoordinatorRatesTests {
 
     @Test("Clear all data works correctly")
     func clearAllDataWorksCorrectly() async throws {
-        let testRates = ["EUR": 1.21, "GBP": 0.85]
+        let testRates = [ExchangeRate(currencyCode: "EUR", rate: 1.21), ExchangeRate(currencyCode: "GBP", rate: 0.85)]
         let historicalRates = ["2025-03-15": ["EUR": 1.21, "GBP": 0.85]]
 
         try await persistence.saveExchangeRates(testRates)

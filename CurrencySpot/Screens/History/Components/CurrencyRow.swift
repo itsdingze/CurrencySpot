@@ -7,10 +7,10 @@ struct CurrencyRow: View {
 
     var metricsHidden = false
 
-    @Environment(HistoryViewModel.self) private var historyViewModel: HistoryViewModel
+    @Environment(CurrencyListViewModel.self) private var viewModel
 
     var body: some View {
-        let trendData = historyViewModel.getTrendData(for: entry.code)
+        let trend = viewModel.trend(for: entry.code)
 
         HStack(spacing: Spacing.element) {
             VStack(alignment: .leading, spacing: Spacing.hairline) {
@@ -20,38 +20,33 @@ struct CurrencyRow: View {
                 Text(entry.name)
                     .lineLimit(1)
                     .font(.appSubheadline)
-                    .foregroundStyle(Color.textSecondary)
+                    .foregroundStyle(Color.secondary)
             }
 
             Spacer()
 
             ZStack(alignment: .trailing) {
-                metrics(trendData, drawsChart: false)
+                metrics(trend, drawsChart: false)
                     .frame(width: 0)
                     .clipped()
                     .hidden()
                     .accessibilityHidden(true)
 
                 if !metricsHidden {
-                    // FIXME: the opacity transition only plays on the way OUT — entering
-                    // edit mode fades the metrics away correctly, but tapping Done
-                    // re-inserts them instantly with no fade. The insertion transition
-                    // isn't running on edit-mode exit (likely the toolbar swapping the
-                    // Done button back to the menu drops the animation transaction).
-                    metrics(trendData)
+                    metrics(trend)
                         .transition(.opacity)
                 }
             }
         }
         .animation(.appQuickFade, value: metricsHidden)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel(trend: trendData))
+        .accessibilityLabel(accessibilityLabel(trend: trend))
     }
 
     @ViewBuilder
-    private func metrics(_ trendData: Trend?, drawsChart: Bool = true) -> some View {
+    private func metrics(_ trend: Trend?, drawsChart: Bool = true) -> some View {
         HStack(spacing: Spacing.element) {
-            if showsTrendChart, let trend = trendData {
+            if showsTrendChart, let trend {
                 if drawsChart {
                     MiniChart(trend: trend)
                         .accessibilityHidden(true)
@@ -68,9 +63,9 @@ struct CurrencyRow: View {
                     .font(.appTitle2)
                     .monospacedDigit()
 
-                if let trend = trendData {
+                if let trend {
                     TrendIndicator(
-                        value: historyViewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange),
+                        value: viewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange),
                         direction: trend.direction
                     )
                 }
@@ -83,9 +78,9 @@ struct CurrencyRow: View {
         var parts = ["\(entry.code.rawValue), \(entry.name)"]
         guard !metricsHidden else { return parts.joined(separator: ", ") }
 
-        parts.append("1 \(historyViewModel.baseCurrency.rawValue) equals \(entry.rate.toStringMax4Decimals) \(entry.code.rawValue)")
+        parts.append("1 \(viewModel.baseCurrency.rawValue) equals \(entry.rate.toStringMax4Decimals) \(entry.code.rawValue)")
         if let trend {
-            let value = historyViewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange)
+            let value = viewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange)
             parts.append("\(trend.direction.description) \(value)")
         }
         return parts.joined(separator: ", ")

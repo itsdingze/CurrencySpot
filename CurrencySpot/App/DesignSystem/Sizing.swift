@@ -1,4 +1,4 @@
-import CoreGraphics
+import SwiftUI
 
 nonisolated enum Spacing {
     // MARK: - Stack gaps
@@ -28,4 +28,13 @@ nonisolated enum Radius {
 
 nonisolated enum ControlMetrics {
     static let buttonSize: CGFloat = 44
+}
+
+// MARK: - Hit targets
+
+extension View {
+    func minimumHitTarget() -> some View {
+        frame(minWidth: 44, minHeight: 44)
+            .contentShape(.rect)
+    }
 }

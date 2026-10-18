@@ -3,14 +3,12 @@ import Foundation
 
 final class MockTrendRepository: TrendRepository {
     var trendsToReturn: [Trend]
-    var historicalWindowData: [HistoricalRateSnapshot] = []
     var shouldThrowOnLoadTrends = false
     var shouldThrowOnSave = false
     var errorToThrow: Error = AppError.unknownError("Mock trend error")
 
     private(set) var loadTrendDataCallCount = 0
     private(set) var saveTrendDataCallCount = 0
-    private(set) var loadHistoricalRatesCallCount = 0
     private(set) var lastSavedTrends: [Trend]?
 
     init(trends: [Trend] = []) {
@@ -32,10 +30,5 @@ final class MockTrendRepository: TrendRepository {
         }
         lastSavedTrends = trends
         trendsToReturn = trends
-    }
-
-    func loadHistoricalRates(from _: Date, to _: Date) async throws -> [HistoricalRateSnapshot] {
-        loadHistoricalRatesCallCount += 1
-        return historicalWindowData
     }
 }

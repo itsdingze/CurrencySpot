@@ -1,6 +1,7 @@
 import Foundation
 import IdentifiedCollections
 import Observation
+import OSLog
 import UIKit
 
 @Observable
@@ -56,37 +57,35 @@ final class CameraViewModel {
     private let appState: AppState
     private let ratesStore: ExchangeRatesStore
     private let permissionService: CameraPermissionService
-    private let scanConversionUseCase: ScanConversionUseCase
-    private let calculateConversionUseCase: CalculateConversionUseCase
-    private let stillTextRecognizer: StillTextRecognitionService
     private let torchService: TorchService
+    private let scanConversionUseCase: ScanConversionUseCase
+    private let recognizeStillImageTextUseCase: RecognizeStillImageTextUseCase
+    private let calculateConversionUseCase: CalculateConversionUseCase
     private let localeCurrencyCode: CurrencyCode?
     private let fallbackBaseCurrency: CurrencyCode
-    private let logger: LoggerService
+    private let logger = Logger(category: .viewModel)
 
     init(
         ratesStore: ExchangeRatesStore,
-        appState: AppState = .shared,
+        appState: AppState,
         permissionService: CameraPermissionService,
-        scanConversionUseCase: ScanConversionUseCase = ScanConversionUseCase(),
-        calculateConversionUseCase: CalculateConversionUseCase = CalculateConversionUseCase(),
-        stillTextRecognizer: StillTextRecognitionService = StillImageTextRecognizer(),
-        torchService: TorchService = AVTorchService(),
-        localeCurrencyCode: CurrencyCode? = Locale.current.currency.flatMap { CurrencyCode($0.identifier) },
+        torchService: TorchService,
+        scanConversionUseCase: ScanConversionUseCase,
+        recognizeStillImageTextUseCase: RecognizeStillImageTextUseCase,
+        calculateConversionUseCase: CalculateConversionUseCase,
+        localeCurrencyCode: CurrencyCode?,
         fallbackBaseCurrency: CurrencyCode,
-        defaultTargetCurrency: CurrencyCode,
-        logger: LoggerService = OSLogLoggerService()
+        defaultTargetCurrency: CurrencyCode
     ) {
         self.ratesStore = ratesStore
         self.appState = appState
         self.permissionService = permissionService
-        self.scanConversionUseCase = scanConversionUseCase
-        self.calculateConversionUseCase = calculateConversionUseCase
-        self.stillTextRecognizer = stillTextRecognizer
         self.torchService = torchService
+        self.scanConversionUseCase = scanConversionUseCase
+        self.recognizeStillImageTextUseCase = recognizeStillImageTextUseCase
+        self.calculateConversionUseCase = calculateConversionUseCase
         self.localeCurrencyCode = localeCurrencyCode
         self.fallbackBaseCurrency = fallbackBaseCurrency
-        self.logger = logger
         targetCurrency = defaultTargetCurrency
         authorization = permissionService.currentStatus()
     }
@@ -120,7 +119,7 @@ final class CameraViewModel {
         } catch is CancellationError {
         } catch {
             guard request == freezeRequestID else { return }
-            logger.error("Frame capture failed: \(error)", category: .viewModel)
+            logger.error("Frame capture failed: \(error.localizedDescription, privacy: .public)")
             appState.errorHandler.handle(AppError.cameraCaptureFailed)
         }
     }
@@ -137,7 +136,7 @@ final class CameraViewModel {
         } catch is CancellationError {
         } catch {
             guard request == freezeRequestID else { return }
-            logger.error("Photo import failed: \(error)", category: .viewModel)
+            logger.error("Photo import failed: \(error.localizedDescription, privacy: .public)")
             appState.errorHandler.handle(AppError.photoImportFailed)
         }
     }
@@ -160,7 +159,7 @@ final class CameraViewModel {
 
     func recognizeStill(in image: UIImage) async {
         do {
-            let result = try await stillTextRecognizer.recognize(image)
+            let result = try await recognizeStillImageTextUseCase.recognizeText(in: image)
             guard !Task.isCancelled, frozenImage === image else { return }
             stillRecognition = result
             pushStillItems()
@@ -168,7 +167,7 @@ final class CameraViewModel {
         } catch is CancellationError {
         } catch {
             guard frozenImage === image else { return }
-            logger.error("Still-image text recognition failed: \(error)", category: .viewModel)
+            logger.error("Still-image text recognition failed: \(error.localizedDescription, privacy: .public)")
             appState.errorHandler.handle(AppError.textRecognitionFailed)
             isRecognizingStill = false
         }
@@ -177,27 +176,6 @@ final class CameraViewModel {
     func stillViewportChanged(_ size: CGSize) {
         stillViewportSize = size
         pushStillItems()
-    }
-
-    func updateRecognizedItems(_ items: [RecognizedTextItem]) {
-        recognizedItems = items
-        let result = scanConversionUseCase.detect(
-            in: items,
-            baseCurrency: baseCurrency,
-            targetCurrency: targetCurrency,
-            exchangeRates: ratesStore.rates
-        )
-        detectedItems = IdentifiedArray(uniqueElements: result.items.map(applyingOverride))
-        classifierFoundPrices = result.foundPrices
-    }
-
-    private func applyingOverride(_ item: DetectedItem) -> DetectedItem {
-        DetectedItem(
-            id: item.id,
-            transcript: item.transcript,
-            bounds: item.bounds,
-            conversion: badgeOverrides.effective(item.conversion, for: item.id)
-        )
     }
 
     func refreshConversions() {
@@ -266,10 +244,30 @@ final class CameraViewModel {
 
     private func pushStillItems() {
         guard frozenImage != nil else { return }
-        let mapping = AspectFitMapping(imageSize: stillRecognition.imagePixelSize, viewSize: stillViewportSize)
-        updateRecognizedItems(stillRecognition.items.map { item in
-            RecognizedTextItem(id: item.id, transcript: item.transcript, bounds: mapping.viewRect(for: item.bounds))
-        })
+        updateRecognizedItems(
+            recognizeStillImageTextUseCase.textItems(in: stillRecognition, fittedTo: stillViewportSize)
+        )
+    }
+
+    private func updateRecognizedItems(_ items: [RecognizedTextItem]) {
+        recognizedItems = items
+        let result = scanConversionUseCase.detect(
+            in: items,
+            baseCurrency: baseCurrency,
+            targetCurrency: targetCurrency,
+            exchangeRates: ratesStore.rates
+        )
+        detectedItems = IdentifiedArray(uniqueElements: result.items.map(applyingOverride))
+        classifierFoundPrices = result.foundPrices
+    }
+
+    private func applyingOverride(_ item: DetectedItem) -> DetectedItem {
+        DetectedItem(
+            id: item.id,
+            transcript: item.transcript,
+            bounds: item.bounds,
+            conversion: badgeOverrides.effective(item.conversion, for: item.id)
+        )
     }
 
     private func reconvert() {

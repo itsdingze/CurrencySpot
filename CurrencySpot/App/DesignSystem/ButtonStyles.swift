@@ -10,7 +10,7 @@ struct PrimaryActionButtonStyle: ButtonStyle {
             .font(.appHeadline)
             .foregroundStyle(Color.white)
             .padding(12)
-            .adaptiveGlassBackground(in: .rect(cornerRadius: Radius.container), isInteractive: true, tintedFallback: .accentColor)
+            .accentGlassBackground(in: .rect(cornerRadius: Radius.container), isInteractive: true)
             .contentShape(.rect)
             .opacity(configuration.isPressed ? pressedOpacity : 1)
     }
@@ -37,8 +37,7 @@ extension ButtonStyle where Self == ControlButtonStyle {
     static func controlButton(glass: Bool) -> ControlButtonStyle { ControlButtonStyle(glass: glass) }
 }
 
-// The chrome lives in a View, not in the ButtonStyle: @ScaledMetric only tracks
-// Dynamic Type inside a view context.
+// @ScaledMetric tracks Dynamic Type only inside a View, not inside a ButtonStyle.
 private struct ControlButtonChrome<Label: View>: View {
     let glass: Bool
     let isPressed: Bool
@@ -107,9 +106,9 @@ struct CurrencyChipButtonStyle: ButtonStyle {
             .font(.appHeadline.weight(.medium))
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
-            .foregroundStyle(isSelected ? Color.white : Color.textPrimary)
+            .foregroundStyle(isSelected ? Color.white : Color.primary)
         if isSelected {
-            styled.adaptiveGlassBackground(in: .rect(cornerRadius: Radius.card), tintedFallback: .accentColor)
+            styled.accentGlassBackground(in: .rect(cornerRadius: Radius.card))
         } else {
             styled
         }

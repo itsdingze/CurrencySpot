@@ -4,21 +4,19 @@ struct FeatureRow: View {
     let symbol: String
     let title: String
     let subtitle: String
-    @ScaledMetric(relativeTo: .headline) private var size: CGFloat = 32
+    @ScaledMetric(relativeTo: .title) private var symbolColumnWidth: CGFloat = 32
 
     var body: some View {
         HStack(alignment: .center, spacing: Spacing.section) {
             Image(systemName: symbol)
-                .resizable()
-                .scaledToFit()
-                .frame(width: size, height: size)
-                .foregroundStyle(Color.accentColor)
+                .font(.title)
+                .foregroundStyle(.tint)
+                .frame(width: symbolColumnWidth)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: Spacing.tight) {
                 Text(title)
                     .font(.appHeadline)
-                    .lineLimit(1)
 
                 Text(subtitle)
                     .font(.appSubheadline)

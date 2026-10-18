@@ -1,7 +1,7 @@
 import SwiftUI
 
-struct ChartPointMarker: View {
-    let color: Color
+struct ChartPointMarker<Fill: ShapeStyle>: View {
+    let color: Fill
     var outerSize: CGFloat = 8
     var innerSize: CGFloat = 6
     var backgroundColor: Color = .markerKnockout
@@ -24,7 +24,7 @@ struct ChartPointMarker: View {
     HStack(spacing: 16) {
         ChartPointMarker(color: .green)
         ChartPointMarker(color: .red)
-        ChartPointMarker(color: .accentColor, outerSize: 14, innerSize: 10)
+        ChartPointMarker(color: .tint, outerSize: 14, innerSize: 10)
     }
     .padding()
 }

@@ -11,9 +11,6 @@ nonisolated enum FrankfurterV2Mapper {
         return ExchangeRatesResponse(base: base, date: date, rates: rates)
     }
 
-    // An empty range is a legitimate answer here (no publication days), and it must map to an
-    // empty response rather than throw: the caller records the coverage watermark only on a
-    // successful fetch, so throwing would leave those days permanently un-checked and refetched.
     static func historical(from entries: [FrankfurterV2Rate], base: String) throws -> HistoricalRatesResponse {
         try validate(entries)
         var grouped: [String: [String: Double]] = [:]

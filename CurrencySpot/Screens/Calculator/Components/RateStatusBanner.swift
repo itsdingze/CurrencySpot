@@ -21,10 +21,11 @@ struct RateStatusBanner: View {
                     .accessibilityLabel("Updating exchange rates")
             } else if showsRetry {
                 Button(action: refreshAction) {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundStyle(Color.accentColor)
+                    Label("Try loading exchange rates again", systemImage: "arrow.clockwise")
+                        .labelStyle(.iconOnly)
+                        .foregroundStyle(.tint)
+                        .minimumHitTarget()
                 }
-                .accessibilityLabel("Try loading exchange rates again")
             }
         }
         .accessibilityElement(children: .contain)

@@ -2,208 +2,198 @@ import Charts
 import SwiftUI
 
 struct ChartPreviewSection: View {
-    @State private var showAverage = false
-    @State private var showHighest = false
-    @State private var showLowest = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.appAccent) private var accent
+    @State private var tappedIndicators: [ChartIndicator: Bool] = [:]
 
     var body: some View {
-        VStack(spacing: Spacing.block) {
-            Chart {
-                RuleMark(y: .value("Average", SampleChartData.averageRate))
-                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
-                    .foregroundStyle(Color.gray.opacity(showAverage ? 0.5 : 0.0))
-                    .zIndex(-1)
+        demo
+            .padding(.top, Spacing.block)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Interactive chart statistics demonstration")
+            .accessibilityHint("Watch the chart indicators toggle as statistics are selected")
+    }
 
-                ForEach(SampleChartData.points) { dataPoint in
-                    AreaMark(
-                        x: .value("Date", dataPoint.date, unit: .day),
-                        yStart: .value("Rate", dataPoint.rate),
-                        yEnd: .value("Rate", SampleChartData.minimumRate * 0.99)
-                    )
-                    .interpolationMethod(.cardinal(tension: 0.8))
-                    .foregroundStyle(
-                        .linearGradient(
-                            colors: [Color.accentColor.opacity(0.15),
-                                     Color.accentColor.opacity(0)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-
-                    LineMark(
-                        x: .value("Date", dataPoint.date, unit: .day),
-                        y: .value("Rate", dataPoint.rate)
-                    )
-                    .interpolationMethod(.cardinal(tension: 0.8))
-                    .lineStyle(.init(lineWidth: 2, lineCap: .round, lineJoin: .round))
-                    .foregroundStyle(Color.accentColor)
-                }
-
-                if let highestPoint = SampleChartData.highestPoint {
-                    PointMark(
-                        x: .value("Date", highestPoint.date, unit: .day),
-                        y: .value("Rate", highestPoint.rate)
-                    )
-                    .symbol {
-                        ZStack {
-                            RippleEffect(isActive: showHighest, color: .success)
-
-                            ChartPointMarker(color: .success, outerSize: 8, innerSize: 7)
-                        }
-                        .opacity(showHighest ? 1.0 : 0.0)
-                        .animation(.appToggle, value: showHighest)
+    @ViewBuilder
+    private var demo: some View {
+        if reduceMotion {
+            section(demoShowing: Set(ChartIndicator.allCases))
+        } else {
+            KeyframeAnimator(initialValue: 0.0, repeating: true) { step in
+                let phase = DemoPhase(step: step)
+                section(demoShowing: phase.shownIndicators)
+                    .animation(.appToggle, value: phase)
+                    .onChange(of: phase) {
+                        withAnimation(.appToggle) { tappedIndicators.removeAll() }
                     }
-                }
-
-                if let lowestPoint = SampleChartData.lowestPoint {
-                    PointMark(
-                        x: .value("Date", lowestPoint.date, unit: .day),
-                        y: .value("Rate", lowestPoint.rate)
-                    )
-                    .symbol {
-                        ZStack {
-                            RippleEffect(isActive: showLowest, color: .failure)
-
-                            ChartPointMarker(color: .failure, outerSize: 8, innerSize: 7)
-                        }
-                        .opacity(showLowest ? 1.0 : 0.0)
-                        .animation(.appToggle, value: showLowest)
-                    }
+            } keyframes: { _ in
+                KeyframeTrack {
+                    LinearKeyframe(0, duration: 1.5)
+                    MoveKeyframe(1)
+                    LinearKeyframe(1, duration: 0.7)
+                    MoveKeyframe(2)
+                    LinearKeyframe(2, duration: 0.7)
+                    MoveKeyframe(3)
+                    LinearKeyframe(3, duration: 1.6)
+                    MoveKeyframe(0)
                 }
             }
-            .chartXAxis(.hidden)
-            .chartYAxis(.hidden)
-            .chartYScale(domain: SampleChartData.chartYDomain)
-            .frame(height: 180)
-
-            VStack(spacing: Spacing.tight) {
-                HStack(spacing: Spacing.element) {
-                    MockStatCard(
-                        label: "Highest",
-                        value: (SampleChartData.highestPoint?.rate ?? 0).formatted(.number.precision(.fractionLength(4))),
-                        isToggled: showHighest,
-                        color: .success
-                    ) {
-                        withAnimation(.appToggle) {
-                            showHighest.toggle()
-                        }
-                    }
-
-                    MockStatCard(
-                        label: "Lowest",
-                        value: (SampleChartData.lowestPoint?.rate ?? 0).formatted(.number.precision(.fractionLength(4))),
-                        isToggled: showLowest,
-                        color: .failure
-                    ) {
-                        withAnimation(.appToggle) {
-                            showLowest.toggle()
-                        }
-                    }
-                }
-
-                HStack(spacing: Spacing.element) {
-                    MockStatCard(
-                        label: "Average",
-                        value: SampleChartData.averageRate.formatted(.number.precision(.fractionLength(4))),
-                        isToggled: showAverage,
-                        color: .gray
-                    ) {
-                        withAnimation(.appToggle) {
-                            showAverage.toggle()
-                        }
-                    }
-
-                    MockStatCard(
-                        label: "Volatility",
-                        value: "Low",
-                        isToggled: false,
-                        color: nil
-                    ) {}
-                }
-            }
-        }
-        .padding(.top, Spacing.block)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Interactive chart statistics demonstration")
-        .accessibilityHint("Watch the chart indicators toggle as statistics are selected")
-        .task {
-            await runInteractiveChartDemo()
         }
     }
 
-    private func runInteractiveChartDemo() async {
-        do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
+    private func section(demoShowing demo: Set<ChartIndicator>) -> some View {
+        let shown = shownIndicators(demoShowing: demo)
+        return VStack(spacing: Spacing.block) {
+            chart(showing: shown)
+            statCards(showing: shown)
+        }
+    }
 
-        while !Task.isCancelled {
-            do { try await Task.sleep(for: .seconds(0.5)) } catch { return }
-            withAnimation(.appToggle) {
-                showAverage = true
+    private func shownIndicators(demoShowing demo: Set<ChartIndicator>) -> Set<ChartIndicator> {
+        var shown = demo
+        for (indicator, isShown) in tappedIndicators {
+            if isShown {
+                shown.insert(indicator)
+            } else {
+                shown.remove(indicator)
+            }
+        }
+        return shown
+    }
+
+    private func toggle(_ indicator: ChartIndicator, in shown: Set<ChartIndicator>) {
+        withAnimation(.appToggle) {
+            tappedIndicators[indicator] = !shown.contains(indicator)
+        }
+    }
+
+    private func chart(showing shown: Set<ChartIndicator>) -> some View {
+        Chart {
+            RuleMark(y: .value("Average", SampleChartData.averageRate))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
+                .foregroundStyle(Color.gray.opacity(shown.contains(.average) ? 0.5 : 0.0))
+                .zIndex(-1)
+
+            ForEach(SampleChartData.points) { dataPoint in
+                RateAreaLineMarks(
+                    date: dataPoint.date,
+                    rate: dataPoint.rate,
+                    lowestRate: SampleChartData.minimumRate,
+                    areaColor: accent,
+                    lineStyle: .tint
+                )
             }
 
-            do { try await Task.sleep(for: .seconds(0.7)) } catch { return }
-            withAnimation(.appToggle) {
-                showHighest = true
+            if let highestPoint = SampleChartData.highestPoint {
+                PointMark(
+                    x: .value("Date", highestPoint.date, unit: .day),
+                    y: .value("Rate", highestPoint.rate)
+                )
+                .symbol {
+                    extremeMarker(isShown: shown.contains(.highest), color: .success)
+                }
             }
 
-            do { try await Task.sleep(for: .seconds(0.7)) } catch { return }
-            withAnimation(.appToggle) {
-                showLowest = true
+            if let lowestPoint = SampleChartData.lowestPoint {
+                PointMark(
+                    x: .value("Date", lowestPoint.date, unit: .day),
+                    y: .value("Rate", lowestPoint.rate)
+                )
+                .symbol {
+                    extremeMarker(isShown: shown.contains(.lowest), color: .failure)
+                }
+            }
+        }
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartYScale(domain: SampleChartData.chartYDomain)
+        .frame(height: 180)
+    }
+
+    private func extremeMarker(isShown: Bool, color: Color) -> some View {
+        ZStack {
+            RippleEffect(isActive: isShown, color: color)
+
+            ChartPointMarker(color: color, outerSize: 8, innerSize: 7)
+        }
+        .opacity(isShown ? 1.0 : 0.0)
+        .animation(.appToggle, value: isShown)
+    }
+
+    private func statCards(showing shown: Set<ChartIndicator>) -> some View {
+        VStack(spacing: Spacing.tight) {
+            HStack(spacing: Spacing.element) {
+                StatCard(
+                    label: "Highest",
+                    value: (SampleChartData.highestPoint?.rate ?? 0).formatted(.number.precision(.fractionLength(4))),
+                    indicatorColor: .success,
+                    isToggled: shown.contains(.highest),
+                    size: .compact
+                ) {
+                    toggle(.highest, in: shown)
+                }
+
+                StatCard(
+                    label: "Lowest",
+                    value: (SampleChartData.lowestPoint?.rate ?? 0).formatted(.number.precision(.fractionLength(4))),
+                    indicatorColor: .failure,
+                    isToggled: shown.contains(.lowest),
+                    size: .compact
+                ) {
+                    toggle(.lowest, in: shown)
+                }
             }
 
-            do { try await Task.sleep(for: .seconds(1.6)) } catch { return }
-            withAnimation(.appToggle) {
-                showAverage = false
-                showHighest = false
-                showLowest = false
-            }
+            HStack(spacing: Spacing.element) {
+                StatCard(
+                    label: "Average",
+                    value: SampleChartData.averageRate.formatted(.number.precision(.fractionLength(4))),
+                    indicatorColor: .gray,
+                    isToggled: shown.contains(.average),
+                    size: .compact
+                ) {
+                    toggle(.average, in: shown)
+                }
 
-            do { try await Task.sleep(for: .seconds(1.0)) } catch { return }
+                StatCard(
+                    label: "Volatility",
+                    value: "Low",
+                    indicatorColor: nil,
+                    isToggled: false,
+                    size: .compact
+                ) {}
+            }
         }
     }
 }
 
-private struct MockStatCard: View {
-    let label: String
-    let value: String
-    let isToggled: Bool
-    let color: Color?
-    let action: () -> Void
+private nonisolated enum ChartIndicator: CaseIterable {
+    case average
+    case highest
+    case lowest
+}
 
-    @ViewBuilder
-    var body: some View {
-        let card = Button(action: action) {
-            VStack(alignment: .leading, spacing: Spacing.hairline) {
-                HStack(spacing: Spacing.hairline) {
-                    Text(label)
-                        .font(.appCaption)
-                        .foregroundStyle(.secondary)
+private nonisolated enum DemoPhase {
+    case cleared
+    case average
+    case highest
+    case lowest
 
-                    if let color {
-                        Circle()
-                            .fill(color.opacity(isToggled ? 1.0 : 0.3))
-                            .frame(width: 5, height: 5)
-                            .animation(.appToggle, value: isToggled)
-                    }
-                }
-
-                Text(value)
-                    .font(.appFootnote.weight(.medium).monospacedDigit())
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(Spacing.chipPadding)
-            .background(
-                isToggled && color != nil ? Color.accentColor.opacity(0.08) : Color.gray.opacity(0.05),
-                in: .rect(cornerRadius: Radius.badge)
-            )
+    init(step: Double) {
+        switch step {
+        case ..<0.5: self = .cleared
+        case ..<1.5: self = .average
+        case ..<2.5: self = .highest
+        default: self = .lowest
         }
-        .buttonStyle(.plain)
-        .disabled(color == nil)
-        .accessibilityLabel("\(label): \(value)")
+    }
 
-        if color != nil {
-            card.accessibilityHint(isToggled ? "Tap to hide \(label.lowercased()) indicator on chart" : "Tap to show \(label.lowercased()) indicator on chart")
-        } else {
-            card
+    var shownIndicators: Set<ChartIndicator> {
+        switch self {
+        case .cleared: []
+        case .average: [.average]
+        case .highest: [.average, .highest]
+        case .lowest: [.average, .highest, .lowest]
         }
     }
 }

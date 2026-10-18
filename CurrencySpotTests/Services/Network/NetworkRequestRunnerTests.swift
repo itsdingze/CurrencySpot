@@ -1,8 +1,40 @@
 @testable import CurrencySpot
 import Foundation
+import Synchronization
 import Testing
 
 // MARK: - Failing URLProtocols
+
+private nonisolated final class FailsOnceURLProtocol: URLProtocol {
+    private static let attempts = Mutex<[String: Int]>([:])
+
+    static func attemptCount(for url: URL) -> Int {
+        attempts.withLock { $0[url.absoluteString, default: 0] }
+    }
+
+    override class func canInit(with _: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        guard let url = request.url else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badURL))
+            return
+        }
+        let attempt = Self.attempts.withLock { attempts in
+            attempts[url.absoluteString, default: 0] += 1
+            return attempts[url.absoluteString, default: 0]
+        }
+        let statusCode = attempt == 1 ? 503 : 200
+        guard let response = HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: "HTTP/1.1", headerFields: nil) else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: statusCode == 200 ? Data(#"["ok"]"#.utf8) : Data())
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
+}
 
 private nonisolated final class CancelledURLProtocol: URLProtocol {
     override class func canInit(with _: URLRequest) -> Bool { true }
@@ -58,6 +90,23 @@ struct NetworkRequestRunnerTests {
                 clock: ImmediateClock()
             )
         }
+    }
+
+    @Test("a retryable server error is retried and the following success is returned", .timeLimit(.minutes(1)))
+    func serverErrorThenSuccessReturnsTheSuccess() async throws {
+        let url = try #require(URL(string: "https://stub.test/fails-once"))
+
+        let result: [String] = try await NetworkRequestRunner.performRequestWithRetry(
+            url: url,
+            urlSession: makeSession(FailsOnceURLProtocol.self),
+            responseType: [String].self,
+            endpoint: "fails-once-endpoint",
+            retryPolicy: Self.retryPolicy,
+            clock: ImmediateClock()
+        )
+
+        #expect(result == ["ok"])
+        #expect(FailsOnceURLProtocol.attemptCount(for: url) == 2)
     }
 
     @Test("Retryable server errors exhaust all retries through the injected clock", .timeLimit(.minutes(1)))

@@ -1,20 +1,18 @@
 import SwiftUI
 
-nonisolated extension Color {
-    // MARK: - Text
-
-    static let textPrimary = Color(.label)
-    static let textSecondary = Color(.secondaryLabel)
-
+nonisolated extension ShapeStyle where Self == Color {
     // MARK: - Semantic outcomes
 
-    static let success = Color.green
-    static let failure = Color.red
-    static let warning = Color.orange
+    static var success: Color { .green }
+    static var failure: Color { .red }
+    static var warning: Color { .orange }
 
     // MARK: - Surfaces and fills
 
-    static let selectionFill = Color.accentColor.opacity(0.2)
-    static let chartPlaceholder = Color(.systemGray6)
-    static let markerKnockout = Color(.systemBackground)
+    static var chartPlaceholder: Color { Color(.systemGray6) }
+    static var markerKnockout: Color { Color(.systemBackground) }
+
+    static func selectionFill(on accent: Color) -> Color {
+        accent.opacity(0.2)
+    }
 }

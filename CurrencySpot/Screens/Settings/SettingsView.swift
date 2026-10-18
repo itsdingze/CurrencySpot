@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(ExchangeRatesStore.self) private var ratesStore: ExchangeRatesStore
     @Environment(SettingsViewModel.self) private var settingsViewModel: SettingsViewModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var bindableViewModel: Bindable<SettingsViewModel> {
         Bindable(settingsViewModel)
@@ -23,35 +24,22 @@ struct SettingsView: View {
         .navigationDestination(for: Acknowledgement.self) { acknowledgement in
             LicenseDetailView(acknowledgement: acknowledgement)
         }
-        .alert(
-            settingsViewModel.pendingAlert?.title ?? "",
-            isPresented: isAlertPresented,
-            presenting: settingsViewModel.pendingAlert
-        ) { alert in
-            Button(alert.confirmTitle, role: .destructive) {
-                settingsViewModel.confirmAlert(alert)
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: { alert in
-            Text(alert.message)
-        }
+        .confirmationAlert(
+            .refreshAllData,
+            isPresented: bindableViewModel.destination.isPresenting(.alert(.refreshAllData)),
+            onConfirm: { settingsViewModel.confirmAlert(.refreshAllData) }
+        )
+        .confirmationAlert(
+            .resetPreferences,
+            isPresented: bindableViewModel.destination.isPresenting(.alert(.resetPreferences)),
+            onConfirm: { settingsViewModel.confirmAlert(.resetPreferences) }
+        )
         .overlay { toastOverlay }
         .onChange(of: settingsViewModel.toast?.id) { _, newID in
             if newID != nil {
                 AccessibilityNotification.Announcement(settingsViewModel.toast?.message ?? "").post()
             }
         }
-    }
-
-    private var isAlertPresented: Binding<Bool> {
-        Binding(
-            get: { settingsViewModel.pendingAlert != nil },
-            set: { isActive in
-                if !isActive, settingsViewModel.pendingAlert != nil {
-                    settingsViewModel.destination = nil
-                }
-            }
-        )
     }
 
     // MARK: - Navigation Destinations
@@ -166,7 +154,7 @@ struct SettingsView: View {
         Group {
             if let toast = settingsViewModel.toast {
                 ToastView(message: toast.message, icon: toast.icon)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .transition(reduceMotion ? AnyTransition.opacity : .move(edge: .top).combined(with: .opacity))
             }
         }
         .animation(.appSelect, value: settingsViewModel.toast != nil)
@@ -204,7 +192,29 @@ struct SettingsView: View {
     @ViewBuilder
     private func settingsActionButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
         Button(role: .destructive, action: action) {
-            Label(title, systemImage: icon)
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: icon)
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+}
+
+// MARK: - Confirmation Alert
+
+private extension View {
+    func confirmationAlert(
+        _ alert: SettingsViewModel.SettingsAlert,
+        isPresented: Binding<Bool>,
+        onConfirm: @escaping () -> Void
+    ) -> some View {
+        self.alert(alert.title, isPresented: isPresented) {
+            Button(alert.confirmTitle, role: .destructive, action: onConfirm)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(alert.message)
         }
     }
 }

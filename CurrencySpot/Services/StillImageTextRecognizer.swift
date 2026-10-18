@@ -1,13 +1,6 @@
 import UIKit
 import Vision
 
-nonisolated struct StillRecognitionResult: Equatable, Sendable {
-    let items: [RecognizedTextItem]
-    let imagePixelSize: CGSize
-
-    static let empty = StillRecognitionResult(items: [], imagePixelSize: .zero)
-}
-
 nonisolated protocol StillTextRecognitionService: Sendable {
     @concurrent func recognize(_ image: UIImage) async throws -> StillRecognitionResult
 }

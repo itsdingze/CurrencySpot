@@ -45,7 +45,7 @@ struct LoadExchangeRatesUseCaseTests {
     @Test("a failed refresh with nothing saved surfaces the network error, not the load error")
     func refreshSurfacesOriginalError() async {
         repository.fetchExchangeRatesResult = .failure(.networkError("offline"))
-        repository.loadExchangeRatesResult = .failure(.noCachedData)
+        repository.loadExchangeRatesResult = .failure(.noInternetConnection)
 
         guard case let .unavailable(error) = await useCase.refresh() else {
             Issue.record("expected .unavailable")

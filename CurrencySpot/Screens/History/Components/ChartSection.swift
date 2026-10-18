@@ -7,7 +7,7 @@ enum ChartMetrics {
 }
 
 struct ChartSection: View {
-    @Environment(HistoryViewModel.self) private var viewModel: HistoryViewModel
+    @Environment(CurrencyHistoryViewModel.self) private var viewModel
     @Binding var isChartSelectionActive: Bool
 
     var body: some View {
@@ -27,14 +27,14 @@ struct ChartSection: View {
 
     @ViewBuilder
     private var chartContent: some View {
-        if viewModel.displayedChartDataPoints.isEmpty {
-            if isAwaitingFirstResult {
-                loadingView
-            } else {
-                noDataView
-            }
-        } else {
+        if !viewModel.displayedChartDataPoints.isEmpty {
             CurrencyChart(isChartSelectionActive: $isChartSelectionActive)
+        } else if isAwaitingFirstResult {
+            loadingView
+        } else if viewModel.chartData.error != nil {
+            failedView
+        } else {
+            noDataView
         }
     }
 
@@ -64,33 +64,45 @@ struct ChartSection: View {
             .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
             .accessibilityLabel("Chart data not available")
     }
+
+    private var failedView: some View {
+        VStack(spacing: Spacing.element) {
+            Text("Unable to load chart data")
+                .foregroundStyle(.secondary)
+
+            Button("Try Again", action: viewModel.retry)
+                .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity, maxHeight: ChartMetrics.height)
+        .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
+    }
 }
 
 #if DEBUG
 #Preview("Loaded") {
-    @Previewable @State var viewModel = HistoryViewModel.preview()
+    @Previewable @State var viewModel = CurrencyHistoryViewModel.preview()
 
     ChartSection(isChartSelectionActive: .constant(false))
         .environment(viewModel)
-        .task { viewModel.openHistory(for: .eur) }
+        .task { await viewModel.loadChart() }
         .padding()
 }
 
 #Preview("Loading") {
-    @Previewable @State var viewModel = HistoryViewModel.previewLoading()
+    @Previewable @State var viewModel = CurrencyHistoryViewModel.previewLoading()
 
     ChartSection(isChartSelectionActive: .constant(false))
         .environment(viewModel)
-        .task { viewModel.openHistory(for: .eur) }
+        .task { await viewModel.loadChart() }
         .padding()
 }
 
 #Preview("Failed") {
-    @Previewable @State var viewModel = HistoryViewModel.previewFailed()
+    @Previewable @State var viewModel = CurrencyHistoryViewModel.previewFailed()
 
     ChartSection(isChartSelectionActive: .constant(false))
         .environment(viewModel)
-        .task { viewModel.openHistory(for: .eur) }
+        .task { await viewModel.loadChart() }
         .padding()
 }
 #endif

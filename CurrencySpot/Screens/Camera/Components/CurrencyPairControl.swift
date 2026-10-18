@@ -39,7 +39,7 @@ struct CurrencyPairControl: View {
             VStack(spacing: 0) {
                 Text(caption)
                     .font(.appCaption)
-                    .foregroundStyle(Color.textSecondary)
+                    .foregroundStyle(Color.secondary)
 
                 FixedWidthCurrencyLabel(code: code)
             }
@@ -47,6 +47,12 @@ struct CurrencyPairControl: View {
         .buttonStyle(.currencyCode())
         .accessibilityLabel(accessibilityLabel)
         .accessibilityValue(code.rawValue)
+        .accessibilityInputLabels([
+            Text(caption),
+            Text(verbatim: code.rawValue),
+            Text(verbatim: code.localizedName),
+            Text(accessibilityLabel),
+        ])
     }
 
     private var swapButton: some View {
@@ -57,7 +63,7 @@ struct CurrencyPairControl: View {
             }
         } label: {
             Image(systemName: "arrow.trianglehead.swap")
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(.tint)
                 .rotationEffect(.degrees(90))
                 .rotation3DEffect(
                     .degrees(isFlipped ? 180 : 0),

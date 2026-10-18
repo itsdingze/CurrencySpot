@@ -13,11 +13,11 @@ struct BadgeDetailView: View {
             VStack(spacing: 32) {
                 VStack(spacing: Spacing.tight) {
                     amountLine(item.conversion.amount, code: baseCurrency)
-                        .foregroundStyle(Color.textSecondary)
-                    
+                        .foregroundStyle(.secondary)
+
                     Image(systemName: "arrow.down")
                         .font(.appHeadline)
-                        .foregroundStyle(Color.textSecondary)
+                        .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                     
                     amountLine(item.conversion.converted, code: targetCurrency, fractionDigits: 2)
@@ -34,7 +34,7 @@ struct BadgeDetailView: View {
                         Label("Hide this conversion", systemImage: "eye.slash")
                             .font(.appSubheadline)
                     }
-                    .foregroundStyle(Color.textSecondary)
+                    .foregroundStyle(Color.secondary)
                 }
             }
             .padding()
@@ -42,12 +42,10 @@ struct BadgeDetailView: View {
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                    Button("Close", systemImage: "xmark") {
                         dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
                     }
-                    .accessibilityLabel("Close")
+                    .labelStyle(.iconOnly)
                 }
             }
         }

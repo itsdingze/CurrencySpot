@@ -1,4 +1,6 @@
-import SwiftUI
+import Foundation
+import Observation
+import OSLog
 
 // MARK: - SettingsViewModel
 
@@ -13,11 +15,9 @@ final class SettingsViewModel {
         case onboarding
     }
 
-    nonisolated enum SettingsAlert: Identifiable {
+    nonisolated enum SettingsAlert {
         case refreshAllData
         case resetPreferences
-
-        var id: Self { self }
 
         var title: String {
             switch self {
@@ -45,11 +45,6 @@ final class SettingsViewModel {
 
     var destination: Destination?
 
-    var pendingAlert: SettingsAlert? {
-        if case let .alert(alert) = destination { return alert }
-        return nil
-    }
-
     private(set) var toast: ToastData?
 
     private var toastDismissTask: Task<Void, Never>?
@@ -58,29 +53,30 @@ final class SettingsViewModel {
 
     // MARK: - Private Properties
 
+    private let refreshAllDataUseCase: AllDataRefreshing
+    private let resetPreferencesUseCase: ResetPreferencesUseCase
+    private let manageFavoritesUseCase: ManageFavoritesUseCase
     private let preferences: PreferencesStore
-    private let refreshAllDataUseCase: RefreshAllDataUseCase
-    private let watchlist: WatchlistStore
     private let appState: AppState
     private let clock: ClockService
-    private let logger: LoggerService
+    private let logger = Logger(category: .viewModel)
 
     // MARK: - Initialization
 
     init(
-        refreshAllDataUseCase: RefreshAllDataUseCase,
-        watchlist: WatchlistStore,
+        refreshAllDataUseCase: AllDataRefreshing,
+        resetPreferencesUseCase: ResetPreferencesUseCase,
+        manageFavoritesUseCase: ManageFavoritesUseCase,
         preferences: PreferencesStore,
-        appState: AppState = .shared,
-        clock: ClockService = ContinuousClockService(),
-        logger: LoggerService = OSLogLoggerService()
+        appState: AppState,
+        clock: ClockService
     ) {
         self.refreshAllDataUseCase = refreshAllDataUseCase
-        self.watchlist = watchlist
+        self.resetPreferencesUseCase = resetPreferencesUseCase
+        self.manageFavoritesUseCase = manageFavoritesUseCase
         self.preferences = preferences
         self.appState = appState
         self.clock = clock
-        self.logger = logger
     }
 
     // MARK: - Presentation Intents
@@ -120,7 +116,7 @@ final class SettingsViewModel {
                 refreshTask = nil
             }
         case .resetPreferences:
-            resetSettingsToDefault()
+            resetPreferencesUseCase.execute()
             showToast(.preferencesReset)
         }
     }
@@ -153,7 +149,7 @@ final class SettingsViewModel {
         preferences.hasSeenOnboarding = true
     }
 
-    // MARK: - Public Settings Methods
+    // MARK: - Preferences
 
     var accentColor: AccentColorOption {
         get { preferences.accentColor }
@@ -175,49 +171,38 @@ final class SettingsViewModel {
         set { preferences.defaultTargetCurrency = newValue }
     }
 
+    // MARK: - Favorites
+
     var favoriteCurrencies: [CurrencyCode] {
-        preferences.favoriteCurrencies.elements
+        manageFavoritesUseCase.favorites
     }
 
     func addFavorite(_ code: CurrencyCode) {
-        preferences.addFavorite(code)
+        manageFavoritesUseCase.add(code)
     }
 
     func removeFavorites(atOffsets offsets: IndexSet) {
-        for code in offsets.map({ preferences.favoriteCurrencies[$0] }) {
-            preferences.removeFavorite(code)
-        }
+        manageFavoritesUseCase.remove(atOffsets: offsets)
     }
 
     func moveFavorites(fromOffsets offsets: IndexSet, toOffset destination: Int) {
-        preferences.moveFavorites(from: offsets, to: destination)
+        manageFavoritesUseCase.move(fromOffsets: offsets, toOffset: destination)
     }
 
     func addableCurrencies(from rates: [ExchangeRate], matching searchText: String) -> [ExchangeRate] {
-        CurrencySearch.results(
-            in: rates,
-            excluding: Set(preferences.favoriteCurrencies),
-            matching: searchText
-        )
+        manageFavoritesUseCase.addableCurrencies(from: rates, matching: searchText)
     }
 
-    func resetSettingsToDefault() {
-        preferences.resetToDefaults()
+    // MARK: - Data Management
 
-        watchlist.reset(to: preferences.favoriteCurrencies.elements)
-    }
-
-    // MARK: - Data Management Methods
-
-    @discardableResult
-    func refreshAllData() async -> Bool {
+    private func refreshAllData() async -> Bool {
         do {
             try await refreshAllDataUseCase.execute()
-            logger.info("Data wipe complete; refresh started", category: .viewModel)
+            appState.dataWasReset()
+            logger.info("Data wipe complete; refresh started")
             return true
         } catch {
-            logger.error("Failed to refresh data: \(error)", category: .viewModel)
-
+            logger.error("Failed to refresh data: \(error.localizedDescription, privacy: .public)")
             if let appError = AppError.from(error) {
                 appState.errorHandler.handle(appError)
             }

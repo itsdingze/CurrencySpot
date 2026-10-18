@@ -6,9 +6,11 @@ final class MockNetworkService: NetworkService {
         .failure(AppError.networkError("MockNetworkService: no exchange rates stubbed"))
     var historicalRatesResult: Result<HistoricalRatesResponse, Error> =
         .failure(AppError.networkError("MockNetworkService: no historical rates stubbed"))
+    var historicalRatesProvider: ((Date, Date) -> HistoricalRatesResponse)?
 
     private(set) var fetchExchangeRatesCallCount = 0
     private(set) var fetchHistoricalRatesCalls: [(from: Date, to: Date)] = []
+    private(set) var cancelledHistoricalFetchCount = 0
 
     func fetchExchangeRates() async throws -> ExchangeRatesResponse {
         fetchExchangeRatesCallCount += 1
@@ -20,6 +22,13 @@ final class MockNetworkService: NetworkService {
     func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> HistoricalRatesResponse {
         fetchHistoricalRatesCalls.append((from: startDate, to: endDate))
         await historicalFetchBarrier?()
+        if Task.isCancelled {
+            cancelledHistoricalFetchCount += 1
+            throw CancellationError()
+        }
+        if let historicalRatesProvider {
+            return historicalRatesProvider(startDate, endDate)
+        }
         return try historicalRatesResult.get()
     }
 

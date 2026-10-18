@@ -3,7 +3,6 @@ import Foundation
 nonisolated enum AppError: Error, Identifiable, Equatable {
     case networkError(String)
     case noInternetConnection
-    case noCachedData
     case decodingError(String)
     case httpError(statusCode: Int)
     case dateCalculationError(String)
@@ -25,7 +24,6 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
         switch self {
         case .networkError: "network"
         case .noInternetConnection: "noInternet"
-        case .noCachedData: "noCache"
         case .decodingError: "decoding"
         case .httpError: "http"
         case .dateCalculationError: "dateCalculation"
@@ -52,7 +50,7 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
             "\(message)-\(attempts)"
         case let .httpError(statusCode):
             "\(statusCode)"
-        case .noInternetConnection, .noCachedData, .cameraCaptureFailed, .photoImportFailed,
+        case .noInternetConnection, .cameraCaptureFailed, .photoImportFailed,
              .textRecognitionFailed:
             "static"
         }
@@ -62,7 +60,6 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
         switch self {
         case .networkError: "Network Error"
         case .noInternetConnection: "No Internet Connection"
-        case .noCachedData: "No Cached Data"
         case .decodingError: "Data Error"
         case .httpError: "API Error"
         case .dateCalculationError: "Date Processing Error"
@@ -82,8 +79,6 @@ nonisolated enum AppError: Error, Identifiable, Equatable {
             "\(message). Please check your internet connection."
         case .noInternetConnection:
             "Unable to connect to the internet. Please check your connection."
-        case .noCachedData:
-            "No exchange rate data available. Connect to the internet to get the latest rates."
         case let .decodingError(message):
             "Error decoding data: \(message)"
         case let .httpError(statusCode):

@@ -6,6 +6,8 @@ struct NavigationHeader: View {
     let onBack: () -> Void
     let onSkip: () -> Void
 
+    @Environment(\.appAccent) private var accent
+
     var body: some View {
         HStack(spacing: Spacing.onboarding) {
             backButton
@@ -16,20 +18,23 @@ struct NavigationHeader: View {
     }
 
     private var backButton: some View {
-        Button("Go back", systemImage: "arrow.left", action: onBack)
-            .labelStyle(.iconOnly)
-            .font(.appHeadline)
-            .buttonStyle(.plain)
-            .opacity(currentPage > 0 ? 1 : 0)
-            .disabled(currentPage == 0)
-            .accessibilityHidden(currentPage == 0)
+        Button(action: onBack) {
+            Label("Go back", systemImage: "arrow.left")
+                .labelStyle(.iconOnly)
+                .minimumHitTarget()
+        }
+        .font(.appHeadline)
+        .buttonStyle(.plain)
+        .opacity(currentPage > 0 ? 1 : 0)
+        .disabled(currentPage == 0)
+        .accessibilityHidden(currentPage == 0)
     }
 
     private var progressIndicator: some View {
         HStack(spacing: Spacing.tight) {
             ForEach(0 ..< totalPages, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(index <= currentPage ? Color.accentColor : Color.gray.opacity(0.3))
+                    .fill(index <= currentPage ? accent : Color.gray.opacity(0.3))
                     .frame(height: 4)
                     .animation(.appSelect, value: currentPage)
             }
@@ -39,10 +44,12 @@ struct NavigationHeader: View {
     }
 
     private var skipButton: some View {
-        Button("Skip", action: onSkip)
-            .font(.appSubheadline.weight(.medium))
-            .foregroundStyle(.primary)
-            .accessibilityLabel("Skip onboarding")
+        Button(action: onSkip) {
+            Text("Skip")
+                .minimumHitTarget()
+        }
+        .font(.appSubheadline.weight(.medium))
+        .foregroundStyle(.primary)
     }
 }
 

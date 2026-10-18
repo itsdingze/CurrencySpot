@@ -5,7 +5,7 @@ struct UnifiedCurrencyView: View {
         case source
         case converted
 
-        var title: String {
+        fileprivate var title: String {
             switch self {
             case .source:
                 "From"
@@ -14,48 +14,39 @@ struct UnifiedCurrencyView: View {
             }
         }
 
-        var titleColor: Color {
+        fileprivate var captionStyle: AnyShapeStyle {
             switch self {
             case .source:
-                .textSecondary
+                AnyShapeStyle(Color.secondary)
             case .converted:
-                .accentColor
+                AnyShapeStyle(.tint)
             }
         }
 
-        var amountColor: Color {
+        fileprivate var amountStyle: AnyShapeStyle {
             switch self {
             case .source:
-                .textPrimary
+                AnyShapeStyle(Color.primary)
             case .converted:
-                .accentColor
+                AnyShapeStyle(.tint)
             }
         }
 
-        var buttonColor: Color {
+        fileprivate func backgroundColor(accent: Color) -> Color {
             switch self {
             case .source:
-                .textSecondary
+                Color.secondary.opacity(0.2)
             case .converted:
-                .accentColor
+                .selectionFill(on: accent)
             }
         }
 
-        var backgroundColor: Color {
+        fileprivate func strokeColor(accent: Color) -> Color {
             switch self {
             case .source:
-                .textSecondary.opacity(0.2)
+                Color.secondary.opacity(0.1)
             case .converted:
-                .selectionFill
-            }
-        }
-
-        var strokeColor: Color {
-            switch self {
-            case .source:
-                .textSecondary.opacity(0.1)
-            case .converted:
-                .accentColor.opacity(0.1)
+                accent.opacity(0.1)
             }
         }
     }
@@ -64,6 +55,8 @@ struct UnifiedCurrencyView: View {
     let amount: String
     let currencyCode: CurrencyCode
     let onPress: () -> Void
+
+    @Environment(\.appAccent) private var accent
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.tight) {
@@ -78,7 +71,7 @@ struct UnifiedCurrencyView: View {
     private var titleView: some View {
         Text(type.title)
             .font(.appHeadline.weight(.medium))
-            .foregroundStyle(type.titleColor)
+            .foregroundStyle(type.captionStyle)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -95,7 +88,7 @@ struct UnifiedCurrencyView: View {
     private var amountText: some View {
         Text(amount)
             .font(.appLargeTitle.monospacedDigit())
-            .foregroundStyle(type.amountColor)
+            .foregroundStyle(type.amountStyle)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .contentTransition(.numericText())
@@ -129,8 +122,8 @@ struct UnifiedCurrencyView: View {
                     .bold()
             }
         }
-        .buttonStyle(.currencyCode(fill: type.backgroundColor, stroke: type.strokeColor))
-        .foregroundStyle(type.buttonColor)
+        .buttonStyle(.currencyCode(fill: type.backgroundColor(accent: accent), stroke: type.strokeColor(accent: accent)))
+        .foregroundStyle(type.captionStyle)
         .accessibilityLabel(accessibilityButtonLabel)
         .accessibilityValue(accessibilityButtonValue)
         .accessibilityInputLabels(accessibilityInputLabels)

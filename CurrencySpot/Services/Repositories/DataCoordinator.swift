@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 // MARK: - DataCoordinator
 
@@ -11,9 +12,11 @@ final class DataCoordinator {
     private let syncStore: HistoricalSyncStore
     private let fetchDateStore: RatesFetchDateStore
     private let dateProvider: DateProvider
-    private let logger: LoggerService
+    private let logger = Logger(category: .data)
 
-    private var pendingHistoricalWrite: Task<Void, Never>?
+    private var inFlightFetches: [CETDayRange: SharedHistoricalFetch] = [:]
+
+    private var pendingHistoricalWrite: Task<Void, Error>?
 
     private var clearEpoch = 0
 
@@ -23,10 +26,9 @@ final class DataCoordinator {
         networkService: NetworkService,
         persistenceService: PersistenceService,
         cacheService: CacheService,
-        syncStore: HistoricalSyncStore = UserDefaultsHistoricalSyncStore(),
+        syncStore: HistoricalSyncStore,
         fetchDateStore: RatesFetchDateStore,
-        dateProvider: DateProvider = SystemDateProvider(),
-        logger: LoggerService = OSLogLoggerService()
+        dateProvider: DateProvider
     ) {
         self.networkService = networkService
         self.persistenceService = persistenceService
@@ -34,7 +36,6 @@ final class DataCoordinator {
         self.syncStore = syncStore
         self.fetchDateStore = fetchDateStore
         self.dateProvider = dateProvider
-        self.logger = logger
     }
 
     // MARK: - DTO -> Domain Mapping
@@ -43,6 +44,24 @@ final class DataCoordinator {
         rates.compactMap { code, rate in
             CurrencyCode(code).map { ExchangeRate(currencyCode: $0, rate: rate) }
         }
+    }
+
+    @concurrent
+    private nonisolated static func snapshots(from rates: [String: [String: Double]]) async -> [HistoricalRateSnapshot] {
+        rates.compactMap { dateString, currencyRates -> HistoricalRateSnapshot? in
+            guard let date = CETCalendar.date(fromDayString: dateString) else { return nil }
+            let points = currencyRates.compactMap { code, rate in
+                CurrencyCode(code).map { HistoricalRatePoint(currencyCode: $0, rate: rate) }
+            }
+            return HistoricalRateSnapshot(date: date, rates: points)
+        }
+        .sorted { $0.date < $1.date }
+    }
+
+    // MARK: - Clear Fence
+
+    private func ensureNotCleared(since epoch: Int) throws {
+        guard epoch == clearEpoch else { throw CancellationError() }
     }
 }
 
@@ -61,12 +80,12 @@ extension DataCoordinator: ExchangeRateRepository {
         let domainRates = Self.domainRates(from: updatedRates)
 
         async let cacheOperation: Void = cacheService.cacheExchangeRates(domainRates)
-        async let persistOperation: Void = persistenceService.saveExchangeRates(updatedRates)
+        async let persistOperation: Void = persistenceService.saveExchangeRates(domainRates)
 
         do {
             _ = try await (cacheOperation, persistOperation)
         } catch {
-            logger.warning("Failed to store fetched rates: \(error.localizedDescription)", category: .data)
+            logger.warning("Failed to store fetched rates: \(error.localizedDescription, privacy: .public)")
         }
 
         fetchDateStore.lastFetchDate = dateProvider.now()
@@ -85,13 +104,13 @@ extension DataCoordinator: ExchangeRateRepository {
                 return persistedRates
             }
         } catch {
-            logger.warning("Failed to load from persistence: \(error.localizedDescription)", category: .persistence)
+            logger.warning("Failed to load saved rates: \(error.localizedDescription, privacy: .public)")
         }
 
         do {
             return try await fetchExchangeRates()
         } catch {
-            logger.warning("Network fetch also failed: \(error.localizedDescription)", category: .network)
+            logger.warning("Network fetch also failed: \(error.localizedDescription, privacy: .public)")
             throw error
         }
     }
@@ -100,97 +119,73 @@ extension DataCoordinator: ExchangeRateRepository {
 // MARK: - HistoricalRateRepository
 
 extension DataCoordinator: HistoricalRateRepository {
-    func fetchHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
-        let epoch = clearEpoch
-        let historicalResponse = try await networkService.fetchHistoricalRates(
-            from: range.start,
-            to: range.end
-        )
-
-        guard epoch == clearEpoch else { throw CancellationError() }
-
-        let snapshots = await Self.snapshots(from: historicalResponse.rates)
-
-        guard epoch == clearEpoch else { throw CancellationError() }
-
-        schedulePersist(of: historicalResponse.rates, from: range.start, through: range.end, epoch: epoch)
-        return snapshots
+    func cachedHistoricalRates() async -> [HistoricalRateSnapshot] {
+        await cacheService.getCachedHistoricalData() ?? []
     }
 
-    func waitForPendingHistoricalWrites() async {
-        await pendingHistoricalWrite?.value
+    func fetchAndMergeHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
+        let days = CETDayRange(range)
+        if let joined = joinInFlightFetch(covering: days) {
+            return try await joined.value().filter { days.contains($0.date) }
+        }
+
+        let fetch = startSharedFetch(of: range, keyedBy: days)
+        defer {
+            if inFlightFetches[days] === fetch {
+                inFlightFetches[days] = nil
+            }
+        }
+        return try await fetch.value().filter { days.contains($0.date) }
     }
 
-    func fetchTransientHistoricalRates(for currencies: [CurrencyCode], in range: DateRange) async throws -> [HistoricalRateSnapshot] {
+    func loadAndMergeStoredHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
         let epoch = clearEpoch
-        let response = try await networkService.fetchHistoricalRates(
-            from: range.start,
-            to: range.end,
-            quotes: currencies.map(\.rawValue)
-        )
-        guard epoch == clearEpoch else { throw CancellationError() }
-        let snapshots = await Self.snapshots(from: response.rates)
-        guard epoch == clearEpoch else { throw CancellationError() }
-        return snapshots
+        let rows = try await loadStoredHistoricalRates(in: range)
+        try ensureNotCleared(since: epoch)
+        _ = await cacheService.mergeHistoricalData(rows)
+        return rows
     }
 
-    func fetchAndPersistHistoricalRates(in range: DateRange) async throws {
+    private func joinInFlightFetch(covering days: CETDayRange) -> SharedHistoricalFetch? {
+        for (key, fetch) in inFlightFetches where key.covers(days) && fetch.join() {
+            return fetch
+        }
+        return nil
+    }
+
+    private func startSharedFetch(of range: DateRange, keyedBy days: CETDayRange) -> SharedHistoricalFetch {
         let epoch = clearEpoch
+        let fetch = SharedHistoricalFetch(task: Task {
+            try await self.fetchMergeAndPersist(range, epoch: epoch)
+        })
+        _ = fetch.join()
+        inFlightFetches[days] = fetch
+        return fetch
+    }
+
+    private func fetchMergeAndPersist(_ range: DateRange, epoch: Int) async throws -> [HistoricalRateSnapshot] {
         let response = try await networkService.fetchHistoricalRates(from: range.start, to: range.end)
-        guard epoch == clearEpoch else { throw CancellationError() }
+        try Task.checkCancellation()
+        try ensureNotCleared(since: epoch)
+
+        let snapshots = await Self.snapshots(from: response.rates)
+        try ensureNotCleared(since: epoch)
+
+        _ = await cacheService.mergeHistoricalData(snapshots)
+        try ensureNotCleared(since: epoch)
+
         schedulePersist(of: response.rates, from: range.start, through: range.end, epoch: epoch)
+        return snapshots
     }
+}
 
-    private func schedulePersist(of rates: [String: [String: Double]], from startDate: Date, through endDate: Date, epoch: Int) {
-        let previousWrite = pendingHistoricalWrite
-        pendingHistoricalWrite = Task {
-            await previousWrite?.value
-            guard !Task.isCancelled, epoch == clearEpoch else { return }
-            do {
-                try await persistenceService.saveHistoricalExchangeRates(rates)
-                guard epoch == clearEpoch else { return }
-                syncStore.record(from: startDate, through: endDate, at: dateProvider.now())
-            } catch {
-                let cached = await cacheService.getCachedHistoricalData() ?? []
-                await cacheService.cacheHistoricalData(cached.filter { $0.date < startDate || $0.date > endDate })
-                logger.warning("Deferred historical save failed; window evicted and coverage not recorded: \(error.localizedDescription)", category: .persistence)
-            }
-        }
-    }
+// MARK: - StoredHistoricalRateRepository
 
-    @concurrent
-    private nonisolated static func snapshots(from rates: [String: [String: Double]]) async -> [HistoricalRateSnapshot] {
-        rates.compactMap { dateString, currencyRates -> HistoricalRateSnapshot? in
-            guard let date = CETCalendar.date(fromDayString:dateString) else { return nil }
-            let points = currencyRates.compactMap { code, rate in
-                CurrencyCode(code).map { HistoricalRatePoint(currencyCode: $0, rate: rate) }
-            }
-            return HistoricalRateSnapshot(date: date, rates: points)
-        }
-        .sorted { $0.date < $1.date }
-    }
-
-    func loadHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
+extension DataCoordinator: StoredHistoricalRateRepository {
+    func loadStoredHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
+        await settlePendingWrites()
         do {
-            return try await loadStoredHistory(from: range.start, to: range.end)
-        } catch {
-            logger.warning("Failed to load historical data from persistence: \(error.localizedDescription)", category: .persistence)
-
-            // Fetched snapshots are returned directly; re-reading persistence here
-            // would race the deferred save.
-            do {
-                return try await fetchHistoricalRates(in: range)
-            } catch {
-                logger.warning("Network fetch for historical data also failed: \(error.localizedDescription)", category: .network)
-            }
-
-            return []
-        }
-    }
-
-    private func loadStoredHistory(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
-        do {
-            return try await persistenceService.loadHistoricalRates(from: startDate, to: endDate)
+            return try await persistenceService.loadHistoricalRates(from: range.start, to: range.end)
         } catch PersistenceError.undecodableRowsPurged {
             syncStore.reset()
             throw PersistenceError.undecodableRowsPurged
@@ -198,23 +193,89 @@ extension DataCoordinator: HistoricalRateRepository {
     }
 
     func earliestStoredDate() async throws -> Date? {
-        try await persistenceService.getEarliestStoredDate()
+        await settlePendingWrites()
+        return try await persistenceService.getEarliestStoredDate()
     }
 
     func latestStoredDate() async throws -> Date? {
-        try await persistenceService.getLatestStoredDate()
+        await settlePendingWrites()
+        return try await persistenceService.getLatestStoredDate()
+    }
+
+    private func settlePendingWrites() async {
+        _ = await pendingHistoricalWrite?.result
+    }
+}
+
+// MARK: - ArchiveRepository
+
+extension DataCoordinator: ArchiveRepository {
+    func fetchTransientHistoricalRates(for currencies: [CurrencyCode], in range: DateRange) async throws -> [HistoricalRateSnapshot] {
+        let epoch = clearEpoch
+        let response = try await networkService.fetchHistoricalRates(
+            from: range.start,
+            to: range.end,
+            quotes: currencies.map(\.rawValue)
+        )
+        try ensureNotCleared(since: epoch)
+        let snapshots = await Self.snapshots(from: response.rates)
+        try ensureNotCleared(since: epoch)
+        return snapshots
+    }
+
+    func fetchAndPersistHistoricalRates(in range: DateRange) async throws {
+        let epoch = clearEpoch
+        let response = try await networkService.fetchHistoricalRates(from: range.start, to: range.end)
+        try ensureNotCleared(since: epoch)
+        try await schedulePersist(of: response.rates, from: range.start, through: range.end, epoch: epoch).value
     }
 
     func pruneHistoricalRates(before cutoff: Date) async throws {
         try await persistenceService.deleteHistoricalRates(before: cutoff)
     }
 
-    func cachedHistoricalRates() async -> [HistoricalRateSnapshot] {
-        await cacheService.getCachedHistoricalData() ?? []
+    func archiveStoredBounds() async throws -> (earliest: Date?, latest: Date?) {
+        for fetch in Array(inFlightFetches.values) {
+            await fetch.waitUntilFinished()
+        }
+        let earliest = try await earliestStoredDate()
+        let latest = try await latestStoredDate()
+        return (earliest, latest)
+    }
+}
+
+// MARK: - Deferred Historical Writes
+
+extension DataCoordinator {
+    @discardableResult
+    private func schedulePersist(
+        of rates: [String: [String: Double]],
+        from startDate: Date,
+        through endDate: Date,
+        epoch: Int
+    ) -> Task<Void, Error> {
+        let previousWrite = pendingHistoricalWrite
+        let write = Task {
+            _ = await previousWrite?.result
+            try Task.checkCancellation()
+            try ensureNotCleared(since: epoch)
+            do {
+                try await persistenceService.saveHistoricalExchangeRates(rates)
+            } catch {
+                await evictFromSharedSeries(from: startDate, through: endDate)
+                logger.warning("Deferred historical save failed; window evicted and coverage not recorded: \(error.localizedDescription, privacy: .public)")
+                throw error
+            }
+            try ensureNotCleared(since: epoch)
+            syncStore.record(from: startDate, through: endDate, at: dateProvider.now())
+        }
+        pendingHistoricalWrite = write
+        return write
     }
 
-    func mergeCachedHistoricalRates(_ new: [HistoricalRateSnapshot]) async -> [HistoricalRateSnapshot] {
-        await cacheService.mergeHistoricalData(new)
+    private func evictFromSharedSeries(from startDate: Date, through endDate: Date) async {
+        let cached = await cacheService.getCachedHistoricalData() ?? []
+        await cacheService.cacheHistoricalData(cached.filter { $0.date < startDate || $0.date > endDate })
     }
 }
 
@@ -236,10 +297,6 @@ extension DataCoordinator: TrendRepository {
         try await persistenceService.saveTrendData(trends)
         await cacheService.cacheTrendData(trends)
     }
-
-    func loadHistoricalRates(from startDate: Date, to endDate: Date) async throws -> [HistoricalRateSnapshot] {
-        try await loadStoredHistory(from: startDate, to: endDate)
-    }
 }
 
 // MARK: - DataClearing
@@ -248,9 +305,14 @@ extension DataCoordinator: DataClearing {
     func clearAllData() async throws {
         clearEpoch += 1
 
+        for fetch in inFlightFetches.values {
+            fetch.abandon()
+        }
+        inFlightFetches.removeAll()
+
         let pending = pendingHistoricalWrite
         pending?.cancel()
-        await pending?.value
+        _ = await pending?.result
         if pendingHistoricalWrite == pending {
             pendingHistoricalWrite = nil
         }
@@ -265,15 +327,19 @@ extension DataCoordinator: DataClearing {
     }
 }
 
+// MARK: - ChartDataCacheRepository
+
 extension DataCoordinator: ChartDataCacheRepository {
     func cachedChartData(for key: ChartCacheKey) async -> [ChartDataPoint]? {
-        await cacheService.getCachedProcessedChartData(for: key.storageKey)
+        await cacheService.getCachedProcessedChartData(for: key)
     }
 
     func storeChartData(_ data: [ChartDataPoint], for key: ChartCacheKey) async {
-        await cacheService.cacheProcessedChartData(data, for: key.storageKey)
+        await cacheService.cacheProcessedChartData(data, for: key)
     }
 }
+
+// MARK: - SyncCoverageRepository
 
 extension DataCoordinator: SyncCoverageRepository {
     var coveredFrom: Date? { syncStore.from }
@@ -282,5 +348,26 @@ extension DataCoordinator: SyncCoverageRepository {
 
     func recordCoverage(from: Date, through: Date, at now: Date) {
         syncStore.record(from: from, through: through, at: now)
+    }
+}
+
+// MARK: - CETDayRange
+
+private nonisolated struct CETDayRange: Hashable {
+    let start: Date
+    let end: Date
+
+    init(_ range: DateRange) {
+        let calendar = CETCalendar.calendar
+        start = calendar.startOfDay(for: range.start)
+        end = calendar.startOfDay(for: range.end)
+    }
+
+    func covers(_ other: CETDayRange) -> Bool {
+        start <= other.start && end >= other.end
+    }
+
+    func contains(_ date: Date) -> Bool {
+        date >= start && date <= end
     }
 }

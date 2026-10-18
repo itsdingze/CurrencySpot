@@ -1,4 +1,6 @@
-import SwiftUI
+import Foundation
+import IdentifiedCollections
+import Observation
 
 // MARK: - CalculatorViewModel
 
@@ -11,6 +13,11 @@ final class CalculatorViewModel {
         var id: Self { self }
     }
 
+    nonisolated enum FailureRecovery: Equatable {
+        case retry
+        case sampleRates
+    }
+
     // MARK: - Input and Calculation Properties
 
     var inputAmountString = "0"
@@ -19,7 +26,7 @@ final class CalculatorViewModel {
 
     var availableRates: [ExchangeRate] { ratesStore.rates }
 
-    var favoriteCurrencies: [CurrencyCode] { preferences.favoriteCurrencies.elements }
+    var favoriteCurrencies: [CurrencyCode] { favorites.codes.elements }
 
     // MARK: - Currency Selection Properties
 
@@ -55,12 +62,16 @@ final class CalculatorViewModel {
         appState.networkMonitor.isConnected && lastRefreshFailed
     }
 
+    var failureRecovery: FailureRecovery {
+        appState.networkMonitor.isConnected ? .retry : .sampleRates
+    }
+
     // MARK: - Private Properties
 
     private let loadExchangeRatesUseCase: LoadExchangeRatesUseCase
     private let calculateConversionUseCase: CalculateConversionUseCase
     private let ratesStore: ExchangeRatesStore
-    private let preferences: PreferencesStore
+    private let favorites: CurrencyCodeListStore
     private let appState: AppState
     private var fetchTask: Task<Void, Never>?
     private var fetchGeneration = 0
@@ -71,20 +82,22 @@ final class CalculatorViewModel {
 
     init(
         loadExchangeRatesUseCase: LoadExchangeRatesUseCase,
-        calculateConversionUseCase: CalculateConversionUseCase = CalculateConversionUseCase(),
+        calculateConversionUseCase: CalculateConversionUseCase,
         ratesStore: ExchangeRatesStore,
         preferences: PreferencesStore,
-        appState: AppState = .shared
+        favorites: CurrencyCodeListStore,
+        appState: AppState
     ) {
         self.loadExchangeRatesUseCase = loadExchangeRatesUseCase
         self.calculateConversionUseCase = calculateConversionUseCase
         self.ratesStore = ratesStore
-        self.preferences = preferences
+        self.favorites = favorites
         self.appState = appState
 
         baseCurrency = preferences.defaultBaseCurrency
         targetCurrency = preferences.defaultTargetCurrency
         ratesStore.updateBaseCurrency(baseCurrency)
+        observeDataReset()
     }
 
     // MARK: - Computed Properties (Calculation Results)
@@ -113,7 +126,8 @@ final class CalculatorViewModel {
     // MARK: - Computed Properties (Formatted Display Values)
 
     var formattedLastUpdated: String {
-        ratesStore.formattedLastUpdated
+        guard let lastUpdated else { return "Not updated yet" }
+        return "Last updated: \(lastUpdated.lastUpdatedDisplay)"
     }
 
     // MARK: - Input Intents
@@ -188,12 +202,6 @@ final class CalculatorViewModel {
         inputAmountString = pending.amountInput
     }
 
-    func clearAllData() {
-        publish(rates: [], lastUpdated: nil, isShowingSampleRates: false)
-        loadState = .loaded([])
-        lastRefreshFailed = false
-    }
-
     private func startFetchTask() {
         fetchGeneration += 1
         let generation = fetchGeneration
@@ -203,6 +211,27 @@ final class CalculatorViewModel {
                 fetchTask = nil
             }
         }
+    }
+
+    // MARK: - Data Reset
+
+    private func observeDataReset() {
+        withObservationTracking {
+            _ = appState.dataResetCount
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                observeDataReset()
+                await reloadAfterDataReset()
+            }
+        }
+    }
+
+    private func reloadAfterDataReset() async {
+        publish(rates: [], lastUpdated: nil, isShowingSampleRates: false)
+        loadState = .loaded([])
+        lastRefreshFailed = false
+        await checkIfShouldFetch()
     }
 
     // MARK: - Data Fetching Methods

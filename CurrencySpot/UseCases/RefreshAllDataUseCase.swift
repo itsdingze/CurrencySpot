@@ -1,23 +1,26 @@
 import Foundation
 
+// MARK: - ArchiveBackfillResetting
+
+protocol ArchiveBackfillResetting {
+    func reset()
+}
+
+extension BackfillArchiveUseCase: ArchiveBackfillResetting {}
+
 // MARK: - RefreshAllDataUseCase
 
 final class RefreshAllDataUseCase {
     private let repository: DataClearing
-    private var resetHandlers: [@MainActor () async -> Void] = []
+    private let backfill: ArchiveBackfillResetting
 
-    init(repository: DataClearing) {
+    init(repository: DataClearing, backfill: ArchiveBackfillResetting) {
         self.repository = repository
-    }
-
-    func registerResetHandler(_ handler: @escaping @MainActor () async -> Void) {
-        resetHandlers.append(handler)
+        self.backfill = backfill
     }
 
     func execute() async throws {
         try await repository.clearAllData()
-        for handler in resetHandlers {
-            await handler()
-        }
+        backfill.reset()
     }
 }

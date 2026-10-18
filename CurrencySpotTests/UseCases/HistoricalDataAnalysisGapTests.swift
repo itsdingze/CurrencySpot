@@ -10,7 +10,8 @@ struct HistoricalDataAnalysisGapTests {
 
     private static func useCase(from: Date?, through: Date?, checkedAt: Date?) -> HistoricalDataAnalysisUseCase {
         HistoricalDataAnalysisUseCase(
-            syncCoverage: MockHistoricalSyncStore(from: from, through: through, checkedAt: checkedAt)
+            syncCoverage: MockHistoricalSyncStore(from: from, through: through, checkedAt: checkedAt),
+            dateProvider: FixedDateProvider(day(2026, 6, 10))
         )
     }
 

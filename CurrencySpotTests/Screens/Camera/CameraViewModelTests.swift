@@ -3,60 +3,48 @@ import Testing
 import UIKit
 @testable import CurrencySpot
 
-private final class MockCameraPermissionService: CameraPermissionService {
-    let status: CameraAuthorizationStatus
-    let grantsAccess: Bool
-
-    init(status: CameraAuthorizationStatus, grantsAccess: Bool = false) {
-        self.status = status
-        self.grantsAccess = grantsAccess
-    }
-
-    func currentStatus() -> CameraAuthorizationStatus { status }
-    func requestAccess() async -> Bool { grantsAccess }
-}
-
-private struct MockTorchService: TorchService {
-    let available: Bool
-
-    func setTorch(enabled: Bool) -> Bool { available && enabled }
-}
-
-private struct MockStillTextRecognitionService: StillTextRecognitionService {
-    let handler: @Sendable (UIImage) async throws -> StillRecognitionResult
-
-    func recognize(_ image: UIImage) async throws -> StillRecognitionResult {
-        try await handler(image)
-    }
-}
-
 struct CameraViewModelTests {
-    private static func makeScanningViewModel(
-        appState: AppState? = nil,
-        stillRecognizer: StillTextRecognitionService = MockStillTextRecognitionService(handler: { _ in .empty }),
-        localeCurrencyCode: CurrencyCode? = "JPY",
-        torchAvailable: Bool = true
-    ) -> CameraViewModel {
-        let appState = appState ?? AppState()
+    private let isolatedDefaults = IsolatedDefaults()
+
+    private static func makeRatesStore(jpyRate: Double = 150) -> ExchangeRatesStore {
         let ratesStore = ExchangeRatesStore()
         ratesStore.update(
             rates: [
-                ExchangeRate(currencyCode: "JPY", rate: 150),
+                ExchangeRate(currencyCode: "JPY", rate: jpyRate),
                 ExchangeRate(currencyCode: "EUR", rate: 0.9),
                 ExchangeRate(currencyCode: "USD", rate: 1),
             ],
             lastUpdated: nil,
             isShowingSampleRates: false
         )
-        return CameraViewModel(
-            ratesStore: ratesStore,
-            appState: appState,
-            permissionService: MockCameraPermissionService(status: .authorized),
-            stillTextRecognizer: stillRecognizer,
-            torchService: MockTorchService(available: torchAvailable),
+        return ratesStore
+    }
+
+    private static func makeAppState() -> AppState {
+        AppState(networkMonitor: NetworkMonitor(isConnected: true))
+    }
+
+    private static func makeViewModel(
+        ratesStore: ExchangeRatesStore? = nil,
+        appState: AppState? = nil,
+        permissionService: CameraPermissionService = StubCameraPermissionService(status: .authorized),
+        torchService: TorchService = InMemoryTorchService(),
+        stillRecognizer: StillTextRecognitionService = StubStillTextRecognizer(),
+        localeCurrencyCode: CurrencyCode? = "JPY",
+        fallbackBaseCurrency: CurrencyCode = "USD",
+        defaultTargetCurrency: CurrencyCode = "USD"
+    ) -> CameraViewModel {
+        CameraViewModel(
+            ratesStore: ratesStore ?? makeRatesStore(),
+            appState: appState ?? makeAppState(),
+            permissionService: permissionService,
+            torchService: torchService,
+            scanConversionUseCase: ScanConversionUseCase(),
+            recognizeStillImageTextUseCase: RecognizeStillImageTextUseCase(recognizer: stillRecognizer),
+            calculateConversionUseCase: CalculateConversionUseCase(),
             localeCurrencyCode: localeCurrencyCode,
-            fallbackBaseCurrency: "USD",
-            defaultTargetCurrency: "USD"
+            fallbackBaseCurrency: fallbackBaseCurrency,
+            defaultTargetCurrency: defaultTargetCurrency
         )
     }
 
@@ -64,13 +52,22 @@ struct CameraViewModelTests {
         try #require(UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1)).image { _ in }.pngData())
     }
 
+    private static let yenPriceResult = StillRecognitionResult(
+        items: [
+            RecognizedTextItem(
+                id: UUID(),
+                transcript: "¥1,200",
+                bounds: CGRect(x: 10, y: 10, width: 80, height: 20)
+            ),
+        ],
+        imagePixelSize: CGSize(width: 100, height: 100)
+    )
+
     @Test(arguments: [CameraAuthorizationStatus.notDetermined, .authorized, .denied])
     func initialAuthorizationReflectsSystemStatus(status: CameraAuthorizationStatus) {
-        let viewModel = CameraViewModel(
+        let viewModel = Self.makeViewModel(
             ratesStore: ExchangeRatesStore(),
-            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
-            permissionService: MockCameraPermissionService(status: status),
-            fallbackBaseCurrency: "USD",
+            permissionService: StubCameraPermissionService(status: status),
             defaultTargetCurrency: "EUR"
         )
         #expect(viewModel.authorization == status)
@@ -78,12 +75,9 @@ struct CameraViewModelTests {
 
     @Test(arguments: [(true, CameraAuthorizationStatus.authorized), (false, .denied)])
     func requestAccessTransitionsToUsersAnswer(granted: Bool, expected: CameraAuthorizationStatus) async {
-        let service = MockCameraPermissionService(status: .notDetermined, grantsAccess: granted)
-        let viewModel = CameraViewModel(
+        let viewModel = Self.makeViewModel(
             ratesStore: ExchangeRatesStore(),
-            appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false)),
-            permissionService: service,
-            fallbackBaseCurrency: "USD",
+            permissionService: StubCameraPermissionService(status: .notDetermined, grantsAccess: granted),
             defaultTargetCurrency: "EUR"
         )
 
@@ -93,11 +87,11 @@ struct CameraViewModelTests {
     }
 
     @Test func recognizedItemsBecomeDetectedItemsWithConversions() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let priceID = UUID()
         let bounds = CGRect(x: 10, y: 20, width: 100, height: 30)
 
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: priceID, transcript: "¥1,200", bounds: bounds),
             RecognizedTextItem(id: UUID(), transcript: "MENU", bounds: .zero),
         ])
@@ -113,9 +107,9 @@ struct CameraViewModelTests {
     }
 
     @Test func aNumberBesideAStandaloneMarkerBecomesAPrice() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let priceID = UUID()
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: priceID, transcript: "680", bounds: CGRect(x: 0, y: 0, width: 40, height: 20)),
             RecognizedTextItem(id: UUID(), transcript: "円", bounds: CGRect(x: 44, y: 0, width: 18, height: 20)),
         ])
@@ -123,22 +117,22 @@ struct CameraViewModelTests {
     }
 
     @Test func aBareNumberWithoutAMarkerStaysAnOutline() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let id = UUID()
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: id, transcript: "680", bounds: CGRect(x: 0, y: 0, width: 40, height: 20)),
         ])
         #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == false)
     }
 
     @Test func aMarkerPromotedPriceCountsAsFoundEvenAfterDismissal() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let priceID = UUID()
         let items = [
             RecognizedTextItem(id: priceID, transcript: "680", bounds: CGRect(x: 0, y: 0, width: 40, height: 20)),
             RecognizedTextItem(id: UUID(), transcript: "円", bounds: CGRect(x: 44, y: 0, width: 18, height: 20)),
         ]
-        viewModel.updateRecognizedItems(items)
+        viewModel.updateLiveRecognizedItems(items)
         #expect(viewModel.hasPrices == true)
 
         viewModel.toggleConversion(for: priceID)
@@ -148,23 +142,23 @@ struct CameraViewModelTests {
     }
 
     @Test func dismissingAMarkerPromotedPriceSurvivesTheNextFrame() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let priceID = UUID()
         let items = [
             RecognizedTextItem(id: priceID, transcript: "680", bounds: CGRect(x: 0, y: 0, width: 40, height: 20)),
             RecognizedTextItem(id: UUID(), transcript: "円", bounds: CGRect(x: 44, y: 0, width: 18, height: 20)),
         ]
-        viewModel.updateRecognizedItems(items)
+        viewModel.updateLiveRecognizedItems(items)
         viewModel.toggleConversion(for: priceID)
 
-        viewModel.updateRecognizedItems(items)
+        viewModel.updateLiveRecognizedItems(items)
 
         #expect(viewModel.detectedItems[id: priceID]?.conversion.isPrice == false)
     }
 
     @Test func changingCurrencyPairReconvertsVisibleItems() {
-        let viewModel = Self.makeScanningViewModel()
-        viewModel.updateRecognizedItems([
+        let viewModel = Self.makeViewModel()
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: UUID(), transcript: "¥1,200", bounds: .zero),
         ])
 
@@ -173,8 +167,26 @@ struct CameraViewModelTests {
         #expect(viewModel.detectedItems.first?.conversion.converted == Decimal(string: "7.2"))
     }
 
+    @Test func refreshingConversionsAppliesNewRatesToVisibleItems() {
+        let ratesStore = Self.makeRatesStore(jpyRate: 150)
+        let viewModel = Self.makeViewModel(ratesStore: ratesStore)
+        viewModel.updateLiveRecognizedItems([
+            RecognizedTextItem(id: UUID(), transcript: "¥1,200", bounds: .zero),
+        ])
+        #expect(viewModel.detectedItems.first?.conversion.converted == 8)
+        ratesStore.update(
+            rates: Self.makeRatesStore(jpyRate: 120).rates,
+            lastUpdated: nil,
+            isShowingSampleRates: false
+        )
+
+        viewModel.refreshConversions()
+
+        #expect(viewModel.detectedItems.first?.conversion.converted == 10)
+    }
+
     @Test func swappingExchangesBaseAndTarget() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
 
         viewModel.swapCurrencies()
 
@@ -183,23 +195,23 @@ struct CameraViewModelTests {
     }
 
     @Test func baseAutodetectsFromLocaleWhenRatesExist() {
-        #expect(Self.makeScanningViewModel(localeCurrencyCode: "EUR").baseCurrency == "EUR")
+        #expect(Self.makeViewModel(localeCurrencyCode: "EUR").baseCurrency == "EUR")
     }
 
     @Test func baseFallsBackWhenLocaleCurrencyUnsupported() {
-        #expect(Self.makeScanningViewModel(localeCurrencyCode: "XXX").baseCurrency == "USD")
+        #expect(Self.makeViewModel(localeCurrencyCode: "XXX").baseCurrency == "USD")
     }
 
     @Test func manualBaseChoiceWinsOverAutodetection() {
-        let viewModel = Self.makeScanningViewModel(localeCurrencyCode: "JPY")
+        let viewModel = Self.makeViewModel(localeCurrencyCode: "JPY")
         viewModel.baseCurrency = "EUR"
         #expect(viewModel.baseCurrency == "EUR")
     }
 
     @Test func togglingANonPricePinsAndUnpinsItsBadge() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let id = UUID()
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: id, transcript: "1200", bounds: .zero),
         ])
         #expect(viewModel.detectedItems.first?.conversion.isPrice == false)
@@ -213,9 +225,9 @@ struct CameraViewModelTests {
     }
 
     @Test func togglingADetectedPriceHidesAndRestoresItsBadge() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let id = UUID()
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: id, transcript: "¥1,200", bounds: .zero),
         ])
         #expect(viewModel.detectedItems.first?.conversion.isPrice == true)
@@ -228,9 +240,9 @@ struct CameraViewModelTests {
     }
 
     @Test func tappingABadgeOpensItsDetail() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let id = UUID()
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: id, transcript: "¥1,200", bounds: .zero),
         ])
 
@@ -244,9 +256,9 @@ struct CameraViewModelTests {
     }
 
     @Test func hidingFromDetailSuppressesTheBadgeAndClosesTheSheet() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let id = UUID()
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: id, transcript: "¥1,200", bounds: .zero),
         ])
         viewModel.showBadgeDetail(for: id)
@@ -258,9 +270,9 @@ struct CameraViewModelTests {
     }
 
     @Test func hidingAPinnedNonPriceUnpinsIt() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let id = UUID()
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: id, transcript: "1200", bounds: .zero),
         ])
         viewModel.toggleConversion(for: id)
@@ -271,13 +283,12 @@ struct CameraViewModelTests {
         #expect(viewModel.detectedItems.first?.conversion.isPrice == false)
     }
 
-    @Test func openInConverterPrefillsCalculatorAndSwitchesToConvertTab() {
-        let appState = AppState()
-        let calculator = makeIsolatedCalculatorViewModel(appState: appState)
-        let viewModel = CameraViewModel(
+    @Test func openInConverterPrefillsCalculatorAndSwitchesToConvertTab() throws {
+        let appState = Self.makeAppState()
+        let calculator = makeIsolatedCalculatorViewModel(defaults: try isolatedDefaults.make(), appState: appState)
+        let viewModel = Self.makeViewModel(
             ratesStore: ExchangeRatesStore(),
             appState: appState,
-            permissionService: MockCameraPermissionService(status: .authorized),
             localeCurrencyCode: "JPY",
             fallbackBaseCurrency: "JPY",
             defaultTargetCurrency: "USD"
@@ -308,8 +319,10 @@ struct CameraViewModelTests {
         #expect(appState.pendingConversion == nil)
     }
 
+    // MARK: - Torch
+
     @Test func togglingTorchTracksTheDevicesActualState() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         #expect(viewModel.isTorchOn == false)
 
         viewModel.toggleTorch()
@@ -320,15 +333,36 @@ struct CameraViewModelTests {
     }
 
     @Test func torchStaysOffWhenTheDeviceHasNone() {
-        let viewModel = Self.makeScanningViewModel(torchAvailable: false)
+        let viewModel = Self.makeViewModel(torchService: InMemoryTorchService(hasTorch: false))
 
         viewModel.toggleTorch()
 
         #expect(viewModel.isTorchOn == false)
     }
 
+    @Test func turningTheTorchOffSwitchesTheDeviceOff() {
+        let torch = InMemoryTorchService()
+        let viewModel = Self.makeViewModel(torchService: torch)
+        viewModel.toggleTorch()
+
+        viewModel.turnTorchOff()
+
+        #expect(viewModel.isTorchOn == false)
+        #expect(torch.requestedStates == [true, false])
+    }
+
+    @Test func turningAnUnlitTorchOffLeavesTheDeviceAlone() {
+        let torch = InMemoryTorchService()
+        let viewModel = Self.makeViewModel(torchService: torch)
+
+        viewModel.turnTorchOff()
+
+        #expect(viewModel.isTorchOn == false)
+        #expect(torch.requestedStates.isEmpty)
+    }
+
     @Test func freezingTurnsTheTorchOff() async {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         viewModel.toggleTorch()
         #expect(viewModel.isTorchOn == true)
 
@@ -337,12 +371,14 @@ struct CameraViewModelTests {
         #expect(viewModel.isTorchOn == false)
     }
 
+    // MARK: - Freeze and Resume
+
     @Test func liveUpdatesAreIgnoredWhileFrozen() async {
-        let viewModel = Self.makeScanningViewModel()
-        await viewModel.freezeFrame(capturing: { UIImage() })
-        viewModel.updateRecognizedItems([
-            RecognizedTextItem(id: UUID(), transcript: "¥1,200", bounds: .zero),
-        ])
+        let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        await viewModel.recognizeStill(in: image)
         #expect(viewModel.detectedItems.count == 1)
 
         viewModel.updateLiveRecognizedItems([])
@@ -351,8 +387,8 @@ struct CameraViewModelTests {
     }
 
     @Test func freezingPausesScanningAndResumingClearsTheStill() async {
-        let viewModel = Self.makeScanningViewModel()
-        viewModel.updateRecognizedItems([
+        let viewModel = Self.makeViewModel()
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: UUID(), transcript: "¥1,200", bounds: .zero),
         ])
         let image = UIImage()
@@ -373,7 +409,7 @@ struct CameraViewModelTests {
     // MARK: - Still Recognition Status
 
     @Test func freezingMarksStillRecognitionInFlight() async {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         #expect(viewModel.isRecognizingStill == false)
 
         await viewModel.freezeFrame(capturing: { UIImage() })
@@ -382,19 +418,7 @@ struct CameraViewModelTests {
     }
 
     @Test func recognizingTheStillPopulatesItemsAndClearsTheInFlightFlag() async {
-        let result = StillRecognitionResult(
-            items: [
-                RecognizedTextItem(
-                    id: UUID(),
-                    transcript: "¥1,200",
-                    bounds: CGRect(x: 10, y: 10, width: 80, height: 20)
-                ),
-            ],
-            imagePixelSize: CGSize(width: 100, height: 100)
-        )
-        let viewModel = Self.makeScanningViewModel(
-            stillRecognizer: MockStillTextRecognitionService(handler: { _ in result })
-        )
+        let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
         let image = UIImage()
         await viewModel.freezeFrame(capturing: { image })
         viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
@@ -406,12 +430,24 @@ struct CameraViewModelTests {
         #expect(viewModel.isRecognizingStill == false)
     }
 
+    @Test func stillItemsFollowViewportChanges() async {
+        let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        await viewModel.recognizeStill(in: image)
+
+        viewModel.stillViewportChanged(CGSize(width: 200, height: 100))
+
+        #expect(viewModel.detectedItems.first?.bounds == CGRect(x: 60, y: 10, width: 80, height: 20))
+    }
+
     @Test func stillRecognitionFailureSurfacesScanError() async {
         struct RecognitionError: Error {}
-        let appState = AppState()
-        let viewModel = Self.makeScanningViewModel(
+        let appState = Self.makeAppState()
+        let viewModel = Self.makeViewModel(
             appState: appState,
-            stillRecognizer: MockStillTextRecognitionService(handler: { _ in throw RecognitionError() })
+            stillRecognizer: StubStillTextRecognizer(failure: RecognitionError())
         )
         let image = UIImage()
         await viewModel.freezeFrame(capturing: { image })
@@ -423,13 +459,7 @@ struct CameraViewModelTests {
     }
 
     @Test func stillResultsForAReplacedFrameAreIgnored() async {
-        let result = StillRecognitionResult(
-            items: [RecognizedTextItem(id: UUID(), transcript: "¥1,200", bounds: .zero)],
-            imagePixelSize: CGSize(width: 100, height: 100)
-        )
-        let viewModel = Self.makeScanningViewModel(
-            stillRecognizer: MockStillTextRecognitionService(handler: { _ in result })
-        )
+        let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
         await viewModel.freezeFrame(capturing: { UIImage() })
 
         await viewModel.recognizeStill(in: UIImage())
@@ -439,13 +469,7 @@ struct CameraViewModelTests {
     }
 
     @Test func stillResultsAfterResumeAreIgnored() async {
-        let result = StillRecognitionResult(
-            items: [RecognizedTextItem(id: UUID(), transcript: "¥1,200", bounds: .zero)],
-            imagePixelSize: CGSize(width: 100, height: 100)
-        )
-        let viewModel = Self.makeScanningViewModel(
-            stillRecognizer: MockStillTextRecognitionService(handler: { _ in result })
-        )
+        let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
         let image = UIImage()
         await viewModel.freezeFrame(capturing: { image })
         viewModel.resumeLiveScanning()
@@ -457,7 +481,7 @@ struct CameraViewModelTests {
     }
 
     @Test func resumingLiveScanningClearsTheInFlightFlag() async {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         await viewModel.freezeFrame(capturing: { UIImage() })
 
         viewModel.resumeLiveScanning()
@@ -466,24 +490,24 @@ struct CameraViewModelTests {
     }
 
     @Test func hasPricesReflectsDetectedPrices() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         #expect(viewModel.hasPrices == false)
 
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: UUID(), transcript: "MENU", bounds: .zero),
         ])
         #expect(viewModel.hasPrices == false)
 
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: UUID(), transcript: "¥1,200", bounds: .zero),
         ])
         #expect(viewModel.hasPrices == true)
     }
 
     @Test func suppressingTheOnlyPriceStillCountsAsFound() {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let id = UUID()
-        viewModel.updateRecognizedItems([
+        viewModel.updateLiveRecognizedItems([
             RecognizedTextItem(id: id, transcript: "¥1,200", bounds: .zero),
         ])
 
@@ -498,8 +522,8 @@ struct CameraViewModelTests {
     private struct StubError: Error {}
 
     @Test func freezeFrameWithoutAScannerStaysLiveAndSilent() async {
-        let appState = AppState()
-        let viewModel = Self.makeScanningViewModel(appState: appState)
+        let appState = Self.makeAppState()
+        let viewModel = Self.makeViewModel(appState: appState)
 
         await viewModel.freezeFrame(capturing: { nil })
 
@@ -509,8 +533,8 @@ struct CameraViewModelTests {
     }
 
     @Test func freezeFrameFailureSurfacesCaptureError() async {
-        let appState = AppState()
-        let viewModel = Self.makeScanningViewModel(appState: appState)
+        let appState = Self.makeAppState()
+        let viewModel = Self.makeViewModel(appState: appState)
 
         await viewModel.freezeFrame(capturing: { throw StubError() })
 
@@ -520,8 +544,8 @@ struct CameraViewModelTests {
     }
 
     @Test func freezeFrameCancellationStaysSilent() async {
-        let appState = AppState()
-        let viewModel = Self.makeScanningViewModel(appState: appState)
+        let appState = Self.makeAppState()
+        let viewModel = Self.makeViewModel(appState: appState)
 
         await viewModel.freezeFrame(capturing: { throw CancellationError() })
 
@@ -529,7 +553,7 @@ struct CameraViewModelTests {
     }
 
     @Test func importPhotoFreezesOnDecodableImageData() async throws {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let imageData = try Self.pngData()
 
         await viewModel.importPhoto(loading: { imageData })
@@ -539,7 +563,7 @@ struct CameraViewModelTests {
     }
 
     @Test func importedEXIFRotatedPhotoFreezesUpright() async throws {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         let landscapePixels = UIGraphicsImageRenderer(size: CGSize(width: 120, height: 60), format: format).image { context in
@@ -556,8 +580,8 @@ struct CameraViewModelTests {
     }
 
     @Test func importPhotoWithNoDataSurfacesImportError() async {
-        let appState = AppState()
-        let viewModel = Self.makeScanningViewModel(appState: appState)
+        let appState = Self.makeAppState()
+        let viewModel = Self.makeViewModel(appState: appState)
 
         await viewModel.importPhoto(loading: { nil })
 
@@ -566,8 +590,8 @@ struct CameraViewModelTests {
     }
 
     @Test func importPhotoWithUndecodableDataSurfacesImportError() async {
-        let appState = AppState()
-        let viewModel = Self.makeScanningViewModel(appState: appState)
+        let appState = Self.makeAppState()
+        let viewModel = Self.makeViewModel(appState: appState)
 
         await viewModel.importPhoto(loading: { Data("not an image".utf8) })
 
@@ -576,8 +600,8 @@ struct CameraViewModelTests {
     }
 
     @Test func importPhotoLoadFailureSurfacesImportError() async {
-        let appState = AppState()
-        let viewModel = Self.makeScanningViewModel(appState: appState)
+        let appState = Self.makeAppState()
+        let viewModel = Self.makeViewModel(appState: appState)
 
         await viewModel.importPhoto(loading: { throw StubError() })
 
@@ -588,7 +612,7 @@ struct CameraViewModelTests {
     // MARK: - Stale Freeze Requests
 
     @Test func staleCaptureCannotReplaceANewerFreeze() async throws {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let imported = try Self.pngData()
         let staleCapture = UIImage()
 
@@ -602,7 +626,7 @@ struct CameraViewModelTests {
     }
 
     @Test func staleCaptureCannotRefreezeAfterResume() async throws {
-        let viewModel = Self.makeScanningViewModel()
+        let viewModel = Self.makeViewModel()
         let imported = try Self.pngData()
 
         await viewModel.freezeFrame(capturing: {
@@ -616,8 +640,8 @@ struct CameraViewModelTests {
     }
 
     @Test func staleCaptureFailureStaysSilent() async throws {
-        let appState = AppState()
-        let viewModel = Self.makeScanningViewModel(appState: appState)
+        let appState = Self.makeAppState()
+        let viewModel = Self.makeViewModel(appState: appState)
         let imported = try Self.pngData()
 
         await viewModel.freezeFrame(capturing: {

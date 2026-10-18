@@ -1,8 +1,12 @@
 import SwiftUI
 
 struct CurrencyHistoryView: View {
-    @Environment(HistoryViewModel.self) private var viewModel: HistoryViewModel
-    @State private var isChartSelectionActive: Bool = false
+    @State private var viewModel: CurrencyHistoryViewModel
+    @State private var isChartSelectionActive = false
+
+    init(viewModel: CurrencyHistoryViewModel) {
+        self.viewModel = viewModel
+    }
 
     private var chartIsLoaded: Bool {
         if case .loaded = viewModel.chartData { return true }
@@ -11,9 +15,7 @@ struct CurrencyHistoryView: View {
 
     var body: some View {
         VStack(spacing: Spacing.section) {
-            HeaderSection(
-                isChartSelectionActive: $isChartSelectionActive
-            )
+            HeaderSection(isChartSelectionActive: $isChartSelectionActive)
 
             ChartSection(isChartSelectionActive: $isChartSelectionActive)
 
@@ -30,20 +32,22 @@ struct CurrencyHistoryView: View {
                 AccessibilityNotification.Announcement(message).post()
             }
         }
-        .sheet(isPresented: Bindable(viewModel).destination.isPresenting(.chartOnboarding)) {
+        .sheet(isPresented: $viewModel.destination.isPresenting(.chartOnboarding)) {
             ChartOnboardingView()
+                .environment(viewModel)
+        }
+        .task {
+            await viewModel.loadChart()
         }
         .task {
             await viewModel.presentChartOnboardingIfNeeded()
         }
+        .environment(viewModel)
     }
 }
 
 #if DEBUG
 #Preview {
-    let container = DependencyContainer.preview()
-
-    CurrencyHistoryView()
-        .withDependencyContainer(container)
+    CurrencyHistoryView(viewModel: .preview())
 }
 #endif

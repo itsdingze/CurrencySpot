@@ -4,11 +4,13 @@ import Foundation
 final class ErrorHandler {
     private(set) var currentError: AppError?
 
-    func handle(_ error: Error) {
-        guard let appError = AppError.from(error) else {
-            return
-        }
-        currentError = appError
+    var isPresentingError: Bool {
+        get { currentError != nil }
+        set { if !newValue { dismiss() } }
+    }
+
+    func handle(_ error: AppError) {
+        currentError = error
     }
 
     func dismiss() {

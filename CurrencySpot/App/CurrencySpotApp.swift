@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct CurrencySpotApp: App {
-    let dependencyContainer: DependencyContainer
+    private let dependencyContainer: DependencyContainer
 
     init() {
         dependencyContainer = DependencyContainer.bootstrap(appState: .shared)
@@ -11,12 +11,11 @@ struct CurrencySpotApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .accentColor(dependencyContainer.settingsViewModel.accentColor.color)
+                .appAccent(dependencyContainer.settingsViewModel.accentColor.color)
                 .preferredColorScheme(getPreferredColorScheme())
                 .withDependencyContainer(dependencyContainer)
                 .task {
-                    await dependencyContainer.historyViewModel.initializeTrendData()
-                    await dependencyContainer.historyViewModel.prefetchHistoricalWindow()
+                    dependencyContainer.currencyListViewModel.warmUp()
                 }
         }
     }

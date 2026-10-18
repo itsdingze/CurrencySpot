@@ -5,7 +5,7 @@
     final class PreviewNetworkService: NetworkService {
         private let today: Date
 
-        init(today: Date = Date()) {
+        init(today: Date) {
             self.today = today
         }
 

@@ -20,7 +20,7 @@ struct RateInfoView: View {
         if shouldShowConversionRate {
             label += "Current rate: \(formattedConversionRate). "
         }
-        label += "Last updated: \(viewModel.formattedLastUpdated)"
+        label += viewModel.formattedLastUpdated
         return label
     }
 
@@ -30,14 +30,14 @@ struct RateInfoView: View {
     private var conversionRateText: some View {
         Text(formattedConversionRate)
             .font(.appCaption)
-            .foregroundStyle(Color.textSecondary)
+            .foregroundStyle(.secondary)
     }
 
     @ViewBuilder
     private var lastUpdatedText: some View {
         Text(viewModel.formattedLastUpdated)
             .font(.appCaption)
-            .foregroundStyle(Color.textSecondary)
+            .foregroundStyle(.secondary)
     }
 
     // MARK: - Private Properties

@@ -3,53 +3,66 @@
     import Foundation
     import SwiftUI
 
-    // MARK: - Container Preview Factory
+    // MARK: - Container Preview Factories
 
     extension DependencyContainer {
         static func preview() -> DependencyContainer {
+            makePreview(exchangeRateRepository: nil, historicalRepository: nil)
+        }
+
+        static func preview(exchangeRateRepository: ExchangeRateRepository) -> DependencyContainer {
+            makePreview(exchangeRateRepository: exchangeRateRepository, historicalRepository: nil)
+        }
+
+        fileprivate static func preview(historicalRepository: any HistoricalRateRepository & ArchiveRepository) -> DependencyContainer {
+            makePreview(exchangeRateRepository: nil, historicalRepository: historicalRepository)
+        }
+
+        private static func makePreview(
+            exchangeRateRepository: ExchangeRateRepository?,
+            historicalRepository: (any HistoricalRateRepository & ArchiveRepository)?
+        ) -> DependencyContainer {
             DependencyContainer(
+                appState: AppState(networkMonitor: NetworkMonitor(isConnected: true)),
                 userDefaults: .previewSuite,
                 preferences: InMemoryPreferencesStore(),
-                networkService: PreviewNetworkService(),
+                networkService: PreviewNetworkService(today: .now),
                 syncStore: InMemoryHistoricalSyncStore(),
-                fetchDateStore: InMemoryRatesFetchDateStore()
+                fetchDateStore: InMemoryRatesFetchDateStore(),
+                exchangeRateRepository: exchangeRateRepository,
+                historicalRepository: historicalRepository,
+                cameraPermissionService: StubCameraPermissionService(status: .authorized),
+                stillTextRecognizer: StubStillTextRecognizer(),
+                torchService: InMemoryTorchService()
             )
         }
     }
 
     extension UserDefaults {
-        static let previewSuite: UserDefaults = {
+        fileprivate static let previewSuite: UserDefaults = {
             let suite = UserDefaults(suiteName: "CurrencySpot.previews") ?? .standard
             suite.removePersistentDomain(forName: "CurrencySpot.previews")
             return suite
         }()
     }
 
-    // MARK: - ViewModel Preview Factories
+    // MARK: - History Preview Factories
 
-    extension HistoryViewModel {
-        static func preview() -> HistoryViewModel {
-            let mockService = PreviewExchangeRateRepository()
-            let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncCoverage: InMemorySyncCoverage())
-            let dataOrchestrationUseCase = DataOrchestrationUseCase(
-                repository: mockService,
-                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase
-            )
-            let chartDataPreparationUseCase = ChartDataPreparationUseCase(chartCache: InMemoryChartDataCache())
-            let trendDataUseCase = TrendDataUseCase(
-                trendRepository: mockService,
-                historicalRateRepository: mockService
-            )
+    extension CurrencyHistoryViewModel {
+        static func preview() -> CurrencyHistoryViewModel {
+            DependencyContainer.preview().makeCurrencyHistoryViewModel(base: .usd, target: .eur)
+        }
 
-            return HistoryViewModel(
-                ratesStore: ExchangeRatesStore(),
-                watchlist: WatchlistStore(userDefaults: .previewSuite),
-                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-                dataOrchestrationUseCase: dataOrchestrationUseCase,
-                chartDataPreparationUseCase: chartDataPreparationUseCase,
-                trendDataUseCase: trendDataUseCase,
-                preferences: InMemoryPreferencesStore()
-            )
+        static func previewLoading() -> CurrencyHistoryViewModel {
+            DependencyContainer.preview(historicalRepository: StubHistoricalRateRepository(behavior: .stalled))
+                .makeCurrencyHistoryViewModel(base: .usd, target: .eur)
+        }
+
+        static func previewFailed() -> CurrencyHistoryViewModel {
+            let viewModel = DependencyContainer.preview(historicalRepository: StubHistoricalRateRepository(behavior: .failing))
+                .makeCurrencyHistoryViewModel(base: .usd, target: .eur)
+            viewModel.selectedTimeRange = .fiveYears
+            return viewModel
         }
     }
 
@@ -80,20 +93,7 @@
         func lastFetchDate() -> Date? { nil }
     }
 
-    extension CalculatorViewModel {
-        static func preview(_ behavior: StubExchangeRateRepository.Behavior) -> CalculatorViewModel {
-            CalculatorViewModel(
-                loadExchangeRatesUseCase: LoadExchangeRatesUseCase(
-                    repository: StubExchangeRateRepository(behavior: behavior),
-                    dateProvider: SystemDateProvider()
-                ),
-                ratesStore: ExchangeRatesStore(),
-                preferences: InMemoryPreferencesStore()
-            )
-        }
-    }
-
-    struct StubHistoricalRateRepository: HistoricalRateRepository {
+    private struct StubHistoricalRateRepository: HistoricalRateRepository, ArchiveRepository {
         enum Behavior {
             case stalled
             case failing
@@ -101,21 +101,22 @@
 
         let behavior: Behavior
 
-        func fetchHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
+        func cachedHistoricalRates() async -> [HistoricalRateSnapshot] {
+            try? await stall()
+            return []
+        }
+
+        func fetchAndMergeHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await stall()
             return []
         }
 
-        func waitForPendingHistoricalWrites() async {}
-
-        func fetchTransientHistoricalRates(for _: [CurrencyCode], in _: DateRange) async throws -> [HistoricalRateSnapshot] {
+        func loadAndMergeStoredHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await stall()
             return []
         }
 
-        func fetchAndPersistHistoricalRates(in _: DateRange) async throws { try await stall() }
-
-        func loadHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
+        func loadStoredHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await stall()
             return []
         }
@@ -130,51 +131,27 @@
             return nil
         }
 
-        func pruneHistoricalRates(before _: Date) async throws {}
-
-        func cachedHistoricalRates() async -> [HistoricalRateSnapshot] {
-            try? await stall()
+        func fetchTransientHistoricalRates(for _: [CurrencyCode], in _: DateRange) async throws -> [HistoricalRateSnapshot] {
+            try await stall()
             return []
         }
 
-        func mergeCachedHistoricalRates(_: [HistoricalRateSnapshot]) async -> [HistoricalRateSnapshot] { [] }
+        func fetchAndPersistHistoricalRates(in _: DateRange) async throws {
+            try await stall()
+        }
+
+        func pruneHistoricalRates(before _: Date) async throws {}
+
+        func archiveStoredBounds() async throws -> (earliest: Date?, latest: Date?) {
+            try await stall()
+            return (nil, nil)
+        }
 
         private func stall() async throws {
             switch behavior {
             case .stalled: try await Task.sleep(for: .seconds(86_400))
             case .failing: throw AppError.networkError("Preview failure")
             }
-        }
-    }
-
-    extension HistoryViewModel {
-        static func previewLoading() -> HistoryViewModel {
-            preview(.stalled)
-        }
-
-        static func previewFailed() -> HistoryViewModel {
-            preview(.failing)
-        }
-
-        private static func preview(_ behavior: StubHistoricalRateRepository.Behavior) -> HistoryViewModel {
-            let mockService = PreviewExchangeRateRepository()
-            let historicalDataAnalysisUseCase = HistoricalDataAnalysisUseCase(syncCoverage: InMemorySyncCoverage())
-
-            return HistoryViewModel(
-                ratesStore: ExchangeRatesStore(),
-                watchlist: WatchlistStore(userDefaults: .previewSuite),
-                historicalDataAnalysisUseCase: historicalDataAnalysisUseCase,
-                dataOrchestrationUseCase: DataOrchestrationUseCase(
-                    repository: StubHistoricalRateRepository(behavior: behavior),
-                    historicalDataAnalysisUseCase: historicalDataAnalysisUseCase
-                ),
-                chartDataPreparationUseCase: ChartDataPreparationUseCase(chartCache: InMemoryChartDataCache()),
-                trendDataUseCase: TrendDataUseCase(
-                    trendRepository: mockService,
-                    historicalRateRepository: mockService
-                ),
-                preferences: InMemoryPreferencesStore()
-            )
         }
     }
 

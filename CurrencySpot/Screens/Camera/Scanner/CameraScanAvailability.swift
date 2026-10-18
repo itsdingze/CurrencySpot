@@ -3,9 +3,6 @@ import VisionKit
 enum CameraScanAvailability {
     static var isSupported: Bool {
         #if DEBUG && targetEnvironment(simulator)
-        // DataScanner needs a Neural Engine and a camera, so the simulator reports
-        // unsupported. Show the tab anyway in debug builds so the photo-import path
-        // and the permission states stay testable during development.
         return true
         #else
         return DataScannerViewController.isSupported

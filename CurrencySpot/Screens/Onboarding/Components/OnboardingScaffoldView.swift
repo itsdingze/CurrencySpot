@@ -25,11 +25,13 @@ struct OnboardingScaffoldView<Icon: View, Footer: View>: View {
     }
 
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var animateIcon: Bool = false
     @State private var animateTitle: Bool = false
     @State private var animatedCardIDs: Set<String> = []
     @State private var animateFooter: Bool = false
+    @State private var isRevealComplete = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -60,42 +62,37 @@ struct OnboardingScaffoldView<Icon: View, Footer: View>: View {
                 }
                 .buttonStyle(.primaryAction)
                 .padding(.bottom, Spacing.tight)
-                .accessibilityLabel("Continue to app")
             }
             .blurSlide(animateFooter)
         }
         .safeAreaPadding(.horizontal, Spacing.instructionInset)
         .interactiveDismissDisabled()
-        .allowsHitTesting(animateFooter || voiceOverEnabled)
+        .allowsHitTesting(isRevealComplete || voiceOverEnabled)
         .accessibilityElement(children: .contain)
-        .task {
-            guard !animateIcon else { return }
+        .onAppear(perform: revealInStages)
+    }
 
-            await delayedAnimation(0.35) {
-                animateIcon = true
-            }
+    private func revealInStages() {
+        guard !animateIcon else { return }
 
-            guard !Task.isCancelled else { return }
+        reveal(after: 0.35) { animateIcon = true }
+        reveal(after: 0.55) { animateTitle = true }
 
-            await delayedAnimation(0.2) {
-                animateTitle = true
-            }
-            guard !Task.isCancelled else { return }
-
-            do { try await Task.sleep(for: .seconds(0.2)) } catch { return }
-
-            for (index, card) in cards.enumerated() {
-                let delay = Double(index) * 0.1
-                await delayedAnimation(delay) {
-                    animatedCardIDs.insert(card.id)
-                }
-                guard !Task.isCancelled else { return }
-            }
-
-            await delayedAnimation(0.2) {
-                animateFooter = true
-            }
+        var cardDelay = 0.75
+        for (index, card) in cards.enumerated() {
+            cardDelay += Double(index) * 0.1
+            reveal(after: cardDelay) { animatedCardIDs.insert(card.id) }
         }
+
+        withAnimation(.appStageReveal(after: cardDelay + 0.2, reduceMotion: reduceMotion)) {
+            animateFooter = true
+        } completion: {
+            isRevealComplete = true
+        }
+    }
+
+    private func reveal(after delay: TimeInterval, _ change: () -> Void) {
+        withAnimation(.appStageReveal(after: delay, reduceMotion: reduceMotion), change)
     }
 
     private var cardsView: some View {

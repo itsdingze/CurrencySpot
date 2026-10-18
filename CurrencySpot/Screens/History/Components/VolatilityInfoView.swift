@@ -11,15 +11,14 @@ struct VolatilityInfoView: View {
 
                 Spacer()
 
-                Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                        .symbolRenderingMode(.hierarchical)
+                Button { dismiss() } label: {
+                    Label("Close volatility information", systemImage: "xmark.circle.fill")
+                        .labelStyle(.iconOnly)
+                        .minimumHitTarget()
                 }
+                .foregroundStyle(.secondary)
+                .symbolRenderingMode(.hierarchical)
                 .buttonStyle(.plain)
-                .accessibilityLabel("Close volatility information")
             }
 
             VStack(alignment: .leading, spacing: Spacing.element) {

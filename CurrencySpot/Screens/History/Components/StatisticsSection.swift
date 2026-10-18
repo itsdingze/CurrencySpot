@@ -3,46 +3,43 @@ import SwiftUI
 // MARK: - Statistics Section
 
 struct StatisticsSection: View {
-    @Environment(HistoryViewModel.self) private var viewModel: HistoryViewModel
+    @Environment(CurrencyHistoryViewModel.self) private var viewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.hairline) {
             HStack(spacing: 0) {
-                Button(action: toggleHighestPoint) {
-                    statCard(
-                        label: "Highest",
-                        value: viewModel.formattedHighestRate,
-                        isToggled: viewModel.showHighestPoint,
-                        indicatorColor: .success
-                    )
-                }
-                .buttonStyle(.plain)
+                StatCard(
+                    label: "Highest",
+                    value: viewModel.formattedHighestRate,
+                    indicatorColor: .success,
+                    isToggled: viewModel.showHighestPoint,
+                    size: .regular,
+                    action: toggleHighestPoint
+                )
 
                 Spacer()
 
-                Button(action: toggleLowestPoint) {
-                    statCard(
-                        label: "Lowest",
-                        value: viewModel.formattedLowestRate,
-                        isToggled: viewModel.showLowestPoint,
-                        indicatorColor: .failure
-                    )
-                }
-                .buttonStyle(.plain)
+                StatCard(
+                    label: "Lowest",
+                    value: viewModel.formattedLowestRate,
+                    indicatorColor: .failure,
+                    isToggled: viewModel.showLowestPoint,
+                    size: .regular,
+                    action: toggleLowestPoint
+                )
             }
 
             Divider()
 
             HStack(spacing: 0) {
-                Button(action: toggleAverageLine) {
-                    statCard(
-                        label: "Average",
-                        value: viewModel.formattedAverageRate,
-                        isToggled: viewModel.showAverageLine,
-                        indicatorColor: Color.gray
-                    )
-                }
-                .buttonStyle(.plain)
+                StatCard(
+                    label: "Average",
+                    value: viewModel.formattedAverageRate,
+                    indicatorColor: .gray,
+                    isToggled: viewModel.showAverageLine,
+                    size: .regular,
+                    action: toggleAverageLine
+                )
 
                 Spacer()
 
@@ -73,41 +70,6 @@ struct StatisticsSection: View {
 
     // MARK: - Private Views
 
-    @ViewBuilder
-    private func statCard(label: String, value: String, isToggled: Bool = false, indicatorColor: Color? = nil) -> some View {
-        let card = VStack(alignment: .leading, spacing: Spacing.hairline) {
-            HStack(spacing: Spacing.hairline) {
-                Text(label)
-                    .font(.appSubheadline)
-                    .foregroundStyle(.secondary)
-
-                if let color = indicatorColor {
-                    Circle()
-                        .fill(color.opacity(isToggled ? 1.0 : 0.3))
-                        .frame(width: 6, height: 6)
-                        .animation(.appToggle, value: isToggled)
-                }
-            }
-
-            Text(value)
-                .font(.appHeadline.weight(.medium).monospacedDigit())
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.chipPadding)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label): \(value)")
-
-        if indicatorColor != nil {
-            card.accessibilityHint(isToggled
-                ? "Hides the \(label.lowercased()) marker on the chart"
-                : "Shows the \(label.lowercased()) marker on the chart")
-        } else {
-            card
-        }
-    }
-
-    @ViewBuilder
     private func volatilityCard(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: Spacing.hairline) {
             Button(action: viewModel.volatilityInfoTapped) {
@@ -121,6 +83,7 @@ struct StatisticsSection: View {
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                 }
+                .minimumHitTarget()
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Volatility information")
@@ -142,11 +105,11 @@ struct StatisticsSection: View {
 
 #if DEBUG
 #Preview {
-    @Previewable @State var viewModel = HistoryViewModel.preview()
+    @Previewable @State var viewModel = CurrencyHistoryViewModel.preview()
 
     StatisticsSection()
         .environment(viewModel)
-        .task { viewModel.openHistory(for: .eur) }
+        .task { await viewModel.loadChart() }
         .padding()
 }
 #endif

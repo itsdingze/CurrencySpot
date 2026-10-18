@@ -17,9 +17,9 @@ nonisolated protocol CacheService: Sendable {
 
     func getCachedTrendData() async -> [Trend]?
 
-    func cacheProcessedChartData(_ data: [ChartDataPoint], for key: String) async
+    func cacheProcessedChartData(_ data: [ChartDataPoint], for key: ChartCacheKey) async
 
-    func getCachedProcessedChartData(for key: String) async -> [ChartDataPoint]?
+    func getCachedProcessedChartData(for key: ChartCacheKey) async -> [ChartDataPoint]?
 
     func clearCache() async
 }
@@ -36,8 +36,8 @@ actor InMemoryCacheService: CacheService {
     private var trends: [Trend] = []
 
     private let processedChartDataLimit: Int
-    private var processedChartData: [String: [ChartDataPoint]] = [:]
-    private var processedChartDataRecency: [String] = []
+    private var processedChartData: [ChartCacheKey: [ChartDataPoint]] = [:]
+    private var processedChartDataRecency: [ChartCacheKey] = []
 
     // MARK: - Initialization
 
@@ -82,7 +82,7 @@ actor InMemoryCacheService: CacheService {
 
     // MARK: - Processed Chart Data Cache
 
-    func cacheProcessedChartData(_ data: [ChartDataPoint], for key: String) {
+    func cacheProcessedChartData(_ data: [ChartDataPoint], for key: ChartCacheKey) {
         processedChartData[key] = data
         markRecentlyUsed(key)
         while processedChartDataRecency.count > processedChartDataLimit {
@@ -90,13 +90,13 @@ actor InMemoryCacheService: CacheService {
         }
     }
 
-    func getCachedProcessedChartData(for key: String) -> [ChartDataPoint]? {
+    func getCachedProcessedChartData(for key: ChartCacheKey) -> [ChartDataPoint]? {
         guard let data = processedChartData[key], !data.isEmpty else { return nil }
         markRecentlyUsed(key)
         return data
     }
 
-    private func markRecentlyUsed(_ key: String) {
+    private func markRecentlyUsed(_ key: ChartCacheKey) {
         processedChartDataRecency.removeAll { $0 == key }
         processedChartDataRecency.append(key)
     }

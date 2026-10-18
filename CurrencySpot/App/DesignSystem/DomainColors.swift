@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 extension TrendDirection {
     var color: Color {
@@ -22,6 +23,12 @@ extension VolatilityLevel {
     }
 }
 
-private nonisolated extension Color {
-    static let volatilityLow = Color(red: 143 / 255, green: 197 / 255, blue: 112 / 255)
+private nonisolated extension ShapeStyle where Self == Color {
+    static var volatilityLow: Color {
+        Color(UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 141 / 255, green: 207 / 255, blue: 116 / 255, alpha: 1)
+                : UIColor(red: 143 / 255, green: 197 / 255, blue: 112 / 255, alpha: 1)
+        })
+    }
 }

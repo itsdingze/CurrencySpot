@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 // MARK: - TrendDataUseCase
 
@@ -8,20 +9,18 @@ final class TrendDataUseCase {
     private let trendRepository: TrendRepository
     private let historicalRateRepository: HistoricalRateRepository
     private let dateProvider: DateProvider
-    private let logger: LoggerService
+    private let logger = Logger(category: .useCase)
 
     // MARK: - Initialization
 
     init(
         trendRepository: TrendRepository,
         historicalRateRepository: HistoricalRateRepository,
-        dateProvider: DateProvider = SystemDateProvider(),
-        logger: LoggerService = OSLogLoggerService()
+        dateProvider: DateProvider
     ) {
         self.trendRepository = trendRepository
         self.historicalRateRepository = historicalRateRepository
         self.dateProvider = dateProvider
-        self.logger = logger
     }
 
     // MARK: - Trend Window
@@ -64,9 +63,8 @@ final class TrendDataUseCase {
     }
 
     private func recalculateAndSaveTrends() async throws {
-        await historicalRateRepository.waitForPendingHistoricalWrites()
         let window = trendWindow(now: dateProvider.now())
-        let historicalData = try await trendRepository.loadHistoricalRates(from: window.start, to: window.end)
+        let historicalData = try await historicalRateRepository.loadStoredHistoricalRates(in: window)
         try await trendRepository.saveTrendData(Self.calculateTrends(from: historicalData))
     }
 
@@ -77,12 +75,10 @@ final class TrendDataUseCase {
         guard existingTrends.isEmpty else { return existingTrends }
 
         let window = trendWindow(now: dateProvider.now())
-        var historicalData = try await trendRepository.loadHistoricalRates(from: window.start, to: window.end)
+        var historicalData = try await historicalRateRepository.loadStoredHistoricalRates(in: window)
 
-        // The fetch returns the window's snapshots directly — a persistence read-back
-        // here would race the deferred save.
         if historicalData.count < 2 {
-            historicalData = try await historicalRateRepository.fetchHistoricalRates(in: window)
+            historicalData = try await historicalRateRepository.fetchAndMergeHistoricalRates(in: window)
         }
 
         try await trendRepository.saveTrendData(Self.calculateTrends(from: historicalData))
@@ -101,16 +97,16 @@ final class TrendDataUseCase {
             }
 
             if shouldRecalculateTrends {
-                logger.info("Recalculating trend data due to new latest data...", category: .useCase)
+                logger.info("Recalculating trend data due to new latest data")
                 try await recalculateAndSaveTrends()
                 let updatedTrends = try await trendRepository.loadTrendData()
-                logger.info("Trend data updated with \(updatedTrends.count) currencies", category: .useCase)
+                logger.info("Trend data updated with \(updatedTrends.count, privacy: .public) currencies")
                 return updatedTrends
             } else {
                 return try await trendRepository.loadTrendData()
             }
         } catch {
-            logger.warning("Failed to check/recalculate trends: \(error.localizedDescription)", category: .useCase)
+            logger.warning("Failed to check or recalculate trends: \(error.localizedDescription, privacy: .public)")
             return []
         }
     }
@@ -126,13 +122,6 @@ final class TrendDataUseCase {
     }
 
     // MARK: - Cross-Currency Adjustment
-
-    func adjustedTrends(baseCurrency: CurrencyCode, in trendData: [Trend]) -> [CurrencyCode: Trend] {
-        let codes = Set(trendData.map(\.currencyCode)).union([.usd])
-        return codes.reduce(into: [:]) { adjusted, code in
-            adjusted[code] = adjustedTrend(for: code, baseCurrency: baseCurrency, in: trendData)
-        }
-    }
 
     func adjustedTrend(
         for currencyCode: CurrencyCode,

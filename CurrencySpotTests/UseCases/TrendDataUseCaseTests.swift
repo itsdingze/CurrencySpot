@@ -41,6 +41,12 @@ struct TrendDataUseCaseTests {
         ]
     }
 
+    private static func storedWindowRepository() -> MockHistoricalRateRepository {
+        let repository = MockHistoricalRateRepository()
+        repository.storedRows = windowHistoricalData()
+        return repository
+    }
+
     // MARK: - Test Helpers
 
     private func makeUseCase(
@@ -75,8 +81,8 @@ struct TrendDataUseCaseTests {
     @Test("When no existing trends and sufficient data, should calculate trends without fetching")
     func whenNoExistingTrendsAndSufficientData_shouldCalculateWithoutFetching() async throws {
         let trendRepository = MockTrendRepository(trends: [])
-        trendRepository.historicalWindowData = Self.windowHistoricalData()
         let historicalRepository = MockHistoricalRateRepository()
+        historicalRepository.storedRows = Self.windowHistoricalData()
         let useCase = makeUseCase(trendRepository: trendRepository, historicalRepository: historicalRepository)
 
         let result = try await useCase.initializeTrendData()
@@ -92,7 +98,6 @@ struct TrendDataUseCaseTests {
     @Test("When no existing trends and insufficient data, should fetch and calculate from the fetched snapshots")
     func whenNoExistingTrendsAndInsufficientData_shouldFetchThenCalculate() async throws {
         let trendRepository = MockTrendRepository(trends: [])
-        trendRepository.historicalWindowData = []
         let historicalRepository = MockHistoricalRateRepository()
         historicalRepository.fetchedDataToReturn = Self.windowHistoricalData()
         let useCase = makeUseCase(trendRepository: trendRepository, historicalRepository: historicalRepository)
@@ -119,17 +124,45 @@ struct TrendDataUseCaseTests {
         #expect(daysDifference == 7)
     }
 
-    @Test("Trend recalculation waits for pending historical writes before reading the window")
-    func recalculationWaitsForPendingWrites() async {
-        let trendRepository = MockTrendRepository(trends: Self.sampleTrendData)
-        trendRepository.historicalWindowData = Self.windowHistoricalData()
-        let historicalRepository = MockHistoricalRateRepository()
-        let useCase = makeUseCase(trendRepository: trendRepository, historicalRepository: historicalRepository)
+    @Test("trends recalculated while a fetched window is still being saved include the fetched days", .timeLimit(.minutes(1)))
+    func recalculationAfterAFetchIncludesTheFetchedDays() async throws {
+        let network = MockNetworkService()
+        network.historicalRatesResult = .success(HistoricalRatesResponse(
+            base: "USD",
+            startDate: "2025-01-09",
+            endDate: "2025-01-14",
+            rates: ["2025-01-09": ["EUR": 1.0], "2025-01-14": ["EUR": 1.1]]
+        ))
+        let persistence = MockPersistenceService()
+        let (save, openSave) = AsyncStream.makeStream(of: Void.self)
+        await persistence.gateHistoricalSave(number: 1, on: save)
+        let coordinator = DataCoordinator(
+            networkService: network,
+            persistenceService: persistence,
+            cacheService: InMemoryCacheService(),
+            syncStore: MockHistoricalSyncStore(),
+            fetchDateStore: InMemoryRatesFetchDateStore(),
+            dateProvider: FixedDateProvider(Self.fixedNow)
+        )
+        let useCase = TrendDataUseCase(
+            trendRepository: coordinator,
+            historicalRateRepository: coordinator,
+            dateProvider: FixedDateProvider(Self.fixedNow)
+        )
+        let window = DateRange.spanning(Self.day(-7), Self.day(0))
+        let recalculationStarted = RecalculationStart()
 
-        _ = await useCase.checkAndRecalculateTrendsIfNeeded(for: Self.affectingRanges)
+        _ = try await coordinator.fetchAndMergeHistoricalRates(in: window)
+        while await persistence.historicalSaveAttempts < 1 { await Task.yield() }
+        let recalculation = Task {
+            recalculationStarted.mark()
+            return await useCase.checkAndRecalculateTrendsIfNeeded(for: [window])
+        }
+        await waitUntil { recalculationStarted.hasStarted }
+        openSave.finish()
 
-        #expect(historicalRepository.waitForPendingWritesCallCount == 1)
-        #expect(trendRepository.saveTrendDataCallCount == 1)
+        let eur = try #require(await recalculation.value.first { $0.currencyCode == "EUR" })
+        #expect(eur.miniChartData == [1.0, 1.1])
     }
 
     @Test("When load trends fails, the error propagates to the caller")
@@ -146,9 +179,8 @@ struct TrendDataUseCaseTests {
     @Test("When saving calculated trends fails, the error propagates to the caller")
     func whenSaveTrendsFails_shouldThrow() async {
         let trendRepository = MockTrendRepository(trends: [])
-        trendRepository.historicalWindowData = Self.windowHistoricalData()
         trendRepository.shouldThrowOnSave = true
-        let useCase = makeUseCase(trendRepository: trendRepository)
+        let useCase = makeUseCase(trendRepository: trendRepository, historicalRepository: Self.storedWindowRepository())
 
         await #expect(throws: AppError.self) {
             _ = try await useCase.initializeTrendData()
@@ -158,9 +190,8 @@ struct TrendDataUseCaseTests {
     @Test("checkAndRecalculateTrendsIfNeeded degrades gracefully when trend persistence fails")
     func recalculationFailureDegradesGracefully() async {
         let trendRepository = MockTrendRepository(trends: [])
-        trendRepository.historicalWindowData = Self.windowHistoricalData()
         trendRepository.shouldThrowOnSave = true
-        let useCase = makeUseCase(trendRepository: trendRepository)
+        let useCase = makeUseCase(trendRepository: trendRepository, historicalRepository: Self.storedWindowRepository())
 
         let trends = await useCase.checkAndRecalculateTrendsIfNeeded(for: Self.affectingRanges)
 
@@ -227,21 +258,19 @@ struct TrendDataUseCaseTests {
         }
     }
 
-    @Test("adjustedTrends re-bases every currency, and derives USD from the base's own trend")
-    func adjustedTrendsRebaseEveryCurrency() throws {
+    @Test("adjustedTrend re-bases each currency, and derives USD from the base's own trend")
+    func adjustedTrendRebasesEachCurrency() throws {
         let useCase = makeUseCase(trendRepository: MockTrendRepository())
         let trends = [
             Trend(currencyCode: "EUR", weeklyChange: 10, miniChartData: [1.0, 1.1]),
             Trend(currencyCode: "GBP", weeklyChange: 10, miniChartData: [0.5, 0.55]),
         ]
 
-        let adjusted = useCase.adjustedTrends(baseCurrency: "EUR", in: trends)
-
-        #expect(Set(adjusted.keys) == ["EUR", "GBP", "USD"])
-        let gbp = try #require(adjusted["GBP"])
+        let gbp = try #require(useCase.adjustedTrend(for: "GBP", baseCurrency: "EUR", in: trends))
         #expect(abs(gbp.weeklyChange) < 1e-9)
-        let usd = try #require(adjusted["USD"])
+        let usd = try #require(useCase.adjustedTrend(for: "USD", baseCurrency: "EUR", in: trends))
         #expect(usd.weeklyChange < 0)
+        #expect(useCase.adjustedTrend(for: "EUR", baseCurrency: "EUR", in: trends) != nil)
     }
 
     @Test("When trend data array is empty, should return nil")
@@ -275,8 +304,7 @@ struct TrendDataUseCaseTests {
     @Test("When missing ranges affect trends, should recalculate and return updated trends")
     func whenMissingRangesAffectTrends_shouldRecalculateAndReturnUpdatedTrends() async throws {
         let trendRepository = MockTrendRepository(trends: Self.sampleTrendData)
-        trendRepository.historicalWindowData = Self.windowHistoricalData()
-        let useCase = makeUseCase(trendRepository: trendRepository)
+        let useCase = makeUseCase(trendRepository: trendRepository, historicalRepository: Self.storedWindowRepository())
 
         let result = await useCase.checkAndRecalculateTrendsIfNeeded(for: Self.affectingRanges)
 
@@ -310,12 +338,19 @@ struct TrendDataUseCaseTests {
     @Test("When recalculate trends fails, should return empty array and continue gracefully")
     func whenRecalculateTrendsFails_shouldReturnEmptyArrayAndContinueGracefully() async {
         let trendRepository = MockTrendRepository(trends: Self.sampleTrendData)
-        trendRepository.historicalWindowData = Self.windowHistoricalData()
         trendRepository.shouldThrowOnSave = true
-        let useCase = makeUseCase(trendRepository: trendRepository)
+        let useCase = makeUseCase(trendRepository: trendRepository, historicalRepository: Self.storedWindowRepository())
 
         let result = await useCase.checkAndRecalculateTrendsIfNeeded(for: Self.affectingRanges)
 
         #expect(result.isEmpty)
+    }
+}
+
+private final class RecalculationStart {
+    private(set) var hasStarted = false
+
+    func mark() {
+        hasStarted = true
     }
 }

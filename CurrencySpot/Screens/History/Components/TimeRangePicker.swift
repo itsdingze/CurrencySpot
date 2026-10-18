@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct TimeRangePicker: View {
-    let selectedTimeRange: TimeRange
-    let onSelect: (TimeRange) -> Void
+    @Binding var selectedTimeRange: TimeRange
 
+    @Environment(\.appAccent) private var accent
     @State private var segmentWidth: CGFloat = 0
     @State private var dragOffset: CGFloat?
     @State private var isDragging = false
@@ -50,7 +50,7 @@ struct TimeRangePicker: View {
             .contentShape(Rectangle())
             .gesture(slideGesture)
             .accessibilityRepresentation {
-                Picker("Time range", selection: timeRangeBinding) {
+                Picker("Time range", selection: $selectedTimeRange) {
                     ForEach(timeRanges, id: \.self) { timeRange in
                         Text(timeRange.displayName)
                             .tag(timeRange)
@@ -68,7 +68,7 @@ struct TimeRangePicker: View {
             ForEach(timeRanges, id: \.self) { timeRange in
                 Text(timeRange.rawValue)
                     .font(.appHeadline.weight(selected ? .semibold : .regular))
-                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                     .padding(Spacing.chipPadding)
                     .frame(maxWidth: .infinity)
             }
@@ -78,9 +78,9 @@ struct TimeRangePicker: View {
     private var selectionBox: some View {
         Color.clear
             .frame(width: segmentWidth)
-            .adaptiveGlassBackground(in: .rect(cornerRadius: Radius.card), tint: .selectionFill) {
+            .adaptiveGlassBackground(in: .rect(cornerRadius: Radius.card), tint: .selectionFill(on: accent)) {
                 RoundedRectangle(cornerRadius: Radius.card)
-                    .fill(Color.selectionFill)
+                    .fill(.selectionFill(on: accent))
             }
             .scaleEffect(boxScale)
             .offset(x: pillOffset)
@@ -133,26 +133,18 @@ struct TimeRangePicker: View {
         guard segmentWidth > 0 else { return }
         let index = min(max(Int(x / segmentWidth), 0), timeRanges.count - 1)
         withAnimation(.appSelect) {
-            if timeRanges[index] != selectedTimeRange {
-                onSelect(timeRanges[index])
-            }
+            selectedTimeRange = timeRanges[index]
             dragOffset = nil
             isDragging = false
             snappedIndex = nil
         }
     }
 
-    private var timeRangeBinding: Binding<TimeRange> {
-        Binding(get: { selectedTimeRange }, set: { onSelect($0) })
-    }
 }
 
 #Preview("TimeRangePicker") {
     @Previewable @State var selectedTimeRange = TimeRange.threeMonths
 
-    TimeRangePicker(
-        selectedTimeRange: selectedTimeRange,
-        onSelect: { selectedTimeRange = $0 }
-    )
-    .padding()
+    TimeRangePicker(selectedTimeRange: $selectedTimeRange)
+        .padding()
 }

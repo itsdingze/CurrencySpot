@@ -1,5 +1,4 @@
 import Foundation
-import IdentifiedCollections
 import Observation
 
 // MARK: - PreferencesStore
@@ -9,19 +8,8 @@ protocol PreferencesStore: AnyObject {
     var appearanceMode: AppearanceMode { get set }
     var defaultBaseCurrency: CurrencyCode { get set }
     var defaultTargetCurrency: CurrencyCode { get set }
-    var favoriteCurrencies: CurrencyCodeList { get }
     var hasSeenOnboarding: Bool { get set }
     var hasSeenChartOnboarding: Bool { get set }
-
-    @discardableResult
-    func addFavorite(_ code: CurrencyCode) -> Bool
-
-    @discardableResult
-    func removeFavorite(_ code: CurrencyCode) -> Bool
-
-    func moveFavorites(from: IndexSet, to: Int)
-
-    func resetToDefaults()
 }
 
 // MARK: - PreferenceDefaults
@@ -31,7 +19,6 @@ enum PreferenceDefaults {
     static let appearanceMode: AppearanceMode = .system
     static let baseCurrency = CurrencyCode.usd
     static let targetCurrency = CurrencyCode.eur
-    static let favoriteCurrencies = CurrencyDefaults.favoriteCurrencies
     static let hasSeenOnboarding = false
     static let hasSeenChartOnboarding = false
 }
@@ -56,10 +43,6 @@ final class UserDefaultsPreferencesStore: PreferencesStore {
         didSet { userDefaults.set(defaultTargetCurrency.rawValue, forKey: UserDefaultsKeys.defaultTargetCurrency) }
     }
 
-    private(set) var favoriteCurrencies: CurrencyCodeList {
-        didSet { userDefaults.set(favoriteCurrencies.map(\.rawValue), forKey: UserDefaultsKeys.favoriteCurrencies) }
-    }
-
     var hasSeenOnboarding: Bool {
         didSet { userDefaults.set(hasSeenOnboarding, forKey: UserDefaultsKeys.hasSeenOnboarding) }
     }
@@ -72,7 +55,7 @@ final class UserDefaultsPreferencesStore: PreferencesStore {
 
     // MARK: - Initialization
 
-    init(userDefaults: UserDefaults = .standard) {
+    init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
 
         accentColor = userDefaults.string(forKey: UserDefaultsKeys.accentColor)
@@ -85,40 +68,7 @@ final class UserDefaultsPreferencesStore: PreferencesStore {
             .flatMap { CurrencyCode($0) } ?? PreferenceDefaults.baseCurrency
         defaultTargetCurrency = userDefaults.string(forKey: UserDefaultsKeys.defaultTargetCurrency)
             .flatMap { CurrencyCode($0) } ?? PreferenceDefaults.targetCurrency
-        favoriteCurrencies = .deduplicating(
-            userDefaults.stringArray(forKey: UserDefaultsKeys.favoriteCurrencies)
-                .map { $0.compactMap { CurrencyCode($0) } } ?? PreferenceDefaults.favoriteCurrencies
-        )
         hasSeenOnboarding = userDefaults.bool(forKey: UserDefaultsKeys.hasSeenOnboarding)
         hasSeenChartOnboarding = userDefaults.bool(forKey: UserDefaultsKeys.hasSeenChartOnboarding)
-    }
-
-    // MARK: - Favorites
-
-    @discardableResult
-    func addFavorite(_ code: CurrencyCode) -> Bool {
-        let (inserted, _) = favoriteCurrencies.append(code)
-        return inserted
-    }
-
-    @discardableResult
-    func removeFavorite(_ code: CurrencyCode) -> Bool {
-        favoriteCurrencies.remove(id: code) != nil
-    }
-
-    func moveFavorites(from: IndexSet, to: Int) {
-        favoriteCurrencies.move(fromOffsets: from, toOffset: to)
-    }
-
-    // MARK: - Reset
-
-    func resetToDefaults() {
-        accentColor = PreferenceDefaults.accentColor
-        appearanceMode = PreferenceDefaults.appearanceMode
-        defaultBaseCurrency = PreferenceDefaults.baseCurrency
-        defaultTargetCurrency = PreferenceDefaults.targetCurrency
-        favoriteCurrencies = .deduplicating(PreferenceDefaults.favoriteCurrencies)
-        hasSeenOnboarding = PreferenceDefaults.hasSeenOnboarding
-        hasSeenChartOnboarding = PreferenceDefaults.hasSeenChartOnboarding
     }
 }

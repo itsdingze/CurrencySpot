@@ -3,6 +3,8 @@ import SwiftUI
 
 struct ChartInteractionSection: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.calendar) private var calendar
+    @Environment(\.appAccent) private var accent
 
     private static let hiddenFinger = FingerDemoFrame(progress: 1, opacity: 0, touch: 0)
     private static let heldFinger = FingerDemoFrame(progress: 3, opacity: 1, touch: 1)
@@ -63,28 +65,13 @@ struct ChartInteractionSection: View {
 
         return Chart {
             ForEach(SampleChartData.points) { dataPoint in
-                AreaMark(
-                    x: .value("Date", dataPoint.date, unit: .day),
-                    yStart: .value("Rate", dataPoint.rate),
-                    yEnd: .value("Rate", SampleChartData.minimumRate * 0.99)
+                RateAreaLineMarks(
+                    date: dataPoint.date,
+                    rate: dataPoint.rate,
+                    lowestRate: SampleChartData.minimumRate,
+                    areaColor: accent,
+                    lineStyle: .tint
                 )
-                .interpolationMethod(.cardinal(tension: 0.8))
-                .foregroundStyle(
-                    .linearGradient(
-                        colors: [Color.accentColor.opacity(0.15),
-                                 Color.accentColor.opacity(0)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-
-                LineMark(
-                    x: .value("Date", dataPoint.date, unit: .day),
-                    y: .value("Rate", dataPoint.rate)
-                )
-                .interpolationMethod(.cardinal(tension: 0.8))
-                .lineStyle(.init(lineWidth: 2, lineCap: .round, lineJoin: .round))
-                .foregroundStyle(Color.accentColor)
             }
 
             if let selectedDataPoint {
@@ -94,14 +81,13 @@ struct ChartInteractionSection: View {
                     .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
                         VStack {
                             Text(selectedDataPoint.date.chartDisplay)
-                                .foregroundStyle(Color.accentColor)
 
                             Text(selectedDataPoint.rate.toStringMax4Decimals)
-                                .foregroundStyle(Color.accentColor)
                         }
                         .font(.appSubheadline)
+                        .foregroundStyle(.tint)
                         .padding(Spacing.chipPadding)
-                        .background(Color.selectionFill, in: .rect(cornerRadius: Radius.badge))
+                        .background(.selectionFill(on: accent), in: .rect(cornerRadius: Radius.badge))
                     }
 
                 PointMark(
@@ -109,7 +95,7 @@ struct ChartInteractionSection: View {
                     y: .value("Rate", selectedDataPoint.rate)
                 )
                 .symbol {
-                    ChartPointMarker(color: .accentColor, outerSize: 14, innerSize: 10)
+                    ChartPointMarker(color: .tint, outerSize: 14, innerSize: 10)
                 }
             }
         }
@@ -135,7 +121,7 @@ struct ChartInteractionSection: View {
     private func fingerGlyph(_ finger: FingerDemoFrame) -> some View {
         Image(systemName: "hand.point.up.left.fill")
             .font(.title)
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(.tint)
             .scaleEffect(finger.scale, anchor: .topLeading)
             .shadow(color: .black.opacity(0.3), radius: 2, x: 1, y: 2)
             .opacity(finger.opacity)
@@ -145,7 +131,7 @@ struct ChartInteractionSection: View {
     private func pointXPositions(proxy: ChartProxy, plotMinX: CGFloat) -> [CGFloat] {
         var positions: [CGFloat] = []
         for point in SampleChartData.points {
-            guard let day = Calendar.current.dateInterval(of: .day, for: point.date),
+            guard let day = calendar.dateInterval(of: .day, for: point.date),
                   let x = proxy.position(forX: day.start.addingTimeInterval(day.duration / 2))
             else { return [] }
             positions.append(plotMinX + x)

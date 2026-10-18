@@ -1,12 +1,14 @@
 import SwiftUI
 
 struct ChartOnboardingView: View {
-    @Environment(HistoryViewModel.self) private var viewModel
+    @Environment(CurrencyHistoryViewModel.self) private var viewModel
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var currentOnboardingPage = 0
     @State private var shouldAnimateTitle = false
     @State private var shouldAnimateContent = false
     @State private var shouldAnimateFooter = false
+    @State private var isRevealComplete = false
 
     private let totalPages = 2
 
@@ -18,14 +20,14 @@ struct ChartOnboardingView: View {
         }
         .safeAreaPadding(.horizontal, Spacing.instructionInset)
         .interactiveDismissDisabled()
-        .allowsHitTesting(shouldAnimateFooter || voiceOverEnabled)
+        .allowsHitTesting(isRevealComplete || voiceOverEnabled)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Chart features onboarding")
         .onChange(of: currentOnboardingPage) {
             AccessibilityNotification.Announcement("Page \(currentOnboardingPage + 1) of \(totalPages)").post()
         }
-        .task(id: currentOnboardingPage) {
-            await runStagedAnimations()
+        .onChange(of: currentOnboardingPage, initial: true) {
+            revealPageInStages()
         }
     }
 
@@ -65,15 +67,19 @@ struct ChartOnboardingView: View {
         Group {
             if currentOnboardingPage == 0 {
                 ChartPreviewSection()
-                    .transition(.move(edge: .leading).combined(with: .opacity))
+                    .transition(pageTransition(from: .leading))
             } else {
                 ChartInteractionSection()
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                    .transition(pageTransition(from: .trailing))
             }
         }
         .frame(maxWidth: .infinity)
         .frame(minHeight: 320)
         .accessibilityElement(children: .contain)
+    }
+
+    private func pageTransition(from edge: Edge) -> AnyTransition {
+        reduceMotion ? .opacity : .move(edge: edge).combined(with: .opacity)
     }
 
     private var titleSection: some View {
@@ -150,16 +156,11 @@ struct ChartOnboardingView: View {
         .buttonStyle(.primaryAction)
         .padding(.bottom, Spacing.tight)
         .blurSlide(shouldAnimateFooter)
-        .accessibilityLabel(continueAccessibilityLabel)
     }
 
     private var continueButtonLabel: some View {
         Text(currentOnboardingPage == totalPages - 1 ? "Let's Start!" : "Continue")
             .frame(maxWidth: .infinity)
-    }
-
-    private var continueAccessibilityLabel: String {
-        currentOnboardingPage == totalPages - 1 ? "Finish onboarding" : "Continue to next page"
     }
 
     private func handleContinueAction() {
@@ -179,31 +180,27 @@ struct ChartOnboardingView: View {
         shouldAnimateTitle = false
         shouldAnimateContent = false
         shouldAnimateFooter = false
+        isRevealComplete = false
     }
 
-    private func runStagedAnimations() async {
-        await delayedAnimation(0.55) {
+    private func revealPageInStages() {
+        withAnimation(.appStageReveal(after: 0.55, reduceMotion: reduceMotion)) {
             shouldAnimateTitle = true
         }
-        guard !Task.isCancelled else { return }
-
-        await delayedAnimation(0.2) {
+        withAnimation(.appStageReveal(after: 0.75, reduceMotion: reduceMotion)) {
             shouldAnimateContent = true
         }
-        guard !Task.isCancelled else { return }
-
-        await delayedAnimation(0.2) {
+        withAnimation(.appStageReveal(after: 0.95, reduceMotion: reduceMotion)) {
             shouldAnimateFooter = true
+        } completion: {
+            isRevealComplete = true
         }
     }
-
 }
 
 #if DEBUG
 #Preview {
-    let container = DependencyContainer.preview()
-
     ChartOnboardingView()
-        .withDependencyContainer(container)
+        .environment(CurrencyHistoryViewModel.preview())
 }
 #endif

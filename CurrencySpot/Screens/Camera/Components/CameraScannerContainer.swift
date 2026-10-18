@@ -34,7 +34,7 @@ struct CameraScannerContainer: View {
                             detectionOverlay(isLive: false)
                         }
                         .environment(viewModel)
-                        .accentColor(settingsViewModel.accentColor.color)
+                        .appAccent(settingsViewModel.accentColor.color)
                         .environment(\.colorScheme, .dark)
                     }
                     .id(ObjectIdentifier(frozenImage))
@@ -92,9 +92,7 @@ struct CameraScannerContainer: View {
             viewModel.turnTorchOff()
         }
         .sheet(item: $viewModel.destination) { destination in
-            // preferredColorScheme darkens the whole enclosing presentation,
-            // UIKit chrome included (sheet background, search bar, toolbar) —
-            // an environment override only reaches the SwiftUI views.
+            // An environment colorScheme override misses the sheet's UIKit chrome; preferredColorScheme reaches it.
             currencyPicker(for: destination)
                 .preferredColorScheme(.dark)
         }

@@ -5,7 +5,7 @@ nonisolated enum TrendDirection: Sendable {
     case down
     case stable
 
-    static let stableChangeThreshold: Double = 0.1
+    private static let stableChangeThreshold: Double = 0.1
 
     init(percentChange: Double) {
         if abs(percentChange) <= Self.stableChangeThreshold {

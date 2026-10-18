@@ -5,7 +5,7 @@ extension View {
         environment(container.appState)
             .environment(container.ratesStore)
             .environment(container.calculatorViewModel)
-            .environment(container.historyViewModel)
+            .environment(container.currencyListViewModel)
             .environment(container.settingsViewModel)
             .environment(container.cameraViewModel)
     }

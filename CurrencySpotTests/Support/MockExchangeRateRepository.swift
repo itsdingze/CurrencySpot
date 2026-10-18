@@ -19,9 +19,11 @@ final class MockExchangeRateRepository: ExchangeRateRepository {
         set { lastFetch = newValue ? nil : Self.now }
     }
 
+    var fetchBarrier: (() async -> Void)?
+
     func fetchExchangeRates() async throws -> [ExchangeRate] {
-        await Task.yield()
         fetchExchangeRatesCallCount += 1
+        await fetchBarrier?()
         let rates = try fetchExchangeRatesResult.get()
         lastFetch = Self.now
         return rates

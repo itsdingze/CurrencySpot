@@ -19,7 +19,6 @@ struct PreferencesStoreTests {
         #expect(store.appearanceMode == .system)
         #expect(store.defaultBaseCurrency == "USD")
         #expect(store.defaultTargetCurrency == "EUR")
-        #expect(store.favoriteCurrencies.elements == CurrencyDefaults.favoriteCurrencies)
         #expect(store.hasSeenOnboarding == false)
         #expect(store.hasSeenChartOnboarding == false)
     }
@@ -28,12 +27,14 @@ struct PreferencesStoreTests {
     func readsPersistedValues() throws {
         let seeded = try isolatedDefaults.make()
         seeded.set("CHF", forKey: UserDefaultsKeys.defaultBaseCurrency)
-        seeded.set(["JPY", "CAD"], forKey: UserDefaultsKeys.favoriteCurrencies)
+        seeded.set(AccentColorOption.pink.rawValue, forKey: UserDefaultsKeys.accentColor)
+        seeded.set(true, forKey: UserDefaultsKeys.hasSeenOnboarding)
 
         let seededStore = UserDefaultsPreferencesStore(userDefaults: seeded)
 
         #expect(seededStore.defaultBaseCurrency == "CHF")
-        #expect(seededStore.favoriteCurrencies.elements == ["JPY", "CAD"])
+        #expect(seededStore.accentColor == .pink)
+        #expect(seededStore.hasSeenOnboarding == true)
     }
 
     @Test("a changed preference writes through to the injected defaults")
@@ -43,47 +44,5 @@ struct PreferencesStoreTests {
 
         #expect(defaults.string(forKey: UserDefaultsKeys.defaultTargetCurrency) == "JPY")
         #expect(defaults.string(forKey: UserDefaultsKeys.appearanceMode) == AppearanceMode.dark.rawValue)
-    }
-
-    @Test("addFavorite deduplicates, appends, and persists")
-    func addFavorite() {
-        #expect(store.addFavorite("USD") == false)
-        #expect(store.addFavorite("CHF") == true)
-        #expect(store.favoriteCurrencies.last == "CHF")
-        #expect(store.addFavorite("CHF") == false)
-        #expect(defaults.stringArray(forKey: UserDefaultsKeys.favoriteCurrencies)?.last == "CHF")
-    }
-
-    @Test("moveFavorites preserves List reorder semantics")
-    func moveFavorites() {
-        let original = store.favoriteCurrencies.elements
-        var expected = original
-        expected.move(fromOffsets: IndexSet(integer: 0), toOffset: 3)
-
-        store.moveFavorites(from: IndexSet(integer: 0), to: 3)
-
-        #expect(store.favoriteCurrencies.elements == expected)
-    }
-
-    @Test("removeFavorite removes by code")
-    func removeFavorite() {
-        #expect(store.removeFavorite("EUR") == true)
-        #expect(store.favoriteCurrencies.contains("EUR") == false)
-        #expect(store.removeFavorite("EUR") == false)
-    }
-
-    @Test("resetToDefaults restores every value")
-    func resetToDefaults() {
-        store.accentColor = .pink
-        store.defaultBaseCurrency = "GBP"
-        store.hasSeenOnboarding = true
-        store.addFavorite("CHF")
-
-        store.resetToDefaults()
-
-        #expect(store.accentColor == .cyan)
-        #expect(store.defaultBaseCurrency == "USD")
-        #expect(store.hasSeenOnboarding == false)
-        #expect(store.favoriteCurrencies.elements == CurrencyDefaults.favoriteCurrencies)
     }
 }
