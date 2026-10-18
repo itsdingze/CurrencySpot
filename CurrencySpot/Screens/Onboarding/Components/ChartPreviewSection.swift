@@ -122,7 +122,7 @@ struct ChartPreviewSection: View {
 
     private func statCards(showing shown: Set<ChartIndicator>) -> some View {
         VStack(spacing: Spacing.tight) {
-            HStack(spacing: Spacing.element) {
+            AdaptiveStack(spacing: Spacing.element) {
                 StatCard(
                     label: .historyStatisticsHighest,
                     value: (SampleChartData.highestPoint?.rate ?? 0).formatted(.number.precision(.fractionLength(4))),
@@ -144,7 +144,7 @@ struct ChartPreviewSection: View {
                 }
             }
 
-            HStack(spacing: Spacing.element) {
+            AdaptiveStack(spacing: Spacing.element) {
                 StatCard(
                     label: .historyStatisticsAverage,
                     value: SampleChartData.averageRate.formatted(.number.precision(.fractionLength(4))),

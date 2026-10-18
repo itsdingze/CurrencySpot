@@ -9,14 +9,16 @@ struct CurrencyRowButton: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                Text(code.rawValue)
-                    .font(.appHeadline.weight(.medium))
+                AdaptiveStack {
+                    Text(code.rawValue)
+                        .font(.appHeadline.weight(.medium))
 
-                Spacer()
+                    Spacer()
 
-                Text(name)
-                    .font(.appSubheadline)
-                    .foregroundStyle(Color.secondary)
+                    Text(name)
+                        .font(.appSubheadline)
+                        .foregroundStyle(Color.secondary)
+                }
 
                 if isSelected {
                     Image(systemName: "checkmark")

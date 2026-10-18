@@ -7,7 +7,7 @@ struct FeatureRow: View {
     @ScaledMetric(relativeTo: .title) private var symbolColumnWidth: CGFloat = 32
 
     var body: some View {
-        HStack(alignment: .center, spacing: Spacing.section) {
+        AdaptiveStack(spacing: Spacing.section) {
             Image(systemName: symbol)
                 .font(.title)
                 .foregroundStyle(.tint)
@@ -21,7 +21,6 @@ struct FeatureRow: View {
                 Text(subtitle)
                     .font(.appSubheadline)
                     .foregroundStyle(.secondary)
-                    .lineLimit(3)
             }
         }
         .accessibilityElement(children: .combine)

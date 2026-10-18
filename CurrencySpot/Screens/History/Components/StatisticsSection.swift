@@ -7,7 +7,7 @@ struct StatisticsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.hairline) {
-            HStack(spacing: 0) {
+            AdaptiveStack(spacing: 0) {
                 StatCard(
                     label: .historyStatisticsHighest,
                     value: viewModel.formattedHighestRate,
@@ -31,7 +31,7 @@ struct StatisticsSection: View {
 
             Divider()
 
-            HStack(spacing: 0) {
+            AdaptiveStack(spacing: 0) {
                 StatCard(
                     label: .historyStatisticsAverage,
                     value: viewModel.formattedAverageRate,

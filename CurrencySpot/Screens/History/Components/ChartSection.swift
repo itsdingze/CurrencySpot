@@ -51,7 +51,7 @@ struct ChartSection: View {
                 .progressViewStyle(.circular)
         }
         .padding()
-        .frame(maxWidth: .infinity, maxHeight: ChartMetrics.height)
+        .frame(maxWidth: .infinity, idealHeight: ChartMetrics.height, maxHeight: ChartMetrics.height)
         .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
         .accessibilityLabel(.historyChartLoadingAccessibilityLabel)
         .accessibilityAddTraits(.updatesFrequently)
@@ -60,7 +60,7 @@ struct ChartSection: View {
     private var noDataView: some View {
         Text(.historyChartEmpty)
             .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, maxHeight: ChartMetrics.height)
+            .frame(maxWidth: .infinity, idealHeight: ChartMetrics.height, maxHeight: ChartMetrics.height)
             .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
             .accessibilityLabel(.historyChartEmptyAccessibilityLabel)
     }
@@ -73,7 +73,7 @@ struct ChartSection: View {
             Button(.historyChartFailedRetry, action: viewModel.retry)
                 .buttonStyle(.bordered)
         }
-        .frame(maxWidth: .infinity, maxHeight: ChartMetrics.height)
+        .frame(maxWidth: .infinity, idealHeight: ChartMetrics.height, maxHeight: ChartMetrics.height)
         .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
     }
 }

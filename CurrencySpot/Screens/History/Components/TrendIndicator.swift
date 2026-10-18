@@ -14,7 +14,7 @@ struct TrendIndicator: View {
                 .accessibilityHidden(true)
 
             Text(value)
-                .lineLimit(1)
+                .fixedSize()
                 .monospacedDigit()
         }
         .foregroundStyle(direction.color)

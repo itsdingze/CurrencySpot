@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(ExchangeRatesStore.self) private var ratesStore: ExchangeRatesStore
     @Environment(SettingsViewModel.self) private var settingsViewModel: SettingsViewModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var bindableViewModel: Bindable<SettingsViewModel> {
         Bindable(settingsViewModel)
@@ -74,21 +75,39 @@ struct SettingsView: View {
         Section(header: Text(.settingsAppearanceHeader)) {
             AccentColorPickerSheet()
 
-            Picker(selection: bindableViewModel.appearanceMode) {
-                ForEach(AppearanceMode.allCases) { mode in
-                    Text(mode.displayName)
-                        .fontDesign(.rounded)
-                        .tag(mode)
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading) {
+                    colorSchemeLabel
+                        .accessibilityHidden(true)
+
+                    colorSchemePicker
+                        .labelsHidden()
                 }
-            } label: {
-                Label(title: {
-                    Text(.settingsAppearanceColorScheme)
-                }, icon: {
-                    Image(systemName: "moon.circle.fill")
-                        .symbolRenderingMode(.multicolor)
-                })
+            } else {
+                colorSchemePicker
             }
         }
+    }
+
+    private var colorSchemePicker: some View {
+        Picker(selection: bindableViewModel.appearanceMode) {
+            ForEach(AppearanceMode.allCases) { mode in
+                Text(mode.displayName)
+                    .fontDesign(.rounded)
+                    .tag(mode)
+            }
+        } label: {
+            colorSchemeLabel
+        }
+    }
+
+    private var colorSchemeLabel: some View {
+        Label(title: {
+            Text(.settingsAppearanceColorScheme)
+        }, icon: {
+            Image(systemName: "moon.circle.fill")
+                .symbolRenderingMode(.multicolor)
+        })
     }
 
     private var currencyPreferencesSection: some View {
@@ -171,7 +190,7 @@ struct SettingsView: View {
         route: SettingsRoute
     ) -> some View {
         NavigationLink(value: route) {
-            HStack {
+            AdaptiveStack {
                 Label(title: {
                     Text(title)
                 }, icon: {

@@ -31,22 +31,24 @@ struct CalculatorView: View {
         ZStack {
             Color.background.ignoresSafeArea()
 
-            VStack(spacing: Spacing.element) {
-                if calculatorViewModel.rateBanner != .hidden {
-                    RateStatusBanner(
-                        status: calculatorViewModel.rateBanner,
-                        showsRetry: calculatorViewModel.canRetryRates,
-                        refreshAction: calculatorViewModel.retryFetch
-                    )
-                }
+            AccessibilitySizeScrollView {
+                VStack(spacing: Spacing.element) {
+                    if calculatorViewModel.rateBanner != .hidden {
+                        RateStatusBanner(
+                            status: calculatorViewModel.rateBanner,
+                            showsRetry: calculatorViewModel.canRetryRates,
+                            refreshAction: calculatorViewModel.retryFetch
+                        )
+                    }
 
-                switch calculatorViewModel.loadState {
-                case .idle, .loading(previous: nil):
-                    ProgressView(.calculatorLoading)
-                case .loaded, .loading(previous: .some):
-                    mainContentView()
-                case .failed:
-                    CalculatorErrorView()
+                    switch calculatorViewModel.loadState {
+                    case .idle, .loading(previous: nil):
+                        ProgressView(.calculatorLoading)
+                    case .loaded, .loading(previous: .some):
+                        mainContentView()
+                    case .failed:
+                        CalculatorErrorView()
+                    }
                 }
             }
             .safeAreaPadding()

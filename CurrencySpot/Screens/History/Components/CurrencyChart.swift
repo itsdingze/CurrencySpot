@@ -4,6 +4,7 @@ import SwiftUI
 struct CurrencyChart: View {
     @Environment(CurrencyHistoryViewModel.self) private var viewModel
     @Environment(\.appAccent) private var accent
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var rawSelectedDate: Date?
     @State private var axSelectionIndex: Int?
     @Binding var isChartSelectionActive: Bool
@@ -132,6 +133,7 @@ struct CurrencyChart: View {
                         .fontDesign(.rounded)
                         .padding(Spacing.chipPadding)
                         .background(.tint.opacity(0.2), in: .rect(cornerRadius: Radius.badge))
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     }
 
                 PointMark(
@@ -144,8 +146,14 @@ struct CurrencyChart: View {
             }
         }
         .chartXAxis {
-            AxisMarks {
-                AxisValueLabel(format: viewModel.selectedTimeRange.chartAxisDateFormat)
+            if dynamicTypeSize.isAccessibilitySize {
+                AxisMarks(preset: .aligned) {
+                    AxisValueLabel(format: viewModel.selectedTimeRange.chartAxisDateFormat, collisionResolution: .greedy)
+                }
+            } else {
+                AxisMarks {
+                    AxisValueLabel(format: viewModel.selectedTimeRange.chartAxisDateFormat)
+                }
             }
         }
         .chartYAxis {

@@ -8,19 +8,30 @@ struct CurrencyRow: View {
     var metricsHidden = false
 
     @Environment(CurrencyListViewModel.self) private var viewModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         let trend = viewModel.trend(for: entry.code)
 
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                stackedLayout(trend)
+            } else {
+                sideBySideLayout(trend)
+            }
+        }
+        .animation(.appQuickFade, value: metricsHidden)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel(trend: trend))
+    }
+
+    private func sideBySideLayout(_ trend: Trend?) -> some View {
         HStack(spacing: Spacing.element) {
             VStack(alignment: .leading, spacing: Spacing.hairline) {
-                Text(entry.code.rawValue)
-                    .font(.appTitle2)
+                codeText
 
-                Text(entry.name)
+                nameText
                     .lineLimit(1)
-                    .font(.appSubheadline)
-                    .foregroundStyle(Color.secondary)
             }
 
             Spacer()
@@ -38,9 +49,59 @@ struct CurrencyRow: View {
                 }
             }
         }
-        .animation(.appQuickFade, value: metricsHidden)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel(trend: trend))
+    }
+
+    private func stackedLayout(_ trend: Trend?) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.hairline) {
+            HStack(spacing: Spacing.element) {
+                codeText
+
+                Spacer()
+
+                if showsTrendChart, let trend {
+                    MiniChart(trend: trend)
+                        .accessibilityHidden(true)
+                        .opacity(metricsHidden ? 0 : 1)
+                }
+            }
+
+            nameText
+
+            Group {
+                rateText
+
+                if let trend {
+                    trendIndicator(trend)
+                }
+            }
+            .opacity(metricsHidden ? 0 : 1)
+        }
+    }
+
+    private var codeText: some View {
+        Text(entry.code.rawValue)
+            .font(.appTitle2)
+    }
+
+    private var nameText: some View {
+        Text(entry.name)
+            .font(.appSubheadline)
+            .foregroundStyle(Color.secondary)
+    }
+
+    private var rateText: some View {
+        Text(entry.rate.toStringMax4Decimals)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .font(.appTitle2)
+            .monospacedDigit()
+    }
+
+    private func trendIndicator(_ trend: Trend) -> some View {
+        TrendIndicator(
+            value: viewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange),
+            direction: trend.direction
+        )
     }
 
     @ViewBuilder
@@ -57,17 +118,10 @@ struct CurrencyRow: View {
             }
 
             VStack(alignment: .trailing, spacing: Spacing.hairline) {
-                Text(entry.rate.toStringMax4Decimals)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .font(.appTitle2)
-                    .monospacedDigit()
+                rateText
 
                 if let trend {
-                    TrendIndicator(
-                        value: viewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange),
-                        direction: trend.direction
-                    )
+                    trendIndicator(trend)
                 }
             }
             .frame(minWidth: 108, alignment: .trailing)

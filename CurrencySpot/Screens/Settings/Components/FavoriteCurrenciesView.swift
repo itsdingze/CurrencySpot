@@ -7,7 +7,7 @@ struct FavoriteCurrenciesView: View {
     var body: some View {
         List {
             ForEach(viewModel.favoriteCurrencies, id: \.self) { currency in
-                HStack {
+                AdaptiveStack {
                     Text(currency.rawValue)
                         .font(.appHeadline.weight(.medium))
 

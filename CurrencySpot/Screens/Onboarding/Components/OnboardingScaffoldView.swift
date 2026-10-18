@@ -26,6 +26,7 @@ struct OnboardingScaffoldView<Icon: View, Footer: View>: View {
 
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var animateIcon: Bool = false
     @State private var animateTitle: Bool = false
@@ -48,13 +49,20 @@ struct OnboardingScaffoldView<Icon: View, Footer: View>: View {
                         .accessibilityAddTraits(.isHeader)
 
                     cardsView
+
+                    if isFooterScrolling {
+                        footer
+                            .blurSlide(animateFooter)
+                    }
                 }
             }
             .scrollIndicators(.hidden)
             .scrollBounceBehavior(.basedOnSize)
 
             VStack(spacing: 0) {
-                footer
+                if !isFooterScrolling {
+                    footer
+                }
 
                 Button(action: onContinue) {
                     Text(buttonTitle)
@@ -70,6 +78,10 @@ struct OnboardingScaffoldView<Icon: View, Footer: View>: View {
         .allowsHitTesting(isRevealComplete || voiceOverEnabled)
         .accessibilityElement(children: .contain)
         .onAppear(perform: revealInStages)
+    }
+
+    private var isFooterScrolling: Bool {
+        dynamicTypeSize.isAccessibilitySize
     }
 
     private func revealInStages() {

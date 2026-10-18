@@ -7,37 +7,40 @@ struct BadgeDetailView: View {
     let openInConverter: () -> Void
     let hideConversion: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 32) {
-                VStack(spacing: Spacing.tight) {
-                    amountLine(item.conversion.amount, code: baseCurrency)
-                        .foregroundStyle(.secondary)
+            AccessibilitySizeOverflowScrollView {
+                VStack(spacing: 32) {
+                    VStack(spacing: Spacing.tight) {
+                        amountLine(item.conversion.amount, code: baseCurrency)
+                            .foregroundStyle(.secondary)
 
-                    Image(systemName: "arrow.down")
-                        .font(.appHeadline)
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                    
-                    amountLine(item.conversion.converted, code: targetCurrency, fractionDigits: 2)
-                }
-                
-                VStack(spacing: Spacing.section) {
-                    Button(action: openInConverter) {
-                        Label(.cameraBadgeDetailOpenInConvert, systemImage: "arrow.left.arrow.right")
-                            .frame(maxWidth: .infinity)
+                        Image(systemName: "arrow.down")
+                            .font(.appHeadline)
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+
+                        amountLine(item.conversion.converted, code: targetCurrency, fractionDigits: 2)
                     }
-                    .buttonStyle(.primaryAction)
-                    
-                    Button(action: hideConversion) {
-                        Label(.cameraBadgeDetailHide, systemImage: "eye.slash")
-                            .font(.appSubheadline)
+
+                    VStack(spacing: Spacing.section) {
+                        Button(action: openInConverter) {
+                            Label(.cameraBadgeDetailOpenInConvert, systemImage: "arrow.left.arrow.right")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.primaryAction)
+
+                        Button(action: hideConversion) {
+                            Label(.cameraBadgeDetailHide, systemImage: "eye.slash")
+                                .font(.appSubheadline)
+                        }
+                        .foregroundStyle(Color.secondary)
                     }
-                    .foregroundStyle(Color.secondary)
                 }
+                .padding()
             }
-            .padding()
             .navigationTitle(.cameraBadgeDetailTitle)
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
@@ -51,13 +54,20 @@ struct BadgeDetailView: View {
         }
     }
 
+    private var isAccessibilitySize: Bool {
+        dynamicTypeSize.isAccessibilitySize
+    }
+
     private func amountLine(_ amount: Decimal, code: CurrencyCode, fractionDigits: Int? = nil) -> some View {
-        HStack(alignment: .lastTextBaseline, spacing: Spacing.tight) {
+        AdaptiveStack(alignment: .lastTextBaseline, stackedAlignment: .center, spacing: Spacing.tight) {
             Text(amount, format: fractionDigits.map { .number.precision(.fractionLength($0)) } ?? .number)
                 .font(.appLargeTitle)
+                .lineLimit(isAccessibilitySize ? 1 : nil)
+                .minimumScaleFactor(isAccessibilitySize ? 0.5 : 1)
             Text(code.localizedName)
                 .font(.appTitle3)
         }
+        .multilineTextAlignment(.center)
     }
 }
 

@@ -68,6 +68,9 @@ struct TimeRangePicker: View {
             ForEach(timeRanges, id: \.self) { timeRange in
                 Text(timeRange.shortName)
                     .font(.appHeadline.weight(selected ? .semibold : .regular))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                     .foregroundStyle(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                     .padding(Spacing.chipPadding)
                     .frame(maxWidth: .infinity)

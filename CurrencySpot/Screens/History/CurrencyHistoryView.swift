@@ -19,14 +19,16 @@ struct CurrencyHistoryView: View {
     }
 
     var body: some View {
-        VStack(spacing: Spacing.section) {
-            HeaderSection(isChartSelectionActive: $isChartSelectionActive)
+        AccessibilitySizeScrollView {
+            VStack(spacing: Spacing.section) {
+                HeaderSection(isChartSelectionActive: $isChartSelectionActive)
 
-            ChartSection(isChartSelectionActive: $isChartSelectionActive)
+                ChartSection(isChartSelectionActive: $isChartSelectionActive)
 
-            StatisticsSection()
+                StatisticsSection()
 
-            Spacer()
+                Spacer()
+            }
         }
         .safeAreaPadding()
         .onChange(of: chartIsLoaded) { _, loaded in

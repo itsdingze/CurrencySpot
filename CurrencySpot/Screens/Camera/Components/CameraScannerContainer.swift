@@ -6,6 +6,7 @@ struct CameraScannerContainer: View {
     @Environment(AppState.self) private var appState
     @Environment(SettingsViewModel.self) private var settingsViewModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var scannerProxy = DataScannerProxy()
 
     var body: some View {
@@ -136,8 +137,12 @@ struct CameraScannerContainer: View {
             }
         case let .badgeDetail(snapshot):
             badgeDetail(for: snapshot)
-                .presentationDetents([.fraction(0.4)])
+                .presentationDetents(badgeDetailDetents)
         }
+    }
+
+    private var badgeDetailDetents: Set<PresentationDetent> {
+        dynamicTypeSize.isAccessibilitySize ? [.large] : [.fraction(0.4)]
     }
 
     private func badgeDetail(for snapshot: DetectedItem) -> some View {

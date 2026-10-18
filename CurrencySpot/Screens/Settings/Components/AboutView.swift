@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct AboutView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         Form {
             Section {
@@ -40,8 +42,13 @@ struct AboutView: View {
                 .font(.appSubheadline)
                 .foregroundStyle(.secondary)
         }
+        .multilineTextAlignment(headerTextAlignment)
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
+    }
+
+    private var headerTextAlignment: TextAlignment {
+        dynamicTypeSize.isAccessibilitySize ? .center : .leading
     }
 
     // MARK: - Links

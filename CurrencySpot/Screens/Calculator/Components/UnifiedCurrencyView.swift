@@ -57,6 +57,7 @@ struct UnifiedCurrencyView: View {
     let onPress: () -> Void
 
     @Environment(\.appAccent) private var accent
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.tight) {
@@ -77,11 +78,15 @@ struct UnifiedCurrencyView: View {
 
     @ViewBuilder
     private var contentRow: some View {
-        HStack {
+        AdaptiveStack {
             amountText
             Spacer()
             currencyButton
         }
+    }
+
+    private var minimumAmountScale: CGFloat {
+        dynamicTypeSize.isAccessibilitySize ? 0.5 : 0.7
     }
 
     @ViewBuilder
@@ -90,7 +95,7 @@ struct UnifiedCurrencyView: View {
             .font(.appLargeTitle.monospacedDigit())
             .foregroundStyle(type.amountStyle)
             .lineLimit(1)
-            .minimumScaleFactor(0.7)
+            .minimumScaleFactor(minimumAmountScale)
             .contentTransition(.numericText())
             .accessibilityLabel(accessibilityAmountLabel)
             .accessibilityValue(accessibilityAmountValue)

@@ -9,32 +9,34 @@ struct CameraStateScreen: View {
     let action: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        AccessibilitySizeOverflowScrollView {
+            VStack(spacing: 0) {
+                Spacer()
 
-            VStack(spacing: Spacing.block) {
-                VStack(spacing: Spacing.element) {
-                    Image(systemName: icon)
-                        .font(.appLargeTitle.weight(.medium))
-                        .imageScale(.large)
-                        .foregroundStyle(.tint)
-                        .accessibilityHidden(true)
+                VStack(spacing: Spacing.block) {
+                    VStack(spacing: Spacing.element) {
+                        Image(systemName: icon)
+                            .font(.appLargeTitle.weight(.medium))
+                            .imageScale(.large)
+                            .foregroundStyle(.tint)
+                            .accessibilityHidden(true)
 
-                    Text(title)
-                        .font(.appTitle2.bold())
-                        .multilineTextAlignment(.center)
-                        .accessibilityAddTraits(.isHeader)
+                        Text(title)
+                            .font(.appTitle2.bold())
+                            .multilineTextAlignment(.center)
+                            .accessibilityAddTraits(.isHeader)
 
-                    Text(message)
-                        .font(.appSubheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                        Text(message)
+                            .font(.appSubheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    actionButton
                 }
 
-                actionButton
+                Spacer()
             }
-
-            Spacer()
         }
         .safeAreaPadding(.horizontal, Spacing.instructionInset)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

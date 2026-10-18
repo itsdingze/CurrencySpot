@@ -114,6 +114,7 @@ private struct ColorCustomizationSheet: View {
                         Image(systemName: "checkmark")
                             .font(.appCallout).bold()
                             .foregroundStyle(.white)
+                            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     }
                 }
                 .scaleEffect(isSelected ? 1.1 : 1.0)

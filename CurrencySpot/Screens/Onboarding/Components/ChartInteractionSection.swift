@@ -88,6 +88,7 @@ struct ChartInteractionSection: View {
                         .foregroundStyle(.tint)
                         .padding(Spacing.chipPadding)
                         .background(.selectionFill(on: accent), in: .rect(cornerRadius: Radius.badge))
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     }
 
                 PointMark(

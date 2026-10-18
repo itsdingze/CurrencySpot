@@ -22,7 +22,7 @@ struct HeaderSection: View {
 
     private var currentRateView: some View {
         VStack(spacing: Spacing.hairline) {
-            HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
+            AdaptiveStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
                 Text(viewModel.targetCurrency.rawValue)
                     .font(.appTitle)
                     .accessibilityLabel(.historyHeaderCurrencyAccessibilityLabel(

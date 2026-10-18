@@ -25,6 +25,7 @@ struct CurrencyPairControl: View {
         .padding(.horizontal, Spacing.cardPadding)
         .padding(.vertical, Spacing.chipPadding)
         .adaptiveGlassBackground(in: .capsule, isInteractive: true)
+        .dynamicTypeSize(...DynamicTypeSize.accessibility3)
     }
 
     private func currencyButton(
@@ -53,6 +54,9 @@ struct CurrencyPairControl: View {
             Text(verbatim: code.localizedName),
             Text(accessibilityLabel),
         ])
+        .accessibilityShowsLargeContentViewer {
+            Text(verbatim: code.rawValue)
+        }
     }
 
     private var swapButton: some View {
@@ -72,6 +76,9 @@ struct CurrencyPairControl: View {
         }
         .buttonStyle(.controlButton(glass: false))
         .accessibilityLabel(.cameraCurrencyPairSwapAccessibilityLabel)
+        .accessibilityShowsLargeContentViewer {
+            Label(.cameraCurrencyPairSwapAccessibilityLabel, systemImage: "arrow.trianglehead.swap")
+        }
     }
 }
 
