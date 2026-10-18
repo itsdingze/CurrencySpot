@@ -3349,6 +3349,18 @@
         }
       }
     },
+    "settings.title" : {
+      "comment" : "Navigation title of the Settings tab's root screen, also shown on the back button of screens pushed from it.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
     "statCard.accessibilityLabel" : {
       "comment" : "VoiceOver label for a chart statistic card. label: statistic name such as Highest. value: formatted statistic value.",
       "extractionState" : "manual",

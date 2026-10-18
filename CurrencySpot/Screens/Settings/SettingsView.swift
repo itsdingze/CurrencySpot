@@ -19,6 +19,7 @@ struct SettingsView: View {
             dataManagementSection
             aboutSection
         }
+        .navigationTitle(.settingsTitle)
         .navigationDestination(for: SettingsRoute.self) { route in
             destinationView(for: route)
         }
