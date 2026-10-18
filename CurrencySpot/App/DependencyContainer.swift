@@ -1,5 +1,4 @@
 import Foundation
-import OSLog
 import SwiftData
 
 // MARK: - DependencyContainer
@@ -15,8 +14,6 @@ final class DependencyContainer {
     let cameraViewModel: CameraViewModel
 
     private let makeHistoryViewModel: @MainActor (CurrencyCode, CurrencyCode) -> CurrencyHistoryViewModel
-
-    private static let logger = Logger(category: .app)
 
     // MARK: - Initialization
 
@@ -171,16 +168,6 @@ final class DependencyContainer {
     // MARK: - Bootstrap
 
     static func bootstrap(appState: AppState) -> DependencyContainer {
-        #if DEBUG
-            if CommandLine.arguments.contains("enable-testing") {
-                if let testContainer = try? ModelContainer.inMemoryCurrencySpot() {
-                    DataMigration.runIfNeeded(modelContainer: testContainer, defaults: .standard)
-                    return DependencyContainer(modelContainer: testContainer, appState: appState)
-                }
-                logger.fault("Failed to create test container; continuing with production ladder")
-            }
-        #endif
-
         let container = ModelContainerFactory.persistentContainer(
             storeURL: ModelConfiguration().url,
             defaults: .standard,
