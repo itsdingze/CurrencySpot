@@ -4,7 +4,7 @@ import Testing
 
 @Suite("CurrencyHistoryViewModel Tests")
 struct CurrencyHistoryViewModelTests {
-    @Test("starts on the requested pair with no chart, an empty series and N/A volatility")
+    @Test("starts on the requested pair with no chart, an empty series and placeholder statistics")
     func initialState() throws {
         let viewModel = try HistoryTestGraph().makeHistoryViewModel(base: "USD", target: "GBP")
 
@@ -13,7 +13,7 @@ struct CurrencyHistoryViewModelTests {
         #expect(viewModel.selectedTimeRange == .threeMonths)
         #expect(viewModel.chartData == .idle)
         #expect(viewModel.displayedChartDataPoints.isEmpty)
-        #expect(viewModel.formattedVolatility == "N/A")
+        Self.expectNoStatistics(viewModel, header: "1 USD = — GBP")
     }
 
     @Test("loading the chart passes through .loading before landing on .loaded", .timeLimit(.minutes(1)))
@@ -138,6 +138,64 @@ struct CurrencyHistoryViewModelTests {
         #expect(viewModel.formattedVolatility == "Very High")
     }
 
+    @Test("while the first load runs, the header and statistics show placeholders, not zero rates", .timeLimit(.minutes(1)))
+    func loadingShowsPlaceholders() async throws {
+        let repository = MockHistoricalRateRepository()
+        let gate = AsyncGate()
+        repository.fetchBarrier = { await gate.wait() }
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel(base: "USD", target: "EUR")
+
+        let load = Task { await viewModel.loadChart() }
+        await waitUntil { repository.fetchHistoricalRatesCallCount == 1 }
+
+        #expect(viewModel.chartData == .loading(previous: nil))
+        Self.expectNoStatistics(viewModel)
+        gate.open()
+        await load.value
+    }
+
+    @Test("a failed first load shows placeholders, not zero rates", .timeLimit(.minutes(1)))
+    func failedLoadShowsPlaceholders() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.shouldThrowErrorOnFetch = true
+        let viewModel = try HistoryTestGraph(historicalRepository: repository).makeHistoryViewModel(base: "USD", target: "EUR")
+
+        await viewModel.loadChart()
+
+        #expect(viewModel.chartData.error != nil)
+        Self.expectNoStatistics(viewModel)
+    }
+
+    @Test("a load that finds no days shows placeholders, not zero rates", .timeLimit(.minutes(1)))
+    func emptyLoadShowsPlaceholders() async throws {
+        let repository = MockHistoricalRateRepository()
+        let viewModel = try HistoryTestGraph(historicalRepository: repository).makeHistoryViewModel(base: "USD", target: "EUR")
+
+        await viewModel.loadChart()
+
+        #expect(viewModel.chartData == .loaded([]))
+        Self.expectNoStatistics(viewModel)
+    }
+
+    @Test("a single loaded day shows its rate, and volatility reads N/A rather than the no-data placeholder", .timeLimit(.minutes(1)))
+    func singleDayShowsRateAndUnavailableVolatility() async throws {
+        let repository = MockHistoricalRateRepository()
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [2], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel(base: "USD", target: "EUR")
+
+        await viewModel.loadChart()
+
+        #expect(viewModel.formattedCurrentRate == "1 USD = 2 EUR")
+        #expect(String(localized: viewModel.currentRateAccessibilityLabel) == "Current rate: 1 USD = 2 EUR")
+        #expect(viewModel.formattedHighestRate == "2")
+        #expect(viewModel.formattedLowestRate == "2")
+        #expect(viewModel.formattedAverageRate == "2")
+        #expect(viewModel.formattedVolatility == "N/A")
+    }
+
     @Test("volatility describes the full daily series, not the downsampled chart line", .timeLimit(.minutes(1)))
     func volatilityUsesFullSeries() async throws {
         let repository = MockHistoricalRateRepository()
@@ -256,6 +314,19 @@ struct CurrencyHistoryViewModelTests {
     }
 
     // MARK: - Fixtures
+
+    private static func expectNoStatistics(
+        _ viewModel: CurrencyHistoryViewModel,
+        header: String = "1 USD = — EUR",
+        sourceLocation: SourceLocation = #_sourceLocation
+    ) {
+        #expect(viewModel.formattedCurrentRate == header, sourceLocation: sourceLocation)
+        #expect(String(localized: viewModel.currentRateAccessibilityLabel) == "Current rate: not available", sourceLocation: sourceLocation)
+        #expect(viewModel.formattedHighestRate == nil, sourceLocation: sourceLocation)
+        #expect(viewModel.formattedLowestRate == nil, sourceLocation: sourceLocation)
+        #expect(viewModel.formattedAverageRate == nil, sourceLocation: sourceLocation)
+        #expect(viewModel.formattedVolatility == nil, sourceLocation: sourceLocation)
+    }
 
     private static func snapshots(rates: [Double], endingBefore today: Date) throws -> [HistoricalRateSnapshot] {
         let calendar = CETCalendar.calendar

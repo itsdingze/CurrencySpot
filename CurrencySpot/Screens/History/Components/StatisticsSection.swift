@@ -70,7 +70,7 @@ struct StatisticsSection: View {
 
     // MARK: - Private Views
 
-    private func volatilityCard(value: String) -> some View {
+    private func volatilityCard(value: String?) -> some View {
         VStack(alignment: .leading, spacing: Spacing.hairline) {
             Button(action: viewModel.volatilityInfoTapped) {
                 HStack(spacing: Spacing.hairline) {
@@ -88,18 +88,23 @@ struct StatisticsSection: View {
             .buttonStyle(.plain)
             .accessibilityLabel(.historyStatisticsVolatilityInfo)
 
-            Text(value)
+            Text(value ?? String(localized: .historyStatisticsVolatilityPlaceholder))
                 .font(.appSubheadline.weight(.medium))
                 .foregroundStyle(viewModel.volatilityLevel?.color ?? .primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.chipPadding)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(.historyStatisticsVolatilityAccessibilityLabel(value: value))
+        .accessibilityLabel(volatilityAccessibilityLabel(value: value))
         .popover(isPresented: Bindable(viewModel).destination.isPresenting(.volatilityInfo)) {
             VolatilityInfoView()
                 .presentationCompactAdaptation(.popover)
         }
+    }
+
+    private func volatilityAccessibilityLabel(value: String?) -> LocalizedStringResource {
+        guard let value else { return .historyStatisticsVolatilityPlaceholderAccessibilityLabel }
+        return .historyStatisticsVolatilityAccessibilityLabel(value: value)
     }
 }
 

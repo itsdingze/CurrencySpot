@@ -53,7 +53,7 @@ struct StatCard: View {
     }
 
     let label: LocalizedStringResource
-    let value: String
+    let value: String?
     let marker: Marker?
     let isToggled: Bool
     let size: Size
@@ -77,7 +77,7 @@ struct StatCard: View {
                     }
                 }
 
-                Text(value)
+                Text(displayedValue)
                     .font(size.valueFont.weight(.medium).monospacedDigit())
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -86,10 +86,19 @@ struct StatCard: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .disabled(marker == nil)
-        .accessibilityLabel(.statCardAccessibilityLabel(label: String(localized: label), value: value))
+        .disabled(marker == nil || value == nil)
+        .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(accessibilityHint)
         .accessibilityAddTraits(isToggled ? .isSelected : [])
+    }
+
+    private var displayedValue: String {
+        value ?? String(localized: .statCardValuePlaceholder)
+    }
+
+    private var accessibilityLabel: LocalizedStringResource {
+        guard let value else { return .statCardPlaceholderAccessibilityLabel(label: String(localized: label)) }
+        return .statCardAccessibilityLabel(label: String(localized: label), value: value)
     }
 
     private var background: Color {
@@ -100,7 +109,7 @@ struct StatCard: View {
     }
 
     private var accessibilityHint: Text {
-        guard let marker else { return Text(verbatim: "") }
+        guard let marker, value != nil else { return Text(verbatim: "") }
         return Text(marker.hint(isShown: isToggled))
     }
 }
@@ -108,6 +117,7 @@ struct StatCard: View {
 #Preview {
     VStack {
         StatCard(label: .historyStatisticsHighest, value: "1.1800", marker: .highest, isToggled: true, size: .regular) {}
+        StatCard(label: .historyStatisticsAverage, value: nil, marker: .average, isToggled: false, size: .regular) {}
         StatCard(label: .historyStatisticsLowest, value: "1.1400", marker: .lowest, isToggled: false, size: .compact) {}
         StatCard(label: .historyStatisticsVolatility, value: "Low", marker: nil, isToggled: false, size: .compact) {}
     }

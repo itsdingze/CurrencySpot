@@ -27,8 +27,8 @@ struct ChartSection: View {
 
     @ViewBuilder
     private var chartContent: some View {
-        if !viewModel.displayedChartDataPoints.isEmpty {
-            CurrencyChart(isChartSelectionActive: $isChartSelectionActive)
+        if let statistics = viewModel.chartStatistics {
+            CurrencyChart(statistics: statistics, isChartSelectionActive: $isChartSelectionActive)
         } else if isAwaitingFirstResult {
             loadingView
         } else if viewModel.chartData.error != nil {

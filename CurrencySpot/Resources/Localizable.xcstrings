@@ -1681,6 +1681,30 @@
         }
       }
     },
+    "history.header.currentRate.unavailable" : {
+      "comment" : "Currency history header while the chart has no data (loading, failed or empty). The dash stands in for the rate. base: base currency code. target: target currency code.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 %1$(base)@ = — %2$(target)@"
+          }
+        }
+      }
+    },
+    "history.header.currentRate.unavailable.accessibilityLabel" : {
+      "comment" : "Currency history header, VoiceOver label of the current rate while the chart has no data (loading, failed or empty).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current rate: not available"
+          }
+        }
+      }
+    },
     "history.list.done" : {
       "comment" : "Toolbar button that ends editing the watchlist on the History tab.",
       "extractionState" : "manual",
@@ -1989,6 +2013,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Volatility: %1$(value)@"
+          }
+        }
+      }
+    },
+    "history.statistics.volatility.placeholder" : {
+      "comment" : "Volatility statistics value while the chart has no data (loading, failed or empty).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        }
+      }
+    },
+    "history.statistics.volatility.placeholder.accessibilityLabel" : {
+      "comment" : "VoiceOver label of the volatility statistics card while the chart has no data (loading, failed or empty).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volatility: not available"
           }
         }
       }
@@ -3381,6 +3429,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Shows the lowest marker on the chart"
+          }
+        }
+      }
+    },
+    "statCard.placeholder.accessibilityLabel" : {
+      "comment" : "VoiceOver label for a chart statistic card whose statistic has no data yet. label: statistic name such as Highest.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$(label)@: not available"
+          }
+        }
+      }
+    },
+    "statCard.value.placeholder" : {
+      "comment" : "Chart statistic card value while its statistic has no data yet.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
           }
         }
       }

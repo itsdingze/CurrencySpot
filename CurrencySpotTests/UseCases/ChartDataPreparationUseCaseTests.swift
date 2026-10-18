@@ -316,12 +316,12 @@ struct ChartDataPreparationUseCaseTests {
     @Suite("calculateStatistics Method Tests")
     struct CalculateStatisticsTests {
         @Test("Should calculate basic statistics correctly")
-        func shouldCalculateBasicStatisticsCorrectly() async {
+        func shouldCalculateBasicStatisticsCorrectly() async throws {
             let useCase = makeUseCase()
 
             let data = createTestChartDataPoints(count: 5, startRate: 1.0)
 
-            let result = useCase.calculateStatistics(from: data)
+            let result = try #require(useCase.calculateStatistics(from: data))
 
             #expect(result.currentRate == 1.4, "Current rate should be last rate")
             #expect(result.highestRate == 1.4, "Highest rate should be maximum")
@@ -330,31 +330,31 @@ struct ChartDataPreparationUseCaseTests {
         }
 
         @Test("Should calculate price change correctly")
-        func shouldCalculatePriceChangeCorrectly() async {
+        func shouldCalculatePriceChangeCorrectly() async throws {
             let useCase = makeUseCase()
 
             let data = createTestChartDataPoints(count: 5, startRate: 1.0)
 
-            let result = useCase.calculateStatistics(from: data)
+            let result = try #require(useCase.calculateStatistics(from: data))
 
             #expect(result.priceChange != nil, "Price change should be calculated")
             #expect(abs((result.priceChange ?? 0) - 0.4) < 0.001, "Price change should be +0.4")
         }
 
         @Test("Should calculate percentage change correctly")
-        func shouldCalculatePercentageChangeCorrectly() async {
+        func shouldCalculatePercentageChangeCorrectly() async throws {
             let useCase = makeUseCase()
 
             let data = createTestChartDataPoints(count: 5, startRate: 1.0)
 
-            let result = useCase.calculateStatistics(from: data)
+            let result = try #require(useCase.calculateStatistics(from: data))
 
             #expect(result.percentChange != nil, "Percentage change should be calculated")
             #expect(abs((result.percentChange ?? 0) - 40.0) < 0.001, "Percentage change should be +40%")
         }
 
         @Test("Should determine trend direction correctly for upward trend")
-        func shouldDetermineTrendDirectionCorrectlyForUpwardTrend() async {
+        func shouldDetermineTrendDirectionCorrectlyForUpwardTrend() async throws {
             let useCase = makeUseCase()
 
             let data = [
@@ -362,13 +362,13 @@ struct ChartDataPreparationUseCaseTests {
                 ChartDataPoint(date: testEndDate, rate: 1.5),
             ]
 
-            let result = useCase.calculateStatistics(from: data)
+            let result = try #require(useCase.calculateStatistics(from: data))
 
             #expect(result.trendDirection == .up, "Should detect upward trend")
         }
 
         @Test("Should determine trend direction correctly for downward trend")
-        func shouldDetermineTrendDirectionCorrectlyForDownwardTrend() async {
+        func shouldDetermineTrendDirectionCorrectlyForDownwardTrend() async throws {
             let useCase = makeUseCase()
 
             let data = [
@@ -376,13 +376,13 @@ struct ChartDataPreparationUseCaseTests {
                 ChartDataPoint(date: testEndDate, rate: 0.5),
             ]
 
-            let result = useCase.calculateStatistics(from: data)
+            let result = try #require(useCase.calculateStatistics(from: data))
 
             #expect(result.trendDirection == .down, "Should detect downward trend")
         }
 
         @Test("Should determine trend direction correctly for stable trend")
-        func shouldDetermineTrendDirectionCorrectlyForStableTrend() async {
+        func shouldDetermineTrendDirectionCorrectlyForStableTrend() async throws {
             let useCase = makeUseCase()
 
             let data = [
@@ -390,18 +390,18 @@ struct ChartDataPreparationUseCaseTests {
                 ChartDataPoint(date: testEndDate, rate: 1.0005),
             ]
 
-            let result = useCase.calculateStatistics(from: data)
+            let result = try #require(useCase.calculateStatistics(from: data))
 
             #expect(result.trendDirection == .stable, "Should detect stable trend")
         }
 
         @Test("Should calculate Y-domain padding correctly")
-        func shouldCalculateYDomainPaddingCorrectly() async {
+        func shouldCalculateYDomainPaddingCorrectly() async throws {
             let useCase = makeUseCase()
 
             let data = createTestChartDataPoints(count: 5, startRate: 1.0)
 
-            let result = useCase.calculateStatistics(from: data)
+            let result = try #require(useCase.calculateStatistics(from: data))
 
             let expectedMin = 1.0 * 0.99
             let expectedMax = 1.4 * 1.01
@@ -410,31 +410,22 @@ struct ChartDataPreparationUseCaseTests {
             #expect(abs(result.chartYDomain.upperBound - expectedMax) < 0.001, "Should apply 1% padding to maximum")
         }
 
-        @Test("Should handle empty data")
-        func shouldHandleEmptyData() async {
+        @Test("An empty series has no statistics")
+        func emptySeriesHasNoStatistics() {
             let useCase = makeUseCase()
 
-            let data: [ChartDataPoint] = []
+            let result = useCase.calculateStatistics(from: [])
 
-            let result = useCase.calculateStatistics(from: data)
-
-            #expect(result.currentRate == 0, "Current rate should be 0 for empty data")
-            #expect(result.highestRate == 0, "Highest rate should be 0 for empty data")
-            #expect(result.lowestRate == 0, "Lowest rate should be 0 for empty data")
-            #expect(result.averageRate == 0, "Average rate should be 0 for empty data")
-            #expect(result.priceChange == nil, "Price change should be nil for empty data")
-            #expect(result.percentChange == nil, "Percentage change should be nil for empty data")
-            #expect(result.trendDirection == .stable, "Trend should be stable for empty data")
-            #expect(result.chartYDomain == 0 ... 1, "Y-domain should be default range for empty data")
+            #expect(result == nil)
         }
 
         @Test("Should handle single data point")
-        func shouldHandleSingleDataPoint() async {
+        func shouldHandleSingleDataPoint() async throws {
             let useCase = makeUseCase()
 
             let data = [ChartDataPoint(date: testStartDate, rate: 1.5)]
 
-            let result = useCase.calculateStatistics(from: data)
+            let result = try #require(useCase.calculateStatistics(from: data))
 
             #expect(result.currentRate == 1.5, "Current rate should match single point")
             #expect(result.highestRate == 1.5, "Highest rate should match single point")
@@ -446,7 +437,7 @@ struct ChartDataPreparationUseCaseTests {
         }
 
         @Test("Should handle zero first rate for percentage calculation")
-        func shouldHandleZeroFirstRateForPercentageCalculation() async {
+        func shouldHandleZeroFirstRateForPercentageCalculation() async throws {
             let useCase = makeUseCase()
 
             let data = [
@@ -454,7 +445,7 @@ struct ChartDataPreparationUseCaseTests {
                 ChartDataPoint(date: testEndDate, rate: 1.0),
             ]
 
-            let result = useCase.calculateStatistics(from: data)
+            let result = try #require(useCase.calculateStatistics(from: data))
 
             #expect(result.priceChange != nil, "Price change should still be calculated")
             #expect(result.percentChange == nil, "Percentage change should be nil for zero first rate")
@@ -467,7 +458,7 @@ struct ChartDataPreparationUseCaseTests {
     @Suite("Integration Tests")
     struct IntegrationTests {
         @Test("Should handle complete workflow from historical data to statistics")
-        func shouldHandleCompleteWorkflowFromHistoricalDataToStatistics() async {
+        func shouldHandleCompleteWorkflowFromHistoricalDataToStatistics() async throws {
             let useCase = makeUseCase()
 
             let historicalData = createTestHistoricalData(targetRate: 1.2)
@@ -482,7 +473,7 @@ struct ChartDataPreparationUseCaseTests {
             )
 
             let sampledData = useCase.sampleDataPoints(from: chartData, maxPoints: 10)
-            let statistics = useCase.calculateStatistics(from: sampledData)
+            let statistics = try #require(useCase.calculateStatistics(from: sampledData))
 
             #expect(chartData.isEmpty == false, "Chart data should be processed")
             #expect(sampledData.isEmpty == false, "Data should be sampled")

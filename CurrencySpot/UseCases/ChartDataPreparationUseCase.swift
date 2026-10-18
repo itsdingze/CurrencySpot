@@ -125,16 +125,19 @@ final class ChartDataPreparationUseCase {
 
     // MARK: - Statistics Calculations
 
-    nonisolated func calculateStatistics(from chartData: [ChartDataPoint]) -> ChartStatistics {
+    nonisolated func calculateStatistics(from chartData: [ChartDataPoint]) -> ChartStatistics? {
         let rates = chartData.map(\.rate)
+        guard let currentRate = rates.last, let highestRate = rates.max(), let lowestRate = rates.min() else {
+            return nil
+        }
         let priceChange = Self.priceChange(of: chartData)
         let percentChange = Self.percentChange(of: chartData, priceChange: priceChange)
 
         return ChartStatistics(
-            currentRate: chartData.last?.rate ?? 0,
-            highestRate: rates.max() ?? 0,
-            lowestRate: rates.min() ?? 0,
-            averageRate: rates.isEmpty ? 0 : rates.reduce(0, +) / Double(rates.count),
+            currentRate: currentRate,
+            highestRate: highestRate,
+            lowestRate: lowestRate,
+            averageRate: rates.reduce(0, +) / Double(rates.count),
             priceChange: priceChange,
             percentChange: percentChange,
             volatility: Self.annualizedVolatility(of: chartData),

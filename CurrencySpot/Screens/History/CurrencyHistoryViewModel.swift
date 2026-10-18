@@ -22,7 +22,7 @@ final class CurrencyHistoryViewModel {
 
     private(set) var displayedChartDataPoints: [ChartDataPoint] = []
 
-    private(set) var chartStatistics: ChartStatistics
+    private(set) var chartStatistics: ChartStatistics?
 
     private(set) var showLoadingOverlay = false
 
@@ -83,7 +83,6 @@ final class CurrencyHistoryViewModel {
         baseCurrency = base
         targetCurrency = target
         chartSeriesID = ChartSeriesID(currency: target, range: .threeMonths)
-        chartStatistics = chartDataPreparation.calculateStatistics(from: [])
         self.ratesStore = ratesStore
         self.trendsStore = trendsStore
         self.loadHistoricalRates = loadHistoricalRates
@@ -286,30 +285,42 @@ final class CurrencyHistoryViewModel {
 
 extension CurrencyHistoryViewModel {
     var formattedCurrentRate: String {
-        String(localized: .historyHeaderCurrentRate(
+        guard let chartStatistics else {
+            return String(localized: .historyHeaderCurrentRateUnavailable(
+                base: baseCurrency.rawValue,
+                target: targetCurrency.rawValue
+            ))
+        }
+        return String(localized: .historyHeaderCurrentRate(
             base: baseCurrency.rawValue,
             rate: chartStatistics.currentRate.toStringMax4Decimals,
             target: targetCurrency.rawValue
         ))
     }
 
-    var formattedHighestRate: String {
-        chartStatistics.highestRate.toStringMax4Decimals
+    var currentRateAccessibilityLabel: LocalizedStringResource {
+        guard chartStatistics != nil else { return .historyHeaderCurrentRateUnavailableAccessibilityLabel }
+        return .historyHeaderCurrentRateAccessibilityLabel(rate: formattedCurrentRate)
     }
 
-    var formattedLowestRate: String {
-        chartStatistics.lowestRate.toStringMax4Decimals
+    var formattedHighestRate: String? {
+        chartStatistics?.highestRate.toStringMax4Decimals
     }
 
-    var formattedAverageRate: String {
-        chartStatistics.averageRate.toStringMax4Decimals
+    var formattedLowestRate: String? {
+        chartStatistics?.lowestRate.toStringMax4Decimals
+    }
+
+    var formattedAverageRate: String? {
+        chartStatistics?.averageRate.toStringMax4Decimals
     }
 
     var volatilityLevel: VolatilityLevel? {
-        chartStatistics.volatility.map(VolatilityLevel.init(annualizedPercent:))
+        chartStatistics?.volatility.map(VolatilityLevel.init(annualizedPercent:))
     }
 
-    var formattedVolatility: String {
-        String(localized: volatilityLevel?.displayName ?? .historyStatisticsVolatilityUnavailable)
+    var formattedVolatility: String? {
+        guard chartStatistics != nil else { return nil }
+        return String(localized: volatilityLevel?.displayName ?? .historyStatisticsVolatilityUnavailable)
     }
 }

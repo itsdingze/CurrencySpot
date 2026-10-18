@@ -7,6 +7,7 @@ struct CurrencyChart: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var rawSelectedDate: Date?
     @State private var axSelectionIndex: Int?
+    let statistics: ChartStatistics
     @Binding var isChartSelectionActive: Bool
 
     @State private var animationPhase: AnimationPhase = .pending
@@ -24,10 +25,6 @@ struct CurrencyChart: View {
 
     private let animationDelay: Double = 0.3
     private let animationDuration: Double = 0.5
-
-    private var statistics: ChartStatistics {
-        viewModel.chartStatistics
-    }
 
     private var trendColor: Color {
         if rawSelectedDate == nil {
@@ -263,9 +260,13 @@ struct CurrencyChart: View {
 #Preview {
     @Previewable @State var viewModel = CurrencyHistoryViewModel.preview()
 
-    CurrencyChart(isChartSelectionActive: .constant(false))
-        .environment(viewModel)
-        .task { await viewModel.loadChart() }
-        .padding()
+    VStack {
+        if let statistics = viewModel.chartStatistics {
+            CurrencyChart(statistics: statistics, isChartSelectionActive: .constant(false))
+        }
+    }
+    .environment(viewModel)
+    .task { await viewModel.loadChart() }
+    .padding()
 }
 #endif

@@ -62,7 +62,7 @@ struct IntegrationTests {
         )
         #expect(chartPoints.count == 8)
 
-        let statistics = chartUseCase.calculateStatistics(from: chartPoints)
+        let statistics = try #require(chartUseCase.calculateStatistics(from: chartPoints))
         #expect(abs(statistics.lowestRate - 1.02) < 0.0001)
         #expect(abs(statistics.currentRate - 1.09) < 0.0001)
         #expect(statistics.trendDirection == .up)
