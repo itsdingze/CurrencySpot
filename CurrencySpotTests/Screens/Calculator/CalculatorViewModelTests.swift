@@ -140,6 +140,19 @@ struct CalculatorViewModelTests {
         #expect(viewModel.convertedAmount == "8.50")
     }
 
+    @Test("a huge converted amount also has a short form for when the full digits don't fit")
+    func compactConvertedAmount() async throws {
+        let viewModel = await makeViewModel(fetching: [
+            ExchangeRate(currencyCode: "USD", rate: 1.0),
+            ExchangeRate(currencyCode: "IDR", rate: 16000),
+        ])
+        viewModel.baseCurrency = "USD"
+        viewModel.targetCurrency = "IDR"
+        viewModel.inputAmountString = "1000000000"
+
+        #expect(viewModel.compactConvertedAmount == "160B")
+    }
+
     @Test("formattedLastUpdated says the rates were not updated yet before any rates arrive")
     func formattedLastUpdatedBeforeAnyRates() {
         let viewModel = makeViewModel()

@@ -14,3 +14,9 @@ extension Double {
         return max(0, Int((-log10(span / 10)).rounded(.up)))
     }
 }
+
+extension FormatStyle where Self == Decimal.FormatStyle {
+    static var compactAmount: Self {
+        .number.notation(.compactName).precision(.fractionLength(0 ... 1))
+    }
+}

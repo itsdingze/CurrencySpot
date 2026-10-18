@@ -20,6 +20,7 @@ struct CurrencyDisplayView: View {
         UnifiedCurrencyView(
             type: .source,
             amount: calculatorViewModel.inputAmount.formatted(.number.precision(.fractionLength(2))),
+            compactAmount: calculatorViewModel.inputAmount.formatted(.compactAmount),
             currencyCode: calculatorViewModel.baseCurrency,
             onPress: selectSourceCurrency
         )
@@ -30,6 +31,7 @@ struct CurrencyDisplayView: View {
         UnifiedCurrencyView(
             type: .converted,
             amount: calculatorViewModel.convertedAmount,
+            compactAmount: calculatorViewModel.compactConvertedAmount,
             currencyCode: calculatorViewModel.targetCurrency,
             onPress: selectTargetCurrency
         )

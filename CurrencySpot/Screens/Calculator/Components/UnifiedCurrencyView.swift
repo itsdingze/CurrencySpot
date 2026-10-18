@@ -53,6 +53,7 @@ struct UnifiedCurrencyView: View {
 
     let type: DisplayType
     let amount: String
+    let compactAmount: String
     let currencyCode: CurrencyCode
     let onPress: () -> Void
 
@@ -89,17 +90,26 @@ struct UnifiedCurrencyView: View {
         dynamicTypeSize.isAccessibilitySize ? 0.5 : 0.7
     }
 
-    @ViewBuilder
     private var amountText: some View {
-        Text(amount)
+        ViewThatFits(in: .horizontal) {
+            MinimumScaleIdealWidth(minimumScale: minimumAmountScale) {
+                amountLabel(amount)
+            }
+            amountLabel(compactAmount)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityAmountLabel)
+        .accessibilityValue(accessibilityAmountValue)
+        .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    private func amountLabel(_ text: String) -> some View {
+        Text(text)
             .font(.appLargeTitle.monospacedDigit())
             .foregroundStyle(type.amountStyle)
             .lineLimit(1)
             .minimumScaleFactor(minimumAmountScale)
             .contentTransition(.numericText())
-            .accessibilityLabel(accessibilityAmountLabel)
-            .accessibilityValue(accessibilityAmountValue)
-            .accessibilityAddTraits(.updatesFrequently)
     }
 
     private var accessibilityAmountLabel: LocalizedStringResource {
@@ -152,10 +162,31 @@ struct UnifiedCurrencyView: View {
     }
 }
 
+private struct MinimumScaleIdealWidth: Layout {
+    let minimumScale: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
+        guard let subview = subviews.first else { return .zero }
+        let size = subview.sizeThatFits(proposal)
+        guard proposal.width == nil else { return size }
+        return CGSize(width: size.width * minimumScale, height: size.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
+        subviews.first?.place(at: bounds.origin, proposal: ProposedViewSize(bounds.size))
+    }
+}
+
 #Preview {
     VStack(spacing: 24) {
-        UnifiedCurrencyView(type: .source, amount: "1,234.56", currencyCode: .usd, onPress: {})
-        UnifiedCurrencyView(type: .converted, amount: "1,134.02", currencyCode: .eur, onPress: {})
+        UnifiedCurrencyView(type: .source, amount: "1,234.56", compactAmount: "1.2K", currencyCode: .usd, onPress: {})
+        UnifiedCurrencyView(
+            type: .converted,
+            amount: "179,889,999,999,999,820.11",
+            compactAmount: "179,890T",
+            currencyCode: .jpy,
+            onPress: {}
+        )
     }
     .padding()
 }

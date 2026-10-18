@@ -123,6 +123,10 @@ final class CalculatorViewModel {
         conversion.converted.formatted(.number.precision(.fractionLength(2)))
     }
 
+    var compactConvertedAmount: String {
+        conversion.converted.formatted(.compactAmount)
+    }
+
     // MARK: - Computed Properties (Formatted Display Values)
 
     var formattedLastUpdated: String {
