@@ -16,7 +16,8 @@ struct IntegrationTests {
             networkService: MockNetworkService(),
             persistenceService: persistence,
             cacheService: InMemoryCacheService(),
-            syncStore: MockHistoricalSyncStore()
+            syncStore: MockHistoricalSyncStore(),
+            fetchDateStore: InMemoryRatesFetchDateStore()
         )
     }
 
@@ -86,7 +87,10 @@ struct IntegrationTests {
         defaults.set("JPY", forKey: UserDefaultsKeys.defaultTargetCurrency)
 
         let viewModel = CalculatorViewModel(
-            loadExchangeRatesUseCase: LoadExchangeRatesUseCase(repository: PreviewExchangeRateRepository()),
+            loadExchangeRatesUseCase: LoadExchangeRatesUseCase(
+                repository: PreviewExchangeRateRepository(),
+                dateProvider: FixedDateProvider(MockExchangeRateRepository.now)
+            ),
             ratesStore: ExchangeRatesStore(),
             preferences: UserDefaultsPreferencesStore(userDefaults: defaults),
             appState: AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))

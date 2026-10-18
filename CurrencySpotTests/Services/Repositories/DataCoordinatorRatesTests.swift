@@ -20,7 +20,8 @@ struct DataCoordinatorRatesTests {
             networkService: networkService,
             persistenceService: persistence,
             cacheService: InMemoryCacheService(),
-            syncStore: syncStore
+            syncStore: syncStore,
+            fetchDateStore: InMemoryRatesFetchDateStore()
         )
     }
 
@@ -67,7 +68,8 @@ struct DataCoordinatorRatesTests {
             networkService: MockNetworkService(),
             persistenceService: persistence,
             cacheService: cacheService,
-            syncStore: MockHistoricalSyncStore()
+            syncStore: MockHistoricalSyncStore(),
+            fetchDateStore: InMemoryRatesFetchDateStore()
         )
 
         let wideDates = (3 ... 12).map { String(format: "2025-03-%02d", $0) }
@@ -85,28 +87,30 @@ struct DataCoordinatorRatesTests {
         #expect(result.count == wideDates.count)
     }
 
-    @Test("FrankfurterNetworkService should fetch on first run (no stored fetch date)")
-    func shouldFetchOnFirstRun() async throws {
-        let (defaults, name) = try Self.makeDefaults()
-        defer { defaults.removePersistentDomain(forName: name) }
-        let networkService = FrankfurterNetworkService(api: FrankfurterAPI(retryManager: RetryManager()), userDefaults: defaults)
-
-        #expect(networkService.getLastFetchDate() == nil)
-        let shouldFetch = await networkService.shouldFetchNewRates()
-        #expect(shouldFetch == true)
-    }
-
-    @Test("FrankfurterNetworkService round-trips the last fetch date through its injected defaults")
+    @Test("the fetch date store starts empty and round-trips a date through its injected defaults")
     func lastFetchDateRoundTrip() async throws {
         let (defaults, name) = try Self.makeDefaults()
         defer { defaults.removePersistentDomain(forName: name) }
-        let networkService = FrankfurterNetworkService(api: FrankfurterAPI(retryManager: RetryManager()), userDefaults: defaults)
+        let store = UserDefaultsRatesFetchDateStore(defaults: defaults)
+        #expect(store.lastFetchDate == nil)
 
         let fetchDate = try cetDate(2025, 3, 12)
-        networkService.updateLastFetchDate(fetchDate)
+        store.lastFetchDate = fetchDate
 
-        #expect(networkService.getLastFetchDate() == fetchDate)
-        #expect(defaults.object(forKey: UserDefaultsKeys.lastFetchDate) as? Date == fetchDate)
+        #expect(UserDefaultsRatesFetchDateStore(defaults: defaults).lastFetchDate == fetchDate)
+    }
+
+    @Test("clearAllData forgets the rates fetch date")
+    func clearAllDataForgetsFetchDate() async throws {
+        networkService.exchangeRatesResult = .success(
+            ExchangeRatesResponse(base: "USD", date: "2025-03-12", rates: ["EUR": 0.9])
+        )
+        _ = try await service.fetchExchangeRates()
+        try #require(service.lastFetchDate() != nil)
+
+        try await service.clearAllData()
+
+        #expect(service.lastFetchDate() == nil)
     }
 
     @Test("fetchExchangeRates maps the DTO to domain values, persists, and stamps the fetch date")
@@ -122,7 +126,6 @@ struct DataCoordinatorRatesTests {
 
         let persisted = try await persistence.loadExchangeRates()
         #expect(persisted.count == 3)
-        #expect(networkService.lastFetchDate != nil)
         #expect(service.lastFetchDate() != nil)
     }
 

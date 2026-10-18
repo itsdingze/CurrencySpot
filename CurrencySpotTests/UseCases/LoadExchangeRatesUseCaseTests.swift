@@ -8,7 +8,10 @@ struct LoadExchangeRatesUseCaseTests {
     private let useCase: LoadExchangeRatesUseCase
 
     init() {
-        useCase = LoadExchangeRatesUseCase(repository: repository)
+        useCase = LoadExchangeRatesUseCase(
+            repository: repository,
+            dateProvider: FixedDateProvider(MockExchangeRateRepository.now)
+        )
     }
 
     @Test("a successful refresh publishes the fetched rates and clears the failure flag")
@@ -66,9 +69,21 @@ struct LoadExchangeRatesUseCaseTests {
         #expect(repository.fetchExchangeRatesCallCount == 0)
     }
 
-    @Test("shouldRefresh delegates to the repository", arguments: [true, false])
-    func shouldRefreshDelegates(expected: Bool) async {
-        repository.shouldRefreshRatesResult = expected
+    @Test("rates that were never fetched need a refresh")
+    func neverFetchedNeedsRefresh() async {
+        repository.ratesAreStale = true
+
+        #expect(await useCase.shouldRefresh())
+    }
+
+    @Test(
+        "rates need a refresh once six hours have passed since the last fetch",
+        arguments: [(0.0, false), (5.9, false), (6.0, true), (30.0, true)]
+    )
+    func refreshAfterSixHours(hoursSinceFetch: Double, expected: Bool) async {
+        repository.ratesAreStale = false
+        let later = MockExchangeRateRepository.now.addingTimeInterval(hoursSinceFetch * 3600)
+        let useCase = LoadExchangeRatesUseCase(repository: repository, dateProvider: FixedDateProvider(later))
 
         #expect(await useCase.shouldRefresh() == expected)
     }
@@ -83,7 +98,7 @@ struct LoadExchangeRatesUseCaseTests {
         ]
     )
     func reconnectPolicy(hasRates: Bool, isShowingSample: Bool, lastRefreshFailed: Bool, expected: Bool) async {
-        repository.shouldRefreshRatesResult = false
+        repository.ratesAreStale = false
 
         let shouldRefresh = await useCase.shouldRefreshOnReconnect(
             hasRates: hasRates,
@@ -94,9 +109,9 @@ struct LoadExchangeRatesUseCaseTests {
         #expect(shouldRefresh == expected)
     }
 
-    @Test("a healthy reconnect still refreshes when the repository says the rates are stale")
+    @Test("a healthy reconnect still refreshes when the rates are stale")
     func reconnectHonorsStaleness() async {
-        repository.shouldRefreshRatesResult = true
+        repository.ratesAreStale = true
 
         let shouldRefresh = await useCase.shouldRefreshOnReconnect(
             hasRates: true,

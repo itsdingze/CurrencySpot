@@ -4,14 +4,9 @@
 
     final class PreviewNetworkService: NetworkService {
         private let today: Date
-        private var lastFetch: Date?
 
         init(today: Date = Date()) {
             self.today = today
-        }
-
-        func shouldFetchNewRates() async -> Bool {
-            false
         }
 
         func fetchExchangeRates() async throws -> ExchangeRatesResponse {
@@ -50,14 +45,6 @@
                 endDate: TimeZoneManager.formatForAPI(endDate),
                 rates: rates
             )
-        }
-
-        func updateLastFetchDate(_ date: Date) {
-            lastFetch = date
-        }
-
-        func getLastFetchDate() -> Date? {
-            lastFetch
         }
 
         private static let sampleRates: [String: Double] = Dictionary(

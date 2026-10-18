@@ -32,6 +32,7 @@ struct DataCoordinatorHistoricalTests {
             persistenceService: persistence,
             cacheService: cache,
             syncStore: syncStore,
+            fetchDateStore: InMemoryRatesFetchDateStore(),
             dateProvider: FixedDateProvider(now)
         )
     }
@@ -171,7 +172,7 @@ struct DataCoordinatorHistoricalTests {
         #expect(Set(quotes.quotes) == Set(["EUR", "GBP"]))
         #expect(await persistence.savedHistoricalRates.isEmpty)
         #expect(syncStore.recordCallCount == 0)
-        #expect(network.lastFetchDate == nil)
+        #expect(coordinator.lastFetchDate() == nil)
     }
 
     @Test("a transient fetch in flight when clearAllData runs surfaces nothing", .timeLimit(.minutes(1)))
@@ -198,7 +199,25 @@ struct DataCoordinatorHistoricalTests {
         }
     }
 
-    @Test("fetchAndPersistHistoricalRates persists, records, and stamps without snapshots")
+    @Test("a history fetch leaves the latest-rates fetch date alone")
+    func historyFetchDoesNotStampRatesFetchDate() async throws {
+        let network = MockNetworkService()
+        network.historicalRatesResult = .success(Self.response(rates: [
+            "2025-01-14": ["EUR": 0.85],
+        ]))
+        let coordinator = Self.makeCoordinator(
+            network: network,
+            persistence: MockPersistenceService(),
+            syncStore: MockHistoricalSyncStore()
+        )
+
+        _ = try await coordinator.fetchHistoricalRates(in: Self.dateRange)
+        await coordinator.waitForPendingHistoricalWrites()
+
+        #expect(coordinator.lastFetchDate() == nil)
+    }
+
+    @Test("fetchAndPersistHistoricalRates persists and records coverage without stamping the rates fetch date")
     func fetchAndPersistSavesAndRecords() async throws {
         let network = MockNetworkService()
         network.historicalRatesResult = .success(Self.response(rates: [
@@ -214,7 +233,7 @@ struct DataCoordinatorHistoricalTests {
         #expect(await persistence.savedHistoricalRates.count == 1)
         #expect(syncStore.recordCallCount == 1)
         #expect(syncStore.from == Self.startDate)
-        #expect(network.lastFetchDate != nil)
+        #expect(coordinator.lastFetchDate() == nil)
     }
 
     // MARK: - clearAllData barrier

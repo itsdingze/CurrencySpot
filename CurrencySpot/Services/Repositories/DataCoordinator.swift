@@ -9,6 +9,7 @@ final class DataCoordinator {
     private let persistenceService: PersistenceService
     private let cacheService: CacheService
     private let syncStore: HistoricalSyncStore
+    private let fetchDateStore: RatesFetchDateStore
     private let dateProvider: DateProvider
     private let logger: LoggerService
 
@@ -23,6 +24,7 @@ final class DataCoordinator {
         persistenceService: PersistenceService,
         cacheService: CacheService,
         syncStore: HistoricalSyncStore = UserDefaultsHistoricalSyncStore(),
+        fetchDateStore: RatesFetchDateStore,
         dateProvider: DateProvider = SystemDateProvider(),
         logger: LoggerService = OSLogLoggerService()
     ) {
@@ -30,6 +32,7 @@ final class DataCoordinator {
         self.persistenceService = persistenceService
         self.cacheService = cacheService
         self.syncStore = syncStore
+        self.fetchDateStore = fetchDateStore
         self.dateProvider = dateProvider
         self.logger = logger
     }
@@ -46,12 +49,8 @@ final class DataCoordinator {
 // MARK: - ExchangeRateRepository
 
 extension DataCoordinator: ExchangeRateRepository {
-    func shouldRefreshRates() async -> Bool {
-        await networkService.shouldFetchNewRates()
-    }
-
     func lastFetchDate() -> Date? {
-        networkService.getLastFetchDate()
+        fetchDateStore.lastFetchDate
     }
 
     func fetchExchangeRates() async throws -> [ExchangeRate] {
@@ -70,7 +69,7 @@ extension DataCoordinator: ExchangeRateRepository {
             logger.warning("Failed to store fetched rates: \(error.localizedDescription)", category: .data)
         }
 
-        networkService.updateLastFetchDate(dateProvider.now())
+        fetchDateStore.lastFetchDate = dateProvider.now()
         return domainRates
     }
 
@@ -115,7 +114,6 @@ extension DataCoordinator: HistoricalRateRepository {
         guard epoch == clearEpoch else { throw CancellationError() }
 
         schedulePersist(of: historicalResponse.rates, from: range.start, through: range.end, epoch: epoch)
-        networkService.updateLastFetchDate(dateProvider.now())
         return snapshots
     }
 
@@ -141,7 +139,6 @@ extension DataCoordinator: HistoricalRateRepository {
         let response = try await networkService.fetchHistoricalRates(from: range.start, to: range.end)
         guard epoch == clearEpoch else { throw CancellationError() }
         schedulePersist(of: response.rates, from: range.start, through: range.end, epoch: epoch)
-        networkService.updateLastFetchDate(dateProvider.now())
     }
 
     private func schedulePersist(of rates: [String: [String: Double]], from startDate: Date, through endDate: Date, epoch: Int) {
@@ -249,7 +246,7 @@ extension DataCoordinator: DataClearing {
 
         await cacheService.clearCache()
 
-        networkService.updateLastFetchDate(Date.distantPast)
+        fetchDateStore.lastFetchDate = nil
 
         syncStore.reset()
     }

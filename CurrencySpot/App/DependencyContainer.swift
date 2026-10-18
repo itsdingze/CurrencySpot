@@ -68,6 +68,7 @@ final class DependencyContainer {
         persistenceService: PersistenceService? = nil,
         cacheService: CacheService = InMemoryCacheService(),
         syncStore: HistoricalSyncStore = UserDefaultsHistoricalSyncStore(),
+        fetchDateStore: RatesFetchDateStore? = nil,
         dateProvider: DateProvider = SystemDateProvider(),
         clockService: ClockService = ContinuousClockService(),
         logger: LoggerService = OSLogLoggerService(),
@@ -79,9 +80,7 @@ final class DependencyContainer {
         self.modelContainer = resolvedModelContainer
         self.appState = appState
         self.networkService = networkService ?? FrankfurterNetworkService(
-            api: FrankfurterAPI(retryManager: retryManager),
-            userDefaults: userDefaults,
-            dateProvider: dateProvider
+            api: FrankfurterAPI(retryManager: retryManager)
         )
         self.persistenceService = persistenceService ?? SwiftDataPersistenceService(
             modelContainer: resolvedModelContainer,
@@ -101,6 +100,7 @@ final class DependencyContainer {
             persistenceService: self.persistenceService,
             cacheService: cacheService,
             syncStore: syncStore,
+            fetchDateStore: fetchDateStore ?? UserDefaultsRatesFetchDateStore(defaults: userDefaults),
             dateProvider: dateProvider,
             logger: logger
         )
@@ -132,7 +132,7 @@ final class DependencyContainer {
         )
 
         refreshAllDataUseCase = RefreshAllDataUseCase(repository: dataCoordinator)
-        loadExchangeRatesUseCase = LoadExchangeRatesUseCase(repository: dataCoordinator)
+        loadExchangeRatesUseCase = LoadExchangeRatesUseCase(repository: dataCoordinator, dateProvider: dateProvider)
         calculateConversionUseCase = CalculateConversionUseCase()
         scanConversionUseCase = ScanConversionUseCase()
 

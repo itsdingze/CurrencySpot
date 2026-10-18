@@ -8,7 +8,10 @@ func makeIsolatedCalculatorViewModel(
 ) -> CalculatorViewModel {
     let repository = repository ?? PreviewExchangeRateRepository()
     return CalculatorViewModel(
-        loadExchangeRatesUseCase: LoadExchangeRatesUseCase(repository: repository),
+        loadExchangeRatesUseCase: LoadExchangeRatesUseCase(
+            repository: repository,
+            dateProvider: FixedDateProvider(MockExchangeRateRepository.now)
+        ),
         ratesStore: ratesStore ?? ExchangeRatesStore(),
         preferences: InMemoryPreferencesStore(),
         appState: appState ?? AppState(networkMonitor: NetworkMonitor(monitorsPathUpdates: false))

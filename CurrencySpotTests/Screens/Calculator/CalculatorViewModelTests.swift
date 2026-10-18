@@ -10,7 +10,10 @@ struct CalculatorViewModelTests {
 
     private func makeViewModel() -> CalculatorViewModel {
         CalculatorViewModel(
-            loadExchangeRatesUseCase: LoadExchangeRatesUseCase(repository: repository),
+            loadExchangeRatesUseCase: LoadExchangeRatesUseCase(
+                repository: repository,
+                dateProvider: FixedDateProvider(MockExchangeRateRepository.now)
+            ),
             ratesStore: ratesStore,
             preferences: InMemoryPreferencesStore(),
             appState: appState
@@ -45,7 +48,10 @@ struct CalculatorViewModelTests {
     @Test("initializes with stored currency preferences when present")
     func initializesWithStoredPreferences() {
         let viewModel = CalculatorViewModel(
-            loadExchangeRatesUseCase: LoadExchangeRatesUseCase(repository: repository),
+            loadExchangeRatesUseCase: LoadExchangeRatesUseCase(
+                repository: repository,
+                dateProvider: FixedDateProvider(MockExchangeRateRepository.now)
+            ),
             ratesStore: ratesStore,
             preferences: InMemoryPreferencesStore(defaultBaseCurrency: "CHF", defaultTargetCurrency: "CAD"),
             appState: appState
@@ -133,7 +139,7 @@ struct CalculatorViewModelTests {
     @Test("checkIfShouldFetch fetches when rates are stale and the device is connected", .timeLimit(.minutes(1)))
     func staleAndConnectedFetches() async throws {
         let viewModel = makeViewModel()
-        repository.shouldRefreshRatesResult = true
+        repository.ratesAreStale = true
         appState.networkMonitor.isConnected = true
         repository.fetchExchangeRatesResult = .success([
             ExchangeRate(currencyCode: "USD", rate: 1.0),
@@ -201,7 +207,7 @@ struct CalculatorViewModelTests {
     @Test("checkIfShouldFetch loads from cache when rates are fresh")
     func freshLoadsFromCache() async throws {
         let viewModel = makeViewModel()
-        repository.shouldRefreshRatesResult = false
+        repository.ratesAreStale = false
         appState.networkMonitor.isConnected = true
         repository.loadExchangeRatesResult = .success([ExchangeRate(currencyCode: "EUR", rate: 0.88)])
 
@@ -218,7 +224,7 @@ struct CalculatorViewModelTests {
     @Test("a failing fetch falls back to cached data", .timeLimit(.minutes(1)))
     func failedFetchFallsBackToCache() async throws {
         let viewModel = makeViewModel()
-        repository.shouldRefreshRatesResult = true
+        repository.ratesAreStale = true
         appState.networkMonitor.isConnected = true
         repository.fetchExchangeRatesResult = .failure(.networkError("stubbed failure"))
         repository.loadExchangeRatesResult = .success([ExchangeRate(currencyCode: "GBP", rate: 0.75)])
@@ -239,7 +245,7 @@ struct CalculatorViewModelTests {
     @Test("offline with no saved rates shows the error state instead of auto-loading sample rates")
     func offlineWithoutCacheShowsErrorState() async throws {
         let viewModel = makeViewModel()
-        repository.shouldRefreshRatesResult = true
+        repository.ratesAreStale = true
         appState.networkMonitor.isConnected = false
         repository.loadExchangeRatesResult = .failure(.noCachedData)
 
@@ -273,7 +279,7 @@ struct CalculatorViewModelTests {
     @Test("offline with saved rates shows them under the offline banner", .timeLimit(.minutes(1)))
     func offlineWithCacheShowsOfflineBanner() async throws {
         let viewModel = makeViewModel()
-        repository.shouldRefreshRatesResult = true
+        repository.ratesAreStale = true
         appState.networkMonitor.isConnected = false
         repository.loadExchangeRatesResult = .success([ExchangeRate(currencyCode: "EUR", rate: 0.91)])
 
@@ -321,7 +327,7 @@ struct CalculatorViewModelTests {
     )
     func onlineFetchAndCacheBothFailEndsLoading() async throws {
         let viewModel = makeViewModel()
-        repository.shouldRefreshRatesResult = true
+        repository.ratesAreStale = true
         appState.networkMonitor.isConnected = true
         repository.fetchExchangeRatesResult = .failure(.networkError("stubbed fetch failure"))
         repository.loadExchangeRatesResult = .failure(.noCachedData)
@@ -342,7 +348,7 @@ struct CalculatorViewModelTests {
     func reconnectFetchesWhenNoRates() async throws {
         let viewModel = makeViewModel()
         appState.networkMonitor.isConnected = false
-        repository.shouldRefreshRatesResult = true
+        repository.ratesAreStale = true
         repository.loadExchangeRatesResult = .failure(.noCachedData)
         await viewModel.checkIfShouldFetch()
         guard case .failed = viewModel.loadState else {
@@ -367,12 +373,12 @@ struct CalculatorViewModelTests {
     func reconnectRefreshesStaleRates() async throws {
         let viewModel = makeViewModel()
         appState.networkMonitor.isConnected = true
-        repository.shouldRefreshRatesResult = false
+        repository.ratesAreStale = false
         repository.loadExchangeRatesResult = .success([ExchangeRate(currencyCode: "EUR", rate: 0.9)])
         await viewModel.checkIfShouldFetch()
         try #require(viewModel.loadState.value?.isEmpty == false)
 
-        repository.shouldRefreshRatesResult = true
+        repository.ratesAreStale = true
         repository.fetchExchangeRatesResult = .success([ExchangeRate(currencyCode: "EUR", rate: 0.95)])
         await viewModel.handleReconnect()
         await waitUntil { repository.fetchExchangeRatesCallCount == 1 }
@@ -385,7 +391,7 @@ struct CalculatorViewModelTests {
     func reconnectSkipsWhenFresh() async throws {
         let viewModel = makeViewModel()
         appState.networkMonitor.isConnected = true
-        repository.shouldRefreshRatesResult = false
+        repository.ratesAreStale = false
         repository.loadExchangeRatesResult = .success([ExchangeRate(currencyCode: "EUR", rate: 0.9)])
         await viewModel.checkIfShouldFetch()
 

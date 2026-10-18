@@ -11,7 +11,8 @@
                 userDefaults: .previewSuite,
                 preferences: InMemoryPreferencesStore(),
                 networkService: PreviewNetworkService(),
-                syncStore: InMemoryHistoricalSyncStore()
+                syncStore: InMemoryHistoricalSyncStore(),
+                fetchDateStore: InMemoryRatesFetchDateStore()
             )
         }
     }
@@ -62,8 +63,6 @@
 
         let behavior: Behavior
 
-        func shouldRefreshRates() async -> Bool { true }
-
         func fetchExchangeRates() async throws -> [ExchangeRate] {
             switch behavior {
             case .stalled:
@@ -84,7 +83,10 @@
     extension CalculatorViewModel {
         static func preview(_ behavior: StubExchangeRateRepository.Behavior) -> CalculatorViewModel {
             CalculatorViewModel(
-                loadExchangeRatesUseCase: LoadExchangeRatesUseCase(repository: StubExchangeRateRepository(behavior: behavior)),
+                loadExchangeRatesUseCase: LoadExchangeRatesUseCase(
+                    repository: StubExchangeRateRepository(behavior: behavior),
+                    dateProvider: SystemDateProvider()
+                ),
                 ratesStore: ExchangeRatesStore(),
                 preferences: InMemoryPreferencesStore()
             )

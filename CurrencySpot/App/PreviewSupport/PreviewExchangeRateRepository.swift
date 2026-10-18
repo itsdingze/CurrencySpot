@@ -16,10 +16,6 @@
 
         // MARK: - ExchangeRateRepository
 
-        func shouldRefreshRates() async -> Bool {
-            false
-        }
-
         func fetchExchangeRates() async throws -> [ExchangeRate] {
             SampleExchangeRates.getCurrencyRates()
         }

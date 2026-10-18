@@ -2,7 +2,8 @@
 import Foundation
 
 final class MockExchangeRateRepository: ExchangeRateRepository {
-    var shouldRefreshRatesResult = false
+    static let now = Date(timeIntervalSince1970: 1_750_000_000)
+
     var fetchExchangeRatesResult: Result<[ExchangeRate], AppError> = .success([
         ExchangeRate(currencyCode: "USD", rate: 1.0),
         ExchangeRate(currencyCode: "EUR", rate: 0.9),
@@ -11,17 +12,18 @@ final class MockExchangeRateRepository: ExchangeRateRepository {
 
     private(set) var fetchExchangeRatesCallCount = 0
     private(set) var loadExchangeRatesCallCount = 0
-    private(set) var stampedFetchDate: Date?
+    private var lastFetch: Date? = MockExchangeRateRepository.now
 
-    func shouldRefreshRates() async -> Bool {
-        shouldRefreshRatesResult
+    var ratesAreStale: Bool {
+        get { lastFetch == nil }
+        set { lastFetch = newValue ? nil : Self.now }
     }
 
     func fetchExchangeRates() async throws -> [ExchangeRate] {
         await Task.yield()
         fetchExchangeRatesCallCount += 1
         let rates = try fetchExchangeRatesResult.get()
-        stampedFetchDate = Date()
+        lastFetch = Self.now
         return rates
     }
 
@@ -31,6 +33,6 @@ final class MockExchangeRateRepository: ExchangeRateRepository {
     }
 
     func lastFetchDate() -> Date? {
-        stampedFetchDate
+        lastFetch
     }
 }

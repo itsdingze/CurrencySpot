@@ -9,13 +9,15 @@ struct LoadExchangeRatesUseCase {
     }
 
     private let repository: ExchangeRateRepository
+    private let dateProvider: DateProvider
 
-    init(repository: ExchangeRateRepository) {
+    init(repository: ExchangeRateRepository, dateProvider: DateProvider) {
         self.repository = repository
+        self.dateProvider = dateProvider
     }
 
     func shouldRefresh() async -> Bool {
-        await repository.shouldRefreshRates()
+        RateRefreshPolicy.shouldRefetch(now: dateProvider.now(), lastFetch: repository.lastFetchDate())
     }
 
     func shouldRefreshOnReconnect(hasRates: Bool, isShowingSample: Bool, lastRefreshFailed: Bool) async -> Bool {
