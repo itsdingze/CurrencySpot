@@ -153,6 +153,7 @@
 			knownRegions = (
 				en,
 				Base,
+				ko,
 				"zh-Hans",
 				"zh-Hant",
 			);

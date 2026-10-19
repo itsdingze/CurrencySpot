@@ -11,6 +11,12 @@
             "value" : "CurrencySpot"
           }
         },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -35,6 +41,12 @@
             "value" : "CurrencySpot"
           }
         },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -56,6 +68,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "CurrencySpot uses the camera to detect prices and show them converted to your currency."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "카메라로 가격표를 비추면 선택한 통화로 환산해 보여드려요."
           }
         },
         "zh-Hans" : {
