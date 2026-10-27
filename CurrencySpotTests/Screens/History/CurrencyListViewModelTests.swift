@@ -86,6 +86,19 @@ struct CurrencyListViewModelTests {
         #expect(viewModel.isInWatchlist("GBP") == false)
     }
 
+    @Test("a watchlist holding only the hidden base currency counts as empty", .timeLimit(.minutes(1)))
+    func watchlistWithOnlyBaseIsEmpty() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: ["USD", "EUR"])
+        let viewModel = graph.makeListViewModel()
+        Self.publishRates(to: graph)
+        await waitUntil { viewModel.displayedCurrencies.count == 1 }
+        #expect(viewModel.isWatchlistEmpty == false)
+
+        viewModel.removeFromWatchlist(atOffsets: IndexSet(integer: 0))
+
+        #expect(viewModel.isWatchlistEmpty == true)
+    }
+
     @Test("moveWatchlist reorders by displayed offset while the hidden base stays put", .timeLimit(.minutes(1)))
     func moveReorders() async throws {
         let graph = try HistoryTestGraph(watchlistSeed: ["USD", "EUR", "GBP", "JPY"])

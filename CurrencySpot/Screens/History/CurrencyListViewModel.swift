@@ -32,7 +32,7 @@ final class CurrencyListViewModel {
 
     var isSearching: Bool { !searchText.isEmpty }
 
-    var isWatchlistEmpty: Bool { watchlist.codes.isEmpty }
+    var isWatchlistEmpty: Bool { watchlist.codes.allSatisfy { $0 == baseCurrency } }
 
     var baseCurrency: CurrencyCode { ratesStore.baseCurrency }
 
