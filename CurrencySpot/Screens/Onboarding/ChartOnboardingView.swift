@@ -17,7 +17,6 @@ struct ChartOnboardingView: View {
         VStack(spacing: 0) {
             navigationHeader
             contentScrollView
-            footerSection
         }
         .safeAreaPadding(.horizontal, Spacing.instructionInset)
         .interactiveDismissDisabled()
@@ -64,6 +63,7 @@ struct ChartOnboardingView: View {
                 featuresSection
             }
         }
+        .adaptiveBottomBar { footerSection }
         .scrollPosition($scrollPosition)
         .scrollIndicators(.hidden)
         .scrollBounceBehavior(.basedOnSize)

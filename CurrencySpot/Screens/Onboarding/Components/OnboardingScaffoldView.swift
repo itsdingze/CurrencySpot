@@ -35,50 +35,69 @@ struct OnboardingScaffoldView<Icon: View, Footer: View>: View {
     @State private var isRevealComplete = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView(.vertical) {
-                VStack(alignment: .center, spacing: Spacing.onboarding) {
-                    icon
-                        .frame(maxWidth: .infinity)
-                        .blurSlide(animateIcon)
+        ScrollView(.vertical) {
+            VStack(alignment: .center, spacing: Spacing.onboarding) {
+                icon
+                    .frame(maxWidth: .infinity)
+                    .blurSlide(animateIcon)
 
-                    Text(title)
-                        .font(.appTitle)
-                        .multilineTextAlignment(.center)
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility3)
-                        .blurSlide(animateTitle)
-                        .accessibilityAddTraits(.isHeader)
+                Text(title)
+                    .font(.appTitle)
+                    .multilineTextAlignment(.center)
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility3)
+                    .blurSlide(animateTitle)
+                    .accessibilityAddTraits(.isHeader)
 
-                    cardsView
+                cardsView
 
-                    if isFooterScrolling {
-                        footer
-                            .blurSlide(animateFooter)
-                    }
-                }
-            }
-            .scrollIndicators(.hidden)
-            .scrollBounceBehavior(.basedOnSize)
-
-            VStack(spacing: 0) {
-                if !isFooterScrolling {
+                if isFooterScrolling {
                     footer
+                        .blurSlide(animateFooter)
                 }
-
-                Button(action: onContinue) {
-                    Text(buttonTitle)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.primaryAction)
-                .padding(.bottom, Spacing.tight)
             }
-            .blurSlide(animateFooter)
         }
+        .adaptiveBottomBar { bottomBar }
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
         .safeAreaPadding(.horizontal, Spacing.instructionInset)
         .interactiveDismissDisabled()
         .allowsHitTesting(isRevealComplete || voiceOverEnabled)
         .accessibilityElement(children: .contain)
         .onAppear(perform: revealInStages)
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 0) {
+            if !isFooterScrolling {
+                footer
+            }
+
+            Button(action: onContinue) {
+                Text(buttonTitle)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.primaryAction)
+            .padding(.bottom, Spacing.tight)
+        }
+        .blurSlide(animateFooter)
+        .background {
+            if !isFooterScrolling {
+                footerBackdrop
+            }
+        }
+    }
+
+    private var footerBackdrop: some View {
+        Rectangle()
+            .fill(BackgroundStyle())
+            .mask {
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                        .frame(height: Spacing.block)
+                    Rectangle()
+                }
+            }
+            .ignoresSafeArea(edges: [.horizontal, .bottom])
     }
 
     private var isFooterScrolling: Bool {
