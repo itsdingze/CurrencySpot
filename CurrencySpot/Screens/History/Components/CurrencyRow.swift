@@ -31,7 +31,7 @@ struct CurrencyRow: View {
                 codeText
 
                 nameText
-                    .lineLimit(1)
+                    .lineLimit(2)
             }
 
             Spacer()
