@@ -5,9 +5,39 @@
       "comment" : "Bundle display name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "CurrencySpot"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "CurrencySpot"
           }
         },
@@ -35,9 +65,39 @@
       "comment" : "Bundle name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "CurrencySpot"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "CurrencySpot"
           }
         },
@@ -64,10 +124,40 @@
     "NSCameraUsageDescription" : {
       "comment" : "Camera permission prompt shown when the app first asks to use the camera for price scanning.",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot verwendet die Kamera, um Preise zu erkennen und in deiner Währung anzuzeigen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "CurrencySpot uses the camera to detect prices and show them converted to your currency."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot usa la cámara para detectar precios y mostrarlos convertidos a tu divisa."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot usa la cámara para detectar precios y mostrarlos convertidos a tu divisa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpot utilise l’appareil photo pour détecter les prix et les afficher convertis dans votre devise."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CurrencySpotはカメラで価格を読み取り、選択した通貨に換算して表示します。"
           }
         },
         "ko" : {

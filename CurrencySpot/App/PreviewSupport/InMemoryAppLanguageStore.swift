@@ -8,7 +8,7 @@
         private let systemLanguage: AppLanguage
         private var savedLanguage: AppLanguage?
 
-        init(availableIdentifiers: [String] = ["en", "ko", "zh-Hans", "zh-Hant"], systemIdentifier: String = "en") {
+        init(availableIdentifiers: [String] = ["de", "en", "es", "es-419", "fr", "ja", "ko", "zh-Hans", "zh-Hant"], systemIdentifier: String = "en") {
             availableLanguages = availableIdentifiers.map(AppLanguage.init(identifier:))
             systemLanguage = AppLanguage(identifier: systemIdentifier)
         }
