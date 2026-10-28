@@ -14,14 +14,14 @@ struct NavigationHeader: View {
             progressIndicator
             skipButton
         }
-        .padding(.top, Spacing.onboarding)
+        .padding(.top, Spacing.block)
     }
 
     private var backButton: some View {
         Button(action: onBack) {
             Label(.onboardingHeaderBack, systemImage: "arrow.left")
                 .labelStyle(.iconOnly)
-                .minimumHitTarget()
+                .edgeAlignedHitTarget(.leading)
         }
         .font(.appHeadline)
         .buttonStyle(.plain)
@@ -46,10 +46,20 @@ struct NavigationHeader: View {
     private var skipButton: some View {
         Button(action: onSkip) {
             Text(.onboardingHeaderSkip)
-                .minimumHitTarget()
+                .edgeAlignedHitTarget(.trailing)
         }
         .font(.appSubheadline.weight(.medium))
         .foregroundStyle(.primary)
+    }
+}
+
+private extension View {
+    func edgeAlignedHitTarget(_ alignment: Alignment) -> some View {
+        let verticalOutset: CGFloat = 16
+        return padding(.vertical, verticalOutset)
+            .frame(minWidth: 44, alignment: alignment)
+            .contentShape(.rect)
+            .padding(.vertical, -verticalOutset)
     }
 }
 

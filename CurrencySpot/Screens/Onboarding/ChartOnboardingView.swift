@@ -16,6 +16,7 @@ struct ChartOnboardingView: View {
     var body: some View {
         VStack(spacing: 0) {
             navigationHeader
+                .zIndex(1)
             contentScrollView
         }
         .safeAreaPadding(.horizontal, Spacing.instructionInset)
