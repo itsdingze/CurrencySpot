@@ -23,8 +23,10 @@ struct VolatilityInfoView: View {
                 Button { dismiss() } label: {
                     Label(.historyVolatilityInfoClose, systemImage: "xmark.circle.fill")
                         .labelStyle(.iconOnly)
-                        .minimumHitTarget()
+                        .frame(minWidth: 20, minHeight: 20)
+                        .layoutNeutralHitTarget()
                 }
+                .font(.appHeadline)
                 .foregroundStyle(.secondary)
                 .symbolRenderingMode(.hierarchical)
                 .buttonStyle(.plain)
