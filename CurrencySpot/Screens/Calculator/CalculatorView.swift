@@ -3,6 +3,7 @@ import SwiftUI
 struct CalculatorView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel
     @Environment(AppState.self) private var appState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @AccessibilityFocusState private var focusResult: Bool
 
@@ -28,6 +29,14 @@ struct CalculatorView: View {
     }
 
     var body: some View {
+        NavigationStack {
+            screen
+                .toolbar { CalculatorToolbar(viewModel: calculatorViewModel, reduceMotion: reduceMotion) }
+                .toolbarTitleDisplayMode(.inline)
+        }
+    }
+
+    private var screen: some View {
         ZStack {
             Color.background.ignoresSafeArea()
 
@@ -51,12 +60,7 @@ struct CalculatorView: View {
                     }
                 }
             }
-            .safeAreaPadding()
-            .safeAreaInset(edge: .top, spacing: 0) {
-                Color.clear
-                    .frame(height: 0)
-                    .background(Color.background)
-            }
+            .safeAreaPadding([.horizontal, .bottom])
         }
         .task {
             await calculatorViewModel.checkIfShouldFetch()
@@ -105,7 +109,7 @@ struct CalculatorView: View {
 
             RateInfoView()
 
-            NumberPadView()
+            CalculatorKeypadView()
                 .layoutPriority(2)
         }
     }

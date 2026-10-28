@@ -19,9 +19,11 @@ struct CurrencyDisplayView: View {
     private var sourceCurrencyView: some View {
         UnifiedCurrencyView(
             type: .source,
-            amount: calculatorViewModel.inputAmount.formatted(.number.precision(.fractionLength(2))),
-            compactAmount: calculatorViewModel.inputAmount.formatted(.compactAmount),
+            amount: sourceAmount,
+            compactAmount: sourceCompactAmount,
             currencyCode: calculatorViewModel.baseCurrency,
+            caption: calculatorViewModel.calculationSteps,
+            unavailableReason: unavailableReason,
             onPress: selectSourceCurrency
         )
     }
@@ -30,11 +32,30 @@ struct CurrencyDisplayView: View {
     private var targetCurrencyView: some View {
         UnifiedCurrencyView(
             type: .converted,
-            amount: calculatorViewModel.convertedAmount,
-            compactAmount: calculatorViewModel.compactConvertedAmount,
+            amount: isUndefined ? Self.noAmountPlaceholder : calculatorViewModel.convertedAmount,
+            compactAmount: isUndefined ? Self.noAmountPlaceholder : calculatorViewModel.compactConvertedAmount,
             currencyCode: calculatorViewModel.targetCurrency,
+            unavailableReason: unavailableReason,
             onPress: selectTargetCurrency
         )
+    }
+
+    private static let noAmountPlaceholder = "—"
+
+    private var isUndefined: Bool {
+        calculatorViewModel.isCalculationUndefined
+    }
+
+    private var unavailableReason: LocalizedStringResource? {
+        isUndefined ? .calculatorCalculationDivideByZero : nil
+    }
+
+    private var sourceAmount: String {
+        isUndefined ? String(localized: .calculatorCalculationDivideByZero) : calculatorViewModel.formattedInputAmount
+    }
+
+    private var sourceCompactAmount: String {
+        isUndefined ? String(localized: .calculatorCalculationDivideByZeroShort) : calculatorViewModel.compactInputAmount
     }
 
     // MARK: - Private Methods

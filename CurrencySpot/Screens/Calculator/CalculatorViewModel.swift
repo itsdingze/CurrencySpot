@@ -18,11 +18,22 @@ final class CalculatorViewModel {
         case sampleRates
     }
 
+    typealias KeypadMode = CalculatorSession.Mode
+    typealias KeyPress = CalculatorSession.KeyPress
+
     // MARK: - Input and Calculation Properties
 
     var inputAmountString = "0"
 
     private let maxInputLength = 15
+
+    private var calculator = CalculatorSession()
+
+    var keypadMode: KeypadMode { calculator.mode }
+
+    var isCalculationUndefined: Bool { calculator.isUndefined }
+
+    var calculationSteps: String? { calculator.steps(locale: .autoupdatingCurrent) }
 
     var availableRates: [ExchangeRate] { ratesStore.rates }
 
@@ -119,6 +130,14 @@ final class CalculatorViewModel {
         conversion.rate
     }
 
+    var formattedInputAmount: String {
+        inputAmount.formatted(.number.precision(.fractionLength(2)))
+    }
+
+    var compactInputAmount: String {
+        inputAmount.formatted(.compactAmount)
+    }
+
     var convertedAmount: String {
         conversion.converted.formatted(.number.precision(.fractionLength(2)))
     }
@@ -151,6 +170,45 @@ final class CalculatorViewModel {
 
     func deleteLastDigit() {
         inputAmountString = inputAmountString.count > 1 ? String(inputAmountString.dropLast()) : "0"
+    }
+
+    // MARK: - Keypad Intents
+
+    func showKeypad(_ mode: KeypadMode) {
+        calculator.show(mode, fromAmount: inputAmount, fromDigits: inputAmountString)
+    }
+
+    @discardableResult
+    func press(_ key: CalculatorExpression.Input) -> KeyPress {
+        switch keypadMode {
+        case .amount: pressAmountKey(key)
+        case .calculator: pressCalculatorKey(key)
+        }
+    }
+
+    private func pressAmountKey(_ key: CalculatorExpression.Input) -> KeyPress {
+        switch key {
+        case let .digit(digit):
+            return appendDigit("\(digit)") ? .accepted : .rejected
+        case .clear:
+            clearInput()
+            return .accepted
+        case .delete:
+            deleteLastDigit()
+            return .deleted
+        case .decimalPoint, .percent, .operation, .equals:
+            return .rejected
+        }
+    }
+
+    private func pressCalculatorKey(_ key: CalculatorExpression.Input) -> KeyPress {
+        let outcome = calculator.press(key, toAmountDigits: amountDigits, maxAmountDigits: maxInputLength)
+        if let digits = outcome.amountDigits { inputAmountString = digits }
+        return outcome.press
+    }
+
+    private func amountDigits(for result: Decimal) -> String {
+        calculateConversionUseCase.impliedCentsDigits(for: max(result, 0))
     }
 
     // MARK: - Currency Pair Intents
@@ -204,6 +262,7 @@ final class CalculatorViewModel {
         baseCurrency = pending.baseCurrency
         targetCurrency = pending.targetCurrency
         inputAmountString = pending.amountInput
+        calculator.reset()
     }
 
     private func startFetchTask() {

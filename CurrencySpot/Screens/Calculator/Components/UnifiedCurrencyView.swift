@@ -55,6 +55,8 @@ struct UnifiedCurrencyView: View {
     let amount: String
     let compactAmount: String
     let currencyCode: CurrencyCode
+    var caption: String?
+    var unavailableReason: LocalizedStringResource?
     let onPress: () -> Void
 
     @Environment(\.appAccent) private var accent
@@ -71,10 +73,16 @@ struct UnifiedCurrencyView: View {
 
     @ViewBuilder
     private var titleView: some View {
-        Text(type.title)
-            .font(.appHeadline.weight(.medium))
-            .foregroundStyle(type.captionStyle)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        HStack {
+            Text(type.title)
+                .foregroundStyle(type.captionStyle)
+            if let caption {
+                CalculationStepsCaption(text: caption)
+                    .transition(.identity)
+            }
+        }
+        .font(.appHeadline.weight(.medium))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -122,7 +130,7 @@ struct UnifiedCurrencyView: View {
     }
 
     private var accessibilityAmountValue: LocalizedStringResource {
-        .calculatorCurrencyAmountAccessibilityValue(amount: amount, currency: currencyCode.localizedName)
+        unavailableReason ?? .calculatorCurrencyAmountAccessibilityValue(amount: amount, currency: currencyCode.localizedName)
     }
 
     @ViewBuilder
