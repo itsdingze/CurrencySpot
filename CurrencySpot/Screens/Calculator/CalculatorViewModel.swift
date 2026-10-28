@@ -9,6 +9,7 @@ final class CalculatorViewModel {
     nonisolated enum Destination: Identifiable, Hashable {
         case basePicker
         case targetPicker
+        case history
 
         var id: Self { self }
     }
@@ -23,11 +24,20 @@ final class CalculatorViewModel {
 
     // MARK: - Input and Calculation Properties
 
-    var inputAmountString = "0"
+    var inputAmountString = "0" {
+        didSet {
+            guard inputAmountString != oldValue else { return }
+            conversionShownSince = dateProvider.now()
+        }
+    }
 
     private let maxInputLength = 15
 
     private var calculator = CalculatorSession()
+
+    @ObservationIgnored private var conversionShownSince: Date
+    @ObservationIgnored private var lastSaved: ConversionRecord?
+    private let conversionSettlesAfter: TimeInterval = 2
 
     var keypadMode: KeypadMode { calculator.mode }
 
@@ -42,10 +52,17 @@ final class CalculatorViewModel {
     // MARK: - Currency Selection Properties
 
     var baseCurrency: CurrencyCode {
-        didSet { ratesStore.updateBaseCurrency(baseCurrency) }
+        willSet { pairWillChange(from: baseCurrency, to: newValue) }
+        didSet {
+            ratesStore.updateBaseCurrency(baseCurrency)
+            pairDidChange(from: oldValue, to: baseCurrency)
+        }
     }
 
-    var targetCurrency: CurrencyCode
+    var targetCurrency: CurrencyCode {
+        willSet { pairWillChange(from: targetCurrency, to: newValue) }
+        didSet { pairDidChange(from: oldValue, to: targetCurrency) }
+    }
 
     // MARK: - UI State Properties
 
@@ -83,6 +100,8 @@ final class CalculatorViewModel {
     private let calculateConversionUseCase: CalculateConversionUseCase
     private let ratesStore: ExchangeRatesStore
     private let favorites: CurrencyCodeListStore
+    private let history: ConversionHistoryStore
+    private let dateProvider: DateProvider
     private let appState: AppState
     private var fetchTask: Task<Void, Never>?
     private var fetchGeneration = 0
@@ -97,13 +116,18 @@ final class CalculatorViewModel {
         ratesStore: ExchangeRatesStore,
         preferences: PreferencesStore,
         favorites: CurrencyCodeListStore,
+        history: ConversionHistoryStore,
+        dateProvider: DateProvider,
         appState: AppState
     ) {
         self.loadExchangeRatesUseCase = loadExchangeRatesUseCase
         self.calculateConversionUseCase = calculateConversionUseCase
         self.ratesStore = ratesStore
         self.favorites = favorites
+        self.history = history
+        self.dateProvider = dateProvider
         self.appState = appState
+        conversionShownSince = dateProvider.now()
 
         baseCurrency = preferences.defaultBaseCurrency
         targetCurrency = preferences.defaultTargetCurrency
@@ -191,6 +215,7 @@ final class CalculatorViewModel {
         case let .digit(digit):
             return appendDigit("\(digit)") ? .accepted : .rejected
         case .clear:
+            saveSettledConversion()
             clearInput()
             return .accepted
         case .delete:
@@ -202,8 +227,10 @@ final class CalculatorViewModel {
     }
 
     private func pressCalculatorKey(_ key: CalculatorExpression.Input) -> KeyPress {
+        if key == .clear { saveSettledConversion() }
         let outcome = calculator.press(key, toAmountDigits: amountDigits, maxAmountDigits: maxInputLength)
         if let digits = outcome.amountDigits { inputAmountString = digits }
+        if let calculation = outcome.calculation { save(calculation: calculation.expression) }
         return outcome.press
     }
 
@@ -211,10 +238,66 @@ final class CalculatorViewModel {
         calculateConversionUseCase.impliedCentsDigits(for: max(result, 0))
     }
 
+    // MARK: - History Intents
+
+    func saveConversion() {
+        save(calculation: calculator.calculation(forAmountDigits: inputAmountString))
+    }
+
+    func showHistory() {
+        saveConversion()
+        destination = .history
+    }
+
+    func restore(_ record: ConversionRecord) {
+        baseCurrency = record.base
+        targetCurrency = record.target
+        inputAmountString = amountDigits(for: record.amount)
+        calculator.restore(record.calculation, amount: record.amount, amountDigits: inputAmountString)
+        lastSaved = record
+    }
+
+    private func saveSettledConversion() {
+        guard dateProvider.now().timeIntervalSince(conversionShownSince) >= conversionSettlesAfter else { return }
+        saveConversion()
+    }
+
+    private func save(calculation: CalculatorExpression?) {
+        guard inputAmount > 0, baseCurrency != targetCurrency, !isCalculationUndefined, hasLiveRates else { return }
+        let record = ConversionRecord(
+            id: UUID(),
+            calculation: calculation,
+            amount: inputAmount,
+            base: baseCurrency,
+            target: targetCurrency,
+            converted: conversion.converted,
+            date: dateProvider.now()
+        )
+        guard lastSaved?.isSameConversion(as: record) != true else { return }
+        history.add(record)
+        lastSaved = record
+    }
+
+    private var hasLiveRates: Bool {
+        !isShowingSampleRates
+            && rateTable.usdRate(for: baseCurrency) != nil
+            && rateTable.usdRate(for: targetCurrency) != nil
+    }
+
     // MARK: - Currency Pair Intents
 
     func swapCurrencies() {
         (baseCurrency, targetCurrency) = (targetCurrency, baseCurrency)
+    }
+
+    private func pairWillChange(from current: CurrencyCode, to next: CurrencyCode) {
+        guard next != current else { return }
+        saveSettledConversion()
+    }
+
+    private func pairDidChange(from previous: CurrencyCode, to current: CurrencyCode) {
+        guard current != previous else { return }
+        conversionShownSince = dateProvider.now()
     }
 
     // MARK: - Public Interface Methods
@@ -258,6 +341,7 @@ final class CalculatorViewModel {
 
     func consumePendingConversion() {
         guard let pending = appState.pendingConversion else { return }
+        saveConversion()
         appState.pendingConversion = nil
         baseCurrency = pending.baseCurrency
         targetCurrency = pending.targetCurrency

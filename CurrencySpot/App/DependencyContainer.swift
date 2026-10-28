@@ -9,6 +9,7 @@ final class DependencyContainer {
     let appState: AppState
     let ratesStore: ExchangeRatesStore
     let calculatorViewModel: CalculatorViewModel
+    let conversionHistoryViewModel: ConversionHistoryViewModel
     let currencyListViewModel: CurrencyListViewModel
     let settingsViewModel: SettingsViewModel
     let cameraViewModel: CameraViewModel
@@ -96,6 +97,7 @@ final class DependencyContainer {
         let trendsStore = TrendsStore()
         let favoritesStore = CurrencyCodeListStore.favorites(in: userDefaults)
         let watchlistStore = CurrencyCodeListStore.watchlist(in: userDefaults, seededFrom: favoritesStore)
+        let conversionHistoryStore = ConversionHistoryStore(defaults: userDefaults)
 
         let makeHistoryViewModel: @MainActor (CurrencyCode, CurrencyCode) -> CurrencyHistoryViewModel = {
             [ratesStore, favoritesStore, trendsStore, loadHistoricalRatesUseCase, chartDataPreparationUseCase, trendDataUseCase, preferences, appState, clockService] base, target in
@@ -124,8 +126,14 @@ final class DependencyContainer {
             ratesStore: ratesStore,
             preferences: preferences,
             favorites: favoritesStore,
+            history: conversionHistoryStore,
+            dateProvider: dateProvider,
             appState: appState
         )
+
+        conversionHistoryViewModel = ConversionHistoryViewModel(store: conversionHistoryStore) {
+            [calculatorViewModel] record in calculatorViewModel.restore(record)
+        }
 
         currencyListViewModel = CurrencyListViewModel(
             baseCurrency: preferences.defaultBaseCurrency,

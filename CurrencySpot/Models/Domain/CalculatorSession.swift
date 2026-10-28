@@ -17,12 +17,14 @@ nonisolated struct CalculatorSession: Equatable, Sendable {
     struct Outcome {
         let press: KeyPress
         fileprivate(set) var amountDigits: String?
+        fileprivate(set) var calculation: (expression: CalculatorExpression, result: Decimal)?
 
         fileprivate static let rejected = Outcome(press: .rejected)
     }
 
     private(set) var mode = Mode.amount
     private var expression = CalculatorExpression()
+    private var settledCalculation: CalculatorExpression?
     private var amountDigits: String?
 
     var isUndefined: Bool {
@@ -34,10 +36,17 @@ nonisolated struct CalculatorSession: Equatable, Sendable {
         return expression.steps(locale: locale)
     }
 
+    func calculation(forAmountDigits digits: String) -> CalculatorExpression? {
+        guard amountDigits == digits else { return nil }
+        guard expression.hasOperator else { return settledCalculation }
+        return expression.isComplete && expression.result != nil ? expression : nil
+    }
+
     mutating func show(_ newMode: Mode, fromAmount amount: Decimal, fromDigits digits: String) {
         let isResumable = expression.hasOperator && amountDigits == digits
         if newMode == .calculator, mode == .amount, !isResumable {
             expression = CalculatorExpression(settledAt: amount)
+            settledCalculation = nil
             amountDigits = digits
         }
         mode = newMode
@@ -49,6 +58,7 @@ nonisolated struct CalculatorSession: Equatable, Sendable {
         maxAmountDigits: Int
     ) -> Outcome {
         let wasUndefined = isUndefined
+        let calculation = expression
         var next = expression
         guard next.apply(key) else { return .rejected }
         if key == .equals, let settled = next.result, settled < 0 {
@@ -57,9 +67,26 @@ nonisolated struct CalculatorSession: Equatable, Sendable {
         let digits = next.result.map(toAmountDigits)
         if let digits, digits.count > maxAmountDigits { return .rejected }
 
+        if next != expression { settledCalculation = nil }
         expression = next
         if let digits { amountDigits = digits }
-        return Outcome(press: pressKind(for: key, wasUndefined: wasUndefined), amountDigits: digits)
+        var outcome = Outcome(press: pressKind(for: key, wasUndefined: wasUndefined), amountDigits: digits)
+        if key == .equals, calculation.hasOperator, calculation.isComplete, let result = next.result {
+            outcome.calculation = (calculation, result)
+            settledCalculation = calculation
+        }
+        return outcome
+    }
+
+    mutating func restore(_ calculation: CalculatorExpression?, amount: Decimal, amountDigits digits: String) {
+        if let calculation {
+            mode = .calculator
+            expression = calculation
+        } else {
+            expression = CalculatorExpression(settledAt: amount)
+        }
+        settledCalculation = nil
+        amountDigits = digits
     }
 
     mutating func reset() {

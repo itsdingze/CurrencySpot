@@ -4,6 +4,7 @@ struct CalculatorView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel
     @Environment(AppState.self) private var appState
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     @AccessibilityFocusState private var focusResult: Bool
 
@@ -83,6 +84,14 @@ struct CalculatorView: View {
         .onAppear {
             calculatorViewModel.consumePendingConversion()
         }
+        .onDisappear {
+            calculatorViewModel.saveConversion()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background {
+                calculatorViewModel.saveConversion()
+            }
+        }
         .onChange(of: appState.pendingConversion) { _, newValue in
             if newValue != nil {
                 calculatorViewModel.consumePendingConversion()
@@ -90,13 +99,18 @@ struct CalculatorView: View {
             }
         }
         .sheet(item: bindableViewModel.destination) { destination in
-            // A NavigationStack inside the picker breaks value-based navigation when Settings pushes it.
-            NavigationStack {
-                CurrencyPickerView(
-                    selectedCurrency: destination == .basePicker ? bindableViewModel.baseCurrency : bindableViewModel.targetCurrency,
-                    exchangeRates: calculatorViewModel.availableRates,
-                    favoriteCurrencies: calculatorViewModel.favoriteCurrencies
-                )
+            switch destination {
+            case .basePicker, .targetPicker:
+                // A NavigationStack inside the picker breaks value-based navigation when Settings pushes it.
+                NavigationStack {
+                    CurrencyPickerView(
+                        selectedCurrency: destination == .basePicker ? bindableViewModel.baseCurrency : bindableViewModel.targetCurrency,
+                        exchangeRates: calculatorViewModel.availableRates,
+                        favoriteCurrencies: calculatorViewModel.favoriteCurrencies
+                    )
+                }
+            case .history:
+                ConversionHistoryView()
             }
         }
     }

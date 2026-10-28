@@ -10,12 +10,14 @@ struct CalculatorViewModelTests {
     private let appState: AppState
     private let isolatedDefaults = IsolatedDefaults()
     private let favorites: CurrencyCodeListStore
+    private let historyDefaults: UserDefaults
 
     init() throws {
         let (connectionUpdates, connectivity) = AsyncStream.makeStream(of: Bool.self)
         self.connectivity = connectivity
         appState = AppState(networkMonitor: NetworkMonitor(connectionUpdates: connectionUpdates))
         favorites = .favorites(in: try isolatedDefaults.make())
+        historyDefaults = try isolatedDefaults.make()
     }
 
     private func setConnected(_ isConnected: Bool) async {
@@ -33,6 +35,8 @@ struct CalculatorViewModelTests {
             ratesStore: ratesStore,
             preferences: preferences,
             favorites: favorites,
+            history: ConversionHistoryStore(defaults: historyDefaults),
+            dateProvider: FixedDateProvider(MockExchangeRateRepository.now),
             appState: appState
         )
     }

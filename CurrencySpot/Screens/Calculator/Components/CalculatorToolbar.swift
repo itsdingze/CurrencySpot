@@ -13,6 +13,13 @@ struct CalculatorToolbar: ToolbarContent {
     }
 
     var body: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button { viewModel.showHistory() } label: {
+                Image(systemName: "clock")
+            }
+            .accessibilityLabel(.calculatorHistoryAccessibilityLabel)
+        }
+
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Picker(selection: modeSelection) {

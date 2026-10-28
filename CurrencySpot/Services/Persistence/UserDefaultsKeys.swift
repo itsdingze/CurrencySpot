@@ -10,6 +10,7 @@ enum UserDefaultsKeys {
     static let favoriteCurrencies = "FavoriteCurrencies"
 
     static let historyWatchlist = "HistoryWatchlist"
+    static let conversionHistory = "ConversionHistory"
     
     // MARK: - Appearance Settings
     

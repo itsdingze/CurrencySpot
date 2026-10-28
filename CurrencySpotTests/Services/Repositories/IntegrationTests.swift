@@ -106,6 +106,8 @@ struct IntegrationTests {
                 key: UserDefaultsKeys.favoriteCurrencies,
                 seed: CurrencyDefaults.favoriteCurrencies
             ),
+            history: ConversionHistoryStore(defaults: defaults),
+            dateProvider: FixedDateProvider(MockExchangeRateRepository.now),
             appState: AppState(networkMonitor: NetworkMonitor(isConnected: true))
         )
 
