@@ -43,14 +43,6 @@ struct CalculatorView: View {
 
             AccessibilitySizeScrollView {
                 VStack(spacing: Spacing.element) {
-                    if calculatorViewModel.rateBanner != .hidden {
-                        RateStatusBanner(
-                            status: calculatorViewModel.rateBanner,
-                            showsRetry: calculatorViewModel.canRetryRates,
-                            refreshAction: calculatorViewModel.retryFetch
-                        )
-                    }
-
                     switch calculatorViewModel.loadState {
                     case .idle, .loading(previous: nil):
                         ProgressView(.calculatorLoading)

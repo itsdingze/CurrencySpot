@@ -4,6 +4,14 @@ struct RateInfoView: View {
     @Environment(CalculatorViewModel.self) private var viewModel: CalculatorViewModel
 
     var body: some View {
+        if viewModel.rateBanner == .hidden {
+            rateAndLastUpdated
+        } else {
+            rateAndStatus
+        }
+    }
+
+    private var rateAndLastUpdated: some View {
         VStack(spacing: Spacing.hairline) {
             if shouldShowConversionRate {
                 conversionRateText
@@ -13,6 +21,22 @@ struct RateInfoView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityContainerLabel)
         .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    private var rateAndStatus: some View {
+        VStack(spacing: Spacing.hairline) {
+            if shouldShowConversionRate {
+                conversionRateText
+                    .accessibilityAddTraits(.updatesFrequently)
+            }
+            RateStatusLine(
+                status: viewModel.rateBanner,
+                savedRatesTime: viewModel.savedRatesTime,
+                showsRetry: viewModel.canRetryRates,
+                retryAction: viewModel.retryFetch
+            )
+        }
+        .accessibilityElement(children: .contain)
     }
 
     private var accessibilityContainerLabel: LocalizedStringResource {

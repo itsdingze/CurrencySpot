@@ -14,4 +14,10 @@ extension Date {
     var lastUpdatedDisplay: String {
         formatted(.dateTime.year().month().day().hour().minute().locale(Locale.current))
     }
+
+    func savedRatesDisplay(relativeTo now: Date) -> String {
+        let style = Date.FormatStyle.dateTime.month().day().hour().minute().locale(Locale.current)
+        let isThisYear = Calendar.current.isDate(self, equalTo: now, toGranularity: .year)
+        return formatted(isThisYear ? style : style.year())
+    }
 }

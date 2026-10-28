@@ -3143,6 +3143,126 @@
         }
       }
     },
+    "calculator.rateInfo.status.offline" : {
+      "comment" : "Converter status line under the conversion rate when the device is offline. date: when the saved exchange rates were fetched, with month, day and time, plus the year when it isn't the current year.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Internet · Kurse vom %(date)@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No internet · Rates from %(date)@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin internet · Tipos del %(date)@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin Internet · Tasas del %(date)@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hors ligne · Taux du %(date)@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "インターネット未接続 · %(date)@時点のレート"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인터넷 연결 없음 · %(date)@ 기준 환율"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未连接网络 · %(date)@的汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未連上網路 · %(date)@的匯率"
+          }
+        }
+      }
+    },
+    "calculator.rateInfo.status.updateFailed" : {
+      "comment" : "Converter status line under the conversion rate when refreshing the exchange rates failed and saved rates are shown. date: when the saved exchange rates were fetched, with month, day and time, plus the year when it isn't the current year.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualisierung fehlgeschlagen · Kurse vom %(date)@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't update · Rates from %(date)@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido actualizar · Tipos del %(date)@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo actualizar · Tasas del %(date)@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échec de la mise à jour · Taux du %(date)@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新できませんでした · %(date)@時点のレート"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "업데이트 실패 · %(date)@ 기준 환율"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新失败 · %(date)@的汇率"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新失敗 · %(date)@的匯率"
+          }
+        }
+      }
+    },
     "calculator.steps.accessibilityLabel" : {
       "comment" : "VoiceOver label for the calculation steps shown beside From while using the converter calculator keypad.",
       "extractionState" : "manual",

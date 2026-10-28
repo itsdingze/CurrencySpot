@@ -177,6 +177,10 @@ final class CalculatorViewModel {
         return String(localized: .calculatorRateInfoLastUpdated(date: lastUpdated.lastUpdatedDisplay))
     }
 
+    var savedRatesTime: String? {
+        lastUpdated?.savedRatesDisplay(relativeTo: dateProvider.now())
+    }
+
     // MARK: - Input Intents
 
     @discardableResult
