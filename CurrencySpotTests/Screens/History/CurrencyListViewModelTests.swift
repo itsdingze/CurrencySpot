@@ -127,19 +127,56 @@ struct CurrencyListViewModelTests {
         await waitUntil { viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP"] }
     }
 
-    @Test("a base currency change re-expresses the list against the new base", .timeLimit(.minutes(1)))
-    func followsSharedBaseCurrency() async throws {
+    @Test("the list starts on the default base currency from Settings, not the converter's", .timeLimit(.minutes(1)))
+    func startsOnDefaultBaseCurrency() async throws {
+        let graph = try HistoryTestGraph(
+            watchlistSeed: ["EUR", "GBP"],
+            preferences: InMemoryPreferencesStore(defaultBaseCurrency: "EUR")
+        )
+        let viewModel = graph.makeListViewModel()
+        Self.publishRates(to: graph)
+
+        await waitUntil { !viewModel.displayedCurrencies.isEmpty }
+
+        #expect(viewModel.baseCurrency == "EUR")
+        #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP"])
+        let gbp = try #require(viewModel.displayedCurrencies.first)
+        #expect(abs(gbp.rate - 0.625) < 0.0001)
+    }
+
+    @Test("changing the converter's base currency leaves the list on its own base", .timeLimit(.minutes(1)))
+    func ignoresConverterBaseCurrency() async throws {
         let graph = try HistoryTestGraph(watchlistSeed: ["EUR", "GBP"])
         let viewModel = graph.makeListViewModel()
         Self.publishRates(to: graph)
         await waitUntil { viewModel.displayedCurrencies.count == 2 }
 
         graph.ratesStore.updateBaseCurrency("EUR")
+        graph.ratesStore.update(
+            rates: [ExchangeRate(currencyCode: "USD", rate: 1.0), ExchangeRate(currencyCode: "EUR", rate: 0.8), ExchangeRate(currencyCode: "GBP", rate: 0.4)],
+            lastUpdated: nil,
+            isShowingSampleRates: false
+        )
 
-        await waitUntil { viewModel.displayedCurrencies.map(\.code) == ["GBP"] }
+        await waitUntil { viewModel.displayedCurrencies.last?.rate == 0.4 }
+        #expect(viewModel.baseCurrency == "USD")
+        #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP"])
+    }
+
+    @Test("picking a base currency re-expresses the list against it", .timeLimit(.minutes(1)))
+    func selectingBaseReexpressesList() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: ["EUR", "GBP"])
+        let viewModel = graph.makeListViewModel()
+        Self.publishRates(to: graph)
+        await waitUntil { viewModel.displayedCurrencies.count == 2 }
+
+        viewModel.selectBase("EUR")
+
         #expect(viewModel.baseCurrency == "EUR")
+        #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP"])
         let gbp = try #require(viewModel.displayedCurrencies.first)
         #expect(abs(gbp.rate - 0.625) < 0.0001)
+        #expect(graph.ratesStore.baseCurrency == "USD")
     }
 
     // MARK: - Trends
@@ -283,16 +320,49 @@ struct CurrencyListViewModelTests {
         #expect(viewModel.path == ["GBP"])
     }
 
-    @Test("the chart screen's model pairs the picked currency with the current base")
-    func historyViewModelUsesCurrentBase() throws {
+    @Test("the chart screen's model pairs the picked currency with the list's base")
+    func historyViewModelUsesListBase() throws {
         let graph = try HistoryTestGraph()
         let viewModel = graph.makeListViewModel()
-        graph.ratesStore.updateBaseCurrency("EUR")
+        viewModel.selectBase("EUR")
 
         let history = viewModel.historyViewModel(for: "GBP")
 
         #expect(history.baseCurrency == "EUR")
         #expect(history.targetCurrency == "GBP")
+    }
+
+    @Test("a base picked on the chart screen stays there, and the next chart opens on the list's base")
+    func chartBaseStaysOnChartScreen() throws {
+        let graph = try HistoryTestGraph()
+        let viewModel = graph.makeListViewModel()
+        viewModel.selectBase("EUR")
+
+        viewModel.historyViewModel(for: "GBP").selectBase("JPY")
+
+        #expect(viewModel.baseCurrency == "EUR")
+        #expect(viewModel.historyViewModel(for: "GBP").baseCurrency == "EUR")
+    }
+
+    // MARK: - Base Picker
+
+    @Test("tapping the base currency opens the base picker")
+    func baseCurrencyTapOpensPicker() throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+
+        viewModel.baseCurrencyTapped()
+
+        #expect(viewModel.destination == .basePicker)
+    }
+
+    @Test("the base picker offers the saved favorites and every rate")
+    func basePickerOptions() throws {
+        let graph = try HistoryTestGraph(favoritesSeed: ["GBP", "USD"])
+        Self.publishRates(to: graph)
+        let viewModel = graph.makeListViewModel()
+
+        #expect(viewModel.basePickerFavorites == ["GBP", "USD"])
+        #expect(viewModel.basePickerRates == Self.rates)
     }
 
     // MARK: - Helpers

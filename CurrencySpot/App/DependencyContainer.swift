@@ -98,11 +98,12 @@ final class DependencyContainer {
         let watchlistStore = CurrencyCodeListStore.watchlist(in: userDefaults, seededFrom: favoritesStore)
 
         let makeHistoryViewModel: @MainActor (CurrencyCode, CurrencyCode) -> CurrencyHistoryViewModel = {
-            [ratesStore, trendsStore, loadHistoricalRatesUseCase, chartDataPreparationUseCase, trendDataUseCase, preferences, appState, clockService] base, target in
+            [ratesStore, favoritesStore, trendsStore, loadHistoricalRatesUseCase, chartDataPreparationUseCase, trendDataUseCase, preferences, appState, clockService] base, target in
             CurrencyHistoryViewModel(
                 base: base,
                 target: target,
                 ratesStore: ratesStore,
+                favorites: favoritesStore,
                 trendsStore: trendsStore,
                 loadHistoricalRates: loadHistoricalRatesUseCase,
                 chartDataPreparation: chartDataPreparationUseCase,
@@ -127,7 +128,9 @@ final class DependencyContainer {
         )
 
         currencyListViewModel = CurrencyListViewModel(
+            baseCurrency: preferences.defaultBaseCurrency,
             ratesStore: ratesStore,
+            favorites: favoritesStore,
             watchlist: watchlistStore,
             trendsStore: trendsStore,
             trendDataUseCase: trendDataUseCase,

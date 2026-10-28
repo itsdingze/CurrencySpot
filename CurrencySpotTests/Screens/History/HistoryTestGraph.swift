@@ -9,6 +9,7 @@ struct HistoryTestGraph {
     let appState = AppState(networkMonitor: NetworkMonitor(isConnected: true))
     let preferences: InMemoryPreferencesStore
     let watchlist: CurrencyCodeListStore
+    let favorites: CurrencyCodeListStore
     let loadHistoricalRates: LoadHistoricalRatesUseCase
     let trendDataUseCase: TrendDataUseCase
 
@@ -20,6 +21,7 @@ struct HistoryTestGraph {
         historicalRepository: (any HistoricalRateRepository & ArchiveRepository)? = nil,
         trendRepository: (any TrendRepository)? = nil,
         watchlistSeed: [CurrencyCode] = CurrencyDefaults.favoriteCurrencies,
+        favoritesSeed: [CurrencyCode] = CurrencyDefaults.favoriteCurrencies,
         preferences: InMemoryPreferencesStore = InMemoryPreferencesStore()
     ) throws {
         let today = try #require(createCETDate(year: 2025, month: 1, day: 15))
@@ -39,6 +41,11 @@ struct HistoryTestGraph {
             key: UserDefaultsKeys.historyWatchlist,
             seed: watchlistSeed
         )
+        favorites = CurrencyCodeListStore(
+            defaults: try isolatedDefaults.make(),
+            key: UserDefaultsKeys.favoriteCurrencies,
+            seed: favoritesSeed
+        )
         loadHistoricalRates = LoadHistoricalRatesUseCase(
             repository: repository,
             archive: repository,
@@ -55,7 +62,9 @@ struct HistoryTestGraph {
 
     func makeListViewModel() -> CurrencyListViewModel {
         CurrencyListViewModel(
+            baseCurrency: preferences.defaultBaseCurrency,
             ratesStore: ratesStore,
+            favorites: favorites,
             watchlist: watchlist,
             trendsStore: trendsStore,
             trendDataUseCase: trendDataUseCase,
@@ -72,6 +81,7 @@ struct HistoryTestGraph {
             base: base,
             target: target,
             ratesStore: ratesStore,
+            favorites: favorites,
             trendsStore: trendsStore,
             loadHistoricalRates: loadHistoricalRates,
             chartDataPreparation: chartDataPreparation,

@@ -94,7 +94,7 @@ struct TrendDataUpdateTests {
     func trendConversionNonUSDBase() async throws {
         let viewModel = graph.makeListViewModel()
         await viewModel.warmUp().value
-        graph.ratesStore.updateBaseCurrency("EUR")
+        viewModel.selectBase("EUR")
 
         let trend = try #require(viewModel.trend(for: "GBP"))
 
@@ -112,7 +112,7 @@ struct TrendDataUpdateTests {
     func trendConversionUSDInversion() async throws {
         let viewModel = graph.makeListViewModel()
         await viewModel.warmUp().value
-        graph.ratesStore.updateBaseCurrency("EUR")
+        viewModel.selectBase("EUR")
 
         let usd = try #require(viewModel.trend(for: "USD"))
 

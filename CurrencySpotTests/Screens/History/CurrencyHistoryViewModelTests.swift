@@ -232,19 +232,59 @@ struct CurrencyHistoryViewModelTests {
         #expect(viewModel.chartSeriesID.range == .oneMonth)
     }
 
-    @Test("follows the calculator's base currency and reloads for it", .timeLimit(.minutes(1)))
-    func followsSharedBaseCurrency() async throws {
+    @Test("changing the converter's base currency leaves the open chart on its base", .timeLimit(.minutes(1)))
+    func ignoresConverterBaseCurrency() async throws {
         let graph = try HistoryTestGraph()
         let viewModel = graph.makeHistoryViewModel(base: "USD", target: "GBP")
         await viewModel.loadChart()
 
         graph.ratesStore.updateBaseCurrency("EUR")
+        viewModel.selectedTimeRange = .oneMonth
+        await waitUntil { viewModel.chartSeriesID.range == .oneMonth }
 
-        await waitUntil { viewModel.baseCurrency == "EUR" }
+        #expect(viewModel.baseCurrency == "USD")
+    }
+
+    @Test("picking a base currency reloads the chart against it", .timeLimit(.minutes(1)))
+    func selectingBaseReloadsChart() async throws {
+        let graph = try HistoryTestGraph()
+        let viewModel = graph.makeHistoryViewModel(base: "USD", target: "GBP")
+        await viewModel.loadChart()
+        let usdRate = try #require(viewModel.chartStatistics?.currentRate)
+
+        viewModel.selectBase("EUR")
+
+        #expect(viewModel.baseCurrency == "EUR")
         await waitUntil {
-            if case .loaded = viewModel.chartData { return true }
-            return false
+            guard case .loaded = viewModel.chartData else { return false }
+            return viewModel.chartStatistics.map { $0.currentRate != usdRate } ?? false
         }
+    }
+
+    @Test("picking a base clears the old base's rate and chart until the new one loads", .timeLimit(.minutes(1)))
+    func selectingBaseClearsOldRate() async throws {
+        let graph = try HistoryTestGraph()
+        let viewModel = graph.makeHistoryViewModel(base: "USD", target: "EUR")
+        await viewModel.loadChart()
+
+        viewModel.selectBase("GBP")
+
+        #expect(viewModel.displayedChartDataPoints.isEmpty)
+        Self.expectNoStatistics(viewModel, header: "1 GBP = — EUR")
+        await viewModel.loadChart()
+    }
+
+    @Test("picking the base already shown, or the charted currency, leaves the chart alone", .timeLimit(.minutes(1)))
+    func selectingCurrentBaseOrTargetIsNoOp() async throws {
+        let viewModel = try HistoryTestGraph().makeHistoryViewModel(base: "USD", target: "EUR")
+        await viewModel.loadChart()
+        let shown = viewModel.chartData
+
+        viewModel.selectBase("USD")
+        viewModel.selectBase("EUR")
+
+        #expect(viewModel.baseCurrency == "USD")
+        #expect(viewModel.chartData == shown)
     }
 
     @Test("a data reset drops the shown chart and loads it again", .timeLimit(.minutes(1)))
@@ -302,6 +342,39 @@ struct CurrencyHistoryViewModelTests {
         viewModel.completeChartOnboarding()
         #expect(viewModel.destination == nil)
         #expect(graph.preferences.hasSeenChartOnboarding == true)
+    }
+
+    @Test("chart onboarding waits for a sheet the user already opened")
+    func chartOnboardingKeepsOpenSheet() async throws {
+        let viewModel = try HistoryTestGraph().makeHistoryViewModel()
+        viewModel.baseCurrencyTapped()
+
+        await viewModel.presentChartOnboardingIfNeeded()
+
+        #expect(viewModel.destination == .basePicker)
+    }
+
+    @Test("tapping the base currency opens the base picker")
+    func baseCurrencyTapOpensPicker() throws {
+        let viewModel = try HistoryTestGraph().makeHistoryViewModel()
+
+        viewModel.baseCurrencyTapped()
+
+        #expect(viewModel.destination == .basePicker)
+    }
+
+    @Test("the base picker offers the saved favorites and rates, minus the charted currency")
+    func basePickerExcludesTarget() throws {
+        let graph = try HistoryTestGraph(favoritesSeed: ["USD", "GBP", "EUR"])
+        graph.ratesStore.update(
+            rates: [ExchangeRate(currencyCode: "USD", rate: 1), ExchangeRate(currencyCode: "GBP", rate: 0.5), ExchangeRate(currencyCode: "JPY", rate: 150)],
+            lastUpdated: nil,
+            isShowingSampleRates: false
+        )
+        let viewModel = graph.makeHistoryViewModel(base: "USD", target: "GBP")
+
+        #expect(viewModel.basePickerFavorites == ["USD", "EUR"])
+        #expect(viewModel.basePickerRates.map(\.currencyCode) == ["USD", "JPY"])
     }
 
     @Test("tapping the volatility info opens its popover")

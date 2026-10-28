@@ -1,4 +1,5 @@
 import Foundation
+import IdentifiedCollections
 import OSLog
 import SwiftUI
 
@@ -14,6 +15,7 @@ final class CurrencyHistoryViewModel {
     nonisolated enum Destination: Equatable {
         case chartOnboarding
         case volatilityInfo
+        case basePicker
     }
 
     // MARK: - Chart State
@@ -49,9 +51,20 @@ final class CurrencyHistoryViewModel {
     var showHighestPoint = false
     var showLowestPoint = false
 
+    // MARK: - Base Picker
+
+    var basePickerFavorites: [CurrencyCode] {
+        favorites.codes.elements.filter { $0 != targetCurrency }
+    }
+
+    var basePickerRates: [ExchangeRate] {
+        ratesStore.rates.filter { $0.currencyCode != targetCurrency }
+    }
+
     // MARK: - Dependencies
 
     private let ratesStore: ExchangeRatesStore
+    private let favorites: CurrencyCodeListStore
     private let trendsStore: TrendsStore
     private let loadHistoricalRates: LoadHistoricalRatesUseCase
     private let chartDataPreparation: ChartDataPreparationUseCase
@@ -62,6 +75,7 @@ final class CurrencyHistoryViewModel {
     private let logger = Logger(category: .viewModel)
 
     @ObservationIgnored private var loadTask: Task<Void, Never>?
+    @ObservationIgnored private var trendRefreshTask: Task<Void, Never>?
     @ObservationIgnored private var loadingOverlayTask: Task<Void, Never>?
     @ObservationIgnored private var loadGeneration = 0
     @ObservationIgnored private var isObservingSharedState = false
@@ -72,6 +86,7 @@ final class CurrencyHistoryViewModel {
         base: CurrencyCode,
         target: CurrencyCode,
         ratesStore: ExchangeRatesStore,
+        favorites: CurrencyCodeListStore,
         trendsStore: TrendsStore,
         loadHistoricalRates: LoadHistoricalRatesUseCase,
         chartDataPreparation: ChartDataPreparationUseCase,
@@ -84,6 +99,7 @@ final class CurrencyHistoryViewModel {
         targetCurrency = target
         chartSeriesID = ChartSeriesID(currency: target, range: .threeMonths)
         self.ratesStore = ratesStore
+        self.favorites = favorites
         self.trendsStore = trendsStore
         self.loadHistoricalRates = loadHistoricalRates
         self.chartDataPreparation = chartDataPreparation
@@ -101,9 +117,21 @@ final class CurrencyHistoryViewModel {
             startLoad()
         }
         await loadTask?.value
+        await trendRefreshTask?.value
     }
 
     func retry() {
+        startLoad()
+    }
+
+    func baseCurrencyTapped() {
+        destination = .basePicker
+    }
+
+    func selectBase(_ code: CurrencyCode) {
+        guard code != baseCurrency, code != targetCurrency else { return }
+        baseCurrency = code
+        publishChart(.loading(previous: nil))
         startLoad()
     }
 
@@ -114,7 +142,7 @@ final class CurrencyHistoryViewModel {
     func presentChartOnboardingIfNeeded() async {
         guard !preferences.hasSeenChartOnboarding else { return }
         try? await clock.sleep(for: .seconds(0.5))
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, destination == nil else { return }
         destination = .chartOnboarding
     }
 
@@ -128,27 +156,7 @@ final class CurrencyHistoryViewModel {
     private func observeSharedStateIfNeeded() {
         guard !isObservingSharedState else { return }
         isObservingSharedState = true
-        observeBaseCurrency()
         observeDataReset()
-    }
-
-    private func observeBaseCurrency() {
-        withObservationTracking {
-            _ = ratesStore.baseCurrency
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                followBaseCurrency()
-                observeBaseCurrency()
-            }
-        }
-    }
-
-    private func followBaseCurrency() {
-        let newBase = ratesStore.baseCurrency
-        guard newBase != baseCurrency else { return }
-        baseCurrency = newBase
-        startLoad()
     }
 
     private func observeDataReset() {
@@ -164,6 +172,7 @@ final class CurrencyHistoryViewModel {
     }
 
     private func reloadAfterDataReset() {
+        trendRefreshTask?.cancel()
         publishChart(.idle)
         startLoad()
     }
@@ -200,7 +209,7 @@ final class CurrencyHistoryViewModel {
             guard isCurrent(generation) else { return }
             publishChart(.loaded(points))
             if result.newDataFetched {
-                await refreshTrends(for: result.fetchedRanges, generation: generation)
+                refreshTrends(for: result.fetchedRanges)
             }
         } catch is CancellationError {
             guard generation == loadGeneration else { return }
@@ -228,10 +237,13 @@ final class CurrencyHistoryViewModel {
         )
     }
 
-    private func refreshTrends(for fetchedRanges: [DateRange], generation: Int) async {
-        let trends = await trendDataUseCase.checkAndRecalculateTrendsIfNeeded(for: fetchedRanges)
-        guard isCurrent(generation) else { return }
-        trendsStore.replace(with: trends)
+    private func refreshTrends(for fetchedRanges: [DateRange]) {
+        trendRefreshTask?.cancel()
+        trendRefreshTask = Task {
+            let trends = await trendDataUseCase.checkAndRecalculateTrendsIfNeeded(for: fetchedRanges)
+            guard !Task.isCancelled else { return }
+            trendsStore.replace(with: trends)
+        }
     }
 
     // MARK: - Chart Publishing

@@ -31,6 +31,11 @@ struct CurrencyHistoryView: View {
             }
         }
         .safeAreaPadding()
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                BaseCurrencyButton(code: viewModel.baseCurrency, action: viewModel.baseCurrencyTapped)
+            }
+        }
         .onChange(of: chartIsLoaded) { _, loaded in
             if loaded {
                 let message: LocalizedStringResource = viewModel.displayedChartDataPoints.isEmpty
@@ -47,6 +52,14 @@ struct CurrencyHistoryView: View {
         .sheet(isPresented: $viewModel.destination.isPresenting(.chartOnboarding)) {
             ChartOnboardingView()
                 .environment(viewModel)
+        }
+        .sheet(isPresented: $viewModel.destination.isPresenting(.basePicker)) {
+            BasePickerSheet(
+                selection: viewModel.baseCurrency,
+                favorites: viewModel.basePickerFavorites,
+                exchangeRates: viewModel.basePickerRates,
+                onSelect: { viewModel.selectBase($0) }
+            )
         }
         .task {
             await viewModel.loadChart()

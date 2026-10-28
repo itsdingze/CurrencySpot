@@ -36,10 +36,7 @@ struct HeaderSection: View {
 
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) {
-                    Text(viewModel.formattedCurrentRate)
-                        .font(.appTitle3)
-                        .accessibilityLabel(viewModel.currentRateAccessibilityLabel)
-                        .accessibilityAddTraits(.updatesFrequently)
+                    currentRateText
 
                     if let statistics = viewModel.chartStatistics,
                        let percentChange = statistics.percentChange,
@@ -53,10 +50,7 @@ struct HeaderSection: View {
 
                 HStack {
                     VStack(alignment: .leading, spacing: Spacing.hairline) {
-                        Text(viewModel.formattedCurrentRate)
-                            .font(.appTitle3)
-                            .accessibilityLabel(viewModel.currentRateAccessibilityLabel)
-                            .accessibilityAddTraits(.updatesFrequently)
+                        currentRateText
 
                         if let statistics = viewModel.chartStatistics,
                            let percentChange = statistics.percentChange,
@@ -70,6 +64,13 @@ struct HeaderSection: View {
                 }
             }
         }
+    }
+
+    private var currentRateText: some View {
+        Text(viewModel.formattedCurrentRate)
+            .font(.appTitle3)
+            .accessibilityLabel(viewModel.currentRateAccessibilityLabel)
+            .accessibilityAddTraits(.updatesFrequently)
     }
 
     @ViewBuilder

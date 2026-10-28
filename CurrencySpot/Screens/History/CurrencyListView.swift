@@ -24,6 +24,14 @@ struct CurrencyListView: View {
             .toolbar {
                 trailingToolbarItems
             }
+            .sheet(isPresented: $viewModel.destination.isPresenting(.basePicker)) {
+                BasePickerSheet(
+                    selection: viewModel.baseCurrency,
+                    favorites: viewModel.basePickerFavorites,
+                    exchangeRates: viewModel.basePickerRates,
+                    onSelect: { viewModel.selectBase($0) }
+                )
+            }
             .onChange(of: viewModel.displayedCurrencies.count) { _, count in
                 guard viewModel.isSearching else { return }
                 AccessibilityNotification.Announcement(String(localized: .historyListSearchResults(count: count))).post()
@@ -103,7 +111,14 @@ struct CurrencyListView: View {
         }
     }
 
+    @ToolbarContentBuilder
     private var trailingToolbarItems: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            BaseCurrencyButton(code: viewModel.baseCurrency, action: viewModel.baseCurrencyTapped)
+        }
+        if #available(iOS 26, *) {
+            ToolbarSpacer(.fixed, placement: .topBarTrailing)
+        }
         ToolbarItem(placement: .topBarTrailing) {
             if isEditing {
                 Button(.historyListDone, action: finishEditing)

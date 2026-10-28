@@ -8,6 +8,10 @@ import SwiftUI
 
 @Observable
 final class CurrencyListViewModel {
+    nonisolated enum Destination: Equatable {
+        case basePicker
+    }
+
     // MARK: - List State
 
     private(set) var displayedCurrencies: [CurrencyListEntry] = []
@@ -34,11 +38,18 @@ final class CurrencyListViewModel {
 
     var isWatchlistEmpty: Bool { watchlist.codes.allSatisfy { $0 == baseCurrency } }
 
-    var baseCurrency: CurrencyCode { ratesStore.baseCurrency }
+    private(set) var baseCurrency: CurrencyCode
+
+    var destination: Destination?
+
+    var basePickerFavorites: [CurrencyCode] { favorites.codes.elements }
+
+    var basePickerRates: [ExchangeRate] { ratesStore.rates }
 
     // MARK: - Dependencies
 
     private let ratesStore: ExchangeRatesStore
+    private let favorites: CurrencyCodeListStore
     private let watchlist: CurrencyCodeListStore
     private let trendsStore: TrendsStore
     private let trendDataUseCase: TrendDataUseCase
@@ -54,7 +65,9 @@ final class CurrencyListViewModel {
     // MARK: - Initialization
 
     init(
+        baseCurrency: CurrencyCode,
         ratesStore: ExchangeRatesStore,
+        favorites: CurrencyCodeListStore,
         watchlist: CurrencyCodeListStore,
         trendsStore: TrendsStore,
         trendDataUseCase: TrendDataUseCase,
@@ -64,7 +77,9 @@ final class CurrencyListViewModel {
         appState: AppState,
         makeHistoryViewModel: @escaping @MainActor (_ base: CurrencyCode, _ target: CurrencyCode) -> CurrencyHistoryViewModel
     ) {
+        self.baseCurrency = baseCurrency
         self.ratesStore = ratesStore
+        self.favorites = favorites
         self.watchlist = watchlist
         self.trendsStore = trendsStore
         self.trendDataUseCase = trendDataUseCase
@@ -102,6 +117,17 @@ final class CurrencyListViewModel {
         updateDisplayedCurrencies()
     }
 
+    // MARK: - Base Currency
+
+    func baseCurrencyTapped() {
+        destination = .basePicker
+    }
+
+    func selectBase(_ code: CurrencyCode) {
+        baseCurrency = code
+        updateDisplayedCurrencies()
+    }
+
     // MARK: - Navigation
 
     func openHistory(for code: CurrencyCode) {
@@ -109,13 +135,13 @@ final class CurrencyListViewModel {
     }
 
     func historyViewModel(for target: CurrencyCode) -> CurrencyHistoryViewModel {
-        makeHistoryViewModel(ratesStore.baseCurrency, target)
+        makeHistoryViewModel(baseCurrency, target)
     }
 
     // MARK: - Trends
 
     func trend(for code: CurrencyCode) -> Trend? {
-        trendDataUseCase.adjustedTrend(for: code, baseCurrency: ratesStore.baseCurrency, in: trendsStore.trends)
+        trendDataUseCase.adjustedTrend(for: code, baseCurrency: baseCurrency, in: trendsStore.trends)
     }
 
     func trendDisplayValue(rate: Double, weeklyChange: Double) -> String {
@@ -160,7 +186,6 @@ final class CurrencyListViewModel {
     private func observeListInputs() {
         withObservationTracking {
             _ = ratesStore.rates
-            _ = ratesStore.baseCurrency
             _ = watchlist.codes
             _ = trendsStore.trends
         } onChange: { [weak self] in
@@ -190,7 +215,7 @@ final class CurrencyListViewModel {
     private func updateDisplayedCurrencies() {
         displayedCurrencies = buildCurrencyList(
             rates: ratesStore.rates,
-            base: ratesStore.baseCurrency,
+            base: baseCurrency,
             isSearching: isSearching,
             searchText: searchText,
             isWatchlisted: { self.watchlist.contains($0) },

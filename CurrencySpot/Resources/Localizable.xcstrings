@@ -4676,7 +4676,7 @@
       }
     },
     "currencyPicker.title" : {
-      "comment" : "Navigation title of the currency picker used by the converter and camera screens.",
+      "comment" : "Navigation title of the currency picker used by the converter, camera and History screens.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -6765,6 +6765,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "操作未完成"
+          }
+        }
+      }
+    },
+    "history.basePicker.accessibilityLabel" : {
+      "comment" : "VoiceOver label for the History screens' button that opens the base currency picker.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ausgangswährung auswählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select base currency"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleccionar divisa de origen"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleccionar divisa de origen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir la devise source"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算元の通貨を選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기준 통화 선택"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择基准币种"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇基準幣別"
+          }
+        }
+      }
+    },
+    "history.basePicker.accessibilityValue" : {
+      "comment" : "VoiceOver value for the History screens' base currency button. name: localized currency name. code: currency code such as EUR.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ausgewählt: %1$(name)@, %2$(code)@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currently selected: %1$(name)@, %2$(code)@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleccionada: %1$(name)@, %2$(code)@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleccionada: %1$(name)@, %2$(code)@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélection actuelle : %1$(name)@, %2$(code)@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択中: %1$(name)@、%2$(code)@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택한 통화: %1$(name)@, %2$(code)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选：%1$(name)@，%2$(code)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選取：%1$(name)@，%2$(code)@"
           }
         }
       }
