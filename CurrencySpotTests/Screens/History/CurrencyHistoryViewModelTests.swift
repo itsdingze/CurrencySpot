@@ -232,19 +232,6 @@ struct CurrencyHistoryViewModelTests {
         #expect(viewModel.chartSeriesID.range == .oneMonth)
     }
 
-    @Test("changing the converter's base currency leaves the open chart on its base", .timeLimit(.minutes(1)))
-    func ignoresConverterBaseCurrency() async throws {
-        let graph = try HistoryTestGraph()
-        let viewModel = graph.makeHistoryViewModel(base: "USD", target: "GBP")
-        await viewModel.loadChart()
-
-        graph.ratesStore.updateBaseCurrency("EUR")
-        viewModel.selectedTimeRange = .oneMonth
-        await waitUntil { viewModel.chartSeriesID.range == .oneMonth }
-
-        #expect(viewModel.baseCurrency == "USD")
-    }
-
     @Test("picking a base currency reloads the chart against it", .timeLimit(.minutes(1)))
     func selectingBaseReloadsChart() async throws {
         let graph = try HistoryTestGraph()

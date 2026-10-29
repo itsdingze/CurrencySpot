@@ -74,7 +74,6 @@ struct CalculatorViewModelTests {
 
         #expect(viewModel.baseCurrency == "CHF")
         #expect(viewModel.targetCurrency == "CAD")
-        #expect(ratesStore.baseCurrency == "CHF")
     }
 
     @Test("favoriteCurrencies lists the injected favorites store in its order")
@@ -600,7 +599,7 @@ struct CalculatorViewModelTests {
         #expect(viewModel.inputAmountString == "0")
     }
 
-    @Test("swapCurrencies exchanges base and target and publishes the new base")
+    @Test("swapCurrencies exchanges base and target")
     func swapCurrenciesExchangesPair() throws {
         let viewModel = makeViewModel()
         viewModel.baseCurrency = "USD"
@@ -610,7 +609,6 @@ struct CalculatorViewModelTests {
 
         #expect(viewModel.baseCurrency == "JPY")
         #expect(viewModel.targetCurrency == "USD")
-        #expect(ratesStore.baseCurrency == "JPY")
     }
 
     @Test("destination drives the currency picker sheet for either side")

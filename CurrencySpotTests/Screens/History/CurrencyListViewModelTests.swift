@@ -144,25 +144,6 @@ struct CurrencyListViewModelTests {
         #expect(abs(gbp.rate - 0.625) < 0.0001)
     }
 
-    @Test("changing the converter's base currency leaves the list on its own base", .timeLimit(.minutes(1)))
-    func ignoresConverterBaseCurrency() async throws {
-        let graph = try HistoryTestGraph(watchlistSeed: ["EUR", "GBP"])
-        let viewModel = graph.makeListViewModel()
-        Self.publishRates(to: graph)
-        await waitUntil { viewModel.displayedCurrencies.count == 2 }
-
-        graph.ratesStore.updateBaseCurrency("EUR")
-        graph.ratesStore.update(
-            rates: [ExchangeRate(currencyCode: "USD", rate: 1.0), ExchangeRate(currencyCode: "EUR", rate: 0.8), ExchangeRate(currencyCode: "GBP", rate: 0.4)],
-            lastUpdated: nil,
-            isShowingSampleRates: false
-        )
-
-        await waitUntil { viewModel.displayedCurrencies.last?.rate == 0.4 }
-        #expect(viewModel.baseCurrency == "USD")
-        #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP"])
-    }
-
     @Test("picking a base currency re-expresses the list against it", .timeLimit(.minutes(1)))
     func selectingBaseReexpressesList() async throws {
         let graph = try HistoryTestGraph(watchlistSeed: ["EUR", "GBP"])
@@ -176,7 +157,6 @@ struct CurrencyListViewModelTests {
         #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP"])
         let gbp = try #require(viewModel.displayedCurrencies.first)
         #expect(abs(gbp.rate - 0.625) < 0.0001)
-        #expect(graph.ratesStore.baseCurrency == "USD")
     }
 
     // MARK: - Trends

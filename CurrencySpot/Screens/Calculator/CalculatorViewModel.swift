@@ -53,10 +53,7 @@ final class CalculatorViewModel {
 
     var baseCurrency: CurrencyCode {
         willSet { pairWillChange(from: baseCurrency, to: newValue) }
-        didSet {
-            ratesStore.updateBaseCurrency(baseCurrency)
-            pairDidChange(from: oldValue, to: baseCurrency)
-        }
+        didSet { pairDidChange(from: oldValue, to: baseCurrency) }
     }
 
     var targetCurrency: CurrencyCode {
@@ -131,7 +128,6 @@ final class CalculatorViewModel {
 
         baseCurrency = preferences.defaultBaseCurrency
         targetCurrency = preferences.defaultTargetCurrency
-        ratesStore.updateBaseCurrency(baseCurrency)
         observeDataReset()
     }
 
