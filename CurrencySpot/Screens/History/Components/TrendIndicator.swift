@@ -19,14 +19,6 @@ struct TrendIndicator: View {
         }
         .foregroundStyle(direction.color)
         .font(.appSubheadline.weight(.medium))
-        .padding(.horizontal, Spacing.badgePaddingHorizontal)
-        .padding(.vertical, Spacing.badgePaddingVertical)
-        .frame(minWidth: 80, alignment: .trailing)
-        .background(
-            RoundedRectangle(cornerRadius: Radius.badge)
-                .fill(direction.color.opacity(0.12))
-                .strokeBorder(direction.color.opacity(0.05), lineWidth: 1)
-        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(changeAccessibilityLabel)
     }
