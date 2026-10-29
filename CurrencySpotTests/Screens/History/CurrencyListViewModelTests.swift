@@ -291,24 +291,25 @@ struct CurrencyListViewModelTests {
 
     // MARK: - Navigation
 
-    @Test("opening a currency pushes it onto the navigation path")
+    @Test("opening a currency pushes it, paired with the list's base, onto the navigation path")
     func openHistoryPushes() throws {
-        let viewModel = try HistoryTestGraph().makeListViewModel()
-
-        viewModel.openHistory(for: "GBP")
-
-        #expect(viewModel.path == ["GBP"])
-    }
-
-    @Test("the chart screen's model pairs the picked currency with the list's base")
-    func historyViewModelUsesListBase() throws {
         let graph = try HistoryTestGraph()
         let viewModel = graph.makeListViewModel()
         viewModel.selectBase("EUR")
 
-        let history = viewModel.historyViewModel(for: "GBP")
+        viewModel.openHistory(for: "GBP")
 
-        #expect(history.baseCurrency == "EUR")
+        #expect(viewModel.path == [HistoryLink(base: "EUR", target: "GBP")])
+    }
+
+    @Test("the chart screen's model shows the pair it was opened for")
+    func historyViewModelUsesThePair() throws {
+        let graph = try HistoryTestGraph()
+        let viewModel = graph.makeListViewModel()
+
+        let history = viewModel.historyViewModel(for: HistoryLink(base: "CHF", target: "GBP"))
+
+        #expect(history.baseCurrency == "CHF")
         #expect(history.targetCurrency == "GBP")
     }
 
@@ -317,11 +318,13 @@ struct CurrencyListViewModelTests {
         let graph = try HistoryTestGraph()
         let viewModel = graph.makeListViewModel()
         viewModel.selectBase("EUR")
+        viewModel.openHistory(for: "GBP")
+        let link = try #require(viewModel.path.first)
 
-        viewModel.historyViewModel(for: "GBP").selectBase("JPY")
+        viewModel.historyViewModel(for: link).selectBase("JPY")
 
         #expect(viewModel.baseCurrency == "EUR")
-        #expect(viewModel.historyViewModel(for: "GBP").baseCurrency == "EUR")
+        #expect(viewModel.historyViewModel(for: link).baseCurrency == "EUR")
     }
 
     // MARK: - Base Picker
@@ -343,6 +346,21 @@ struct CurrencyListViewModelTests {
 
         #expect(viewModel.basePickerFavorites == ["GBP", "USD"])
         #expect(viewModel.basePickerRates == Self.rates)
+    }
+
+    // MARK: - Links
+
+    @Test("a widget link switches to History and shows only that pair's chart")
+    func widgetLinkOpensThePair() throws {
+        let graph = try HistoryTestGraph()
+        let viewModel = graph.makeListViewModel()
+        viewModel.openHistory(for: "GBP")
+        let link = HistoryLink(base: "JPY", target: "EUR")
+
+        viewModel.open(link)
+
+        #expect(graph.appState.selectedTab == .history)
+        #expect(viewModel.path == [link])
     }
 
     // MARK: - Helpers

@@ -17,6 +17,10 @@ struct CurrencySpotApp: App {
                 .task {
                     dependencyContainer.currencyListViewModel.warmUp()
                 }
+                .onOpenURL { url in
+                    guard let link = HistoryLink(url: url) else { return }
+                    dependencyContainer.currencyListViewModel.open(link)
+                }
         }
     }
 

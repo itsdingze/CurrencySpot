@@ -27,9 +27,22 @@
 		0AFF88122FD4CE5900D54E02 /* CurrencySpot.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = CurrencySpot.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0AE0A0052FDC000100A1B2C3 /* Exceptions for "CurrencySpot" folder in "CurrencySpot" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0A42BCD12D6F14E5009B4F56 /* CurrencySpot */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		0A42BCD42D6F14E5009B4F56 /* CurrencySpot */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0AE0A0052FDC000100A1B2C3 /* Exceptions for "CurrencySpot" folder in "CurrencySpot" target */,
+			);
 			path = CurrencySpot;
 			sourceTree = "<group>";
 		};
@@ -357,6 +370,7 @@
 				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CurrencySpot/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CurrencySpot;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "CurrencySpot uses the camera to detect prices and show them converted to your currency.";
@@ -397,6 +411,7 @@
 				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CurrencySpot/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = CurrencySpot;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "CurrencySpot uses the camera to detect prices and show them converted to your currency.";

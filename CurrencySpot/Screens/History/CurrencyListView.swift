@@ -18,8 +18,9 @@ struct CurrencyListView: View {
                 prompt: .historyListSearchPrompt
             )
             .autocorrectionDisabled()
-            .navigationDestination(for: CurrencyCode.self) { code in
-                CurrencyHistoryView(viewModel: viewModel.historyViewModel(for: code))
+            .navigationDestination(for: HistoryLink.self) { link in
+                CurrencyHistoryView(viewModel: viewModel.historyViewModel(for: link))
+                    .id(link)
             }
             .toolbar {
                 trailingToolbarItems
