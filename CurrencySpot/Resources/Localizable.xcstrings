@@ -21790,6 +21790,156 @@
           }
         }
       }
+    },
+    "widget.pairRate.accessibilityLabel" : {
+      "comment" : "VoiceOver label of the currency pair in the Exchange Rate widget. base and target: currency names, for example US Dollar and Euro.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@ in %2$(target)@" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@ to %2$(target)@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@ a %2$(target)@" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@ a %2$(target)@" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@ en %2$(target)@" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@から%2$(target)@" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@ 대 %2$(target)@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@ 兑 %2$(target)@" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@ 兌 %2$(target)@" } }
+      }
+    },
+    "widget.pairRate.description" : {
+      "comment" : "Description of the small Exchange Rate widget in the widget gallery.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Verfolge ein Währungspaar." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Follow one currency pair." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Sigue un par de divisas." } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Sigue un par de divisas." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Suivez une paire de devises." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "1つの通貨ペアを表示します。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "통화 쌍 하나를 확인해 보세요." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关注一组币种汇率。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "關注一組幣別匯率。" } }
+      }
+    },
+    "widget.pairRate.name" : {
+      "comment" : "Name of the small widget that shows one currency pair.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Wechselkurs" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Exchange Rate" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Tipo de cambio" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Tipo de cambio" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Taux de change" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "為替レート" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "환율" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "汇率" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "匯率" } }
+      }
+    },
+    "widget.parameter.base" : {
+      "comment" : "Widget setting that picks the currency the rates are quoted against.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Ausgangswährung" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Base Currency" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Divisa de origen" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Divisa de origen" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Devise source" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "換算元通貨" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기준 통화" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "基准币种" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "基準幣別" } }
+      }
+    },
+    "widget.parameter.currencies" : {
+      "comment" : "Widget setting that picks the currencies listed in the Exchange Rates widget.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Währungen" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Currencies" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Divisas" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Divisas" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Devises" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "通貨" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "통화" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "币种" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "幣別" } }
+      }
+    },
+    "widget.parameter.period" : {
+      "comment" : "Widget setting that picks how far back the chart and change go.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Zeitraum" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Time Range" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Periodo" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Período" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Période" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "期間" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기간" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "时间范围" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "時間範圍" } }
+      }
+    },
+    "widget.parameter.target" : {
+      "comment" : "Widget setting that picks the currency shown in the Exchange Rate widget.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Zielwährung" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Target Currency" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Divisa de destino" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Divisa de destino" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Devise cible" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "換算先通貨" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대상 통화" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "目标币种" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "目標幣別" } }
+      }
+    },
+    "widget.rate.unavailable" : {
+      "comment" : "Shown in place of a rate a widget couldn't load.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "—" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "—" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "—" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "—" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "—" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "—" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "—" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "—" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "—" } }
+      }
+    },
+    "widget.rateList.description" : {
+      "comment" : "Description of the medium and large Exchange Rates widget in the widget gallery.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Verfolge mehrere Währungen gegenüber einer Ausgangswährung." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Follow several currencies against one base currency." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Sigue varias divisas frente a una divisa de origen." } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Sigue varias divisas frente a una divisa de origen." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Suivez plusieurs devises par rapport à une devise source." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "複数の通貨を1つの換算元通貨で表示します。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "여러 통화를 기준 통화 하나와 비교해 보세요." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关注多个币种相对同一基准币种的汇率。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "關注多個幣別相對同一基準幣別的匯率。" } }
+      }
+    },
+    "widget.rateList.name" : {
+      "comment" : "Name of the medium and large widget that lists several currencies.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Wechselkurse" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Exchange Rates" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Tipos de cambio" } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Tipos de cambio" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Taux de plusieurs devises" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "為替レート一覧" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "환율 목록" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "汇率列表" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "匯率列表" } }
+      }
     }
   },
   "version" : "1.3"

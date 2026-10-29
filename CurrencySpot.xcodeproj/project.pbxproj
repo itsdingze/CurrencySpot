@@ -8,9 +8,17 @@
 
 /* Begin PBXBuildFile section */
 		0AB1D2C32FDA000100A1B2C3 /* IdentifiedCollections in Frameworks */ = {isa = PBXBuildFile; productRef = 0AB1D2C22FDA000100A1B2C3 /* IdentifiedCollections */; };
+		0AE0A0102FDC000100A1B2C3 /* CurrencySpotWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0AE0A0012FDC000100A1B2C3 /* CurrencySpotWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		0AE0A00D2FDC000100A1B2C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0A42BCCA2D6F14E5009B4F56 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0AE0A0092FDC000100A1B2C3;
+			remoteInfo = CurrencySpotWidgetsExtension;
+		};
 		0A42BCE32D6F14E6009B4F56 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0A42BCCA2D6F14E5009B4F56 /* Project object */;
@@ -20,14 +28,77 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		0AE0A00F2FDC000100A1B2C3 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0AE0A0102FDC000100A1B2C3 /* CurrencySpotWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0A42BCD22D6F14E5009B4F56 /* CurrencySpot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CurrencySpot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A42BCE22D6F14E6009B4F56 /* CurrencySpotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CurrencySpotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A860CFE2E1E7DA20097076D /* TestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TestPlan.xctestplan; sourceTree = "<group>"; };
 		0AFF88122FD4CE5900D54E02 /* CurrencySpot.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = CurrencySpot.xcconfig; sourceTree = "<group>"; };
+		0AE0A0012FDC000100A1B2C3 /* CurrencySpotWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CurrencySpotWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0AE0A0032FDC000100A1B2C3 /* Exceptions for "CurrencySpotWidgets" folder in "CurrencySpotWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 0AE0A0092FDC000100A1B2C3 /* CurrencySpotWidgetsExtension */;
+		};
+		0AE0A0042FDC000100A1B2C3 /* Exceptions for "CurrencySpot" folder in "CurrencySpotWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/DesignSystem/Colors.swift,
+				App/DesignSystem/DomainColors.swift,
+				App/DesignSystem/Fonts.swift,
+				App/DesignSystem/Sizing.swift,
+				Intents/CurrencyEntity.swift,
+				Intents/OpenScannerIntent.swift,
+				Models/DTO/ExchangeRatesResponse.swift,
+				Models/DTO/FrankfurterV2Rate.swift,
+				Models/DTO/HistoricalRatesResponse.swift,
+				Models/Domain/AppError.swift,
+				Models/Domain/CETCalendar.swift,
+				Models/Domain/CurrencyCatalog.swift,
+				Models/Domain/CurrencyCode.swift,
+				Models/Domain/CurrencyCodeLocalizedName.swift,
+				Models/Domain/CurrencyDefaults.swift,
+				Models/Domain/CurrencySearch.swift,
+				Models/Domain/ExchangeRate.swift,
+				Models/Domain/HistoryLink.swift,
+				Models/Domain/RateMath.swift,
+				Models/Domain/RatePublishSchedule.swift,
+				Models/Domain/RateSeries.swift,
+				Models/Domain/TimeRange.swift,
+				Models/Domain/TrendDirection.swift,
+				Models/Domain/VolatilityLevel.swift,
+				Resources/Localizable.xcstrings,
+				Services/Cache/RateSeriesCache.swift,
+				Services/Logging/LogCategory.swift,
+				Services/Network/FrankfurterAPI.swift,
+				Services/Network/FrankfurterV2Mapper.swift,
+				Services/Network/NetworkRequestRunner.swift,
+				Services/Network/RetryPolicy.swift,
+				Services/Persistence/UserDefaultsKeys.swift,
+				Services/Time/ClockService.swift,
+				Shared/Extensions/NumberFormatting.swift,
+				UseCases/LoadRateSeriesUseCase.swift,
+			);
+			target = 0AE0A0092FDC000100A1B2C3 /* CurrencySpotWidgetsExtension */;
+		};
 		0AE0A0052FDC000100A1B2C3 /* Exceptions for "CurrencySpot" folder in "CurrencySpot" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -42,8 +113,17 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				0AE0A0052FDC000100A1B2C3 /* Exceptions for "CurrencySpot" folder in "CurrencySpot" target */,
+				0AE0A0042FDC000100A1B2C3 /* Exceptions for "CurrencySpot" folder in "CurrencySpotWidgetsExtension" target */,
 			);
 			path = CurrencySpot;
+			sourceTree = "<group>";
+		};
+		0AE0A0022FDC000100A1B2C3 /* CurrencySpotWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0AE0A0032FDC000100A1B2C3 /* Exceptions for "CurrencySpotWidgets" folder in "CurrencySpotWidgetsExtension" target */,
+			);
+			path = CurrencySpotWidgets;
 			sourceTree = "<group>";
 		};
 		0A42BCE52D6F14E6009B4F56 /* CurrencySpotTests */ = {
@@ -69,6 +149,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0AE0A0072FDC000100A1B2C3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -78,6 +165,7 @@
 				0A860CFE2E1E7DA20097076D /* TestPlan.xctestplan */,
 				0A42BCD42D6F14E5009B4F56 /* CurrencySpot */,
 				0A42BCE52D6F14E6009B4F56 /* CurrencySpotTests */,
+				0AE0A0022FDC000100A1B2C3 /* CurrencySpotWidgets */,
 				0A42BCD32D6F14E5009B4F56 /* Products */,
 				0AFF88122FD4CE5900D54E02 /* CurrencySpot.xcconfig */,
 			);
@@ -88,6 +176,7 @@
 			children = (
 				0A42BCD22D6F14E5009B4F56 /* CurrencySpot.app */,
 				0A42BCE22D6F14E6009B4F56 /* CurrencySpotTests.xctest */,
+				0AE0A0012FDC000100A1B2C3 /* CurrencySpotWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,10 +191,12 @@
 				0A42BCCE2D6F14E5009B4F56 /* Sources */,
 				0A42BCCF2D6F14E5009B4F56 /* Frameworks */,
 				0A42BCD02D6F14E5009B4F56 /* Resources */,
+				0AE0A00F2FDC000100A1B2C3 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				0AE0A00E2FDC000100A1B2C3 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				0A42BCD42D6F14E5009B4F56 /* CurrencySpot */,
@@ -141,6 +232,28 @@
 			productReference = 0A42BCE22D6F14E6009B4F56 /* CurrencySpotTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		0AE0A0092FDC000100A1B2C3 /* CurrencySpotWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0AE0A00A2FDC000100A1B2C3 /* Build configuration list for PBXNativeTarget "CurrencySpotWidgetsExtension" */;
+			buildPhases = (
+				0AE0A0062FDC000100A1B2C3 /* Sources */,
+				0AE0A0072FDC000100A1B2C3 /* Frameworks */,
+				0AE0A0082FDC000100A1B2C3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				0AE0A0022FDC000100A1B2C3 /* CurrencySpotWidgets */,
+			);
+			name = CurrencySpotWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = CurrencySpotWidgetsExtension;
+			productReference = 0AE0A0012FDC000100A1B2C3 /* CurrencySpotWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -157,6 +270,9 @@
 					0A42BCE12D6F14E6009B4F56 = {
 						CreatedOnToolsVersion = 16.2;
 						TestTargetID = 0A42BCD12D6F14E5009B4F56;
+					};
+					0AE0A0092FDC000100A1B2C3 = {
+						CreatedOnToolsVersion = 27.0;
 					};
 				};
 			};
@@ -187,6 +303,7 @@
 			targets = (
 				0A42BCD12D6F14E5009B4F56 /* CurrencySpot */,
 				0A42BCE12D6F14E6009B4F56 /* CurrencySpotTests */,
+				0AE0A0092FDC000100A1B2C3 /* CurrencySpotWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -200,6 +317,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0A42BCE02D6F14E6009B4F56 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0AE0A0082FDC000100A1B2C3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -223,9 +347,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		0AE0A0062FDC000100A1B2C3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		0AE0A00E2FDC000100A1B2C3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0AE0A0092FDC000100A1B2C3 /* CurrencySpotWidgetsExtension */;
+			targetProxy = 0AE0A00D2FDC000100A1B2C3 /* PBXContainerItemProxy */;
+		};
 		0A42BCE42D6F14E6009B4F56 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 0A42BCD12D6F14E5009B4F56 /* CurrencySpot */;
@@ -493,6 +629,72 @@
 			};
 			name = Release;
 		};
+		0AE0A00B2FDC000100A1B2C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CurrencySpotWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CurrencySpot;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).CurrencySpot.Widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "WIDGET_EXTENSION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		0AE0A00C2FDC000100A1B2C3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CurrencySpotWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = CurrencySpot;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).CurrencySpot.Widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "WIDGET_EXTENSION $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -519,6 +721,15 @@
 			buildConfigurations = (
 				0A42BCFA2D6F14E6009B4F56 /* Debug */,
 				0A42BCFB2D6F14E6009B4F56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		0AE0A00A2FDC000100A1B2C3 /* Build configuration list for PBXNativeTarget "CurrencySpotWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0AE0A00B2FDC000100A1B2C3 /* Debug */,
+				0AE0A00C2FDC000100A1B2C3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

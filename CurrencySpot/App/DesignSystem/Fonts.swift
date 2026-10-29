@@ -10,6 +10,7 @@ nonisolated extension Font {
     static let appSubheadline = Font.system(.subheadline, design: .rounded)
     static let appFootnote = Font.system(.footnote, design: .rounded)
     static let appCaption = Font.system(.caption, design: .rounded)
+    static let appCaption2 = Font.system(.caption2, design: .rounded)
 
     static let appMonospaced = Font.system(.footnote, design: .monospaced)
 }
