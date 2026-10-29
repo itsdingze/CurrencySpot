@@ -27,4 +27,8 @@ final class AppState {
     func dataWasReset() {
         dataResetCount += 1
     }
+
+    func openScanner(isScanningSupported: Bool = CameraScanAvailability.isSupported) {
+        selectedTab = isScanningSupported ? .camera : .convert
+    }
 }

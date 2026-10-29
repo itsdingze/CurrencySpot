@@ -1,3 +1,4 @@
+import AppIntents
 import SwiftUI
 
 @main
@@ -5,7 +6,10 @@ struct CurrencySpotApp: App {
     private let dependencyContainer: DependencyContainer
 
     init() {
-        dependencyContainer = DependencyContainer.bootstrap(appState: .shared)
+        let dependencyContainer = DependencyContainer.bootstrap(appState: .shared)
+        let convertCurrency = dependencyContainer.convertCurrencyUseCase
+        AppDependencyManager.shared.add(dependency: convertCurrency)
+        self.dependencyContainer = dependencyContainer
     }
 
     var body: some Scene {

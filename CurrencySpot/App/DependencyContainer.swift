@@ -13,6 +13,7 @@ final class DependencyContainer {
     let currencyListViewModel: CurrencyListViewModel
     let settingsViewModel: SettingsViewModel
     let cameraViewModel: CameraViewModel
+    let convertCurrencyUseCase: ConvertCurrencyUseCase
 
     private let makeHistoryViewModel: @MainActor (CurrencyCode, CurrencyCode) -> CurrencyHistoryViewModel
 
@@ -119,6 +120,7 @@ final class DependencyContainer {
         self.appState = appState
         self.ratesStore = ratesStore
         self.makeHistoryViewModel = makeHistoryViewModel
+        convertCurrencyUseCase = ConvertCurrencyUseCase(loadExchangeRates: loadExchangeRatesUseCase)
 
         calculatorViewModel = CalculatorViewModel(
             loadExchangeRatesUseCase: loadExchangeRatesUseCase,
