@@ -6,10 +6,12 @@ nonisolated struct HistoryLink: Hashable, Sendable {
 
     let base: CurrencyCode
     let target: CurrencyCode
+    let period: TimeRange
 
-    init(base: CurrencyCode, target: CurrencyCode) {
+    init(base: CurrencyCode, target: CurrencyCode, period: TimeRange = .threeMonths) {
         self.base = base
         self.target = target
+        self.period = period
     }
 
     init?(url: URL) {
@@ -19,7 +21,8 @@ nonisolated struct HistoryLink: Hashable, Sendable {
               let target = Self.currency(named: "target", in: items),
               base != target
         else { return nil }
-        self.init(base: base, target: target)
+        let period = items.first { $0.name == "range" }?.value.flatMap(TimeRange.init(rawValue:))
+        self.init(base: base, target: target, period: period ?? .threeMonths)
     }
 
     private static func currency(named name: String, in items: [URLQueryItem]) -> CurrencyCode? {
@@ -33,6 +36,7 @@ nonisolated struct HistoryLink: Hashable, Sendable {
         components.queryItems = [
             URLQueryItem(name: "base", value: base.rawValue),
             URLQueryItem(name: "target", value: target.rawValue),
+            URLQueryItem(name: "range", value: period.rawValue),
         ]
         return components.url ?? URL(filePath: "/")
     }

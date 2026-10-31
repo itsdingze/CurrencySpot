@@ -72,14 +72,19 @@ struct HistoryTestGraph {
             backfillArchive: backfillArchive,
             buildCurrencyList: BuildCurrencyListUseCase(),
             appState: appState,
-            makeHistoryViewModel: makeHistoryViewModel(base:target:)
+            makeHistoryViewModel: makeHistoryViewModel(for:)
         )
     }
 
     func makeHistoryViewModel(base: CurrencyCode = .usd, target: CurrencyCode = .eur) -> CurrencyHistoryViewModel {
+        makeHistoryViewModel(for: HistoryLink(base: base, target: target))
+    }
+
+    func makeHistoryViewModel(for link: HistoryLink) -> CurrencyHistoryViewModel {
         CurrencyHistoryViewModel(
-            base: base,
-            target: target,
+            base: link.base,
+            target: link.target,
+            timeRange: link.period,
             ratesStore: ratesStore,
             favorites: favorites,
             trendsStore: trendsStore,

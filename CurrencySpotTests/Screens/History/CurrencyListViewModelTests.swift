@@ -314,6 +314,16 @@ struct CurrencyListViewModelTests {
         #expect(history.targetCurrency == "GBP")
     }
 
+    @Test("the chart screen opens on the time range its link names")
+    func historyViewModelUsesTheLinkRange() throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+
+        let history = viewModel.historyViewModel(for: HistoryLink(base: "USD", target: "IDR", period: .oneWeek))
+
+        #expect(history.selectedTimeRange == .oneWeek)
+        #expect(history.chartSeriesID == CurrencyHistoryViewModel.ChartSeriesID(currency: "IDR", range: .oneWeek))
+    }
+
     @Test("a base picked on the chart screen stays there, and the next chart opens on the list's base")
     func chartBaseStaysOnChartScreen() async throws {
         let graph = try HistoryTestGraph()

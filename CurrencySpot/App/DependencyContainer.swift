@@ -18,7 +18,7 @@ final class DependencyContainer {
     let convertCurrencyUseCase: ConvertCurrencyUseCase
     private let sharedSettingsMirror: SharedSettingsMirror
 
-    private let makeHistoryViewModel: @MainActor (CurrencyCode, CurrencyCode) -> CurrencyHistoryViewModel
+    private let makeHistoryViewModel: @MainActor (HistoryLink) -> CurrencyHistoryViewModel
 
     // MARK: - Initialization
 
@@ -104,11 +104,12 @@ final class DependencyContainer {
         let watchlistStore = CurrencyCodeListStore.watchlist(in: userDefaults, seededFrom: favoritesStore)
         let conversionHistoryStore = ConversionHistoryStore(defaults: userDefaults)
 
-        let makeHistoryViewModel: @MainActor (CurrencyCode, CurrencyCode) -> CurrencyHistoryViewModel = {
-            [ratesStore, favoritesStore, trendsStore, loadHistoricalRatesUseCase, chartDataPreparationUseCase, trendDataUseCase, preferences, appState, clockService] base, target in
+        let makeHistoryViewModel: @MainActor (HistoryLink) -> CurrencyHistoryViewModel = {
+            [ratesStore, favoritesStore, trendsStore, loadHistoricalRatesUseCase, chartDataPreparationUseCase, trendDataUseCase, preferences, appState, clockService] link in
             CurrencyHistoryViewModel(
-                base: base,
-                target: target,
+                base: link.base,
+                target: link.target,
+                timeRange: link.period,
                 ratesStore: ratesStore,
                 favorites: favoritesStore,
                 trendsStore: trendsStore,
@@ -196,7 +197,7 @@ final class DependencyContainer {
     // MARK: - Factories
 
     func makeCurrencyHistoryViewModel(base: CurrencyCode, target: CurrencyCode) -> CurrencyHistoryViewModel {
-        makeHistoryViewModel(base, target)
+        makeHistoryViewModel(HistoryLink(base: base, target: target))
     }
 
     // MARK: - Bootstrap

@@ -36,7 +36,7 @@ final class CurrencyHistoryViewModel {
 
     let targetCurrency: CurrencyCode
 
-    var selectedTimeRange: TimeRange = .threeMonths {
+    var selectedTimeRange: TimeRange {
         didSet {
             guard selectedTimeRange != oldValue else { return }
             startLoad()
@@ -85,6 +85,7 @@ final class CurrencyHistoryViewModel {
     init(
         base: CurrencyCode,
         target: CurrencyCode,
+        timeRange: TimeRange,
         ratesStore: ExchangeRatesStore,
         favorites: CurrencyCodeListStore,
         trendsStore: TrendsStore,
@@ -97,7 +98,8 @@ final class CurrencyHistoryViewModel {
     ) {
         baseCurrency = base
         targetCurrency = target
-        chartSeriesID = ChartSeriesID(currency: target, range: .threeMonths)
+        selectedTimeRange = timeRange
+        chartSeriesID = ChartSeriesID(currency: target, range: timeRange)
         self.ratesStore = ratesStore
         self.favorites = favorites
         self.trendsStore = trendsStore

@@ -20,7 +20,7 @@ struct PairRateWidgetView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .widgetURL(series.map { HistoryLink(base: entry.request.base, target: $0.currency).url })
+        .widgetURL(series.map { HistoryLink(base: entry.request.base, target: $0.currency, period: entry.request.period).url })
     }
 
     private var smallLayout: some View {

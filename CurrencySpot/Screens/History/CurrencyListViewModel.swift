@@ -57,7 +57,7 @@ final class CurrencyListViewModel {
     private let backfillArchive: BackfillArchiveUseCase
     private let buildCurrencyList: BuildCurrencyListUseCase
     private let appState: AppState
-    private let makeHistoryViewModel: @MainActor (CurrencyCode, CurrencyCode) -> CurrencyHistoryViewModel
+    private let makeHistoryViewModel: @MainActor (HistoryLink) -> CurrencyHistoryViewModel
     private let logger = Logger(category: .viewModel)
 
     @ObservationIgnored private var warmUpTask: Task<Void, Never>?
@@ -75,7 +75,7 @@ final class CurrencyListViewModel {
         backfillArchive: BackfillArchiveUseCase,
         buildCurrencyList: BuildCurrencyListUseCase,
         appState: AppState,
-        makeHistoryViewModel: @escaping @MainActor (_ base: CurrencyCode, _ target: CurrencyCode) -> CurrencyHistoryViewModel
+        makeHistoryViewModel: @escaping @MainActor (HistoryLink) -> CurrencyHistoryViewModel
     ) {
         self.baseCurrency = baseCurrency
         self.ratesStore = ratesStore
@@ -141,7 +141,7 @@ final class CurrencyListViewModel {
     }
 
     func historyViewModel(for link: HistoryLink) -> CurrencyHistoryViewModel {
-        makeHistoryViewModel(link.base, link.target)
+        makeHistoryViewModel(link)
     }
 
     // MARK: - Trends

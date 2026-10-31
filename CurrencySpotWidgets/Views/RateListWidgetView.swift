@@ -44,7 +44,7 @@ struct RateListWidgetView: View {
                     separator(showsDivider: true, fillsHeight: fillsHeight)
                 }
 
-                Link(destination: HistoryLink(base: entry.request.base, target: series.currency).url) {
+                Link(destination: HistoryLink(base: entry.request.base, target: series.currency, period: entry.request.period).url) {
                     RateListRow(series: series)
                 }
             }
