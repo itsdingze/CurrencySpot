@@ -5,43 +5,46 @@ import Testing
 @MainActor
 @Suite("NetworkMonitor")
 struct NetworkMonitorTests {
-    @Test("the system connectivity stream reports the current path status", .tags(.integration), .timeLimit(.minutes(1)))
+    @Test("the system path stream reports the current path status and Low Data Mode", .tags(.integration), .timeLimit(.minutes(1)))
     func systemUpdatesReportPathStatus() async {
-        let expected = await Self.currentPathIsSatisfied()
+        let expected = await Self.currentPath()
 
-        var firstUpdate: Bool?
-        for await isConnected in NetworkMonitor.systemConnectionUpdates() {
-            firstUpdate = isConnected
+        var firstUpdate: NetworkMonitor.Path?
+        for await path in NetworkMonitor.systemPathUpdates() {
+            firstUpdate = path
             break
         }
 
         #expect(firstUpdate == expected)
     }
 
-    @Test("an injected connectivity stream drives the published status", .timeLimit(.minutes(1)))
-    func publishesInjectedConnectivityUpdates() async {
-        let (updates, connectivity) = AsyncStream.makeStream(of: Bool.self)
-        let monitor = NetworkMonitor(connectionUpdates: updates)
+    @Test("an injected path stream drives the published connectivity and Low Data Mode", .timeLimit(.minutes(1)))
+    func publishesInjectedPathUpdates() async {
+        let (updates, paths) = AsyncStream.makeStream(of: NetworkMonitor.Path.self)
+        let monitor = NetworkMonitor(pathUpdates: updates)
 
-        connectivity.yield(false)
+        paths.yield(NetworkMonitor.Path(isConnected: false, isConstrained: false))
         await waitUntil { monitor.isConnected == false }
-        connectivity.yield(true)
-        await waitUntil { monitor.isConnected }
-        connectivity.finish()
+        paths.yield(NetworkMonitor.Path(isConnected: true, isConstrained: true))
+        await waitUntil { monitor.isConnected && monitor.isConstrained }
+        paths.finish()
 
         #expect(monitor.isConnected)
+        #expect(monitor.isConstrained)
     }
 
-    @Test("a pinned monitor reports the connectivity it was given")
+    @Test("a pinned monitor reports the connectivity and Low Data Mode it was given")
     func pinnedMonitorReportsGivenConnectivity() {
         #expect(NetworkMonitor(isConnected: false).isConnected == false)
         #expect(NetworkMonitor(isConnected: true).isConnected)
+        #expect(NetworkMonitor(isConnected: true).isConstrained == false)
+        #expect(NetworkMonitor(isConnected: true, isConstrained: true).isConstrained)
     }
 
-    private static func currentPathIsSatisfied() async -> Bool {
+    private static func currentPath() async -> NetworkMonitor.Path? {
         for await path in NWPathMonitor() {
-            return path.status == .satisfied
+            return NetworkMonitor.Path(isConnected: path.status == .satisfied, isConstrained: path.isConstrained)
         }
-        return false
+        return nil
     }
 }

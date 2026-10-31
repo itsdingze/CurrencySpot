@@ -12,6 +12,7 @@ final class BackfillArchiveUseCase {
 
     private let archive: ArchiveRepository
     private let analysis: HistoricalDataAnalysisUseCase
+    private let networkMonitor: NetworkMonitor
     private let clock: ClockService
     private let logger = Logger(category: .useCase)
 
@@ -25,25 +26,29 @@ final class BackfillArchiveUseCase {
 
     // MARK: - Initialization
 
-    init(archive: ArchiveRepository, analysis: HistoricalDataAnalysisUseCase, clock: ClockService) {
+    init(
+        archive: ArchiveRepository,
+        analysis: HistoricalDataAnalysisUseCase,
+        networkMonitor: NetworkMonitor,
+        clock: ClockService
+    ) {
         self.archive = archive
         self.analysis = analysis
+        self.networkMonitor = networkMonitor
         self.clock = clock
     }
 
     // MARK: - Public Interface
 
     func backfillArchive() async {
-        if let runTask {
-            await runTask.value
-            return
-        }
-        guard !isExhausted else { return }
+        start()
+        await runTask?.value
+    }
 
+    func start() {
+        guard runTask == nil, !isExhausted, !networkMonitor.isConstrained else { return }
         let generation = generation
-        let task = Task { await run(generation: generation) }
-        runTask = task
-        await task.value
+        runTask = Task { await run(generation: generation) }
     }
 
     func reset() {

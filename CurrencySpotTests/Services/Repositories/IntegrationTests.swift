@@ -39,7 +39,12 @@ struct IntegrationTests {
         let loadUseCase = LoadHistoricalRatesUseCase(
             repository: service,
             archive: service,
-            backfill: BackfillArchiveUseCase(archive: service, analysis: analysisUseCase, clock: GatedClock()),
+            backfill: BackfillArchiveUseCase(
+                archive: service,
+                analysis: analysisUseCase,
+                networkMonitor: NetworkMonitor(isConnected: true),
+                clock: GatedClock()
+            ),
             analysis: analysisUseCase
         )
         let chartUseCase = ChartDataPreparationUseCase()

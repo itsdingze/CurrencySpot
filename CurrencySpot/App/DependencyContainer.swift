@@ -74,6 +74,7 @@ final class DependencyContainer {
         let backfillArchiveUseCase = BackfillArchiveUseCase(
             archive: historicalRepository,
             analysis: historicalDataAnalysisUseCase,
+            networkMonitor: appState.networkMonitor,
             clock: clockService
         )
         let loadHistoricalRatesUseCase = LoadHistoricalRatesUseCase(

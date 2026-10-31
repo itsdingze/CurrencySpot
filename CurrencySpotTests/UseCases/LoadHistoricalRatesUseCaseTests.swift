@@ -26,7 +26,12 @@ struct LoadHistoricalRatesUseCaseTests {
         return LoadHistoricalRatesUseCase(
             repository: repository,
             archive: repository,
-            backfill: BackfillArchiveUseCase(archive: repository, analysis: analysis, clock: GatedClock()),
+            backfill: BackfillArchiveUseCase(
+                archive: repository,
+                analysis: analysis,
+                networkMonitor: NetworkMonitor(isConnected: true),
+                clock: GatedClock()
+            ),
             analysis: analysis
         )
     }
@@ -510,7 +515,12 @@ struct LoadHistoricalRatesUseCaseTests {
         let syncStore = MockHistoricalSyncStore()
         repository.syncStoreForPersist = syncStore
         let analysis = HistoricalDataAnalysisUseCase(syncCoverage: syncStore, dateProvider: FixedDateProvider(Self.baseDate))
-        let backfill = BackfillArchiveUseCase(archive: repository, analysis: analysis, clock: GatedClock())
+        let backfill = BackfillArchiveUseCase(
+            archive: repository,
+            analysis: analysis,
+            networkMonitor: NetworkMonitor(isConnected: true),
+            clock: GatedClock()
+        )
         let useCase = LoadHistoricalRatesUseCase(repository: repository, archive: repository, backfill: backfill, analysis: analysis)
 
         let backfillRun = Task { await backfill.backfillArchive() }

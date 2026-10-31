@@ -6,22 +6,22 @@ import Testing
 struct CalculatorViewModelTests {
     private let repository = MockExchangeRateRepository()
     private let ratesStore = ExchangeRatesStore()
-    private let connectivity: AsyncStream<Bool>.Continuation
+    private let connectivity: AsyncStream<NetworkMonitor.Path>.Continuation
     private let appState: AppState
     private let isolatedDefaults = IsolatedDefaults()
     private let favorites: CurrencyCodeListStore
     private let historyDefaults: UserDefaults
 
     init() throws {
-        let (connectionUpdates, connectivity) = AsyncStream.makeStream(of: Bool.self)
+        let (pathUpdates, connectivity) = AsyncStream.makeStream(of: NetworkMonitor.Path.self)
         self.connectivity = connectivity
-        appState = AppState(networkMonitor: NetworkMonitor(connectionUpdates: connectionUpdates))
+        appState = AppState(networkMonitor: NetworkMonitor(pathUpdates: pathUpdates))
         favorites = .favorites(in: try isolatedDefaults.make())
         historyDefaults = try isolatedDefaults.make()
     }
 
     private func setConnected(_ isConnected: Bool) async {
-        connectivity.yield(isConnected)
+        connectivity.yield(NetworkMonitor.Path(isConnected: isConnected, isConstrained: false))
         await waitUntil { appState.networkMonitor.isConnected == isConnected }
     }
 

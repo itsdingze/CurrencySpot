@@ -192,7 +192,7 @@ final class LoadHistoricalRatesUseCase {
             return .cached(rows)
         }
 
-        Task { await backfill.backfillArchive() }
+        backfill.start()
 
         let pair = Array(Set([currency, base]).subtracting([CurrencyCode.usd]))
         guard !pair.isEmpty else {

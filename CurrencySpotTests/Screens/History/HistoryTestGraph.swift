@@ -8,7 +8,7 @@ struct HistoryTestGraph {
     let trendsStore = TrendsStore()
     let syncStore = MockHistoricalSyncStore()
     let appState: AppState
-    let connectivity: AsyncStream<Bool>.Continuation
+    let connectivity: AsyncStream<NetworkMonitor.Path>.Continuation
     let preferences: InMemoryPreferencesStore
     let watchlist: CurrencyCodeListStore
     let favorites: CurrencyCodeListStore
@@ -33,11 +33,17 @@ struct HistoryTestGraph {
         let repository: any HistoricalRateRepository & ArchiveRepository = historicalRepository ?? fixture
         let dateProvider = FixedDateProvider(today)
         let analysis = HistoricalDataAnalysisUseCase(syncCoverage: syncStore, dateProvider: dateProvider)
-        let backfillArchive = BackfillArchiveUseCase(archive: repository, analysis: analysis, clock: ImmediateClock())
+        let (pathUpdates, connectivity) = AsyncStream.makeStream(of: NetworkMonitor.Path.self)
+        let networkMonitor = NetworkMonitor(pathUpdates: pathUpdates)
+        let backfillArchive = BackfillArchiveUseCase(
+            archive: repository,
+            analysis: analysis,
+            networkMonitor: networkMonitor,
+            clock: ImmediateClock()
+        )
         let isolatedDefaults = IsolatedDefaults()
 
-        let (connectionUpdates, connectivity) = AsyncStream.makeStream(of: Bool.self)
-        appState = AppState(networkMonitor: NetworkMonitor(connectionUpdates: connectionUpdates))
+        appState = AppState(networkMonitor: networkMonitor)
         self.connectivity = connectivity
         self.waitLimitClock = waitLimitClock
         self.today = today
@@ -77,7 +83,7 @@ struct HistoryTestGraph {
     }
 
     private func setConnected(_ isConnected: Bool) async throws {
-        connectivity.yield(isConnected)
+        connectivity.yield(NetworkMonitor.Path(isConnected: isConnected, isConstrained: false))
         let monitor = appState.networkMonitor
         await waitUntil { monitor.isConnected == isConnected }
         try #require(monitor.isConnected == isConnected)

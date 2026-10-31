@@ -18,11 +18,13 @@ struct BackfillArchiveUseCaseTests {
     private static func makeUseCase(
         repository: MockHistoricalRateRepository,
         syncStore: MockHistoricalSyncStore,
+        networkMonitor: NetworkMonitor = NetworkMonitor(isConnected: true),
         clock: ClockService = GatedClock()
     ) -> BackfillArchiveUseCase {
         BackfillArchiveUseCase(
             archive: repository,
             analysis: HistoricalDataAnalysisUseCase(syncCoverage: syncStore, dateProvider: FixedDateProvider(baseDate)),
+            networkMonitor: networkMonitor,
             clock: clock
         )
     }
@@ -59,6 +61,25 @@ struct BackfillArchiveUseCaseTests {
         #expect(syncStore.from == Self.archiveRange.start)
         #expect(repository.fetchHistoricalRatesCalls.isEmpty)
         #expect(repository.series.isEmpty)
+    }
+
+    @Test("backfillArchive downloads nothing in Low Data Mode, then downloads on the next run once it's off", .timeLimit(.minutes(1)))
+    func skipsLowDataModeUntilItIsOff() async throws {
+        let repository = MockHistoricalRateRepository()
+        let syncStore = Self.residentYearStored(in: repository)
+        let (pathUpdates, paths) = AsyncStream.makeStream(of: NetworkMonitor.Path.self)
+        let networkMonitor = NetworkMonitor(pathUpdates: pathUpdates)
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore, networkMonitor: networkMonitor)
+
+        paths.yield(NetworkMonitor.Path(isConnected: true, isConstrained: true))
+        await waitUntil { networkMonitor.isConstrained }
+        await useCase.backfillArchive()
+        #expect(repository.fetchAndPersistCalls.isEmpty)
+
+        paths.yield(NetworkMonitor.Path(isConnected: true, isConstrained: false))
+        await waitUntil { !networkMonitor.isConstrained }
+        await useCase.backfillArchive()
+        #expect(repository.fetchAndPersistCalls.count == 8)
     }
 
     @Test("the gap is anchored at days an in-flight merging fetch is still writing")
