@@ -300,7 +300,7 @@ struct CurrencyListViewModelTests {
 
         viewModel.openHistory(for: "GBP")
 
-        #expect(viewModel.path == [HistoryLink(base: "EUR", target: "GBP")])
+        #expect(viewModel.path.map(\.link) == [HistoryLink(base: "EUR", target: "GBP")])
     }
 
     @Test("the chart screen's model shows the pair it was opened for")
@@ -315,17 +315,21 @@ struct CurrencyListViewModelTests {
     }
 
     @Test("a base picked on the chart screen stays there, and the next chart opens on the list's base")
-    func chartBaseStaysOnChartScreen() throws {
+    func chartBaseStaysOnChartScreen() async throws {
         let graph = try HistoryTestGraph()
         let viewModel = graph.makeListViewModel()
         viewModel.selectBase("EUR")
         viewModel.openHistory(for: "GBP")
-        let link = try #require(viewModel.path.first)
+        let link = try #require(viewModel.path.first?.link)
+        let chart = viewModel.historyViewModel(for: link)
 
-        viewModel.historyViewModel(for: link).selectBase("JPY")
+        chart.selectBase("JPY")
+        await chart.loadChart()
+        viewModel.openHistory(for: "CHF")
 
+        #expect(chart.baseCurrency == "JPY")
         #expect(viewModel.baseCurrency == "EUR")
-        #expect(viewModel.historyViewModel(for: link).baseCurrency == "EUR")
+        #expect(viewModel.path.last?.link == HistoryLink(base: "EUR", target: "CHF"))
     }
 
     // MARK: - Base Picker
@@ -361,7 +365,30 @@ struct CurrencyListViewModelTests {
         viewModel.open(link)
 
         #expect(graph.appState.selectedTab == .history)
-        #expect(viewModel.path == [link])
+        #expect(viewModel.path.map(\.link) == [link])
+    }
+
+    @Test("a link for the chart already showing opens it again fresh, on the link's base")
+    func linkReopensShownChart() throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+        let link = HistoryLink(base: "EUR", target: "GBP")
+        viewModel.open(link)
+        let shown = viewModel.path
+
+        viewModel.open(link)
+
+        #expect(viewModel.path != shown)
+        #expect(viewModel.path.map(\.link) == [link])
+    }
+
+    @Test("a link closes the base picker so the chart it opens is visible")
+    func linkClosesBasePicker() throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+        viewModel.baseCurrencyTapped()
+
+        viewModel.open(HistoryLink(base: "EUR", target: "GBP"))
+
+        #expect(viewModel.destination == nil)
     }
 
     // MARK: - Helpers

@@ -32,7 +32,7 @@ final class CurrencyListViewModel {
 
     var trendDisplayMode: TrendDisplayMode = .percentChange
 
-    var path: [HistoryLink] = []
+    var path: [HistoryRoute] = []
 
     var isSearching: Bool { !searchText.isEmpty }
 
@@ -131,12 +131,13 @@ final class CurrencyListViewModel {
     // MARK: - Navigation
 
     func openHistory(for code: CurrencyCode) {
-        path.append(HistoryLink(base: baseCurrency, target: code))
+        path.append(HistoryRoute(HistoryLink(base: baseCurrency, target: code)))
     }
 
     func open(_ link: HistoryLink) {
         appState.selectedTab = .history
-        path = [link]
+        destination = nil
+        path = [HistoryRoute(link)]
     }
 
     func historyViewModel(for link: HistoryLink) -> CurrencyHistoryViewModel {
