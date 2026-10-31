@@ -52,7 +52,11 @@ struct RateSparkline: View {
         .chartLegend(.hidden)
         .chartYScale(domain: yDomain)
         .widgetAccentable()
-        .accessibilityHidden(true)
+        // Charts keeps its axis values in VoiceOver under .accessibilityHidden(true) and .accessibilityElement(children: .ignore)
+        .accessibilityRepresentation {
+            Color.clear
+                .accessibilityHidden(true)
+        }
     }
 
     private var yDomain: ClosedRange<Double> {
