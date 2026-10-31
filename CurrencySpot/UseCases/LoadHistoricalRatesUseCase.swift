@@ -63,11 +63,12 @@ final class LoadHistoricalRatesUseCase {
         return await repository.cachedHistoricalRates()
     }
 
-    func prefetchResidentYear() async {
+    func prefetchResidentYear() async -> [DateRange] {
         do {
-            _ = try await loadHistoricalData(for: .usd, base: .usd, dateRange: dateRange(for: .oneYear))
+            return try await loadHistoricalData(for: .usd, base: .usd, dateRange: dateRange(for: .oneYear)).fetchedRanges
         } catch {
             logger.debug("Historical prefetch did not complete: \(error.localizedDescription, privacy: .public)")
+            return []
         }
     }
 

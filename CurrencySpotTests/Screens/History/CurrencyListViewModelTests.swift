@@ -210,7 +210,7 @@ struct CurrencyListViewModelTests {
 
     // MARK: - Warm-up
 
-    @Test("warm-up loads the stored trends once and prefetches the resident year once", .timeLimit(.minutes(1)))
+    @Test("warm-up shows the stored trends and prefetches the resident year once", .timeLimit(.minutes(1)))
     func warmUpRunsEachStepOnce() async throws {
         let repository = MockHistoricalRateRepository()
         let trendRepository = MockTrendRepository(trends: SampleExchangeRates.trendData)
@@ -219,9 +219,51 @@ struct CurrencyListViewModelTests {
 
         await viewModel.warmUp().value
 
-        #expect(trendRepository.loadTrendDataCallCount == 1)
         #expect(graph.trendsStore.trends == SampleExchangeRates.trendData)
         #expect(Self.residentYearFetches(in: repository) == 1)
+    }
+
+    @Test("warm-up replaces last session's trends once the resident-year download brings this week's rates", .timeLimit(.minutes(1)))
+    func warmUpRecalculatesTrendsAfterDownload() async throws {
+        let weekStart = try #require(createCETDate(year: 2025, month: 1, day: 8))
+        let today = try #require(createCETDate(year: 2025, month: 1, day: 15))
+        let thisWeek = [
+            HistoricalRateSnapshot(date: weekStart, rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.0)]),
+            HistoricalRateSnapshot(date: today, rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.5)]),
+        ]
+        let repository = MockHistoricalRateRepository()
+        repository.fetchedDataToReturn = thisWeek
+        repository.storedRows = thisWeek
+        let lastSession = [Trend(currencyCode: "EUR", weeklyChange: 9, miniChartData: [1, 1.09])]
+        let graph = try HistoryTestGraph(
+            historicalRepository: repository,
+            trendRepository: MockTrendRepository(trends: lastSession)
+        )
+        let viewModel = graph.makeListViewModel()
+
+        await viewModel.warmUp().value
+
+        #expect(graph.trendsStore.trends == [Trend(currencyCode: "EUR", weeklyChange: 50, miniChartData: [1.0, 1.5])])
+    }
+
+    @Test("warm-up keeps last session's trends when recalculating them after the download fails", .timeLimit(.minutes(1)))
+    func warmUpKeepsTrendsWhenRecalculationFails() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.fetchedDataToReturn = [
+            HistoricalRateSnapshot(
+                date: try #require(createCETDate(year: 2025, month: 1, day: 15)),
+                rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.5)]
+            ),
+        ]
+        let lastSession = [Trend(currencyCode: "EUR", weeklyChange: 9, miniChartData: [1, 1.09])]
+        let trendRepository = MockTrendRepository(trends: lastSession)
+        trendRepository.shouldThrowOnSave = true
+        let graph = try HistoryTestGraph(historicalRepository: repository, trendRepository: trendRepository)
+        let viewModel = graph.makeListViewModel()
+
+        await viewModel.warmUp().value
+
+        #expect(graph.trendsStore.trends == lastSession)
     }
 
     @Test("a failing warm-up is logged, never shown as an alert", .timeLimit(.minutes(1)))

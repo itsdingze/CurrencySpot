@@ -540,27 +540,30 @@ struct LoadHistoricalRatesUseCaseTests {
         #expect(range == DateRange.spanning(Self.day(-7), Self.day(0)))
     }
 
-    @Test("prefetchResidentYear warms a today-anchored one-year window")
+    @Test("prefetchResidentYear warms a today-anchored one-year window and reports it as fetched")
     func prefetchWarmsTheResidentYear() async throws {
         let repository = MockHistoricalRateRepository()
         let useCase = Self.makeUseCase(repository: repository)
 
-        await useCase.prefetchResidentYear()
+        let fetchedRanges = await useCase.prefetchResidentYear()
 
         let call = try #require(repository.fetchHistoricalRatesCalls.first)
-        #expect(call.from == createCETDate(year: 2024, month: 1, day: 15))
+        let yearStart = try #require(createCETDate(year: 2024, month: 1, day: 15))
+        #expect(call.from == yearStart)
         #expect(call.to == Self.day(0))
+        #expect(fetchedRanges == [DateRange.spanning(yearStart, Self.day(0))])
     }
 
-    @Test("a failing prefetch completes quietly")
+    @Test("a failing prefetch completes quietly and reports nothing fetched")
     func failingPrefetchCompletesQuietly() async throws {
         let repository = MockHistoricalRateRepository()
         repository.shouldThrowErrorOnFetch = true
         repository.shouldThrowErrorOnLoad = true
         let useCase = Self.makeUseCase(repository: repository)
 
-        await useCase.prefetchResidentYear()
+        let fetchedRanges = await useCase.prefetchResidentYear()
 
         #expect(repository.fetchHistoricalRatesCallCount >= 1)
+        #expect(fetchedRanges.isEmpty)
     }
 }

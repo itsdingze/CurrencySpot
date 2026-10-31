@@ -172,7 +172,9 @@ final class CurrencyListViewModel {
     private func runWarmUp() async {
         await initializeTrends()
         guard !Task.isCancelled else { return }
-        await loadHistoricalRates.prefetchResidentYear()
+        let fetchedRanges = await loadHistoricalRates.prefetchResidentYear()
+        guard !Task.isCancelled else { return }
+        await refreshTrends(after: fetchedRanges)
         guard !Task.isCancelled else { return }
         await backfillArchive.backfillArchive()
     }
@@ -185,6 +187,13 @@ final class CurrencyListViewModel {
         } catch {
             logger.error("Trend warm-up failed: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    private func refreshTrends(after fetchedRanges: [DateRange]) async {
+        guard !fetchedRanges.isEmpty else { return }
+        let trends = await trendDataUseCase.checkAndRecalculateTrendsIfNeeded(for: fetchedRanges)
+        guard !Task.isCancelled, !trends.isEmpty else { return }
+        trendsStore.replace(with: trends)
     }
 
     // MARK: - Shared State
