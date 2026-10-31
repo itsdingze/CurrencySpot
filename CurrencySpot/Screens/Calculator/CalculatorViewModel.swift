@@ -100,8 +100,8 @@ final class CalculatorViewModel {
     private let history: ConversionHistoryStore
     private let dateProvider: DateProvider
     private let appState: AppState
-    private var fetchTask: Task<Void, Never>?
-    private var fetchGeneration = 0
+    @ObservationIgnored private var fetchTask: Task<Void, Never>?
+    @ObservationIgnored private var fetchGeneration = 0
 
     private var rateTable: RateTable = .empty
 
