@@ -11,16 +11,38 @@ struct PairRateWidgetView: View {
 
     private var series: RateSeries? { entry.rows.first }
 
+    private var isSamePair: Bool { entry.request.quotes.isEmpty }
+
+    private var link: URL? {
+        guard !isSamePair, let series else { return nil }
+        return HistoryLink(base: entry.request.base, target: series.currency, period: entry.request.period).url
+    }
+
     var body: some View {
         Group {
-            if family == .systemMedium {
+            if isSamePair {
+                samePairLayout
+            } else if family == .systemMedium {
                 mediumLayout
             } else {
                 smallLayout
             }
         }
         .accessibilityElement(children: .combine)
-        .widgetURL(series.map { HistoryLink(base: entry.request.base, target: $0.currency, period: entry.request.period).url })
+        .widgetURL(link)
+    }
+
+    private var samePairLayout: some View {
+        VStack(alignment: .leading, spacing: Spacing.tight) {
+            header
+
+            Text(.widgetPairRateSamePair)
+                .font(.appSubheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 0)
+        }
+        .widgetContentPadding()
     }
 
     private var smallLayout: some View {
@@ -102,6 +124,7 @@ struct PairRateWidgetView: View {
     SampleRateSeries.entry(for: RateSeriesRequest(base: .usd, currencies: [.eur], period: .oneMonth))
     SampleRateSeries.entry(for: RateSeriesRequest(base: .usd, currencies: [.jpy], period: .oneYear))
     RateSeriesEntry(date: .now, request: RateSeriesRequest(base: .usd, currencies: [.eur], period: .oneMonth), snapshot: nil)
+    SampleRateSeries.entry(for: RateSeriesRequest(base: .usd, currencies: [.usd], period: .oneMonth))
 }
 
 #Preview(as: .systemMedium) {

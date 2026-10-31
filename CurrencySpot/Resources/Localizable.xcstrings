@@ -21836,6 +21836,21 @@
         "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "匯率" } }
       }
     },
+    "widget.pairRate.samePair" : {
+      "comment" : "Exchange Rate widget: shown instead of a rate when the widget's base and target currency are the same.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Wähle zwei verschiedene Währungen." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose two different currencies." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Elige dos divisas distintas." } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Elige dos divisas distintas." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Choisissez deux devises différentes." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "異なる2つの通貨を選択してください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "서로 다른 통화 두 개를 선택해 주세요." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请选择两种不同的币种。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "請選擇兩種不同的幣別。" } }
+      }
+    },
     "widget.parameter.base" : {
       "comment" : "Widget setting that picks the currency the rates are quoted against.",
       "extractionState" : "manual",
@@ -21939,6 +21954,21 @@
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "환율 목록" } },
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "汇率列表" } },
         "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "匯率列表" } }
+      }
+    },
+    "widget.rateList.onlyBase" : {
+      "comment" : "Exchange Rates widget: shown instead of the list when every chosen currency is the base currency. base: currency code, for example USD.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Wähle andere Währungen als %1$(base)@." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose currencies other than %1$(base)@." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Elige divisas distintas de %1$(base)@." } },
+        "es-419" : { "stringUnit" : { "state" : "translated", "value" : "Elige divisas distintas de %1$(base)@." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Choisissez des devises autres que %1$(base)@." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@以外の通貨を選択してください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%1$(base)@ 이외의 통화를 선택해 주세요." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请选择 %1$(base)@ 以外的币种。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "請選擇 %1$(base)@ 以外的幣別。" } }
       }
     }
   },

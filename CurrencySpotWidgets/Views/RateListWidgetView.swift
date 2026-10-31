@@ -21,12 +21,34 @@ struct RateListWidgetView: View {
     }
 
     var body: some View {
-        ViewThatFits(in: .vertical) {
-            ForEach(arrangementsByPreference, id: \.self) { arrangement in
-                list(arrangement)
+        Group {
+            if entry.request.quotes.isEmpty {
+                onlyBaseLayout
+            } else {
+                ViewThatFits(in: .vertical) {
+                    ForEach(arrangementsByPreference, id: \.self) { arrangement in
+                        list(arrangement)
+                    }
+                }
             }
         }
         .widgetContentPadding()
+    }
+
+    private var onlyBaseLayout: some View {
+        VStack(alignment: .leading, spacing: Spacing.tight) {
+            header
+
+            Text(.widgetRateListOnlyBase(base: entry.request.base.rawValue))
+                .font(.appSubheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var header: some View {
+        WidgetHeader(base: entry.request.base, period: entry.request.period)
     }
 
     private func list(_ arrangement: Arrangement) -> some View {
@@ -35,7 +57,7 @@ struct RateListWidgetView: View {
 
         return VStack(spacing: 0) {
             if arrangement.showsHeader {
-                WidgetHeader(base: entry.request.base, period: entry.request.period)
+                header
                 headerGap(fillsHeight: fillsHeight)
             }
 
