@@ -35,7 +35,7 @@ struct RateListWidgetView: View {
 
         return VStack(spacing: 0) {
             if arrangement.showsHeader {
-                WidgetHeader(base: entry.request.base)
+                WidgetHeader(base: entry.request.base, period: entry.request.period)
                 headerGap(fillsHeight: fillsHeight)
             }
 

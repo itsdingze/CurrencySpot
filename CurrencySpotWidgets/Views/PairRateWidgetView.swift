@@ -75,7 +75,7 @@ struct PairRateWidgetView: View {
     }
 
     private var header: some View {
-        WidgetHeader(base: entry.request.base, target: series?.currency)
+        WidgetHeader(base: entry.request.base, target: series?.currency, period: entry.request.period)
     }
 
     private var rateSummary: some View {

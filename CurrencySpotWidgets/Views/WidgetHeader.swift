@@ -3,10 +3,25 @@ import SwiftUI
 struct WidgetHeader: View {
     let base: CurrencyCode
     var target: CurrencyCode?
+    let period: TimeRange
 
     var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: Spacing.hairline) {
+                titleText
+
+                Text(period.shortName)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(period.displayName)
+            }
+
+            titleText
+        }
+        .font(.appFootnote.weight(.semibold))
+    }
+
+    private var titleText: some View {
         Text(title)
-            .font(.appFootnote.weight(.semibold))
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityLabel(accessibilityLabel)
