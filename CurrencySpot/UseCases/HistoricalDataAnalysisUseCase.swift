@@ -32,11 +32,10 @@ final class HistoricalDataAnalysisUseCase {
 
     func calculateMissingDateRanges(
         requiredRange: DateRange,
-        cache: CurrencyCache?
-    ) async throws -> [DateRange] {
-        guard let cache, !cache.isEmpty,
-              let earliestDate = cache.earliestDate,
-              let latestDate = cache.latestDate
+        cachedSeries: [HistoricalRateSnapshot]
+    ) throws -> [DateRange] {
+        guard let earliestDate = cachedSeries.first?.date,
+              let latestDate = cachedSeries.last?.date
         else {
             return [requiredRange]
         }

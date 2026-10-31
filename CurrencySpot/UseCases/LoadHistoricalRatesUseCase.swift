@@ -101,10 +101,7 @@ final class LoadHistoricalRatesUseCase {
 
         let missingRanges: [DateRange]
         do {
-            missingRanges = try await analysis.calculateMissingDateRanges(
-                requiredRange: dateRange,
-                cache: cachedData.isEmpty ? nil : CurrencyCache(data: cachedData)
-            )
+            missingRanges = try analysis.calculateMissingDateRanges(requiredRange: dateRange, cachedSeries: cachedData)
         } catch {
             logger.warning("Error calculating missing ranges: \(error.localizedDescription, privacy: .public)")
             return .cached(cachedData)

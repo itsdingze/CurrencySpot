@@ -31,7 +31,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         }
     }
 
-    private func createMockCache(startDate: Date, endDate: Date, dayInterval: Int = 1) -> CurrencyCache {
+    private func createMockCache(startDate: Date, endDate: Date, dayInterval: Int = 1) -> [HistoricalRateSnapshot] {
         var dates: [Date] = []
         let calendar = CETCalendar.calendar
         var currentDate = startDate
@@ -44,8 +44,7 @@ struct HistoricalDataAnalysisUseCaseTests {
             currentDate = nextDate
         }
 
-        let historicalData = createTestHistoricalData(dates: dates)
-        return CurrencyCache(data: historicalData)
+        return createTestHistoricalData(dates: dates)
     }
 
     private func createBusinessDays(startDate: Date, count: Int) -> [Date] {
@@ -111,28 +110,13 @@ struct HistoricalDataAnalysisUseCaseTests {
 
     // MARK: - calculateMissingDateRanges Tests - No Cache Scenarios
 
-    @Test("calculateMissingDateRanges with nil cache should return complete required range")
-    func calculateMissingDateRanges_nilCache_shouldReturnCompleteRange() async throws {
-        let requiredRange = DateRange.spanning(Self.testWeekdayBefore, Self.testBaseDate)
-
-        let result = try await useCase.calculateMissingDateRanges(
-            requiredRange: requiredRange,
-            cache: nil
-        )
-
-        #expect(result.count == 1, "Should return exactly one missing range")
-        #expect(result[0].start == requiredRange.start, "Missing range start should match required start")
-        #expect(result[0].end == requiredRange.end, "Missing range end should match required end")
-    }
-
     @Test("calculateMissingDateRanges with empty cache should return complete required range")
     func calculateMissingDateRanges_emptyCache_shouldReturnCompleteRange() async throws {
         let requiredRange = DateRange.spanning(Self.testWeekdayBefore, Self.testBaseDate)
-        let emptyCache = CurrencyCache(data: [])
 
-        let result = try await useCase.calculateMissingDateRanges(
+        let result = try useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
-            cache: emptyCache
+            cachedSeries: []
         )
 
         #expect(result.count == 1, "Should return exactly one missing range")
@@ -150,9 +134,9 @@ struct HistoricalDataAnalysisUseCaseTests {
         let requiredRange = DateRange.spanning(requiredStart, Self.testWeekdayAfter)
         let cache = createMockCache(startDate: cacheStart, endDate: Self.testWeekdayAfter)
 
-        let result = try await useCase.calculateMissingDateRanges(
+        let result = try useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
-            cache: cache
+            cachedSeries: cache
         )
 
         #expect(result.count == 1, "Should detect one missing range before cache")
@@ -170,9 +154,9 @@ struct HistoricalDataAnalysisUseCaseTests {
         let requiredRange = DateRange.spanning(requiredStart, Self.testWeekdayAfter)
         let cache = createMockCache(startDate: cacheStart, endDate: Self.testWeekdayAfter)
 
-        let result = try await useCase.calculateMissingDateRanges(
+        let result = try useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
-            cache: cache
+            cachedSeries: cache
         )
 
         #expect(result.count == 1, "Should detect gap of 5 days")
@@ -192,9 +176,9 @@ struct HistoricalDataAnalysisUseCaseTests {
         let requiredRange = DateRange.spanning(Self.testWeekdayBefore, requiredEnd)
         let cache = createMockCache(startDate: Self.testWeekdayBefore, endDate: cacheEnd)
 
-        let result = try await useCase.calculateMissingDateRanges(
+        let result = try useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
-            cache: cache
+            cachedSeries: cache
         )
 
         #expect(result.count == 1, "Should detect one missing range after cache")
@@ -211,9 +195,9 @@ struct HistoricalDataAnalysisUseCaseTests {
         let requiredRange = DateRange.spanning(Self.testWeekdayBefore, requiredMondayEnd)
         let cache = createMockCache(startDate: Self.testWeekdayBefore, endDate: cacheWednesdayEnd)
 
-        let result = try await useCase.calculateMissingDateRanges(
+        let result = try useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
-            cache: cache
+            cachedSeries: cache
         )
 
         let expectedGapStart = try #require(CETCalendar.calendar.date(byAdding: .day, value: 1, to: cacheWednesdayEnd))
@@ -235,9 +219,9 @@ struct HistoricalDataAnalysisUseCaseTests {
         let requiredRange = DateRange.spanning(requiredStart, requiredEnd)
         let cache = createMockCache(startDate: cacheStart, endDate: cacheEnd)
 
-        let result = try await useCase.calculateMissingDateRanges(
+        let result = try useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
-            cache: cache
+            cachedSeries: cache
         )
 
         #expect(result.count == 2, "Should detect two missing ranges")
@@ -266,9 +250,9 @@ struct HistoricalDataAnalysisUseCaseTests {
         let requiredRange = DateRange.spanning(Self.testBaseDate, Self.testBaseDate)
         let cache = createMockCache(startDate: cacheStart, endDate: cacheEnd)
 
-        let result = try await useCase.calculateMissingDateRanges(
+        let result = try useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
-            cache: cache
+            cachedSeries: cache
         )
 
         #expect(result.isEmpty, "Should return no missing ranges when cache covers required range")
@@ -289,9 +273,9 @@ struct HistoricalDataAnalysisUseCaseTests {
         let cacheEnd = try #require(calendar.date(byAdding: .day, value: 5, to: baseDate))
         let cache = createMockCache(startDate: cacheStart, endDate: cacheEnd)
 
-        let result = try await useCase.calculateMissingDateRanges(
+        let result = try useCase.calculateMissingDateRanges(
             requiredRange: requiredRange,
-            cache: cache
+            cachedSeries: cache
         )
 
         #expect(result.count == 2, "Should detect gaps before and after cache")
@@ -316,12 +300,12 @@ struct HistoricalDataAnalysisUseCaseTests {
         let cacheEnd = today
         let cache = createMockCache(startDate: cacheStart, endDate: cacheEnd)
 
-        let missingRanges = try await useCase.calculateMissingDateRanges(
+        let missingRanges = try useCase.calculateMissingDateRanges(
             requiredRange: dateRange,
-            cache: cache
+            cachedSeries: cache
         )
 
-        var allData = cache.data
+        var allData = cache
         for missingRange in missingRanges {
             let missingData = createTestHistoricalData(
                 dates: [missingRange.start, missingRange.end]
@@ -330,7 +314,7 @@ struct HistoricalDataAnalysisUseCaseTests {
         }
 
         #expect(missingRanges.count >= 1, "Should detect missing data for 3-month range")
-        #expect(allData.count >= cache.data.count, "Merged data should be larger than or equal to original cache")
+        #expect(allData.count >= cache.count, "Merged data should be larger than or equal to original cache")
 
         for i in 0 ..< (allData.count - 1) {
             #expect(allData[i].date <= allData[i + 1].date, "Merged data should be chronologically sorted")
