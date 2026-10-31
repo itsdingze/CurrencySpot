@@ -115,6 +115,7 @@ struct ChartInteractionSection: View {
             }
             .allowsHitTesting(false)
         }
+        .chartAccessibilityHidden()
         .frame(height: 180)
         .padding(.top, 80)
     }

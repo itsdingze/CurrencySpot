@@ -173,11 +173,14 @@ struct CurrencyChart: View {
         .environment(\.calendar, CETCalendar.calendar)
         .environment(\.timeZone, CETCalendar.timeZone)
         .chartXSelection(value: isSelectionEnabled ? $rawSelectedDate : .constant(nil))
-        .accessibilityLabel(chartAccessibilityLabel)
-        .accessibilityValue(chartAccessibilityValue)
-        .accessibilityHint(chartAccessibilityHint)
-        .accessibilityAdjustableAction { direction in
-            adjustSelection(direction)
+        .accessibilityRepresentation {
+            Color.clear
+                .accessibilityLabel(chartAccessibilityLabel)
+                .accessibilityValue(chartAccessibilityValue)
+                .accessibilityHint(chartAccessibilityHint)
+                .accessibilityAdjustableAction { direction in
+                    adjustSelection(direction)
+                }
         }
         .onChange(of: rawSelectedDate) { _, newValue in
             isChartSelectionActive = newValue != nil

@@ -60,7 +60,6 @@ struct CurrencyRow: View {
 
                 if showsTrendChart, let trend {
                     MiniChart(trend: trend)
-                        .accessibilityHidden(true)
                         .opacity(metricsHidden ? 0 : 1)
                 }
             }
@@ -111,7 +110,6 @@ struct CurrencyRow: View {
             if showsTrendChart, let trend {
                 if drawsChart {
                     MiniChart(trend: trend)
-                        .accessibilityHidden(true)
                 } else {
                     Color.clear
                         .frame(width: MiniChart.size.width, height: MiniChart.size.height)

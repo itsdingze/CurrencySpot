@@ -107,6 +107,7 @@ struct ChartPreviewSection: View {
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartYScale(domain: SampleChartData.chartYDomain)
+        .chartAccessibilityHidden()
         .frame(height: 180)
     }
 

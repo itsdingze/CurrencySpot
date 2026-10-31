@@ -44,6 +44,7 @@ struct MiniChart: View {
         .chartYAxis(.hidden)
         .chartLegend(.hidden)
         .chartYScale(domain: chartYDomain)
+        .chartAccessibilityHidden()
         .frame(width: Self.size.width, height: Self.size.height)
     }
 
