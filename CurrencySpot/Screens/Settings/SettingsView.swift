@@ -130,8 +130,14 @@ struct SettingsView: View {
         Label(title: {
             Text(.settingsLanguageLabel)
         }, icon: {
-            Image(systemName: "globe")
+            Image(systemName: "circle.fill")
                 .foregroundStyle(.blue)
+                .overlay {
+                    Image(systemName: "globe")
+                        .fontWeight(.semibold)
+                        .scaleEffect(0.6)
+                        .foregroundStyle(.white)
+                }
         })
     }
 
