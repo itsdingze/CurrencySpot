@@ -273,6 +273,66 @@ struct TrendDataUseCaseTests {
         #expect(useCase.adjustedTrend(for: "EUR", baseCurrency: "EUR", in: trends) != nil)
     }
 
+    @Test("a currency that starts mid-week is re-based over the days it shares with the base")
+    func adjustedTrendAlignsCurrencyStartingMidWeek() throws {
+        let useCase = makeUseCase(trendRepository: MockTrendRepository())
+        let rows = [
+            HistoricalRateSnapshot(date: Self.day(-3), rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 1.0)]),
+            HistoricalRateSnapshot(date: Self.day(-2), rates: [
+                HistoricalRatePoint(currencyCode: "EUR", rate: 1.0),
+                HistoricalRatePoint(currencyCode: "GBP", rate: 0.5),
+            ]),
+            HistoricalRateSnapshot(date: Self.day(-1), rates: [
+                HistoricalRatePoint(currencyCode: "EUR", rate: 2.0),
+                HistoricalRatePoint(currencyCode: "GBP", rate: 0.5),
+            ]),
+            HistoricalRateSnapshot(date: Self.day(0), rates: [
+                HistoricalRatePoint(currencyCode: "EUR", rate: 2.0),
+                HistoricalRatePoint(currencyCode: "GBP", rate: 2.0),
+            ]),
+        ]
+
+        let trends = TrendDataUseCase.calculateTrends(from: rows)
+        let gbp = try #require(useCase.adjustedTrend(for: "GBP", baseCurrency: "EUR", in: trends))
+
+        #expect(gbp.miniChartData == [0.5, 0.25, 1.0])
+        #expect(gbp.weeklyChange == 100)
+    }
+
+    @Test("a day missing from one currency's rows carries its previous rate, so re-basing pairs the same days")
+    func adjustedTrendCarriesMissingDayForward() throws {
+        let useCase = makeUseCase(trendRepository: MockTrendRepository())
+        let rows = [
+            HistoricalRateSnapshot(date: Self.day(-2), rates: [
+                HistoricalRatePoint(currencyCode: "EUR", rate: 1.0),
+                HistoricalRatePoint(currencyCode: "GBP", rate: 1.0),
+            ]),
+            HistoricalRateSnapshot(date: Self.day(-1), rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 2.0)]),
+            HistoricalRateSnapshot(date: Self.day(0), rates: [
+                HistoricalRatePoint(currencyCode: "EUR", rate: 2.0),
+                HistoricalRatePoint(currencyCode: "GBP", rate: 4.0),
+            ]),
+        ]
+
+        let trends = TrendDataUseCase.calculateTrends(from: rows)
+        let gbp = try #require(useCase.adjustedTrend(for: "GBP", baseCurrency: "EUR", in: trends))
+
+        #expect(gbp.miniChartData == [1.0, 0.5, 2.0])
+        #expect(gbp.weeklyChange == 100)
+    }
+
+    @Test("a row whose base has fewer than 2 days of trend shows no trend rather than the USD-based one")
+    func adjustedTrendWithoutSharedDaysIsNil() {
+        let useCase = makeUseCase(trendRepository: MockTrendRepository())
+        let trends = [
+            Trend(currencyCode: "EUR", weeklyChange: 0, miniChartData: [1.0]),
+            Trend(currencyCode: "GBP", weeklyChange: 10, miniChartData: [0.5, 0.55]),
+        ]
+
+        #expect(useCase.adjustedTrend(for: "GBP", baseCurrency: "EUR", in: trends) == nil)
+        #expect(useCase.adjustedTrend(for: "GBP", baseCurrency: "CHF", in: trends) == nil)
+    }
+
     @Test("When trend data array is empty, should return nil")
     func whenTrendDataArrayIsEmpty_shouldReturnNil() {
         let useCase = makeUseCase(trendRepository: MockTrendRepository())

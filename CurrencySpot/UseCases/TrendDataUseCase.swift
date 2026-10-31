@@ -35,20 +35,10 @@ final class TrendDataUseCase {
     // MARK: - Trend Calculation (pure)
 
     static func calculateTrends(from historicalData: [HistoricalRateSnapshot]) -> [Trend] {
-        var currencyDateRates: [CurrencyCode: [(Date, Double)]] = [:]
-
-        for historicalDay in historicalData {
-            for ratePoint in historicalDay.rates {
-                currencyDateRates[ratePoint.currencyCode, default: []].append((historicalDay.date, ratePoint.rate))
-            }
-        }
-
-        return currencyDateRates.compactMap { currencyCode, dateRates in
-            let sortedRates = dateRates.sorted { $0.0 < $1.0 }
-
-            guard sortedRates.count >= 2,
-                  let firstRate = sortedRates.first?.1,
-                  let lastRate = sortedRates.last?.1,
+        dailySeries(from: historicalData).compactMap { currencyCode, rates in
+            guard rates.count >= 2,
+                  let firstRate = rates.first,
+                  let lastRate = rates.last,
                   let weeklyChange = RateMath.percentChange(from: firstRate, to: lastRate)
             else {
                 return nil
@@ -57,9 +47,24 @@ final class TrendDataUseCase {
             return Trend(
                 currencyCode: currencyCode,
                 weeklyChange: weeklyChange,
-                miniChartData: sortedRates.map(\.1)
+                miniChartData: rates
             )
         }
+    }
+
+    private static func dailySeries(from historicalData: [HistoricalRateSnapshot]) -> [CurrencyCode: [Double]] {
+        var series: [CurrencyCode: [Double]] = [:]
+        for historicalDay in historicalData.sorted(by: { $0.date < $1.date }) {
+            let dayRates = Dictionary(
+                historicalDay.rates.map { ($0.currencyCode, $0.rate) },
+                uniquingKeysWith: { _, latest in latest }
+            )
+            for currencyCode in Set(series.keys).union(dayRates.keys) {
+                guard let rate = dayRates[currencyCode] ?? series[currencyCode]?.last else { continue }
+                series[currencyCode, default: []].append(rate)
+            }
+        }
+        return series
     }
 
     private func recalculateAndSaveTrends() async throws {
@@ -161,14 +166,19 @@ final class TrendDataUseCase {
             return targetTrend
         }
 
-        guard let baseTrend = getTrendData(for: baseCurrency, from: trendData),
-              baseTrend.miniChartData.count == targetTrend.miniChartData.count,
-              baseTrend.miniChartData.count >= 2
-        else {
-            return targetTrend
+        guard let baseTrend = getTrendData(for: baseCurrency, from: trendData) else {
+            return nil
         }
 
-        let adjustedMiniChartData = zip(targetTrend.miniChartData, baseTrend.miniChartData).map { targetRate, baseRate in
+        let sharedDays = min(targetTrend.miniChartData.count, baseTrend.miniChartData.count)
+        guard sharedDays >= 2 else {
+            return nil
+        }
+
+        let adjustedMiniChartData = zip(
+            targetTrend.miniChartData.suffix(sharedDays),
+            baseTrend.miniChartData.suffix(sharedDays)
+        ).map { targetRate, baseRate in
             baseRate != 0 ? targetRate / baseRate : targetRate
         }
 
@@ -176,7 +186,7 @@ final class TrendDataUseCase {
               let lastRate = adjustedMiniChartData.last,
               let adjustedChange = RateMath.percentChange(from: firstRate, to: lastRate)
         else {
-            return targetTrend
+            return nil
         }
 
         return Trend(
