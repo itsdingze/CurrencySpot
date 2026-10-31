@@ -87,6 +87,20 @@ struct IntegrationTests {
         #expect(clearedEarliest == nil)
     }
 
+    @Test("saving a day that is already stored takes the revised rates and keeps the currencies the save left out")
+    func resavedDayTakesRevisedRates() async throws {
+        let day = try #require(CETCalendar.date(fromDayString: "2025-03-14"))
+        try await persistence.saveHistoricalExchangeRates(["2025-03-14": ["EUR": 0.92, "GBP": 0.78]])
+
+        try await persistence.saveHistoricalExchangeRates(["2025-03-14": ["EUR": 0.93]])
+
+        let stored = try await persistence.loadHistoricalRates(from: day, to: day)
+        let rates = try #require(stored.first).rates
+        let ratesByCurrency = Dictionary(uniqueKeysWithValues: rates.map { ($0.currencyCode, $0.rate) })
+        #expect(stored.count == 1)
+        #expect(ratesByCurrency == ["EUR": 0.93, "GBP": 0.78])
+    }
+
     @Test("CalculatorViewModel default currencies come from the injected defaults, not the environment")
     func calculatorDefaultsAreEnvironmentIndependent() throws {
         let defaults = try isolatedDefaults.make()

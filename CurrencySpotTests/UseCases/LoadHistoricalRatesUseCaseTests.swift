@@ -57,6 +57,65 @@ struct LoadHistoricalRatesUseCaseTests {
         #expect(repository.fetchHistoricalRatesCallCount == 0)
     }
 
+    @Test("today's rate held for over six hours is fetched again with yesterday's, since both are still being revised")
+    func staleTodayIsRefetched() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.seedSeries(Self.snapshots(on: [Self.startDate, Self.day(-1), Self.endDate]))
+        let revisedToday = HistoricalRateSnapshot(date: Self.endDate, rates: [HistoricalRatePoint(currencyCode: "EUR", rate: 0.86)])
+        repository.fetchedDataToReturn = [revisedToday]
+        let syncStore = MockHistoricalSyncStore(
+            from: Self.startDate,
+            through: Self.endDate,
+            checkedAt: Self.baseDate.addingTimeInterval(-7 * 60 * 60)
+        )
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        let result = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.testDateRange)
+
+        let fetchCall = try #require(repository.fetchHistoricalRatesCalls.first)
+        #expect(repository.fetchHistoricalRatesCallCount == 1)
+        #expect(fetchCall.from == Self.day(-1))
+        #expect(fetchCall.to == Self.endDate)
+        #expect(result.snapshots.last == revisedToday)
+    }
+
+    @Test("after a relaunch, a stored today older than six hours is fetched again before the store serves the rest")
+    func staleStoredTodayIsRefetchedAfterRelaunch() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.endDate
+        repository.storedRows = Self.snapshots(on: [Self.startDate, Self.day(-1), Self.endDate])
+        let syncStore = MockHistoricalSyncStore(
+            from: Self.day(-365),
+            through: Self.endDate,
+            checkedAt: Self.baseDate.addingTimeInterval(-7 * 60 * 60)
+        )
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        _ = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.testDateRange)
+
+        let fetchCall = try #require(repository.fetchHistoricalRatesCalls.first)
+        #expect(repository.fetchHistoricalRatesCallCount == 1)
+        #expect(fetchCall.from == Self.day(-1))
+        #expect(fetchCall.to == Self.endDate)
+    }
+
+    @Test("today's rate fetched under six hours ago is served without another fetch")
+    func freshTodayIsNotRefetched() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.seedSeries(Self.snapshots(on: [Self.startDate, Self.endDate]))
+        let syncStore = MockHistoricalSyncStore(
+            from: Self.startDate,
+            through: Self.endDate,
+            checkedAt: Self.baseDate.addingTimeInterval(-60 * 60)
+        )
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        _ = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.testDateRange)
+
+        #expect(repository.fetchHistoricalRatesCallCount == 0)
+    }
+
     @Test("a partly covered range fetches only the missing days and returns the merged series")
     func partlyCoveredRangeFetchesTheMissingDays() async throws {
         let repository = MockHistoricalRateRepository()

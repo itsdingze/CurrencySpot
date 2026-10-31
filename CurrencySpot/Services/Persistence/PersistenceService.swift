@@ -87,17 +87,20 @@ actor SwiftDataPersistenceService: PersistenceService {
                 incoming[date] = currencyRates
             }
             guard let windowStart = incoming.keys.min(), let windowEnd = incoming.keys.max() else { return }
-            var descriptor = FetchDescriptor<HistoricalRateData>(
+            let descriptor = FetchDescriptor<HistoricalRateData>(
                 predicate: #Predicate { $0.date >= windowStart && $0.date <= windowEnd }
             )
-            descriptor.propertiesToFetch = [\.date]
-            let existingDates = Set(try modelContext.fetch(descriptor).map(\.date))
+            let existingRows = Dictionary(try modelContext.fetch(descriptor).map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
 
-            for (date, currencyRates) in incoming where !existingDates.contains(date) {
+            for (date, currencyRates) in incoming {
                 guard !currencyRates.isEmpty else { continue }
 
                 do {
-                    modelContext.insert(try HistoricalRateData(date: date, rates: currencyRates))
+                    if let existing = existingRows[date] {
+                        try existing.takeRevisedRates(currencyRates)
+                    } else {
+                        modelContext.insert(try HistoricalRateData(date: date, rates: currencyRates))
+                    }
                 } catch {
                     logger.warning("Skipping unencodable rates for \(CETCalendar.dayString(for: date), privacy: .public): \(error.localizedDescription, privacy: .public)")
                     continue

@@ -109,6 +109,7 @@ final class LoadHistoricalRatesUseCase {
             let earliestStored = try await repository.earliestStoredDate()
             let latestStored = try await repository.latestStoredDate()
             gap = analysis.fetchableGap(for: missingRange, storedFrom: earliestStored, storedThrough: latestStored)
+                ?? analysis.staleRecentDays(endingAt: missingRange.end)
         } catch {
             logger.warning("Error reading stored bounds: \(error.localizedDescription, privacy: .public)")
             return Fill(failure: error)

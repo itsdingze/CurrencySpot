@@ -243,8 +243,8 @@ struct DataCoordinatorRatesTests {
         #expect(remaining.map(\.date) == [try cetDate(2025, 3, 11), try cetDate(2025, 3, 12)])
     }
 
-    @Test("re-saving a stored day keeps the stored row and still adds the new days")
-    func resaveKeepsStoredDayAndAddsNewOnes() async throws {
+    @Test("re-saving a stored day revises that row in place and still adds the new days")
+    func resaveRevisesStoredDayAndAddsNewOnes() async throws {
         try await persistence.saveHistoricalExchangeRates(["2025-03-15": ["EUR": 1.21]])
         try await persistence.saveHistoricalExchangeRates([
             "2025-03-15": ["EUR": 9.99],
@@ -257,7 +257,7 @@ struct DataCoordinatorRatesTests {
         )
 
         #expect(stored.count == 2)
-        #expect(stored.first?.rates == [HistoricalRatePoint(currencyCode: "EUR", rate: 1.21)])
+        #expect(stored.first?.rates == [HistoricalRatePoint(currencyCode: "EUR", rate: 9.99)])
     }
 
     @Test("Save and load current exchange rates")

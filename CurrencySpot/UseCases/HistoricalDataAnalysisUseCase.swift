@@ -61,8 +61,23 @@ final class HistoricalDataAnalysisUseCase {
             }
             missingRanges.append(try DateRange.make(start: startDate, end: requiredRange.end))
             logger.debug("Gap after cache: \(CETCalendar.dayString(for: startDate), privacy: .public) to \(CETCalendar.dayString(for: requiredRange.end), privacy: .public)")
+        } else if let recentDays = staleRecentDays(endingAt: requiredRange.end) {
+            missingRanges.append(recentDays)
         }
         return missingRanges
+    }
+
+    func staleRecentDays(endingAt end: Date) -> DateRange? {
+        let now = dateProvider.now()
+        let calendar = CETCalendar.calendar
+        let today = calendar.startOfDay(for: now)
+        guard calendar.startOfDay(for: end) == today,
+              let through = syncCoverage.coveredThrough,
+              calendar.startOfDay(for: through) == today,
+              RateRefreshPolicy.shouldRefetch(now: now, lastFetch: syncCoverage.coverageCheckedAt),
+              let yesterday = calendar.date(byAdding: .day, value: -1, to: today)
+        else { return nil }
+        return DateRange.spanning(yesterday, today)
     }
 
     func fetchableGap(for missingRange: DateRange, storedFrom earliestStored: Date?, storedThrough latestStored: Date?) -> DateRange? {

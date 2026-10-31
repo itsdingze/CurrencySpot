@@ -22,6 +22,13 @@ nonisolated extension HistoricalRateData {
     convenience init(date: Date, rates: [String: Double]) throws {
         self.init(date: date, ratesData: try ratesEncoder.encode(rates))
     }
+
+    func takeRevisedRates(_ revised: [String: Double]) throws {
+        let stored = (try? ratesDecoder.decode([String: Double].self, from: ratesData)) ?? [:]
+        let merged = stored.merging(revised) { _, revisedRate in revisedRate }
+        guard merged != stored else { return }
+        ratesData = try ratesEncoder.encode(merged)
+    }
 }
 
 // MARK: - Entity -> Domain Mapping
