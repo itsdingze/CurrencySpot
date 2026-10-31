@@ -12168,7 +12168,7 @@
       }
     },
     "history.trendIndicator.down" : {
-      "comment" : "VoiceOver label of a falling weekly change badge. change: formatted change, for example 0.28% or 0.0123.",
+      "comment" : "VoiceOver label of a falling rate change: the weekly change on History rows, or the change over the widget's chosen period. change: formatted change, for example 0.28% or 0.0123.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -12228,7 +12228,7 @@
       }
     },
     "history.trendIndicator.stable" : {
-      "comment" : "VoiceOver label of a stable weekly change badge. change: formatted change, for example 0.00%.",
+      "comment" : "VoiceOver label of a stable rate change: the weekly change on History rows, or the change over the widget's chosen period. change: formatted change, for example 0.00%.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -12288,7 +12288,7 @@
       }
     },
     "history.trendIndicator.up" : {
-      "comment" : "VoiceOver label of a rising weekly change badge. change: formatted change, for example 0.28% or 0.0123.",
+      "comment" : "VoiceOver label of a rising rate change: the weekly change on History rows, or the change over the widget's chosen period. change: formatted change, for example 0.28% or 0.0123.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {

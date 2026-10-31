@@ -40,7 +40,9 @@ struct RateListRow: View {
                     .minimumScaleFactor(0.7)
 
                 if let changeText = series.changeText, let direction = series.direction {
-                    TrendBadge(value: changeText, direction: direction)
+                    TrendIndicator(value: changeText, direction: direction)
+                        .font(.appCaption2.weight(.semibold))
+                        .imageScale(.small)
                         .widgetAccentable()
                 }
             }

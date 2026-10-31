@@ -102,6 +102,7 @@ struct CurrencyRow: View {
             value: viewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange),
             direction: trend.direction
         )
+        .font(.appSubheadline.weight(.semibold))
     }
 
     @ViewBuilder

@@ -5,10 +5,10 @@ struct TrendIndicator: View {
     let direction: TrendDirection
 
     var body: some View {
-        HStack(spacing: Spacing.hairline) {
+        HStack(spacing: 2) {
             Image(systemName: "circle")
                 .opacity(0)
-                .overlay {
+                .overlay(alignment: .trailing) {
                     Image(systemName: direction.systemImage)
                 }
                 .accessibilityHidden(true)
@@ -18,7 +18,6 @@ struct TrendIndicator: View {
                 .monospacedDigit()
         }
         .foregroundStyle(direction.color)
-        .font(.appSubheadline.weight(.semibold))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(changeAccessibilityLabel)
     }

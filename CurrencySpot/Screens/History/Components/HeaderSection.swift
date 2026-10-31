@@ -79,7 +79,7 @@ struct HeaderSection: View {
         let change = abs(priceChange).rateText(matching: statistics.currentRate)
         let percent = (abs(percentChange) / 100).formatted(.percent.precision(.fractionLength(0 ... 2)))
 
-        HStack(spacing: Spacing.hairline) {
+        HStack(spacing: 2) {
             Image(systemName: trend.systemImage)
                 .accessibilityHidden(true)
 

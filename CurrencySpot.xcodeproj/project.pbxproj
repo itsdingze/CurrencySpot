@@ -87,6 +87,7 @@
 				Models/DTO/FrankfurterV2Rate.swift,
 				Models/DTO/HistoricalRatesResponse.swift,
 				Resources/Localizable.xcstrings,
+				Screens/History/Components/TrendIndicator.swift,
 				Services/Cache/RateSeriesCache.swift,
 				Services/Logging/LogCategory.swift,
 				Services/Network/FrankfurterAPI.swift,

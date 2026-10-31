@@ -100,7 +100,9 @@ struct PairRateWidgetView: View {
                 .minimumScaleFactor(0.6)
 
             if let series, let changeText = series.changeText, let direction = series.direction {
-                TrendChange(value: changeText, direction: direction)
+                TrendIndicator(value: changeText, direction: direction)
+                    .font(.appFootnote.weight(.semibold))
+                    .imageScale(.small)
                     .widgetAccentable()
             }
         }
