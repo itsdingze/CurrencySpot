@@ -28,7 +28,7 @@ struct RateListRow: View {
             Spacer(minLength: 0)
 
             if let direction = series.direction {
-                RateSparkline(rates: series.rates, direction: direction, floorRoom: 0, ceilingRoom: 0)
+                RateSparkline(rates: series.rates, direction: direction)
                     .frame(width: chartSize.width, height: chartSize.height)
             }
 

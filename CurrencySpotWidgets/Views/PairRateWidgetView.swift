@@ -32,14 +32,8 @@ struct PairRateWidgetView: View {
             .layoutPriority(1)
 
             if let series, let direction = series.direction {
-                RateSparkline(
-                    rates: series.rates,
-                    direction: direction,
-                    showsEndpoint: true,
-                    floorRoom: 0,
-                    ceilingRoom: 0
-                )
-                .frame(maxHeight: .infinity)
+                RateSparkline(rates: series.rates, direction: direction, fillsHeight: true)
+                    .frame(maxHeight: .infinity)
             } else {
                 Spacer(minLength: 0)
             }
@@ -58,15 +52,8 @@ struct PairRateWidgetView: View {
                 }
 
                 if let series, let direction = series.direction {
-                    RateSparkline(
-                        rates: series.rates,
-                        direction: direction,
-                        showsEndpoint: true,
-                        referenceRate: series.averageRate,
-                        floorRoom: 0,
-                        ceilingRoom: 0.12
-                    )
-                    .padding(.bottom, textDescentInset)
+                    RateSparkline(rates: series.rates, direction: direction, referenceRate: series.averageRate, fillsHeight: true)
+                        .padding(.bottom, textDescentInset)
                 } else {
                     Spacer(minLength: 0)
                 }

@@ -5,14 +5,15 @@ import WidgetKit
 struct RateSparkline: View {
     let rates: [Double]
     let direction: TrendDirection
-    var showsEndpoint = false
     var referenceRate: Double?
-    var floorRoom = 0.1
-    var ceilingRoom = 0.1
+    var fillsHeight = false
 
-    private let lineWidth: CGFloat = 1.75
-    private let endpointSize: CGFloat = 7
+    private let lineWidth: CGFloat = 1.5
+    private let endpointSize: CGFloat = 6
+    private let innerPointSize: CGFloat = 4
     private let tension: Double = 0.8
+    private let domainPadding: Double = 0.01
+    private let minimumSpanRatio: Double = 0.004
 
     var body: some View {
         Chart {
@@ -37,13 +38,18 @@ struct RateSparkline: View {
                 .foregroundStyle(areaGradient)
             }
 
-            if showsEndpoint, let last = rates.last {
+            if let last = rates.last {
                 PointMark(x: .value(.historyChartPlotDay, rates.count - 1), y: .value(.rateChartAxisRate, last))
                     .symbol {
-                        Circle()
-                            .fill(direction.color)
-                            .stroke(.background, lineWidth: 1.5)
-                            .frame(width: endpointSize, height: endpointSize)
+                        ZStack {
+                            Circle()
+                                .fill(.background)
+                                .frame(width: endpointSize, height: endpointSize)
+
+                            Circle()
+                                .fill(direction.color)
+                                .frame(width: innerPointSize, height: innerPointSize)
+                        }
                     }
             }
         }
@@ -61,14 +67,18 @@ struct RateSparkline: View {
 
     private var yDomain: ClosedRange<Double> {
         guard let low = rates.min(), let high = rates.max() else { return 0 ... 1 }
-        let span = max(high - low, (high + low) / 2 * 0.004)
+        guard fillsHeight else {
+            return (low * (1 - domainPadding)) ... (high * (1 + domainPadding))
+        }
+
+        let span = max(high - low, (high + low) / 2 * minimumSpanRatio)
         let flatPadding = (span - (high - low)) / 2
-        return (low - flatPadding - span * floorRoom) ... (high + flatPadding + span * ceilingRoom)
+        return (low - flatPadding) ... (high + flatPadding)
     }
 
     private var areaGradient: LinearGradient {
         LinearGradient(
-            colors: [direction.color.opacity(0.18), direction.color.opacity(0)],
+            colors: [direction.color.opacity(0.1), direction.color.opacity(0)],
             startPoint: .top,
             endPoint: .bottom
         )
@@ -77,7 +87,7 @@ struct RateSparkline: View {
 
 #Preview(traits: .sizeThatFitsLayout) {
     VStack(spacing: Spacing.section) {
-        RateSparkline(rates: [0.851, 0.853, 0.852, 0.855, 0.857, 0.858, 0.861], direction: .up, showsEndpoint: true)
+        RateSparkline(rates: [0.851, 0.853, 0.852, 0.855, 0.857, 0.858, 0.861], direction: .up)
             .frame(width: 170, height: 52)
         RateSparkline(rates: [153.7, 153.4, 153.1, 152.8, 152.6, 152.37], direction: .down)
             .frame(width: 60, height: 26)
