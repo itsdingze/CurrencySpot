@@ -60,7 +60,7 @@ struct CurrencyPickerView: View {
                         }
                     )
                     .accessibilityLabel(spokenName(of: currency.currencyCode))
-                    .accessibilityValue(currency.rate.toStringMax4Decimals)
+                    .accessibilityValue(currency.rate.rateText)
                     .accessibilityAddTraits(selectedCurrency == currency.currencyCode ? [.isButton, .isSelected] : .isButton)
                 }
                 .listSectionSeparator(.hidden)

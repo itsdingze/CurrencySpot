@@ -20,7 +20,7 @@ struct PairRangeSummary: View {
 
             Spacer(minLength: Spacing.hairline)
 
-            Text(value.toStringMax4Decimals)
+            Text(value.rateText)
                 .monospacedDigit()
         }
         .font(.appCaption)

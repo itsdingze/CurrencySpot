@@ -154,7 +154,7 @@ final class CurrencyListViewModel {
         case .percentChange:
             (abs(weeklyChange) / 100).formatted(.percent.precision(.fractionLength(2)))
         case .priceChange:
-            abs(RateMath.priceChange(rate: rate, percentChange: weeklyChange)).toStringMax4Decimals
+            abs(RateMath.priceChange(rate: rate, percentChange: weeklyChange)).rateText(matching: rate)
         }
     }
 

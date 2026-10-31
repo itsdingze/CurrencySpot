@@ -198,13 +198,14 @@ struct CurrencyListViewModelTests {
         #expect(viewModel.trendDisplayValue(rate: 150, weeklyChange: -2) == "2.00%")
     }
 
-    @Test("the price indicator shows the absolute rate move implied by the weekly change")
+    @Test("the price indicator shows the absolute rate move implied by the weekly change, with as many decimals as the rate")
     func priceChangeDisplayValue() throws {
         let viewModel = try HistoryTestGraph().makeListViewModel()
 
         viewModel.trendDisplayMode = .priceChange
 
-        #expect(viewModel.trendDisplayValue(rate: 150, weeklyChange: -2) == "3")
+        #expect(viewModel.trendDisplayValue(rate: 150, weeklyChange: -2) == "3.00")
+        #expect(viewModel.trendDisplayValue(rate: 0.006351, weeklyChange: -2) == "0.000127")
     }
 
     // MARK: - Warm-up

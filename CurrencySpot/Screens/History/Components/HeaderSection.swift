@@ -42,7 +42,7 @@ struct HeaderSection: View {
                        let percentChange = statistics.percentChange,
                        let priceChange = statistics.priceChange
                     {
-                        percentChangeIndicator(priceChange: priceChange, percentChange: percentChange, trend: statistics.trendDirection)
+                        percentChangeIndicator(statistics, priceChange: priceChange, percentChange: percentChange)
                     }
 
                     Spacer()
@@ -56,7 +56,7 @@ struct HeaderSection: View {
                            let percentChange = statistics.percentChange,
                            let priceChange = statistics.priceChange
                         {
-                            percentChangeIndicator(priceChange: priceChange, percentChange: percentChange, trend: statistics.trendDirection)
+                            percentChangeIndicator(statistics, priceChange: priceChange, percentChange: percentChange)
                         }
                     }
 
@@ -74,8 +74,9 @@ struct HeaderSection: View {
     }
 
     @ViewBuilder
-    private func percentChangeIndicator(priceChange: Double, percentChange: Double, trend: TrendDirection) -> some View {
-        let change = abs(priceChange).formatted(.number.precision(.fractionLength(0 ... 4)))
+    private func percentChangeIndicator(_ statistics: ChartStatistics, priceChange: Double, percentChange: Double) -> some View {
+        let trend = statistics.trendDirection
+        let change = abs(priceChange).rateText(matching: statistics.currentRate)
         let percent = (abs(percentChange) / 100).formatted(.percent.precision(.fractionLength(0 ... 2)))
 
         HStack(spacing: Spacing.hairline) {

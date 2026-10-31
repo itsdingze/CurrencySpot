@@ -82,7 +82,7 @@ struct ChartInteractionSection: View {
                         VStack {
                             Text(selectedDataPoint.date.chartDisplay)
 
-                            Text(selectedDataPoint.rate.toStringMax4Decimals)
+                            Text(selectedDataPoint.rate.rateText)
                         }
                         .font(.appSubheadline)
                         .foregroundStyle(.tint)

@@ -78,7 +78,7 @@ struct RateInfoView: View {
     private var conversionRate: LocalizedStringResource {
         .calculatorRateInfoConversionRate(
             base: viewModel.baseCurrency.rawValue,
-            rate: viewModel.conversionRate.toStringMax4Decimals,
+            rate: viewModel.conversionRate.rateText,
             target: viewModel.targetCurrency.rawValue
         )
     }

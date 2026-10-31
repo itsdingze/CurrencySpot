@@ -90,7 +90,7 @@ struct CurrencyRow: View {
     }
 
     private var rateText: some View {
-        Text(entry.rate.toStringMax4Decimals)
+        Text(entry.rate.rateText)
             .lineLimit(1)
             .minimumScaleFactor(0.7)
             .font(.appTitle2)
@@ -135,7 +135,7 @@ struct CurrencyRow: View {
         }
 
         let base = viewModel.baseCurrency.rawValue
-        let rate = entry.rate.toStringMax4Decimals
+        let rate = entry.rate.rateText
         guard let trend else {
             return .historyRowAccessibilityLabelRate(code: code, name: entry.name, base: base, rate: rate, target: code)
         }

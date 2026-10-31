@@ -128,7 +128,7 @@ struct CurrencyChart: View {
                         VStack {
                             Text(selectedDate.date.rateDayDisplay)
 
-                            Text(selectedDate.rate.toStringMax4Decimals)
+                            Text(selectedDate.rate.rateText)
                         }
                         .foregroundStyle(.tint)
                         .fontDesign(.rounded)
@@ -210,7 +210,7 @@ struct CurrencyChart: View {
             let point = dataPoints[index]
             return .historyChartAccessibilityValueSelectedPoint(
                 date: point.date.rateDayDisplay,
-                rate: point.rate.toStringMax4Decimals
+                rate: point.rate.rateText
             )
         }
 
@@ -222,7 +222,7 @@ struct CurrencyChart: View {
             count: dataPoints.count,
             startDate: first.date.rateDayDisplay,
             endDate: last.date.rateDayDisplay,
-            rate: last.rate.toStringMax4Decimals
+            rate: last.rate.rateText
         )
     }
 

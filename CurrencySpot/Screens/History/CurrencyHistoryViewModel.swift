@@ -305,7 +305,7 @@ extension CurrencyHistoryViewModel {
         }
         return String(localized: .historyHeaderCurrentRate(
             base: baseCurrency.rawValue,
-            rate: chartStatistics.currentRate.toStringMax4Decimals,
+            rate: chartStatistics.currentRate.rateText,
             target: targetCurrency.rawValue
         ))
     }
@@ -316,15 +316,15 @@ extension CurrencyHistoryViewModel {
     }
 
     var formattedHighestRate: String? {
-        chartStatistics?.highestRate.toStringMax4Decimals
+        chartStatistics?.highestRate.rateText
     }
 
     var formattedLowestRate: String? {
-        chartStatistics?.lowestRate.toStringMax4Decimals
+        chartStatistics?.lowestRate.rateText
     }
 
     var formattedAverageRate: String? {
-        chartStatistics?.averageRate.toStringMax4Decimals
+        chartStatistics?.averageRate.rateText
     }
 
     var volatilityLevel: VolatilityLevel? {

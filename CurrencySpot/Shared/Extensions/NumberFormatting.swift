@@ -1,8 +1,20 @@
 import Foundation
 
 extension Double {
-    var toStringMax4Decimals: String {
-        formatted(.number.precision(.fractionLength(0 ... 4)))
+    var rateText: String {
+        rateText(matching: self)
+    }
+
+    func rateText(matching rate: Double) -> String {
+        formatted(.number.precision(.fractionLength(rate.rateFractionDigits)))
+    }
+
+    private var rateFractionDigits: Int {
+        let magnitude = abs(self)
+        guard magnitude.isNormal else { return 0 }
+        let significantDigits = magnitude < 1 ? 4 : 5
+        let wholeDigits = Int(log10(magnitude).rounded(.down)) + 1
+        return max(0, significantDigits - wholeDigits)
     }
 
     func axisLabel(across span: Double) -> String {

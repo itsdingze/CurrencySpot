@@ -130,10 +130,10 @@ struct CurrencyHistoryViewModelTests {
 
         await viewModel.loadChart()
 
-        #expect(viewModel.formattedCurrentRate == "1 USD = 3 EUR")
-        #expect(viewModel.formattedHighestRate == "3")
-        #expect(viewModel.formattedLowestRate == "1")
-        #expect(viewModel.formattedAverageRate == "2")
+        #expect(viewModel.formattedCurrentRate == "1 USD = 3.0000 EUR")
+        #expect(viewModel.formattedHighestRate == "3.0000")
+        #expect(viewModel.formattedLowestRate == "1.0000")
+        #expect(viewModel.formattedAverageRate == "2.0000")
         #expect(viewModel.volatilityLevel == .veryHigh)
         #expect(viewModel.formattedVolatility == "Very High")
     }
@@ -188,11 +188,11 @@ struct CurrencyHistoryViewModelTests {
 
         await viewModel.loadChart()
 
-        #expect(viewModel.formattedCurrentRate == "1 USD = 2 EUR")
-        #expect(String(localized: viewModel.currentRateAccessibilityLabel) == "Current rate: 1 USD = 2 EUR")
-        #expect(viewModel.formattedHighestRate == "2")
-        #expect(viewModel.formattedLowestRate == "2")
-        #expect(viewModel.formattedAverageRate == "2")
+        #expect(viewModel.formattedCurrentRate == "1 USD = 2.0000 EUR")
+        #expect(String(localized: viewModel.currentRateAccessibilityLabel) == "Current rate: 1 USD = 2.0000 EUR")
+        #expect(viewModel.formattedHighestRate == "2.0000")
+        #expect(viewModel.formattedLowestRate == "2.0000")
+        #expect(viewModel.formattedAverageRate == "2.0000")
         #expect(viewModel.formattedVolatility == "N/A")
     }
 
