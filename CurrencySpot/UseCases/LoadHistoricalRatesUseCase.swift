@@ -15,6 +15,13 @@ final class LoadHistoricalRatesUseCase {
     private let analysis: HistoricalDataAnalysisUseCase
     private let logger = Logger(category: .useCase)
 
+    private struct StoredArchiveRead {
+        let range: DateRange
+        let rows: [HistoricalRateSnapshot]
+    }
+
+    private var storedArchiveRead: StoredArchiveRead?
+
     // MARK: - Initialization
 
     init(
@@ -52,8 +59,18 @@ final class LoadHistoricalRatesUseCase {
     }
 
     func storedHistoricalData(in dateRange: DateRange) async -> [HistoricalRateSnapshot] {
+        storedArchiveRead = nil
         if Self.isArchiveRange(dateRange) {
-            return await completeStoredArchive(in: dateRange) ?? []
+            let wasCovered = (try? isArchiveCovered(dateRange)) ?? false
+            let rows = await completeStoredArchive(in: dateRange) ?? []
+            if wasCovered {
+                storedArchiveRead = StoredArchiveRead(range: dateRange, rows: rows)
+            }
+            return rows
+        }
+        let series = await repository.cachedHistoricalRates()
+        if let earliest = series.first?.date, CETCalendar.calendar.startOfDay(for: earliest) <= dateRange.start {
+            return series
         }
         do {
             _ = try await repository.loadAndMergeStoredHistoricalRates(in: dateRange)
@@ -187,7 +204,8 @@ final class LoadHistoricalRatesUseCase {
         base: CurrencyCode,
         dateRange: DateRange
     ) async throws -> HistoricalLoadResult {
-        if let rows = try await coveredArchiveRows(in: dateRange) {
+        let storedFirstRows = takeStoredArchiveRead(for: dateRange)
+        if let rows = try await coveredArchiveRows(in: dateRange, alreadyRead: storedFirstRows) {
             logger.info("Archive range served from the store for \(currency.rawValue, privacy: .private)")
             return .cached(rows)
         }
@@ -210,10 +228,24 @@ final class LoadHistoricalRatesUseCase {
         }
     }
 
-    private func coveredArchiveRows(in dateRange: DateRange) async throws -> [HistoricalRateSnapshot]? {
+    private func takeStoredArchiveRead(for dateRange: DateRange) -> [HistoricalRateSnapshot]? {
+        defer { storedArchiveRead = nil }
+        guard let storedArchiveRead, storedArchiveRead.range == dateRange, !storedArchiveRead.rows.isEmpty else { return nil }
+        return storedArchiveRead.rows
+    }
+
+    private func isArchiveCovered(_ dateRange: DateRange) throws -> Bool {
         let calendar = CETCalendar.calendar
         let coverageEnd = calendar.date(byAdding: .day, value: -1, to: dateRange.end) ?? dateRange.end
-        guard analysis.isRangeCovered(try DateRange.make(start: dateRange.start, end: coverageEnd)) else { return nil }
+        return analysis.isRangeCovered(try DateRange.make(start: dateRange.start, end: coverageEnd))
+    }
+
+    private func coveredArchiveRows(
+        in dateRange: DateRange,
+        alreadyRead: [HistoricalRateSnapshot]?
+    ) async throws -> [HistoricalRateSnapshot]? {
+        guard try isArchiveCovered(dateRange) else { return nil }
+        if let alreadyRead { return alreadyRead }
 
         do {
             let rows = try await archive.loadStoredHistoricalRates(in: dateRange)

@@ -127,6 +127,33 @@ struct LoadHistoricalRatesUseCaseTests {
         #expect(repository.fetchTransientCalls.isEmpty)
     }
 
+    @Test("a range the shared series already reaches back to is served from it without reading the store")
+    func storedDataInsideTheSharedSeriesSkipsTheStore() async throws {
+        let repository = MockHistoricalRateRepository()
+        let series = Self.snapshots(on: [Self.day(-30), Self.day(-7), Self.day(0)])
+        repository.seedSeries(series)
+        repository.storedRows = Self.snapshots(on: [Self.day(-7)])
+        let useCase = Self.makeUseCase(repository: repository)
+
+        let snapshots = await useCase.storedHistoricalData(in: Self.testDateRange)
+
+        #expect(snapshots == series)
+        #expect(repository.storedReadCount == 0)
+    }
+
+    @Test("a range reaching past the start of the shared series reads the store for the missing days")
+    func storedDataBeforeTheSharedSeriesReadsTheStore() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.seedSeries(Self.snapshots(on: [Self.day(-3), Self.day(0)]))
+        repository.storedRows = Self.snapshots(on: [Self.day(-7)])
+        let useCase = Self.makeUseCase(repository: repository)
+
+        let snapshots = await useCase.storedHistoricalData(in: Self.testDateRange)
+
+        #expect(snapshots.map(\.date) == [Self.day(-7), Self.day(-3), Self.day(0)])
+        #expect(repository.storedReadCount == 1)
+    }
+
     @Test("today's rate fetched under six hours ago is served without another fetch")
     func freshTodayIsNotRefetched() async throws {
         let repository = MockHistoricalRateRepository()
@@ -383,6 +410,72 @@ struct LoadHistoricalRatesUseCaseTests {
         #expect(partial.isEmpty)
         #expect(repository.fetchTransientCalls.isEmpty)
         #expect(repository.fetchHistoricalRatesCallCount == 0)
+    }
+
+    @Test("opening a covered archive reads the store once for the stored-first chart and the load after it")
+    func coveredArchiveIsReadOncePerOpen() async throws {
+        let repository = MockHistoricalRateRepository()
+        let stored = Self.snapshots(on: [Self.day(-1820), Self.day(-1)])
+        repository.storedRows = stored
+        repository.earliestStoredDateResult = Self.day(-1820)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        let storedFirst = await useCase.storedHistoricalData(in: Self.archiveRange)
+        let result = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+
+        #expect(storedFirst == stored)
+        #expect(result.snapshots == stored)
+        #expect(repository.storedReadCount == 1)
+    }
+
+    @Test("a second archive open reads the store again, so it sees days saved since the first")
+    func eachArchiveOpenReadsTheStore() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.storedRows = Self.snapshots(on: [Self.day(-1820), Self.day(-2)])
+        repository.earliestStoredDateResult = Self.day(-1820)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+        _ = await useCase.storedHistoricalData(in: Self.archiveRange)
+        _ = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+
+        let updated = Self.snapshots(on: [Self.day(-1820), Self.day(-1)])
+        repository.storedRows = updated
+        let result = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+
+        #expect(result.snapshots == updated)
+    }
+
+    @Test("an archive that finishes downloading between the stored-first read and the load is read again")
+    func archiveFinishedAfterStoredFirstReadIsReadAgain() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.storedRows = Self.snapshots(on: [Self.day(-1822), Self.day(-1)])
+        repository.earliestStoredDateResult = Self.day(-1822)
+        let syncStore = MockHistoricalSyncStore()
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+        _ = await useCase.storedHistoricalData(in: Self.archiveRange)
+
+        let finished = Self.snapshots(on: [Self.day(-1827), Self.day(-1822), Self.day(-1)])
+        repository.storedRows = finished
+        syncStore.record(from: Self.day(-1827), through: Self.day(0), at: Self.day(0))
+        let result = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+
+        #expect(result.snapshots == finished)
+    }
+
+    @Test("an archive read for one range is never reused for a different range")
+    func storedArchiveReadIsNotReusedForAnotherRange() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.storedRows = Self.snapshots(on: [Self.day(-1820), Self.day(-1)])
+        repository.earliestStoredDateResult = Self.day(-1820)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+        _ = await useCase.storedHistoricalData(in: Self.archiveRange)
+
+        let otherRange = DateRange.spanning(Self.day(-1826), Self.day(0))
+        _ = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: otherRange)
+
+        #expect(repository.storedReadCount == 2)
     }
 
     @Test("an archive covered through yesterday still loads from the store")
