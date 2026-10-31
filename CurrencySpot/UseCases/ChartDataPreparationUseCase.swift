@@ -1,20 +1,8 @@
 import Foundation
-import OSLog
 
 // MARK: - ChartDataPreparationUseCase
 
 final class ChartDataPreparationUseCase {
-    // MARK: - Dependencies
-
-    private let chartCache: ChartDataCacheRepository
-    private let logger = Logger(category: .cache)
-
-    // MARK: - Initialization
-
-    init(chartCache: ChartDataCacheRepository) {
-        self.chartCache = chartCache
-    }
-
     // MARK: - Chart Data Processing
 
     func processHistoricalRateData(
@@ -24,31 +12,13 @@ final class ChartDataPreparationUseCase {
         dateRange: DateRange,
         exchangeRates: [ExchangeRate]
     ) async -> [ChartDataPoint] {
-        let cacheKey = ChartCacheKey(
-            base: baseCurrency,
-            target: targetCurrency,
-            range: dateRange,
-            snapshotCount: historicalData.count,
-            firstSnapshot: historicalData.first?.date,
-            lastSnapshot: historicalData.last?.date
-        )
-
-        if let cachedData = await chartCache.cachedChartData(for: cacheKey) {
-            logger.debug("Using cached processed chart data for \(baseCurrency.rawValue, privacy: .private) to \(targetCurrency.rawValue, privacy: .private)")
-            return cachedData
-        }
-
-        let chartPoints = await Self.transformHistoricalData(
+        await Self.transformHistoricalData(
             historicalData,
             baseCurrency: baseCurrency,
             targetCurrency: targetCurrency,
             dateRange: dateRange,
             exchangeRates: exchangeRates
         )
-
-        await chartCache.storeChartData(chartPoints, for: cacheKey)
-
-        return chartPoints
     }
 
     @concurrent

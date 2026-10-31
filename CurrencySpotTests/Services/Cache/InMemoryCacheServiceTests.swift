@@ -4,34 +4,6 @@ import Testing
 
 @Suite("InMemoryCacheService Tests")
 struct InMemoryCacheServiceTests {
-    private let points = [ChartDataPoint(date: Date(timeIntervalSince1970: 0), rate: 1.2)]
-
-    private static func key(_ target: CurrencyCode) -> ChartCacheKey {
-        let day = Date(timeIntervalSince1970: 0)
-        return ChartCacheKey(
-            base: "USD",
-            target: target,
-            range: DateRange.spanning(day, day),
-            snapshotCount: 1,
-            firstSnapshot: day,
-            lastSnapshot: day
-        )
-    }
-
-    @Test("processed chart data evicts the least recently used series once over the limit")
-    func chartDataEvictsLeastRecentlyUsed() async {
-        let cache = InMemoryCacheService(processedChartDataLimit: 2)
-        await cache.cacheProcessedChartData(points, for: Self.key("EUR"))
-        await cache.cacheProcessedChartData(points, for: Self.key("GBP"))
-        _ = await cache.getCachedProcessedChartData(for: Self.key("EUR"))
-
-        await cache.cacheProcessedChartData(points, for: Self.key("JPY"))
-
-        #expect(await cache.getCachedProcessedChartData(for: Self.key("EUR")) == points)
-        #expect(await cache.getCachedProcessedChartData(for: Self.key("GBP")) == nil)
-        #expect(await cache.getCachedProcessedChartData(for: Self.key("JPY")) == points)
-    }
-
     @Test("exchange rates and trends round-trip and clear")
     func ratesAndTrendsRoundTripAndClear() async {
         let cache = InMemoryCacheService()
@@ -54,10 +26,8 @@ struct InMemoryCacheServiceTests {
 
         await cache.cacheExchangeRates([])
         await cache.cacheTrendData([])
-        await cache.cacheProcessedChartData([], for: Self.key("EUR"))
 
         #expect(await cache.getCachedExchangeRates() == nil)
         #expect(await cache.getCachedTrendData() == nil)
-        #expect(await cache.getCachedProcessedChartData(for: Self.key("EUR")) == nil)
     }
 }

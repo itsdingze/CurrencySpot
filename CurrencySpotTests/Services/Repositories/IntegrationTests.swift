@@ -42,7 +42,7 @@ struct IntegrationTests {
             backfill: BackfillArchiveUseCase(archive: service, analysis: analysisUseCase, clock: GatedClock()),
             analysis: analysisUseCase
         )
-        let chartUseCase = ChartDataPreparationUseCase(chartCache: InMemoryChartDataCache())
+        let chartUseCase = ChartDataPreparationUseCase()
 
         let rangeStart = try #require(createCETDate(year: 2025, month: 3, day: 5))
         let rangeEnd = try #require(createCETDate(year: 2025, month: 3, day: 12))

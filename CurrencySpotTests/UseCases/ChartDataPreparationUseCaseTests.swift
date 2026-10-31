@@ -13,7 +13,7 @@ private let testOutsideDate = createCETDate(year: 2020, month: 9, day: 16)!
 // MARK: - Test Helpers
 
 private func makeUseCase() -> ChartDataPreparationUseCase {
-    ChartDataPreparationUseCase(chartCache: InMemoryChartDataCache())
+    ChartDataPreparationUseCase()
 }
 
 private func createTestExchangeRates() -> [ExchangeRate] {
@@ -62,10 +62,9 @@ struct ChartDataPreparationUseCaseTests {
 
     @Suite("processHistoricalRateData Method Tests")
     struct ProcessHistoricalRateDataTests {
-        @Test("A larger dataset is not shadowed by a smaller dataset's processed cache (same pair/range)")
-        func largerDatasetNotShadowedByProcessedCache() async throws {
-            let chartCache = InMemoryChartDataCache()
-            let useCase = ChartDataPreparationUseCase(chartCache: chartCache)
+        @Test("A larger dataset for the same pair and range yields all of its points after a smaller one")
+        func largerDatasetYieldsAllPointsAfterSmallerOne() async throws {
+            let useCase = makeUseCase()
             let calendar = CETCalendar.calendar
             let end = try #require(createCETDate(year: 2025, month: 6, day: 6))
             let range = DateRange.spanning(try #require(calendar.date(byAdding: .day, value: -90, to: end)), end)
@@ -87,6 +86,29 @@ struct ChartDataPreparationUseCaseTests {
 
             #expect(small.count == 3)
             #expect(large.count == 60)
+        }
+
+        @Test("A revised rate on the same days replaces the earlier chart point")
+        func revisedRateOnSameDaysReplacesEarlierPoint() async {
+            let useCase = makeUseCase()
+            let dateRange = DateRange.spanning(testStartDate, testEndDate)
+
+            _ = await useCase.processHistoricalRateData(
+                historicalData: createTestHistoricalData(targetRate: 1.2),
+                baseCurrency: "USD",
+                targetCurrency: "EUR",
+                dateRange: dateRange,
+                exchangeRates: createTestExchangeRates()
+            )
+            let revised = await useCase.processHistoricalRateData(
+                historicalData: createTestHistoricalData(targetRate: 1.25),
+                baseCurrency: "USD",
+                targetCurrency: "EUR",
+                dateRange: dateRange,
+                exchangeRates: createTestExchangeRates()
+            )
+
+            #expect(revised.map(\.rate) == [1.25, 1.25, 1.25])
         }
 
         @Test("Should filter data by date range inclusively")

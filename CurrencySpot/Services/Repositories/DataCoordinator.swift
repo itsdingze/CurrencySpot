@@ -331,18 +331,6 @@ extension DataCoordinator: DataClearing {
     }
 }
 
-// MARK: - ChartDataCacheRepository
-
-extension DataCoordinator: ChartDataCacheRepository {
-    func cachedChartData(for key: ChartCacheKey) async -> [ChartDataPoint]? {
-        await cacheService.getCachedProcessedChartData(for: key)
-    }
-
-    func storeChartData(_ data: [ChartDataPoint], for key: ChartCacheKey) async {
-        await cacheService.cacheProcessedChartData(data, for: key)
-    }
-}
-
 // MARK: - SyncCoverageRepository
 
 extension DataCoordinator: SyncCoverageRepository {

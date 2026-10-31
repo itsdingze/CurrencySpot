@@ -82,7 +82,7 @@ final class DependencyContainer {
             backfill: backfillArchiveUseCase,
             analysis: historicalDataAnalysisUseCase
         )
-        let chartDataPreparationUseCase = ChartDataPreparationUseCase(chartCache: dataCoordinator)
+        let chartDataPreparationUseCase = ChartDataPreparationUseCase()
         let trendDataUseCase = TrendDataUseCase(
             trendRepository: dataCoordinator,
             historicalRateRepository: historicalRepository,

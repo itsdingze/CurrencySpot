@@ -87,19 +87,6 @@ struct DataCoordinatorRatesTests {
         #expect(await coordinator.cachedHistoricalRates().count == wideDates.count)
     }
 
-    @Test("processed chart data round-trips by key and misses for any other key")
-    func chartDataRoundTripsByKey() async throws {
-        let points = [ChartDataPoint(date: try cetDate(2025, 3, 12), rate: 0.92)]
-        let window = try range("2025-03-01", "2025-03-12")
-        let key = ChartCacheKey(base: "USD", target: "EUR", range: window, snapshotCount: 1, firstSnapshot: nil, lastSnapshot: nil)
-        let otherKey = ChartCacheKey(base: "USD", target: "GBP", range: window, snapshotCount: 1, firstSnapshot: nil, lastSnapshot: nil)
-
-        await service.storeChartData(points, for: key)
-
-        #expect(await service.cachedChartData(for: key) == points)
-        #expect(await service.cachedChartData(for: otherKey) == nil)
-    }
-
     @Test("the fetch date store starts empty and round-trips a date through its injected defaults")
     func lastFetchDateRoundTrip() async throws {
         let defaults = try isolatedDefaults.make()

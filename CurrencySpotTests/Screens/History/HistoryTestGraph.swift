@@ -65,7 +65,7 @@ struct HistoryTestGraph {
             historicalRateRepository: repository,
             dateProvider: dateProvider
         )
-        chartDataPreparation = ChartDataPreparationUseCase(chartCache: InMemoryChartDataCache())
+        chartDataPreparation = ChartDataPreparationUseCase()
     }
 
     func goOffline() async throws {
