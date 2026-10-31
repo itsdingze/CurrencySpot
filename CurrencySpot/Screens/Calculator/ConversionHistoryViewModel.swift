@@ -57,7 +57,7 @@ final class ConversionHistoryViewModel {
     }
 
     private func text(for amount: Decimal, in currency: CurrencyCode) -> String {
-        "\(amount.formatted(.number.locale(locale).precision(.fractionLength(2)))) \(currency.rawValue)"
+        amount.amountText(in: currency, locale: locale)
     }
 
     func choose(_ record: ConversionRecord) {

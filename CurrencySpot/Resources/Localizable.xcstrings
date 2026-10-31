@@ -3024,7 +3024,7 @@
       }
     },
     "calculator.rateInfo.lastUpdated" : {
-      "comment" : "Converter screen caption under the conversion rate. date: when the exchange rates were last fetched, formatted with date and time.",
+      "comment" : "Caption under the conversion rate on the Converter screen and in the Siri and Shortcuts conversion result. date: when the exchange rates were last fetched, formatted with date and time.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {

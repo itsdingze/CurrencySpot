@@ -120,7 +120,7 @@ final class DependencyContainer {
         self.appState = appState
         self.ratesStore = ratesStore
         self.makeHistoryViewModel = makeHistoryViewModel
-        convertCurrencyUseCase = ConvertCurrencyUseCase(loadExchangeRates: loadExchangeRatesUseCase)
+        convertCurrencyUseCase = ConvertCurrencyUseCase(loadExchangeRates: loadExchangeRatesUseCase, clock: clockService)
 
         calculatorViewModel = CalculatorViewModel(
             loadExchangeRatesUseCase: loadExchangeRatesUseCase,

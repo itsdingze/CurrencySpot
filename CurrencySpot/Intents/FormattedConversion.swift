@@ -3,9 +3,11 @@ import Foundation
 struct FormattedConversion {
     let amount: String
     let converted: String
+    let ratesDate: String?
 
-    init(_ conversion: ConvertCurrencyUseCase.Conversion) {
-        amount = "\(conversion.amount.formatted(.number.precision(.fractionLength(0 ... 2)))) \(conversion.from.rawValue)"
-        converted = "\(conversion.converted.formatted(.number.precision(.fractionLength(2)))) \(conversion.to.rawValue)"
+    init(_ conversion: ConvertCurrencyUseCase.Conversion, locale: Locale = .autoupdatingCurrent) {
+        amount = conversion.amount.amountText(in: conversion.from, locale: locale)
+        converted = conversion.converted.amountText(in: conversion.to, locale: locale)
+        ratesDate = conversion.ratesDate?.lastUpdatedDisplay
     }
 }

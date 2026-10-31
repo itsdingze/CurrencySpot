@@ -27,6 +27,12 @@ extension Double {
     }
 }
 
+extension Decimal {
+    func amountText(in currency: CurrencyCode, locale: Locale = .autoupdatingCurrent) -> String {
+        "\(formatted(.number.locale(locale).precision(.fractionLength(2)))) \(currency.rawValue)"
+    }
+}
+
 extension FormatStyle where Self == Decimal.FormatStyle {
     static var compactAmount: Self {
         .number.notation(.compactName).precision(.fractionLength(0 ... 1))

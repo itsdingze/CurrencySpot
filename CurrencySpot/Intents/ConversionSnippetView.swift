@@ -4,12 +4,20 @@ struct ConversionSnippetView: View {
     let conversion: FormattedConversion
 
     var body: some View {
-        Text(conversion.converted)
-            .font(.appLargeTitle)
-            .monospacedDigit()
-            .lineLimit(1)
-            .minimumScaleFactor(0.5)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(Spacing.cardPadding)
+        VStack(alignment: .leading, spacing: Spacing.hairline) {
+            Text(conversion.converted)
+                .font(.appLargeTitle)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+
+            if let ratesDate = conversion.ratesDate {
+                Text(.calculatorRateInfoLastUpdated(date: ratesDate))
+                    .font(.appCaption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.cardPadding)
     }
 }
