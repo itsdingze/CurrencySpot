@@ -41,6 +41,8 @@ struct PreviewExchangeRateRepository: ExchangeRateRepository, HistoricalRateRepo
         mergedIntoSeries(generatedHistoricalRates(in: range))
     }
 
+    func finishPendingWrites() async {}
+
     private func mergedIntoSeries(_ rows: [HistoricalRateSnapshot]) -> [HistoricalRateSnapshot] {
         series.storage = HistoricalRateSnapshot.merge(existing: series.storage, new: rows)
         return rows

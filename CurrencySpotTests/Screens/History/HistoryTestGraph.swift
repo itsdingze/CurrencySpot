@@ -6,13 +6,16 @@ struct HistoryTestGraph {
     let today: Date
     let ratesStore = ExchangeRatesStore()
     let trendsStore = TrendsStore()
-    let appState = AppState(networkMonitor: NetworkMonitor(isConnected: true))
+    let syncStore = MockHistoricalSyncStore()
+    let appState: AppState
+    let connectivity: AsyncStream<Bool>.Continuation
     let preferences: InMemoryPreferencesStore
     let watchlist: CurrencyCodeListStore
     let favorites: CurrencyCodeListStore
     let loadHistoricalRates: LoadHistoricalRatesUseCase
     let trendDataUseCase: TrendDataUseCase
 
+    private let waitLimitClock: ClockService
     private let backfillArchive: BackfillArchiveUseCase
     private let chartDataPreparation: ChartDataPreparationUseCase
     private let isolatedDefaults: IsolatedDefaults
@@ -22,16 +25,21 @@ struct HistoryTestGraph {
         trendRepository: (any TrendRepository)? = nil,
         watchlistSeed: [CurrencyCode] = CurrencyDefaults.favoriteCurrencies,
         favoritesSeed: [CurrencyCode] = CurrencyDefaults.favoriteCurrencies,
-        preferences: InMemoryPreferencesStore = InMemoryPreferencesStore()
+        preferences: InMemoryPreferencesStore = InMemoryPreferencesStore(),
+        waitLimitClock: ClockService = GatedClock()
     ) throws {
         let today = try #require(createCETDate(year: 2025, month: 1, day: 15))
         let fixture = PreviewExchangeRateRepository(today: today)
         let repository: any HistoricalRateRepository & ArchiveRepository = historicalRepository ?? fixture
         let dateProvider = FixedDateProvider(today)
-        let analysis = HistoricalDataAnalysisUseCase(syncCoverage: MockHistoricalSyncStore(), dateProvider: dateProvider)
+        let analysis = HistoricalDataAnalysisUseCase(syncCoverage: syncStore, dateProvider: dateProvider)
         let backfillArchive = BackfillArchiveUseCase(archive: repository, analysis: analysis, clock: ImmediateClock())
         let isolatedDefaults = IsolatedDefaults()
 
+        let (connectionUpdates, connectivity) = AsyncStream.makeStream(of: Bool.self)
+        appState = AppState(networkMonitor: NetworkMonitor(connectionUpdates: connectionUpdates))
+        self.connectivity = connectivity
+        self.waitLimitClock = waitLimitClock
         self.today = today
         self.preferences = preferences
         self.isolatedDefaults = isolatedDefaults
@@ -58,6 +66,21 @@ struct HistoryTestGraph {
             dateProvider: dateProvider
         )
         chartDataPreparation = ChartDataPreparationUseCase(chartCache: InMemoryChartDataCache())
+    }
+
+    func goOffline() async throws {
+        try await setConnected(false)
+    }
+
+    func goOnline() async throws {
+        try await setConnected(true)
+    }
+
+    private func setConnected(_ isConnected: Bool) async throws {
+        connectivity.yield(isConnected)
+        let monitor = appState.networkMonitor
+        await waitUntil { monitor.isConnected == isConnected }
+        try #require(monitor.isConnected == isConnected)
     }
 
     func makeListViewModel() -> CurrencyListViewModel {
@@ -93,7 +116,8 @@ struct HistoryTestGraph {
             trendDataUseCase: trendDataUseCase,
             preferences: preferences,
             appState: appState,
-            clock: ImmediateClock()
+            clock: ImmediateClock(),
+            waitLimitClock: waitLimitClock
         )
     }
 }

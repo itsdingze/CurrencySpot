@@ -118,7 +118,8 @@ final class DependencyContainer {
                 trendDataUseCase: trendDataUseCase,
                 preferences: preferences,
                 appState: appState,
-                clock: clockService
+                clock: clockService,
+                waitLimitClock: clockService
             )
         }
 

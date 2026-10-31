@@ -123,6 +123,10 @@ extension DataCoordinator: HistoricalRateRepository {
         await cacheService.getCachedHistoricalData() ?? []
     }
 
+    func finishPendingWrites() async {
+        await settlePendingWrites()
+    }
+
     func fetchAndMergeHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
         let days = CETDayRange(range)
         if let joined = joinInFlightFetch(covering: days) {

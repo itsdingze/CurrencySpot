@@ -1202,7 +1202,7 @@
       }
     },
     "calculator.error.message.offline" : {
-      "comment" : "Converter screen error message when the device is offline and no rates are saved, above the Use Sample Rates button.",
+      "comment" : "Error message when the device is offline and no rates are saved, on the Converter screen above the Use Sample Rates button and in the History chart area.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -1854,7 +1854,7 @@
       }
     },
     "calculator.loading" : {
-      "comment" : "Converter screen progress label shown while the first exchange rates load.",
+      "comment" : "Progress label shown while the first exchange rates load on the Converter screen, and in the History chart area while its rates load.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -3024,7 +3024,7 @@
       }
     },
     "calculator.rateInfo.lastUpdated" : {
-      "comment" : "Caption under the conversion rate on the Converter screen and in the Siri and Shortcuts conversion result. date: when the exchange rates were last fetched, formatted with date and time.",
+      "comment" : "Caption under the conversion rate on the Converter screen, under the chart on the History screen, and in the Siri and Shortcuts conversion result. date: when the exchange rates were last fetched, formatted with date and time.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -3144,7 +3144,7 @@
       }
     },
     "calculator.rateInfo.status.offline" : {
-      "comment" : "Converter status line under the conversion rate when the device is offline. date: when the exchange rates were last downloaded, with month, day and time, plus the year when it isn't the current year.",
+      "comment" : "Status line when the device is offline and saved rates are shown, under the conversion rate on the Converter screen and under the chart on the History screen. date: when the exchange rates were last downloaded, with month, day and time, plus the year when it isn't the current year.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -3204,7 +3204,7 @@
       }
     },
     "calculator.rateInfo.status.updateFailed" : {
-      "comment" : "Converter status line under the conversion rate when refreshing the exchange rates failed and saved rates are shown. date: when the exchange rates were last downloaded, with month, day and time, plus the year when it isn't the current year.",
+      "comment" : "Status line when downloading newer exchange rates failed and saved rates are shown, under the conversion rate on the Converter screen and under the chart on the History screen. date: when the exchange rates were last downloaded, with month, day and time, plus the year when it isn't the current year.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -6738,7 +6738,7 @@
       }
     },
     "error.noInternet.title" : {
-      "comment" : "Error alert title when the device is offline.",
+      "comment" : "Error alert title when the device is offline, also the title of the History chart area when it has no saved rates offline.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -9229,66 +9229,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "匯率圖表載入完成"
-          }
-        }
-      }
-    },
-    "history.chart.loading.accessibilityLabel" : {
-      "comment" : "VoiceOver label of the currency history chart while it loads.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Diagrammdaten werden geladen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading chart data"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cargando datos del gráfico"
-          }
-        },
-        "es-419" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cargando datos del gráfico"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chargement des données du graphique"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "チャートデータを読み込み中"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "차트 데이터 불러오는 중"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在加载图表数据"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在載入圖表資料"
           }
         }
       }

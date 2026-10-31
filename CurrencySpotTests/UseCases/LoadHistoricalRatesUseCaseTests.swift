@@ -54,6 +54,7 @@ struct LoadHistoricalRatesUseCaseTests {
 
         #expect(result.snapshots == series)
         #expect(result.newDataFetched == false)
+        #expect(result.updateFailed == false)
         #expect(repository.fetchHistoricalRatesCallCount == 0)
     }
 
@@ -98,6 +99,27 @@ struct LoadHistoricalRatesUseCaseTests {
         #expect(repository.fetchHistoricalRatesCallCount == 1)
         #expect(fetchCall.from == Self.day(-1))
         #expect(fetchCall.to == Self.endDate)
+    }
+
+    @Test("stored days are served without contacting the server, even when a fetch is due")
+    func storedDaysAreServedWithoutAFetch() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(-1)
+        let stored = Self.snapshots(on: [Self.startDate, Self.day(-1)])
+        repository.storedRows = stored
+        let syncStore = MockHistoricalSyncStore(
+            from: Self.day(-365),
+            through: Self.day(-1),
+            checkedAt: Self.baseDate.addingTimeInterval(-26 * 60 * 60)
+        )
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        let snapshots = await useCase.storedHistoricalData(in: Self.testDateRange)
+
+        #expect(snapshots == stored)
+        #expect(repository.fetchHistoricalRatesCallCount == 0)
+        #expect(repository.fetchTransientCalls.isEmpty)
     }
 
     @Test("today's rate fetched under six hours ago is served without another fetch")
@@ -239,6 +261,7 @@ struct LoadHistoricalRatesUseCaseTests {
 
         #expect(result.newDataFetched == false)
         #expect(result.snapshots.map(\.date) == [Self.day(-15), Self.day(-10), Self.day(-9), Self.day(-8)])
+        #expect(result.updateFailed)
     }
 
     @Test("a failed store read falls back to fetching that range")
@@ -337,6 +360,24 @@ struct LoadHistoricalRatesUseCaseTests {
         #expect(repository.fetchHistoricalRatesCallCount == 0)
         #expect(repository.fetchTransientCalls.isEmpty)
         #expect(repository.series.isEmpty)
+    }
+
+    @Test("a downloaded archive is served as stored days, and a partial one as none, without contacting the server")
+    func storedArchiveIsServedOnlyWhenComplete() async throws {
+        let repository = MockHistoricalRateRepository()
+        let stored = Self.snapshots(on: [Self.day(-1820), Self.day(-1)])
+        repository.storedRows = stored
+        repository.earliestStoredDateResult = Self.day(-1820)
+        let useCase = Self.makeUseCase(repository: repository)
+
+        let complete = await useCase.storedHistoricalData(in: Self.archiveRange)
+        repository.earliestStoredDateResult = Self.day(-400)
+        let partial = await useCase.storedHistoricalData(in: Self.archiveRange)
+
+        #expect(complete == stored)
+        #expect(partial.isEmpty)
+        #expect(repository.fetchTransientCalls.isEmpty)
+        #expect(repository.fetchHistoricalRatesCallCount == 0)
     }
 
     @Test("an archive covered through yesterday still loads from the store")
@@ -444,6 +485,7 @@ struct LoadHistoricalRatesUseCaseTests {
         #expect(repository.fetchTransientCalls.count == 1)
         #expect(result.snapshots == stored)
         #expect(result.newDataFetched == false)
+        #expect(result.updateFailed)
     }
 
     @Test("a failed bridge with only a partial archive on disk surfaces the error")

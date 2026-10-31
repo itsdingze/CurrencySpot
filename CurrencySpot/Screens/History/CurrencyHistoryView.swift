@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct CurrencyHistoryView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel: CurrencyHistoryViewModel
     @State private var isChartSelectionActive = false
 
@@ -18,6 +19,10 @@ struct CurrencyHistoryView: View {
         return false
     }
 
+    private var isShowingChart: Bool {
+        !viewModel.showLoadingOverlay && viewModel.chartStatistics != nil
+    }
+
     var body: some View {
         AccessibilitySizeScrollView {
             VStack(spacing: Spacing.section) {
@@ -26,6 +31,10 @@ struct CurrencyHistoryView: View {
                 ChartSection(isChartSelectionActive: $isChartSelectionActive)
 
                 StatisticsSection()
+
+                if isShowingChart {
+                    ChartUpdateStatus()
+                }
 
                 Spacer()
             }
@@ -46,7 +55,17 @@ struct CurrencyHistoryView: View {
         }
         .onChange(of: chartDidFail) { _, failed in
             if failed {
-                AccessibilityNotification.Announcement(String(localized: .historyChartFailed)).post()
+                let message: LocalizedStringResource = viewModel.isWaitingForConnection
+                    ? .errorNoInternetTitle
+                    : .historyChartFailed
+                AccessibilityNotification.Announcement(String(localized: message)).post()
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .background: viewModel.appMovedToBackground()
+            case .active: viewModel.appBecameActive()
+            default: break
             }
         }
         .sheet(isPresented: $viewModel.destination.isPresenting(.chartOnboarding)) {

@@ -12,8 +12,12 @@ final class MockHistoricalRateRepository: HistoricalRateRepository, ArchiveRepos
     var shouldThrowErrorOnLoad = false
     var errorToThrow: Error = AppError.networkError("Mock error")
     var fetchBarrier: (() async -> Void)?
+    var storedReadBarrier: (() async -> Void)?
+    var deferredSave: (() async -> Void)?
 
     private(set) var series: [HistoricalRateSnapshot] = []
+    private(set) var storedReadCount = 0
+    private var pendingSave: Task<Void, Never>?
     private(set) var fetchHistoricalRatesCalls: [(from: Date, to: Date)] = []
     private(set) var fetchTransientCalls: [(currencies: [CurrencyCode], from: Date, to: Date)] = []
 
@@ -37,7 +41,14 @@ final class MockHistoricalRateRepository: HistoricalRateRepository, ArchiveRepos
         }
         let fetched = fetchedDataProvider?(range.start, range.end) ?? fetchedDataToReturn
         series = HistoricalRateSnapshot.merge(existing: series, new: fetched)
+        if let deferredSave {
+            pendingSave = Task { await deferredSave() }
+        }
         return fetched
+    }
+
+    func finishPendingWrites() async {
+        await pendingSave?.value
     }
 
     func loadAndMergeStoredHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot] {
@@ -47,6 +58,8 @@ final class MockHistoricalRateRepository: HistoricalRateRepository, ArchiveRepos
     }
 
     func loadStoredHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
+        storedReadCount += 1
+        await storedReadBarrier?()
         if shouldThrowErrorOnLoad {
             throw errorToThrow
         }

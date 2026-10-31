@@ -6,4 +6,6 @@ protocol HistoricalRateRepository: StoredHistoricalRateRepository {
     func fetchAndMergeHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot]
 
     func loadAndMergeStoredHistoricalRates(in range: DateRange) async throws -> [HistoricalRateSnapshot]
+
+    func finishPendingWrites() async
 }

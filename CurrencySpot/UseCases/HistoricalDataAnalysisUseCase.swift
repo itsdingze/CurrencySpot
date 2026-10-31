@@ -129,6 +129,10 @@ final class HistoricalDataAnalysisUseCase {
         return RateRefreshPolicy.shouldRefetch(now: now, lastFetch: syncCoverage.coverageCheckedAt)
     }
 
+    var lastDownloaded: Date? {
+        syncCoverage.coverageCheckedAt
+    }
+
     func repairCoverage(from: Date, through: Date) {
         syncCoverage.recordCoverage(from: from, through: through, at: dateProvider.now())
     }

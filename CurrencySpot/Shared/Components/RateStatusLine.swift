@@ -5,14 +5,23 @@ struct RateStatusLine: View {
     var savedRatesTime: String?
     var showsRetry: Bool
     var retryAction: () -> Void
+    var alignment: TextAlignment = .center
 
     private let retryHitOutset: CGFloat = 16
 
     var body: some View {
         content
             .font(.appCaption)
-            .multilineTextAlignment(.center)
+            .multilineTextAlignment(alignment)
             .onAppear(perform: announce)
+    }
+
+    private var stackAlignment: HorizontalAlignment {
+        switch alignment {
+        case .leading: .leading
+        case .center: .center
+        case .trailing: .trailing
+        }
     }
 
     @ViewBuilder
@@ -30,7 +39,7 @@ struct RateStatusLine: View {
             Button(action: retryAction) {
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: Spacing.tight) { message; retryLabel }
-                    VStack(spacing: Spacing.hairline) { message; retryLabel }
+                    VStack(alignment: stackAlignment, spacing: Spacing.hairline) { message; retryLabel }
                 }
                 .padding(.vertical, retryHitOutset)
                 .contentShape(.rect)
@@ -50,7 +59,7 @@ struct RateStatusLine: View {
                 messageLabel
                     .fixedSize()
             }
-            VStack(spacing: Spacing.hairline) {
+            VStack(alignment: stackAlignment, spacing: Spacing.hairline) {
                 icon
                 messageLabel
             }

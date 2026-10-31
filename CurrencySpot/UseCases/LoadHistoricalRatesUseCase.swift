@@ -46,6 +46,23 @@ final class LoadHistoricalRatesUseCase {
         return try await loadResidentData(for: currency, dateRange: dateRange)
     }
 
+    func lastDownloaded() async -> Date? {
+        await repository.finishPendingWrites()
+        return analysis.lastDownloaded
+    }
+
+    func storedHistoricalData(in dateRange: DateRange) async -> [HistoricalRateSnapshot] {
+        if Self.isArchiveRange(dateRange) {
+            return await completeStoredArchive(in: dateRange) ?? []
+        }
+        do {
+            _ = try await repository.loadAndMergeStoredHistoricalRates(in: dateRange)
+        } catch {
+            logger.warning("Stored read failed: \(error.localizedDescription, privacy: .public)")
+        }
+        return await repository.cachedHistoricalRates()
+    }
+
     func prefetchResidentYear() async {
         do {
             _ = try await loadHistoricalData(for: .usd, base: .usd, dateRange: dateRange(for: .oneYear))
@@ -95,7 +112,12 @@ final class LoadHistoricalRatesUseCase {
             throw failure
         }
         logger.info("Shared series updated for \(currency.rawValue, privacy: .private) with \(fetchedRanges.count, privacy: .public) fetched ranges")
-        return HistoricalLoadResult(snapshots: series, newDataFetched: !fetchedRanges.isEmpty, fetchedRanges: fetchedRanges)
+        return HistoricalLoadResult(
+            snapshots: series,
+            newDataFetched: !fetchedRanges.isEmpty,
+            fetchedRanges: fetchedRanges,
+            updateFailed: failure != nil
+        )
     }
 
     private struct Fill {
@@ -183,7 +205,7 @@ final class LoadHistoricalRatesUseCase {
         } catch {
             guard let rows = await completeStoredArchive(in: dateRange) else { throw error }
             logger.info("Archive bridge failed; serving the stored archive instead: \(error.localizedDescription, privacy: .public)")
-            return .cached(rows)
+            return .cached(rows, updateFailed: true)
         }
     }
 

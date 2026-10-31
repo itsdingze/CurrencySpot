@@ -37,6 +37,244 @@ struct CurrencyHistoryViewModelTests {
         #expect(viewModel.displayedChartDataPoints == points)
     }
 
+    @Test("stored days show while newer ones download, and the status clears once the download lands", .timeLimit(.minutes(1)))
+    func storedDaysShowDuringTheDownload() async throws {
+        let repository = MockHistoricalRateRepository()
+        let gate = AsyncGate()
+        repository.fetchBarrier = { await gate.wait() }
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.storedRows = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3, 4], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel()
+
+        let load = Task { await viewModel.loadChart() }
+        await waitUntil { repository.fetchHistoricalRatesCallCount == 1 }
+        #expect(viewModel.chartData.value?.map(\.rate) == [1, 2, 3])
+        #expect(viewModel.updateStatus == .updating)
+
+        gate.open()
+        await load.value
+
+        #expect(viewModel.chartData.value?.map(\.rate) == [1, 2, 3, 4])
+        #expect(viewModel.updateStatus == .hidden)
+    }
+
+    @Test("a failed download keeps the stored chart and says the update failed, with a retry", .timeLimit(.minutes(1)))
+    func failedDownloadKeepsStoredChart() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.shouldThrowErrorOnFetch = true
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.storedRows = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel()
+
+        await viewModel.loadChart()
+
+        #expect(viewModel.chartData.value?.map(\.rate) == [1, 2, 3])
+        #expect(viewModel.updateStatus == .updateFailed)
+        #expect(viewModel.canRetryUpdate)
+    }
+
+    @Test("offline, the stored chart shows with the offline status and nothing is downloaded", .timeLimit(.minutes(1)))
+    func offlineShowsStoredChartWithoutDownloading() async throws {
+        let repository = MockHistoricalRateRepository()
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.storedRows = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        try await graph.goOffline()
+        let viewModel = graph.makeHistoryViewModel()
+
+        await viewModel.loadChart()
+
+        #expect(viewModel.chartData.value?.map(\.rate) == [1, 2, 3])
+        #expect(viewModel.updateStatus == .offlineSaved)
+        #expect(viewModel.canRetryUpdate == false)
+        #expect(repository.fetchHistoricalRatesCallCount == 0)
+    }
+
+    @Test("offline with nothing stored, the chart waits for a connection at once, then loads when it returns", .timeLimit(.minutes(1)))
+    func offlineWithNothingStoredLoadsOnReconnect() async throws {
+        let repository = MockHistoricalRateRepository()
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        try await graph.goOffline()
+        let viewModel = graph.makeHistoryViewModel()
+
+        await viewModel.loadChart()
+
+        #expect(viewModel.isWaitingForConnection)
+        #expect(viewModel.updateStatus == .hidden)
+        #expect(repository.fetchHistoricalRatesCallCount == 0)
+
+        try await graph.goOnline()
+        await waitUntil { viewModel.chartData.value?.isEmpty == false }
+
+        #expect(viewModel.chartData.value?.map(\.rate) == [1, 2, 3])
+        #expect(viewModel.isWaitingForConnection == false)
+    }
+
+    @Test("a download that outlasts the wait limit with nothing to show fails, then shows the chart if it lands later", .timeLimit(.minutes(1)))
+    func slowDownloadWithNothingStoredFailsAtTheWaitLimit() async throws {
+        let repository = MockHistoricalRateRepository()
+        let gate = AsyncGate()
+        repository.fetchBarrier = { await gate.wait() }
+        let waitLimit = GatedClock()
+        let graph = try HistoryTestGraph(historicalRepository: repository, waitLimitClock: waitLimit)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel()
+
+        let load = Task { await viewModel.loadChart() }
+        await waitUntil { repository.fetchHistoricalRatesCallCount == 1 }
+        #expect(viewModel.chartData.isLoading)
+
+        waitLimit.release()
+        await waitUntil { viewModel.chartData.error != nil }
+        #expect(viewModel.isWaitingForConnection == false)
+
+        gate.open()
+        await load.value
+        #expect(viewModel.chartData.value?.map(\.rate) == [1, 2, 3])
+    }
+
+    @Test("the chart says when rates were last downloaded", .timeLimit(.minutes(1)))
+    func lastUpdatedComesFromTheLastDownload() async throws {
+        let repository = MockHistoricalRateRepository()
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        let downloadedAt = graph.today.addingTimeInterval(-90 * 60)
+        graph.syncStore.checkedAt = downloadedAt
+        let viewModel = graph.makeHistoryViewModel()
+
+        await viewModel.loadChart()
+
+        #expect(viewModel.lastUpdated == downloadedAt)
+    }
+
+    @Test("losing the connection after a load switches the status to offline", .timeLimit(.minutes(1)))
+    func losingTheConnectionShowsOfflineStatus() async throws {
+        let repository = MockHistoricalRateRepository()
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel()
+        await viewModel.loadChart()
+        #expect(viewModel.updateStatus == .hidden)
+
+        try await graph.goOffline()
+
+        #expect(viewModel.updateStatus == .offlineSaved)
+    }
+
+    @Test("a download that failed while the connection dropped retries once it returns", .timeLimit(.minutes(1)))
+    func failedDownloadRetriesOnReconnect() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.shouldThrowErrorOnFetch = true
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.storedRows = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3, 4], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel()
+        await viewModel.loadChart()
+        try await graph.goOffline()
+        #expect(viewModel.updateStatus == .offlineSaved)
+
+        repository.shouldThrowErrorOnFetch = false
+        try await graph.goOnline()
+        await waitUntil { viewModel.chartData.value?.count == 4 }
+
+        #expect(viewModel.updateStatus == .hidden)
+    }
+
+    @Test("offline with a stored chart, reconnecting downloads newer rates", .timeLimit(.minutes(1)))
+    func offlineStoredChartUpdatesOnReconnect() async throws {
+        let repository = MockHistoricalRateRepository()
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.storedRows = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3, 4], endingBefore: graph.today)
+        try await graph.goOffline()
+        let viewModel = graph.makeHistoryViewModel()
+        await viewModel.loadChart()
+
+        try await graph.goOnline()
+        await waitUntil { viewModel.chartData.value?.count == 4 }
+
+        #expect(viewModel.updateStatus == .hidden)
+    }
+
+    @Test("after a download, the chart says it was updated once those rates are saved", .timeLimit(.minutes(1)))
+    func lastUpdatedWaitsForTheDownloadToBeSaved() async throws {
+        let repository = MockHistoricalRateRepository()
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        let saved = AsyncGate()
+        let syncStore = graph.syncStore
+        let downloadedAt = graph.today
+        repository.deferredSave = {
+            await saved.wait()
+            syncStore.checkedAt = downloadedAt
+        }
+        let viewModel = graph.makeHistoryViewModel()
+
+        let load = Task { await viewModel.loadChart() }
+        await waitUntil { viewModel.chartData.value?.isEmpty == false }
+        saved.open()
+        await load.value
+
+        #expect(viewModel.lastUpdated == downloadedAt)
+        #expect(viewModel.updateStatus == .hidden)
+    }
+
+    @Test("becoming active without having left the app, like closing Control Center, doesn't reload", .timeLimit(.minutes(1)))
+    func becomingActiveWithoutLeavingDoesNotReload() async throws {
+        let repository = MockHistoricalRateRepository()
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel()
+        await viewModel.loadChart()
+        let fetches = repository.fetchHistoricalRatesCallCount
+
+        viewModel.appBecameActive()
+        await viewModel.loadChart()
+
+        #expect(repository.fetchHistoricalRatesCallCount == fetches)
+    }
+
+    @Test("returning to the app keeps the chart on screen while it checks for newer rates", .timeLimit(.minutes(1)))
+    func returningToTheAppKeepsTheChartShown() async throws {
+        let repository = MockHistoricalRateRepository()
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel()
+        await viewModel.loadChart()
+        let storedRead = AsyncGate()
+        repository.storedReadBarrier = { await storedRead.wait() }
+        let reads = repository.storedReadCount
+
+        viewModel.appMovedToBackground()
+        viewModel.appBecameActive()
+        await waitUntil { repository.storedReadCount > reads }
+
+        #expect(viewModel.chartData.isLoading == false)
+        #expect(viewModel.chartData.value?.map(\.rate) == [1, 2, 3])
+        storedRead.open()
+        await viewModel.loadChart()
+    }
+
+    @Test("returning to the app checks for newer rates and shows them", .timeLimit(.minutes(1)))
+    func becomingActiveChecksForNewerRates() async throws {
+        let repository = MockHistoricalRateRepository()
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel()
+        await viewModel.loadChart()
+
+        repository.fetchedDataToReturn = try Self.snapshots(rates: [1, 2, 3, 4], endingBefore: graph.today)
+        let laterDownload = graph.today
+        graph.syncStore.checkedAt = laterDownload
+        viewModel.appMovedToBackground()
+        viewModel.appBecameActive()
+        await waitUntil { viewModel.chartData.value?.count == 4 }
+
+        #expect(viewModel.chartData.value?.map(\.rate) == [1, 2, 3, 4])
+        #expect(viewModel.lastUpdated == laterDownload)
+    }
+
     @Test("loading again after a completed load keeps the shown chart", .timeLimit(.minutes(1)))
     func repeatedLoadKeepsChart() async throws {
         let repository = MockHistoricalRateRepository()

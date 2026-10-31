@@ -117,6 +117,8 @@
             return []
         }
 
+        func finishPendingWrites() async {}
+
         func loadStoredHistoricalRates(in _: DateRange) async throws -> [HistoricalRateSnapshot] {
             try await stall()
             return []

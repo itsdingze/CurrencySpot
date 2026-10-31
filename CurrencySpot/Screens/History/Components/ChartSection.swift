@@ -11,32 +11,23 @@ struct ChartSection: View {
     @Binding var isChartSelectionActive: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.element) {
-            ZStack {
-                chartContent
-
-                if viewModel.showLoadingOverlay, !viewModel.displayedChartDataPoints.isEmpty {
-                    loadingView
-                        .transition(.opacity)
-                }
-            }
-        }
-    }
-
-    // MARK: - Private Views
-
-    @ViewBuilder
-    private var chartContent: some View {
-        if let statistics = viewModel.chartStatistics {
+        if viewModel.showLoadingOverlay {
+            loadingView
+                .transition(.opacity)
+        } else if let statistics = viewModel.chartStatistics {
             CurrencyChart(statistics: statistics, isChartSelectionActive: $isChartSelectionActive)
         } else if isAwaitingFirstResult {
-            loadingView
+            placeholder
+        } else if viewModel.isWaitingForConnection {
+            offlineView
         } else if viewModel.chartData.error != nil {
             failedView
         } else {
             noDataView
         }
     }
+
+    // MARK: - Private Views
 
     private var isAwaitingFirstResult: Bool {
         switch viewModel.chartData {
@@ -45,16 +36,40 @@ struct ChartSection: View {
         }
     }
 
+    private var placeholder: some View {
+        Color.clear
+            .frame(maxWidth: .infinity, idealHeight: ChartMetrics.height, maxHeight: ChartMetrics.height)
+            .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
+            .accessibilityHidden(true)
+    }
+
     private var loadingView: some View {
+        ProgressView(.calculatorLoading)
+            .padding()
+            .frame(maxWidth: .infinity, idealHeight: ChartMetrics.height, maxHeight: ChartMetrics.height)
+            .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
+            .accessibilityAddTraits(.updatesFrequently)
+    }
+
+    private var offlineView: some View {
         VStack(spacing: Spacing.element) {
-            ProgressView()
-                .progressViewStyle(.circular)
+            Image(systemName: "wifi.slash")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+
+            Text(.errorNoInternetTitle)
+                .font(.appHeadline)
+
+            Text(.calculatorErrorMessageOffline)
+                .font(.appSubheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
         .padding()
         .frame(maxWidth: .infinity, idealHeight: ChartMetrics.height, maxHeight: ChartMetrics.height)
         .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
-        .accessibilityLabel(.historyChartLoadingAccessibilityLabel)
-        .accessibilityAddTraits(.updatesFrequently)
+        .accessibilityElement(children: .combine)
     }
 
     private var noDataView: some View {
