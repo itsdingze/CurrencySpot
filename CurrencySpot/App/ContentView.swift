@@ -35,6 +35,7 @@ struct ContentView: View {
                 NavigationStack {
                     SettingsView()
                 }
+                .overlay { SettingsToastOverlay() }
                 .toolbarBackground(.visible, for: .tabBar)
             } label: {
                 Label(.appTabSettings, systemImage: "gearshape")

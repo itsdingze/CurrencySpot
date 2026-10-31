@@ -5,21 +5,17 @@ struct ToastView: View {
     let icon: String
 
     var body: some View {
-        HStack(spacing: Spacing.element) {
-            Image(systemName: icon)
-                .font(.appTitle3)
-                .foregroundStyle(Color.success)
-
+        Label {
             Text(message)
-                .font(.appHeadline)
+        } icon: {
+            Image(systemName: icon)
+                .foregroundStyle(Color.success)
+                .imageScale(.large)
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: Radius.card)
-                .fill(Color.secondaryBackground)
-                .stroke(Color.background, lineWidth: 1)
-        )
-        .frame(maxHeight: .infinity, alignment: .top)
+        .font(.appSubheadline.weight(.semibold))
+        .padding(.horizontal, Spacing.section)
+        .padding(.vertical, Spacing.element)
+        .adaptiveGlassBackground(in: .capsule)
     }
 }
 

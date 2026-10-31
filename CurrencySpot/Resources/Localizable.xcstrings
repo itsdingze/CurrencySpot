@@ -21204,7 +21204,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Refreshing Data"
+            "value" : "Refreshing data"
           }
         },
         "es" : {
@@ -21264,7 +21264,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preferences Reset to Default"
+            "value" : "Preferences reset to default"
           }
         },
         "es" : {

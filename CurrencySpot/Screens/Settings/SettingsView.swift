@@ -3,7 +3,6 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(ExchangeRatesStore.self) private var ratesStore: ExchangeRatesStore
     @Environment(SettingsViewModel.self) private var settingsViewModel: SettingsViewModel
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var bindableViewModel: Bindable<SettingsViewModel> {
@@ -40,12 +39,6 @@ struct SettingsView: View {
             Button(.settingsLanguageChangedOk) {}
         } message: {
             Text(.settingsLanguageChangedMessage(language: settingsViewModel.language.displayName))
-        }
-        .overlay { toastOverlay }
-        .onChange(of: settingsViewModel.toast?.id) {
-            if let toast = settingsViewModel.toast {
-                AccessibilityNotification.Announcement(String(localized: toast.message)).post()
-            }
         }
     }
 
@@ -199,16 +192,6 @@ struct SettingsView: View {
                 })
             }
         }
-    }
-
-    private var toastOverlay: some View {
-        Group {
-            if let toast = settingsViewModel.toast {
-                ToastView(message: toast.message, icon: toast.icon)
-                    .transition(reduceMotion ? AnyTransition.opacity : .move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .animation(.appSelect, value: settingsViewModel.toast != nil)
     }
 
     // MARK: - Private Views

@@ -209,6 +209,48 @@ struct SettingsViewModelTests {
         await waitUntil { viewModel.toast == nil }
     }
 
+    @Test("swiping a toast away hides it at once and stops its pending auto-dismiss", .timeLimit(.minutes(1)))
+    func dismissingToastHidesItAndStopsTheTimer() async {
+        let toastClock = GatedClock()
+        let viewModel = makeViewModel(refresh: GatedRefresh(), appState: appState, toastClock: toastClock)
+        viewModel.confirmAlert(.resetPreferences)
+        await waitUntil { toastClock.sleepRequestCount == 1 }
+
+        viewModel.toastDismissed()
+
+        #expect(viewModel.toast == nil)
+        await waitUntil { toastClock.cancelledSleepCount == 1 }
+    }
+
+    @Test("a held toast stays up after its auto-dismiss time passes", .timeLimit(.minutes(1)))
+    func heldToastOutlastsItsTimer() async {
+        let toastClock = GatedClock()
+        let viewModel = makeViewModel(refresh: GatedRefresh(), appState: appState, toastClock: toastClock)
+        viewModel.confirmAlert(.resetPreferences)
+        await waitUntil { toastClock.sleepRequestCount == 1 }
+
+        viewModel.toastHeld()
+        await waitUntil { toastClock.cancelledSleepCount == 1 }
+        toastClock.release()
+
+        #expect(viewModel.toast?.type == .preferencesReset)
+    }
+
+    @Test("letting go of a held toast hides it after a fresh countdown", .timeLimit(.minutes(1)))
+    func releasedToastHidesAfterNewCountdown() async {
+        let toastClock = GatedClock()
+        let viewModel = makeViewModel(refresh: GatedRefresh(), appState: appState, toastClock: toastClock)
+        viewModel.confirmAlert(.resetPreferences)
+        await waitUntil { toastClock.sleepRequestCount == 1 }
+        viewModel.toastHeld()
+
+        viewModel.toastReleased()
+        await waitUntil { toastClock.sleepRequestCount == 2 }
+        toastClock.release()
+
+        await waitUntil { viewModel.toast == nil }
+    }
+
     @Test("confirming a preferences reset restores the default favorites and re-seeds the History watchlist from them")
     func resetPreferencesReseedsWatchlist() {
         viewModel.confirmAlert(.resetPreferences)

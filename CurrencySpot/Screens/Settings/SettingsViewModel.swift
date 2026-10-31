@@ -127,9 +127,25 @@ final class SettingsViewModel {
         }
     }
 
+    func toastDismissed() {
+        toastDismissTask?.cancel()
+        toast = nil
+    }
+
+    func toastHeld() {
+        toastDismissTask?.cancel()
+    }
+
+    func toastReleased() {
+        startToastTimer()
+    }
+
     private func showToast(_ type: ToastType) {
         toast = ToastData(type: type)
+        startToastTimer()
+    }
 
+    private func startToastTimer() {
         toastDismissTask?.cancel()
         toastDismissTask = Task { [clock] in
             try? await clock.sleep(for: .seconds(3.5))

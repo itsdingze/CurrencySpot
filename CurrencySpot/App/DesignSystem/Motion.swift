@@ -7,4 +7,5 @@ nonisolated extension Animation {
     static let appQuickFade = Animation.easeInOut(duration: 0.2)
     static let appTrack = Animation.easeInOut(duration: 0.07)
     static let appStageReveal = Animation.smooth
+    static let appIslandGrow = Animation.bouncy(duration: 0.5, extraBounce: 0.1)
 }
