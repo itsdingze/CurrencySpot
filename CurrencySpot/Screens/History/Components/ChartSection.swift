@@ -45,9 +45,7 @@ struct ChartSection: View {
 
     private var loadingView: some View {
         ProgressView(.calculatorLoading)
-            .padding()
-            .frame(maxWidth: .infinity, idealHeight: ChartMetrics.height, maxHeight: ChartMetrics.height)
-            .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
+            .chartMessageBox()
             .accessibilityAddTraits(.updatesFrequently)
     }
 
@@ -64,19 +62,15 @@ struct ChartSection: View {
             Text(.calculatorErrorMessageOffline)
                 .font(.appSubheadline)
                 .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
         }
-        .padding()
-        .frame(maxWidth: .infinity, idealHeight: ChartMetrics.height, maxHeight: ChartMetrics.height)
-        .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
+        .chartMessageBox()
         .accessibilityElement(children: .combine)
     }
 
     private var noDataView: some View {
         Text(.historyChartEmpty)
             .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, idealHeight: ChartMetrics.height, maxHeight: ChartMetrics.height)
-            .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
+            .chartMessageBox()
             .accessibilityLabel(.historyChartEmptyAccessibilityLabel)
     }
 
@@ -88,8 +82,16 @@ struct ChartSection: View {
             Button(.historyChartFailedRetry, action: viewModel.retry)
                 .buttonStyle(.bordered)
         }
-        .frame(maxWidth: .infinity, idealHeight: ChartMetrics.height, maxHeight: ChartMetrics.height)
-        .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
+        .chartMessageBox()
+    }
+}
+
+private extension View {
+    func chartMessageBox() -> some View {
+        padding()
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: ChartMetrics.height)
+            .background(Color.chartPlaceholder, in: .rect(cornerRadius: Radius.card))
     }
 }
 
