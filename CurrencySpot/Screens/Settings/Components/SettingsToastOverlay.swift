@@ -4,7 +4,9 @@ struct SettingsToastOverlay: View {
     @Environment(SettingsViewModel.self) private var settingsViewModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    @GestureState private var isHolding = false
     @State private var dragTranslation: CGFloat = 0
+    @State private var releaseTranslation: CGFloat = 0
 
     private let islandScale: CGFloat = 0.4
     private let islandRise: CGFloat = 40
@@ -35,6 +37,11 @@ struct SettingsToastOverlay: View {
                 return
             }
             AccessibilityNotification.Announcement(String(localized: toast.message)).post()
+        }
+        .onChange(of: isHolding) { _, holding in
+            if !holding {
+                release()
+            }
         }
     }
 
@@ -67,20 +74,26 @@ struct SettingsToastOverlay: View {
 
     private var swipeUpToDismiss: some Gesture {
         DragGesture()
+            .updating($isHolding) { _, holding, _ in
+                holding = true
+            }
             .onChanged { value in
                 if dragTranslation == 0 {
                     settingsViewModel.toastHeld()
                 }
                 dragTranslation = value.translation.height
+                releaseTranslation = min(value.translation.height, value.predictedEndTranslation.height)
             }
-            .onEnded { value in
-                if min(value.translation.height, value.predictedEndTranslation.height) < -dismissDistance {
-                    collapseIntoIsland()
-                } else {
-                    withAnimation(reduceMotion ? .appQuickFade : .appIslandGrow) { dragTranslation = 0 }
-                    settingsViewModel.toastReleased()
-                }
-            }
+    }
+
+    private func release() {
+        if releaseTranslation < -dismissDistance {
+            collapseIntoIsland()
+        } else {
+            withAnimation(reduceMotion ? .appQuickFade : .appIslandGrow) { dragTranslation = 0 }
+            settingsViewModel.toastReleased()
+        }
+        releaseTranslation = 0
     }
 
     private func collapseIntoIsland() {
