@@ -54,11 +54,16 @@ struct RateListWidgetView: View {
     private func list(_ arrangement: Arrangement) -> some View {
         let count = arrangement.rowCount
         let fillsHeight = count < entry.rows.count || entry.rows.count >= RateListLayout.rowLimit(for: family)
+        let centersRows = family == .systemMedium && entry.rows.count < RateListLayout.rowLimit(for: family)
 
         return VStack(spacing: 0) {
             if arrangement.showsHeader {
                 header
-                headerGap(fillsHeight: fillsHeight)
+                if centersRows {
+                    Spacer(minLength: separatorGap)
+                } else {
+                    headerGap(fillsHeight: fillsHeight)
+                }
             }
 
             ForEach(Array(entry.rows.prefix(count).enumerated()), id: \.element.currency) { index, series in
