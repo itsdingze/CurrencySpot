@@ -18,7 +18,7 @@ struct TrendIndicator: View {
                 .monospacedDigit()
         }
         .foregroundStyle(direction.color)
-        .font(.appSubheadline.weight(.medium))
+        .font(.appSubheadline.weight(.semibold))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(changeAccessibilityLabel)
     }

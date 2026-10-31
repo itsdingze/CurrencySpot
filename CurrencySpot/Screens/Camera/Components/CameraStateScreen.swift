@@ -16,13 +16,13 @@ struct CameraStateScreen: View {
                 VStack(spacing: Spacing.block) {
                     VStack(spacing: Spacing.element) {
                         Image(systemName: icon)
-                            .font(.appLargeTitle.weight(.medium))
+                            .font(.appLargeTitle.weight(.regular))
                             .imageScale(.large)
                             .foregroundStyle(.tint)
                             .accessibilityHidden(true)
 
                         Text(title)
-                            .font(.appTitle2.bold())
+                            .font(.appTitle2)
                             .multilineTextAlignment(.center)
                             .accessibilityAddTraits(.isHeader)
 

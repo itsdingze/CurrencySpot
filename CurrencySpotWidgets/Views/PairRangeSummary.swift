@@ -21,7 +21,6 @@ struct PairRangeSummary: View {
             Spacer(minLength: Spacing.hairline)
 
             Text(value.toStringMax4Decimals)
-                .fontWeight(.medium)
                 .monospacedDigit()
         }
         .font(.appCaption)

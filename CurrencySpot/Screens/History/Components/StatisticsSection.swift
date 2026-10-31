@@ -89,7 +89,7 @@ struct StatisticsSection: View {
             .accessibilityLabel(.historyStatisticsVolatilityInfo)
 
             Text(value ?? String(localized: .historyStatisticsVolatilityPlaceholder))
-                .font(.appSubheadline.weight(.medium))
+                .font(.appSubheadline)
                 .foregroundStyle(viewModel.volatilityLevel?.color ?? .primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -62,7 +62,7 @@ struct VolatilityInfoView: View {
                     .accessibilityHidden(true)
 
                 Text(level.displayName)
-                    .font(.appCaption.weight(.medium))
+                    .font(.appCaption.weight(.semibold))
                     .frame(minWidth: 70, alignment: .leading)
             }
 

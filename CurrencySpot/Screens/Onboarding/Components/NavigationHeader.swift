@@ -48,7 +48,7 @@ struct NavigationHeader: View {
             Text(.onboardingHeaderSkip)
                 .edgeAlignedHitTarget(.trailing)
         }
-        .font(.appSubheadline.weight(.medium))
+        .font(.appSubheadline.weight(.semibold))
         .foregroundStyle(.primary)
     }
 }

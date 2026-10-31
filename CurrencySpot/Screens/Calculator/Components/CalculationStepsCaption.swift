@@ -63,7 +63,7 @@ private nonisolated extension EdgeOverflow {
         CalculationStepsCaption(text: "1,250 + 8 × 3")
         CalculationStepsCaption(text: "1,250 + 8 × 3 − 45.5 ÷ 2 + 120 × 4 + 99 − 12.75 × 2")
     }
-    .font(.appHeadline.weight(.medium))
+    .font(.appHeadline.weight(.regular))
     .frame(width: 260)
     .padding()
 }

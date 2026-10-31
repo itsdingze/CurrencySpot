@@ -27,7 +27,7 @@ struct HeaderSection: View {
                     ))
 
                 Text(viewModel.targetCurrency.localizedName)
-                    .font(.appHeadline.weight(.medium))
+                    .font(.appHeadline.weight(.regular))
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
 
@@ -84,7 +84,7 @@ struct HeaderSection: View {
 
             Text(.historyHeaderChange(change: change, percent: percent))
         }
-        .font(.appSubheadline.weight(.medium))
+        .font(.appSubheadline.weight(.semibold))
         .foregroundStyle(trend.color)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityChangeLabel(change: change, percent: percent, trend: trend))

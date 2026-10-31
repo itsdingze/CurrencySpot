@@ -111,7 +111,7 @@ struct CurrencyChipButtonStyle: ButtonStyle {
     @ViewBuilder
     private func chip(_ label: Configuration.Label) -> some View {
         let styled = label
-            .font(.appHeadline.weight(.medium))
+            .font(.appHeadline)
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
             .foregroundStyle(isSelected ? Color.white : Color.primary)

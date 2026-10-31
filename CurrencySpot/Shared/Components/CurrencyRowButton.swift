@@ -11,7 +11,7 @@ struct CurrencyRowButton: View {
             HStack {
                 AdaptiveStack {
                     Text(code.rawValue)
-                        .font(.appHeadline.weight(.medium))
+                        .font(.appHeadline)
 
                     Spacer()
 

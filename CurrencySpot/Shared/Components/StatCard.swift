@@ -78,7 +78,7 @@ struct StatCard: View {
                 }
 
                 Text(displayedValue)
-                    .font(size.valueFont.weight(.medium).monospacedDigit())
+                    .font(size.valueFont.weight(.regular).monospacedDigit())
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Spacing.chipPadding)

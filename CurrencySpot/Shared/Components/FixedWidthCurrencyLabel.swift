@@ -11,7 +11,7 @@ struct FixedWidthCurrencyLabel: View {
             Text(code.rawValue)
                 .contentTransition(.numericText())
         }
-        .font(.appHeadline.bold())
+        .font(.appHeadline)
     }
 }
 

@@ -112,7 +112,7 @@ private struct ColorCustomizationSheet: View {
                 .overlay {
                     if isSelected {
                         Image(systemName: "checkmark")
-                            .font(.appCallout).bold()
+                            .font(.appCallout.weight(.semibold))
                             .foregroundStyle(.white)
                             .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     }

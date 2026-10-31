@@ -81,7 +81,7 @@ struct UnifiedCurrencyView: View {
                     .transition(.identity)
             }
         }
-        .font(.appHeadline.weight(.medium))
+        .font(.appHeadline.weight(.regular))
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -140,8 +140,7 @@ struct UnifiedCurrencyView: View {
                 FixedWidthCurrencyLabel(code: currencyCode)
 
                 Image(systemName: "chevron.down")
-                    .font(.appCaption)
-                    .bold()
+                    .font(.appCaption.weight(.semibold))
             }
         }
         .buttonStyle(.currencyCode(fill: type.backgroundColor(accent: accent), stroke: type.strokeColor(accent: accent)))

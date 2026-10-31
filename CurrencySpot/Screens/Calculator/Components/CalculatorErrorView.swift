@@ -11,7 +11,7 @@ struct CalculatorErrorView: View {
                 .accessibilityHidden(true)
 
             Text(.calculatorErrorTitle)
-                .font(.appTitle3.bold())
+                .font(.appTitle3)
                 .accessibilityAddTraits(.isHeader)
 
             Text(message)

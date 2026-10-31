@@ -9,7 +9,7 @@ struct FavoriteCurrenciesView: View {
             ForEach(viewModel.favoriteCurrencies, id: \.self) { currency in
                 AdaptiveStack {
                     Text(currency.rawValue)
-                        .font(.appHeadline.weight(.medium))
+                        .font(.appHeadline)
 
                     Spacer()
 
