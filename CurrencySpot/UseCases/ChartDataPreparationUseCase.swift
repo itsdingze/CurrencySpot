@@ -163,7 +163,7 @@ final class ChartDataPreparationUseCase {
         let dailyVolatility = sqrt(variance)
         guard dailyVolatility.isFinite else { return nil }
 
-        let annualizedVolatility = dailyVolatility * sqrt(252) * 100
+        let annualizedVolatility = dailyVolatility * sqrt(365) * 100
         return annualizedVolatility.isFinite ? annualizedVolatility : nil
     }
 

@@ -351,6 +351,20 @@ struct ChartDataPreparationUseCaseTests {
             #expect(abs(result.averageRate - 1.2) < 0.001, "Average should be correct")
         }
 
+        @Test("Volatility annualizes daily returns over the 365 calendar days the feed reports")
+        func volatilityAnnualizesOverCalendarDays() throws {
+            let calendar = CETCalendar.calendar
+            let rates = [1.0, 1.01, 1.01 * 0.99, 1.01 * 0.99 * 1.01, 1.01 * 0.99 * 1.01 * 0.99]
+            let data = try rates.enumerated().map { day, rate in
+                ChartDataPoint(date: try #require(calendar.date(byAdding: .day, value: day, to: testStartDate)), rate: rate)
+            }
+
+            let result = try #require(makeUseCase().calculateStatistics(from: data))
+
+            let volatility = try #require(result.volatility)
+            #expect(abs(volatility - 19.105) < 0.01, "±1% daily returns annualize to 1% × √365 ≈ 19.105%")
+        }
+
         @Test("Should calculate price change correctly")
         func shouldCalculatePriceChangeCorrectly() async throws {
             let useCase = makeUseCase()
