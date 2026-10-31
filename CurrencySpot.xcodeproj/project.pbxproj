@@ -12,19 +12,19 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		0AE0A00D2FDC000100A1B2C3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 0A42BCCA2D6F14E5009B4F56 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0AE0A0092FDC000100A1B2C3;
-			remoteInfo = CurrencySpotWidgetsExtension;
-		};
 		0A42BCE32D6F14E6009B4F56 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0A42BCCA2D6F14E5009B4F56 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 0A42BCD12D6F14E5009B4F56;
 			remoteInfo = CurrencySpot;
+		};
+		0AE0A00D2FDC000100A1B2C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0A42BCCA2D6F14E5009B4F56 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0AE0A0092FDC000100A1B2C3;
+			remoteInfo = CurrencySpotWidgetsExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -46,8 +46,8 @@
 		0A42BCD22D6F14E5009B4F56 /* CurrencySpot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CurrencySpot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A42BCE22D6F14E6009B4F56 /* CurrencySpotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CurrencySpotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A860CFE2E1E7DA20097076D /* TestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TestPlan.xctestplan; sourceTree = "<group>"; };
-		0AFF88122FD4CE5900D54E02 /* CurrencySpot.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = CurrencySpot.xcconfig; sourceTree = "<group>"; };
 		0AE0A0012FDC000100A1B2C3 /* CurrencySpotWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CurrencySpotWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		0AFF88122FD4CE5900D54E02 /* CurrencySpot.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = CurrencySpot.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -67,9 +67,6 @@
 				App/DesignSystem/Sizing.swift,
 				Intents/CurrencyEntity.swift,
 				Intents/OpenScannerIntent.swift,
-				Models/DTO/ExchangeRatesResponse.swift,
-				Models/DTO/FrankfurterV2Rate.swift,
-				Models/DTO/HistoricalRatesResponse.swift,
 				Models/Domain/AppError.swift,
 				Models/Domain/CETCalendar.swift,
 				Models/Domain/CurrencyCatalog.swift,
@@ -85,6 +82,10 @@
 				Models/Domain/TimeRange.swift,
 				Models/Domain/TrendDirection.swift,
 				Models/Domain/VolatilityLevel.swift,
+				Models/Domain/WidgetCurrencyDefaults.swift,
+				Models/DTO/ExchangeRatesResponse.swift,
+				Models/DTO/FrankfurterV2Rate.swift,
+				Models/DTO/HistoricalRatesResponse.swift,
 				Resources/Localizable.xcstrings,
 				Services/Cache/RateSeriesCache.swift,
 				Services/Logging/LogCategory.swift,
@@ -92,6 +93,7 @@
 				Services/Network/FrankfurterV2Mapper.swift,
 				Services/Network/NetworkRequestRunner.swift,
 				Services/Network/RetryPolicy.swift,
+				Services/Persistence/AppGroupDefaults.swift,
 				Services/Persistence/UserDefaultsKeys.swift,
 				Services/Time/ClockService.swift,
 				Shared/Extensions/NumberFormatting.swift,
@@ -118,17 +120,17 @@
 			path = CurrencySpot;
 			sourceTree = "<group>";
 		};
+		0A42BCE52D6F14E6009B4F56 /* CurrencySpotTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CurrencySpotTests;
+			sourceTree = "<group>";
+		};
 		0AE0A0022FDC000100A1B2C3 /* CurrencySpotWidgets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				0AE0A0032FDC000100A1B2C3 /* Exceptions for "CurrencySpotWidgets" folder in "CurrencySpotWidgetsExtension" target */,
 			);
 			path = CurrencySpotWidgets;
-			sourceTree = "<group>";
-		};
-		0A42BCE52D6F14E6009B4F56 /* CurrencySpotTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = CurrencySpotTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -357,15 +359,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		0AE0A00E2FDC000100A1B2C3 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 0AE0A0092FDC000100A1B2C3 /* CurrencySpotWidgetsExtension */;
-			targetProxy = 0AE0A00D2FDC000100A1B2C3 /* PBXContainerItemProxy */;
-		};
 		0A42BCE42D6F14E6009B4F56 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 0A42BCD12D6F14E5009B4F56 /* CurrencySpot */;
 			targetProxy = 0A42BCE32D6F14E6009B4F56 /* PBXContainerItemProxy */;
+		};
+		0AE0A00E2FDC000100A1B2C3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0AE0A0092FDC000100A1B2C3 /* CurrencySpotWidgetsExtension */;
+			targetProxy = 0AE0A00D2FDC000100A1B2C3 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -500,6 +502,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CurrencySpot/CurrencySpot.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -541,6 +544,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CurrencySpot/CurrencySpot.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -632,6 +636,7 @@
 		0AE0A00B2FDC000100A1B2C3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CurrencySpotWidgets/CurrencySpotWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
@@ -665,6 +670,7 @@
 		0AE0A00C2FDC000100A1B2C3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CurrencySpotWidgets/CurrencySpotWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";

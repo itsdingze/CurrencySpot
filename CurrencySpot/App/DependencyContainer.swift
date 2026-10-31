@@ -1,3 +1,4 @@
+import AppIntents
 import Foundation
 import SwiftData
 
@@ -14,6 +15,7 @@ final class DependencyContainer {
     let settingsViewModel: SettingsViewModel
     let cameraViewModel: CameraViewModel
     let convertCurrencyUseCase: ConvertCurrencyUseCase
+    private let sharedSettingsMirror: SharedSettingsMirror
 
     private let makeHistoryViewModel: @MainActor (CurrencyCode, CurrencyCode) -> CurrencyHistoryViewModel
 
@@ -23,6 +25,7 @@ final class DependencyContainer {
         modelContainer: ModelContainer? = nil,
         appState: AppState = .shared,
         userDefaults: UserDefaults = .standard,
+        sharedDefaults: UserDefaults = .appGroup,
         preferences: PreferencesStore? = nil,
         languageStore: AppLanguageStore? = nil,
         retryPolicy: RetryPolicy = RetryPolicy(),
@@ -178,6 +181,14 @@ final class DependencyContainer {
             fallbackBaseCurrency: preferences.defaultBaseCurrency,
             defaultTargetCurrency: preferences.defaultTargetCurrency
         )
+
+        sharedSettingsMirror = SharedSettingsMirror(
+            favorites: favoritesStore,
+            preferences: preferences,
+            ratesStore: ratesStore,
+            shared: sharedDefaults,
+            favoritesChanged: { CurrencySpotShortcuts.updateAppShortcutParameters() }
+        )
     }
 
     // MARK: - Factories
@@ -194,6 +205,8 @@ final class DependencyContainer {
             defaults: .standard,
             errorHandler: appState.errorHandler
         )
-        return DependencyContainer(modelContainer: container, appState: appState)
+        let dependencies = DependencyContainer(modelContainer: container, appState: appState)
+        dependencies.sharedSettingsMirror.start()
+        return dependencies
     }
 }

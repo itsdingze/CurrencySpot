@@ -5,12 +5,12 @@ struct RateListConfiguration: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "widget.rateList.name"
     static let description = IntentDescription("widget.rateList.description")
 
-    @Parameter(title: "widget.parameter.base", default: CurrencyEntity(code: WidgetCurrencyDefaults.base))
+    @Parameter(title: "widget.parameter.base", default: CurrencyEntity(code: WidgetCurrencyDefaults.current.base))
     var base: CurrencyEntity
 
     @Parameter(
         title: "widget.parameter.currencies",
-        default: WidgetCurrencyDefaults.listCurrencies.map(CurrencyEntity.init),
+        default: WidgetCurrencyDefaults.current.listCurrencies.map(CurrencyEntity.init),
         size: [.systemMedium: 2, .systemLarge: 7]
     )
     var currencies: [CurrencyEntity]

@@ -24,10 +24,10 @@ nonisolated struct CurrencyEntityQuery: EntityStringQuery {
     }
 
     func entities(matching string: String) async throws -> [CurrencyEntity] {
-        await CurrencyCatalog.search(string).map(CurrencyEntity.init)
+        await CurrencyCatalog.search(string, in: .appGroup).map(CurrencyEntity.init)
     }
 
     func suggestedEntities() async throws -> [CurrencyEntity] {
-        await MainActor.run { CurrencyCatalog.suggested(in: .standard) }.map(CurrencyEntity.init)
+        await MainActor.run { CurrencyCatalog.suggested(in: .appGroup) }.map(CurrencyEntity.init)
     }
 }

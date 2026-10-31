@@ -2,12 +2,14 @@ import Foundation
 
 // MARK: - UserDefaultsKeys
 
-enum UserDefaultsKeys {
+nonisolated enum UserDefaultsKeys {
     // MARK: - Currency Settings
     
     static let defaultBaseCurrency = "DefaultBaseCurrency"
     static let defaultTargetCurrency = "DefaultTargetCurrency"
     static let favoriteCurrencies = "FavoriteCurrencies"
+
+    static let rateCurrencies = "RateCurrencies"
 
     static let historyWatchlist = "HistoryWatchlist"
     static let conversionHistory = "ConversionHistory"
