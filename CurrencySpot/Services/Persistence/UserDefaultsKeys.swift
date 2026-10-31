@@ -10,6 +10,7 @@ nonisolated enum UserDefaultsKeys {
     static let favoriteCurrencies = "FavoriteCurrencies"
 
     static let rateCurrencies = "RateCurrencies"
+    static let sharedRatesUpdatedAt = "SharedRatesUpdatedAt"
 
     static let historyWatchlist = "HistoryWatchlist"
     static let conversionHistory = "ConversionHistory"

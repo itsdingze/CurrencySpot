@@ -9,6 +9,7 @@ struct SharedSettingsMirrorTests {
     private let preferences: UserDefaultsPreferencesStore
     private let ratesStore = ExchangeRatesStore()
     private let favoritesChanges = Counter()
+    private let ratesRefreshes = Counter()
 
     init() throws {
         let appDefaults = try #require(UserDefaults(suiteName: "SharedSettingsMirrorTests-app-\(UUID().uuidString)"))
@@ -25,7 +26,8 @@ struct SharedSettingsMirrorTests {
             preferences: preferences,
             ratesStore: ratesStore,
             shared: shared,
-            favoritesChanged: { [favoritesChanges] in favoritesChanges.value += 1 }
+            favoritesChanged: { [favoritesChanges] in favoritesChanges.value += 1 },
+            ratesRefreshed: { [ratesRefreshes] in ratesRefreshes.value += 1 }
         )
     }
 
@@ -80,6 +82,33 @@ struct SharedSettingsMirrorTests {
 
         favorites.add("SEK")
         await waitUntil { favoritesChanges.value == 2 }
+    }
+
+    @Test("widgets reload once for each newer rates fetch, including across launches", .timeLimit(.minutes(1)))
+    func newerRatesReloadWidgets() async {
+        let morning = Date(timeIntervalSince1970: 1_800_000_000)
+        let afternoon = morning.addingTimeInterval(6 * 60 * 60)
+        let rates = [ExchangeRate(currencyCode: "USD", rate: 1)]
+        ratesStore.update(rates: rates, lastUpdated: morning, isShowingSampleRates: false)
+        makeMirror().start()
+        #expect(ratesRefreshes.value == 1)
+
+        let relaunched = makeMirror()
+        relaunched.start()
+        #expect(ratesRefreshes.value == 1)
+
+        ratesStore.update(rates: rates, lastUpdated: afternoon, isShowingSampleRates: false)
+        await waitUntil { ratesRefreshes.value == 2 }
+        withExtendedLifetime(relaunched) {}
+    }
+
+    @Test("sample rates never reload the widgets")
+    func sampleRatesDoNotReloadWidgets() {
+        ratesStore.update(rates: [ExchangeRate(currencyCode: "USD", rate: 1)], lastUpdated: .now, isShowingSampleRates: true)
+
+        makeMirror().start()
+
+        #expect(ratesRefreshes.value == 0)
     }
 }
 

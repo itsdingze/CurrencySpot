@@ -1,6 +1,7 @@
 import AppIntents
 import Foundation
 import SwiftData
+import WidgetKit
 
 // MARK: - DependencyContainer
 
@@ -187,7 +188,8 @@ final class DependencyContainer {
             preferences: preferences,
             ratesStore: ratesStore,
             shared: sharedDefaults,
-            favoritesChanged: { CurrencySpotShortcuts.updateAppShortcutParameters() }
+            favoritesChanged: { CurrencySpotShortcuts.updateAppShortcutParameters() },
+            ratesRefreshed: { WidgetCenter.shared.reloadAllTimelines() }
         )
     }
 

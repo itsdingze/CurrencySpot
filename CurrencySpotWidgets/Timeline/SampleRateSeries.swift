@@ -10,7 +10,7 @@ enum SampleRateSeries {
         RateSeriesEntry(
             date: .now,
             request: request,
-            snapshot: RateSeriesSnapshot(latestRateDay: .now, series: request.currencies.map { series(for: $0, base: request.base) })
+            snapshot: RateSeriesSnapshot(series: request.currencies.map { series(for: $0, base: request.base) })
         )
     }
 

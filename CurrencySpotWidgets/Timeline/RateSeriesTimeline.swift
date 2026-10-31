@@ -12,17 +12,20 @@ enum RateSeriesTimeline {
     )
 
     static func entry(for request: RateSeriesRequest, in context: TimelineProviderContext) async -> RateSeriesEntry {
-        if context.isPreview {
-            return SampleRateSeries.entry(for: request)
-        }
-        let now = Date.now
-        return RateSeriesEntry(date: now, request: request, snapshot: await loadRateSeries(request, now: now))
+        await loaded(request, in: context).entry
     }
 
     static func timeline(for request: RateSeriesRequest, in context: TimelineProviderContext) async -> Timeline<RateSeriesEntry> {
-        let entry = await entry(for: request, in: context)
-        let refresh = RatePublishSchedule.nextRefresh(after: entry.date, latestRateDay: entry.snapshot?.latestRateDay)
-        return Timeline(entries: [entry], policy: .after(refresh))
+        let loaded = await loaded(request, in: context)
+        return Timeline(entries: [loaded.entry], policy: .after(loaded.refresh))
+    }
+
+    private static func loaded(_ request: RateSeriesRequest, in context: TimelineProviderContext) async -> (entry: RateSeriesEntry, refresh: Date) {
+        let now = Date.now
+        let load = context.isPreview
+            ? RateSeriesLoad(snapshot: SampleRateSeries.entry(for: request).snapshot, isFresh: true)
+            : await loadRateSeries(request, now: now)
+        return (RateSeriesEntry(date: now, request: request, snapshot: load.snapshot), load.nextRefresh(after: now))
     }
 }
 

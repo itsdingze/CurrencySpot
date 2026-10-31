@@ -17,8 +17,18 @@ nonisolated struct RateSeriesRequest: Hashable, Sendable {
 }
 
 nonisolated struct RateSeriesSnapshot: Equatable, Sendable, Codable {
-    let latestRateDay: Date?
     let series: [RateSeries]
+}
+
+nonisolated struct RateSeriesLoad: Equatable, Sendable {
+    let snapshot: RateSeriesSnapshot?
+    let isFresh: Bool
+
+    private static let retryInterval: TimeInterval = 60 * 60
+
+    func nextRefresh(after now: Date) -> Date {
+        isFresh ? RateRefreshPolicy.nextRefetch(after: now) : now.addingTimeInterval(Self.retryInterval)
+    }
 }
 
 nonisolated protocol HistoricalRatesFetching: Sendable {
@@ -29,19 +39,17 @@ nonisolated struct LoadRateSeriesUseCase: Sendable {
     let fetcher: HistoricalRatesFetching
     let cache: RateSeriesCache
 
-    func callAsFunction(_ request: RateSeriesRequest, now: Date) async -> RateSeriesSnapshot? {
+    func callAsFunction(_ request: RateSeriesRequest, now: Date) async -> RateSeriesLoad {
         guard !request.quotes.isEmpty else {
-            return RateSeriesSnapshot(
-                latestRateDay: now,
-                series: request.currencies.map { RateSeries(currency: $0, rates: [1, 1]) }
-            )
+            let snapshot = RateSeriesSnapshot(series: request.currencies.map { RateSeries(currency: $0, rates: [1, 1]) })
+            return RateSeriesLoad(snapshot: snapshot, isFresh: true)
         }
         do {
             let snapshot = try await fetch(request, now: now)
             cache.save(snapshot, for: request)
-            return snapshot
+            return RateSeriesLoad(snapshot: snapshot, isFresh: true)
         } catch {
-            return cache.load(for: request)
+            return RateSeriesLoad(snapshot: cache.load(for: request), isFresh: false)
         }
     }
 
@@ -52,12 +60,9 @@ nonisolated struct LoadRateSeriesUseCase: Sendable {
             endDate: now,
             quotes: request.quotes.map(\.rawValue)
         )
-        guard let latestRateDay = CETCalendar.date(fromDayString: response.endDate), !response.rates.isEmpty else {
+        guard !response.rates.isEmpty else {
             throw AppError.dataValidationError("Rate series response contained no days")
         }
-        return RateSeriesSnapshot(
-            latestRateDay: latestRateDay,
-            series: RateSeries.series(for: request.currencies, in: response)
-        )
+        return RateSeriesSnapshot(series: RateSeries.series(for: request.currencies, in: response))
     }
 }

@@ -7,6 +7,7 @@ final class SharedSettingsMirror {
     private let ratesStore: ExchangeRatesStore
     private let shared: UserDefaults
     private let favoritesChanged: () -> Void
+    private let ratesRefreshed: () -> Void
 
     private var sharedFavorites: [String]?
 
@@ -15,13 +16,15 @@ final class SharedSettingsMirror {
         preferences: PreferencesStore,
         ratesStore: ExchangeRatesStore,
         shared: UserDefaults,
-        favoritesChanged: @escaping () -> Void
+        favoritesChanged: @escaping () -> Void,
+        ratesRefreshed: @escaping () -> Void
     ) {
         self.favorites = favorites
         self.preferences = preferences
         self.ratesStore = ratesStore
         self.shared = shared
         self.favoritesChanged = favoritesChanged
+        self.ratesRefreshed = ratesRefreshed
     }
 
     func start() {
@@ -38,6 +41,7 @@ final class SharedSettingsMirror {
         shared.set(preferences.defaultTargetCurrency.rawValue, forKey: UserDefaultsKeys.defaultTargetCurrency)
         if !ratesStore.isShowingSampleRates, !ratesStore.rates.isEmpty {
             shared.set(ratesStore.rates.map(\.currencyCode.rawValue).sorted(), forKey: UserDefaultsKeys.rateCurrencies)
+            shareRatesUpdate(ratesStore.lastUpdated)
         }
     }
 
@@ -46,5 +50,14 @@ final class SharedSettingsMirror {
         sharedFavorites = codes
         shared.set(codes, forKey: UserDefaultsKeys.favoriteCurrencies)
         favoritesChanged()
+    }
+
+    private func shareRatesUpdate(_ lastUpdated: Date?) {
+        guard let lastUpdated else { return }
+        if let sharedUpdate = shared.object(forKey: UserDefaultsKeys.sharedRatesUpdatedAt) as? Date, sharedUpdate >= lastUpdated {
+            return
+        }
+        shared.set(lastUpdated, forKey: UserDefaultsKeys.sharedRatesUpdatedAt)
+        ratesRefreshed()
     }
 }

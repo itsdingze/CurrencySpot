@@ -29,11 +29,10 @@ struct LoadRateSeriesUseCaseTests {
         let fetcher = StubHistoricalRatesFetcher(result: .success(response))
         let load = LoadRateSeriesUseCase(fetcher: fetcher, cache: cache)
 
-        let snapshot = try #require(await load(request, now: now))
+        let snapshot = try #require(await load(request, now: now).snapshot)
 
         #expect(snapshot.series.map(\.currency) == ["JPY", "USD", "EUR"])
         #expect(snapshot.series.map(\.rates) == [[160.0, 150.0], [1, 1], [0.80, 0.88]])
-        #expect(snapshot.latestRateDay == createCETDate(year: 2026, month: 10, day: 27))
         let call = try #require(fetcher.calls.first)
         #expect(call.base == "USD")
         #expect(call.quotes == ["JPY", "EUR"])
@@ -43,19 +42,42 @@ struct LoadRateSeriesUseCaseTests {
 
     @Test("falls back to the last saved rates when the fetch fails")
     func fallsBackToSavedRates() async throws {
-        let saved = try #require(await LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .success(response)), cache: cache)(request, now: now))
+        let saved = try #require(await LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .success(response)), cache: cache)(request, now: now).snapshot)
         let offline = LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .failure(URLError(.notConnectedToInternet))), cache: cache)
 
-        #expect(await offline(request, now: now) == saved)
+        #expect(await offline(request, now: now) == RateSeriesLoad(snapshot: saved, isFresh: false))
+    }
+
+    @Test("after a successful download the widget refreshes when the app would treat the rates as stale, weekends included")
+    func freshDownloadRefreshesWithTheApp() async throws {
+        let saturday = try #require(createCETDate(year: 2026, month: 10, day: 31))
+        let load = await LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .success(response)), cache: cache)(request, now: saturday)
+
+        let next = load.nextRefresh(after: saturday)
+
+        #expect(RateRefreshPolicy.shouldRefetch(now: next, lastFetch: saturday))
+        #expect(!RateRefreshPolicy.shouldRefetch(now: next.addingTimeInterval(-60), lastFetch: saturday))
+    }
+
+    @Test("after a failed download the widget keeps retrying within the hour, even long after a missed publish")
+    func failedDownloadRetriesSoon() async throws {
+        _ = await LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .success(response)), cache: cache)(request, now: now)
+        let offline = LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .failure(URLError(.notConnectedToInternet))), cache: cache)
+        let nextEvening = now.addingTimeInterval(45 * 60 * 60)
+
+        let load = await offline(request, now: nextEvening)
+
+        #expect(load.snapshot != nil)
+        #expect(load.nextRefresh(after: nextEvening) <= nextEvening.addingTimeInterval(60 * 60))
     }
 
     @Test("an empty response keeps the last saved rates instead of replacing them")
     func emptyResponseKeepsSavedRates() async throws {
-        let saved = try #require(await LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .success(response)), cache: cache)(request, now: now))
+        let saved = try #require(await LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .success(response)), cache: cache)(request, now: now).snapshot)
         let empty = HistoricalRatesResponse(base: "USD", startDate: "", endDate: "", rates: [:])
         let emptyLoad = LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .success(empty)), cache: cache)
 
-        #expect(await emptyLoad(request, now: now) == saved)
+        #expect(await emptyLoad(request, now: now).snapshot == saved)
     }
 
     @Test("a request with only the base currency answers one without going online")
@@ -63,7 +85,7 @@ struct LoadRateSeriesUseCaseTests {
         let fetcher = StubHistoricalRatesFetcher(result: .failure(URLError(.notConnectedToInternet)))
         let load = LoadRateSeriesUseCase(fetcher: fetcher, cache: cache)
 
-        let snapshot = try #require(await load(RateSeriesRequest(base: "USD", currencies: ["USD"], period: .oneWeek), now: now))
+        let snapshot = try #require(await load(RateSeriesRequest(base: "USD", currencies: ["USD"], period: .oneWeek), now: now).snapshot)
 
         #expect(snapshot.series.map(\.currency) == ["USD"])
         #expect(snapshot.series.first?.latestRate == 1)
@@ -76,7 +98,7 @@ struct LoadRateSeriesUseCaseTests {
         let offline = LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .failure(URLError(.notConnectedToInternet))), cache: cache)
         let otherPeriod = RateSeriesRequest(base: "USD", currencies: ["JPY", "USD", "EUR"], period: .oneYear)
 
-        #expect(await offline(otherPeriod, now: now) == nil)
+        #expect(await offline(otherPeriod, now: now).snapshot == nil)
     }
 }
 

@@ -77,7 +77,7 @@
 				Models/Domain/ExchangeRate.swift,
 				Models/Domain/HistoryLink.swift,
 				Models/Domain/RateMath.swift,
-				Models/Domain/RatePublishSchedule.swift,
+				Models/Domain/RateRefreshPolicy.swift,
 				Models/Domain/RateSeries.swift,
 				Models/Domain/TimeRange.swift,
 				Models/Domain/TrendDirection.swift,
