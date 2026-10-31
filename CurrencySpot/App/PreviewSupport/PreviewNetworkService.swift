@@ -47,6 +47,8 @@
             )
         }
 
+        func clearCachedResponses() {}
+
         private static let sampleRates: [String: Double] = Dictionary(
             uniqueKeysWithValues: SampleExchangeRates.rates.map { ($0.key.rawValue, $0.value) }
         )

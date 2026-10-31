@@ -8,6 +8,8 @@ protocol NetworkService {
     func fetchHistoricalRates(from startDate: Date, to endDate: Date) async throws -> HistoricalRatesResponse
 
     func fetchHistoricalRates(from startDate: Date, to endDate: Date, quotes: [String]) async throws -> HistoricalRatesResponse
+
+    func clearCachedResponses()
 }
 
 // MARK: - NetworkService Implementation
@@ -42,5 +44,9 @@ final class FrankfurterNetworkService: NetworkService {
             endDate: endDate,
             quotes: quotes
         )
+    }
+
+    func clearCachedResponses() {
+        api.clearCachedResponses()
     }
 }

@@ -58,6 +58,13 @@ struct DataCoordinatorRatesTests {
         #expect(syncStore.checkedAt == nil)
     }
 
+    @Test("clearAllData drops cached server responses, so the next download goes to the server")
+    func clearAllDataDropsCachedResponses() async throws {
+        try await service.clearAllData()
+
+        #expect(networkService.clearCachedResponsesCallCount == 1)
+    }
+
     @Test("a stored read returns persisted days beyond a narrower series and widens the series with them")
     func storedReadServesPersistenceNotTheNarrowerSeries() async throws {
         let cacheService = InMemoryCacheService()

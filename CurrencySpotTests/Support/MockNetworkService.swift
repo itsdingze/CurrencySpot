@@ -11,6 +11,11 @@ final class MockNetworkService: NetworkService {
     private(set) var fetchExchangeRatesCallCount = 0
     private(set) var fetchHistoricalRatesCalls: [(from: Date, to: Date)] = []
     private(set) var cancelledHistoricalFetchCount = 0
+    private(set) var clearCachedResponsesCallCount = 0
+
+    func clearCachedResponses() {
+        clearCachedResponsesCallCount += 1
+    }
 
     func fetchExchangeRates() async throws -> ExchangeRatesResponse {
         fetchExchangeRatesCallCount += 1

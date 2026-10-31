@@ -17,9 +17,18 @@ nonisolated final class FrankfurterAPI: Sendable {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 10.0
         configuration.timeoutIntervalForResource = 30.0
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.requestCachePolicy = .useProtocolCachePolicy
+        configuration.urlCache = URLCache(
+            memoryCapacity: 2 * 1024 * 1024,
+            diskCapacity: 20 * 1024 * 1024,
+            directory: URL.cachesDirectory.appending(path: "FrankfurterResponses")
+        )
         configuration.allowsCellularAccess = true
         return URLSession(configuration: configuration)
+    }
+
+    func clearCachedResponses() {
+        urlSession.configuration.urlCache?.removeAllCachedResponses()
     }
 
     @concurrent

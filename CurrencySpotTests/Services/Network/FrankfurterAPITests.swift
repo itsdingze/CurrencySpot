@@ -63,6 +63,27 @@ struct FrankfurterAPITests {
         return Data("[\(rows.joined(separator: ","))]".utf8)
     }
 
+    @Test("clearCachedResponses empties the session's response cache")
+    func clearCachedResponsesEmptiesTheCache() throws {
+        let cache = URLCache(memoryCapacity: 1024 * 1024, diskCapacity: 0)
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.urlCache = cache
+        let api = FrankfurterAPI(
+            session: URLSession(configuration: configuration),
+            retryPolicy: RetryPolicy(jitter: { _ in 1.0 }),
+            clock: ImmediateClock()
+        )
+        let url = try #require(URL(string: "https://api.frankfurter.dev/v2/rates?base=USD"))
+        let request = URLRequest(url: url)
+        let response = try #require(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil))
+        cache.storeCachedResponse(CachedURLResponse(response: response, data: Data("[]".utf8)), for: request)
+        try #require(cache.cachedResponse(for: request) != nil)
+
+        api.clearCachedResponses()
+
+        #expect(cache.cachedResponse(for: request) == nil)
+    }
+
     @Test("fetchExchangeRates builds the latest endpoint URL and decodes through the v2 mapper")
     func latestEndpointHappyPath() async throws {
         StubURLProtocol.register(

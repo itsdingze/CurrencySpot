@@ -324,6 +324,7 @@ extension DataCoordinator: DataClearing {
         try await persistenceService.clearAllData()
 
         await cacheService.clearCache()
+        networkService.clearCachedResponses()
 
         fetchDateStore.lastFetchDate = nil
 
