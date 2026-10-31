@@ -4,10 +4,12 @@ struct RateInfoView: View {
     @Environment(CalculatorViewModel.self) private var viewModel: CalculatorViewModel
 
     var body: some View {
-        if viewModel.rateBanner == .hidden {
-            rateAndLastUpdated
-        } else {
-            rateAndStatus
+        DelayedUpdatingBanner(banner: viewModel.rateBanner) { banner in
+            if banner == .hidden {
+                rateAndLastUpdated
+            } else {
+                rateAndStatus(banner)
+            }
         }
     }
 
@@ -23,14 +25,14 @@ struct RateInfoView: View {
         .accessibilityAddTraits(.updatesFrequently)
     }
 
-    private var rateAndStatus: some View {
+    private func rateAndStatus(_ banner: RateBanner) -> some View {
         VStack(spacing: Spacing.hairline) {
             if shouldShowConversionRate {
                 conversionRateText
                     .accessibilityAddTraits(.updatesFrequently)
             }
             RateStatusLine(
-                status: viewModel.rateBanner,
+                status: banner,
                 savedRatesTime: viewModel.savedRatesTime,
                 showsRetry: viewModel.canRetryRates,
                 retryAction: viewModel.retryFetch
