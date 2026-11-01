@@ -16,7 +16,7 @@ struct AppOnboardingView: View {
                     .frame(width: iconSide, height: iconSide)
                     .clipShape(iconShape)
                     .overlay {
-                        iconShape.stroke(Color.gray.opacity(0.2), lineWidth: 1.5)
+                        iconShape.stroke(Color.gray.opacity(0.1), lineWidth: 1)
                     }
                     .padding(.top, Spacing.onboarding)
                     .accessibilityHidden(true)
