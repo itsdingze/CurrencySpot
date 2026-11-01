@@ -13,6 +13,8 @@ struct CalculatorKeypadView: View {
     @GestureState private var isDragging = false
 
     private let swipeThreshold: CGFloat = 60
+    private let topFadeHeight = Spacing.element
+    private let shadowOverflow = Spacing.onboarding
 
     private var progress: CGFloat {
         viewModel.keypadMode == .calculator ? 1 : 0
@@ -52,11 +54,21 @@ struct CalculatorKeypadView: View {
                 keys
             }
         }
-        .mask { Rectangle().padding(-Spacing.element) }
+        .mask { keypadMask }
         .contentShape(.rect)
         .simultaneousGesture(swipe)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(.calculatorNumberPadAccessibilityLabel)
+    }
+
+    private var keypadMask: some View {
+        VStack(spacing: 0) {
+            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                .frame(height: topFadeHeight)
+            Rectangle()
+        }
+        .padding(.top, -topFadeHeight)
+        .padding([.horizontal, .bottom], -shadowOverflow)
     }
 
     private var keys: some View {
