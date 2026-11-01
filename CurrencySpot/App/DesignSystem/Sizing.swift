@@ -38,10 +38,10 @@ extension View {
             .contentShape(.rect)
     }
 
-    func layoutNeutralHitTarget() -> some View {
+    func layoutNeutralHitTarget(_ edges: Edge.Set = .all) -> some View {
         let outset: CGFloat = 12
-        return padding(outset)
+        return padding(edges, outset)
             .contentShape(.rect)
-            .padding(-outset)
+            .padding(edges, -outset)
     }
 }

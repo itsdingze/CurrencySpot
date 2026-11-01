@@ -7,15 +7,16 @@ struct KeypadPageIndicator: View {
     private let dotSize: CGFloat = 7
 
     var body: some View {
-        HStack(spacing: Spacing.tight) {
+        HStack(spacing: 0) {
             ForEach(modes, id: \.self) { page in
                 Button { mode = page } label: {
                     Circle()
                         .fill(page == mode ? AnyShapeStyle(.primary) : AnyShapeStyle(.tertiary))
                         .frame(width: dotSize, height: dotSize)
+                        .padding(.horizontal, Spacing.tight / 2)
                 }
                 .buttonStyle(.plain)
-                .layoutNeutralHitTarget()
+                .layoutNeutralHitTarget(outerEdges(of: page))
                 .accessibilityLabel(Text(page.title))
                 .accessibilityAddTraits(page == mode ? .isSelected : [])
             }
@@ -23,6 +24,13 @@ struct KeypadPageIndicator: View {
         .padding(.vertical, Spacing.hairline)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(.calculatorNumberPadAccessibilityLabel)
+    }
+
+    private func outerEdges(of page: CalculatorViewModel.KeypadMode) -> Edge.Set {
+        var edges: Edge.Set = .vertical
+        if page == modes.first { edges.insert(.leading) }
+        if page == modes.last { edges.insert(.trailing) }
+        return edges
     }
 }
 
