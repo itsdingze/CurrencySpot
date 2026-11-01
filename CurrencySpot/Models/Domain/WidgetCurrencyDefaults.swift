@@ -18,8 +18,8 @@ nonisolated struct WidgetCurrencyDefaults {
 
         self.base = base
         self.target = target.flatMap { $0 == base ? nil : $0 } ?? (base == .eur ? .usd : .eur)
-        let list = favorites.isEmpty ? Self.popularCurrencies.filter { $0 != base } : favorites
-        listCurrencies = Array(list.prefix(Self.listLimit))
+        let topUp = Self.popularCurrencies.filter { $0 != base && !favorites.contains($0) }
+        listCurrencies = Array((favorites + topUp).prefix(Self.listLimit))
     }
 
     static var current: WidgetCurrencyDefaults {

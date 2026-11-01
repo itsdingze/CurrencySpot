@@ -20,7 +20,7 @@ struct WidgetCurrencyDefaultsTests {
 
         #expect(defaults.base == "CHF")
         #expect(defaults.target == "SEK")
-        #expect(defaults.listCurrencies == ["SEK", "NOK"])
+        #expect(defaults.listCurrencies == ["SEK", "NOK", "USD", "EUR", "GBP", "JPY", "CNY"])
     }
 
     @Test("before the app has shared its settings, a widget starts on the device region's currency")
@@ -41,6 +41,26 @@ struct WidgetCurrencyDefaultsTests {
         let defaults = WidgetCurrencyDefaults(shared: shared, locale: Locale(identifier: "en_US"))
 
         #expect(defaults.listCurrencies == ["EUR", "GBP", "JPY", "CNY", "CAD", "AUD", "CHF"])
+    }
+
+    @Test("a new large list widget fills all seven rows, topping up favorites with popular currencies")
+    func topsUpToSevenRows() {
+        shared.set("USD", forKey: UserDefaultsKeys.defaultBaseCurrency)
+        shared.set(["USD", "EUR", "GBP", "JPY", "CNY", "CAD", "AUD"], forKey: UserDefaultsKeys.favoriteCurrencies)
+
+        let defaults = WidgetCurrencyDefaults(shared: shared, locale: Locale(identifier: "en_US"))
+
+        #expect(defaults.listCurrencies == ["EUR", "GBP", "JPY", "CNY", "CAD", "AUD", "CHF"])
+    }
+
+    @Test("topping up keeps the user's favorites in their own order ahead of popular currencies")
+    func topUpKeepsFavoriteOrder() {
+        shared.set("USD", forKey: UserDefaultsKeys.defaultBaseCurrency)
+        shared.set(["USD", "CAD", "EUR", "GBP"], forKey: UserDefaultsKeys.favoriteCurrencies)
+
+        let defaults = WidgetCurrencyDefaults(shared: shared, locale: Locale(identifier: "en_US"))
+
+        #expect(defaults.listCurrencies == ["CAD", "EUR", "GBP", "JPY", "CNY", "AUD", "CHF"])
     }
 
     @Test("a shared target equal to the base is replaced so the pair widget shows two currencies")
