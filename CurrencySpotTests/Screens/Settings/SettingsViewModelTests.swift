@@ -11,6 +11,7 @@ struct SettingsViewModelTests {
     private let watchlist: CurrencyCodeListStore
     private let language = InMemoryAppLanguageStore(systemIdentifier: "en")
     private let appState = AppState(networkMonitor: NetworkMonitor(isConnected: true))
+    private let appIcons = InMemoryAppIconService()
     private let viewModel: SettingsViewModel
 
     init() throws {
@@ -27,6 +28,7 @@ struct SettingsViewModelTests {
             favorites: favorites,
             watchlist: watchlist,
             language: language,
+            appIcons: appIcons,
             appState: appState,
             clock: ImmediateClock()
         )
@@ -38,6 +40,7 @@ struct SettingsViewModelTests {
         favorites: CurrencyCodeListStore,
         watchlist: CurrencyCodeListStore,
         language: AppLanguageStore,
+        appIcons: AppIconService,
         appState: AppState,
         clock: ClockService
     ) -> SettingsViewModel {
@@ -52,18 +55,33 @@ struct SettingsViewModelTests {
             manageFavoritesUseCase: ManageFavoritesUseCase(favorites: favorites),
             preferences: preferences,
             languageStore: language,
+            appIconService: appIcons,
             appState: appState,
             clock: clock
         )
     }
 
     private func makeViewModel(refresh: AllDataRefreshing, appState: AppState, toastClock: ClockService) -> SettingsViewModel {
+        makeViewModel(refresh: refresh, appIcons: appIcons, appState: appState, toastClock: toastClock)
+    }
+
+    private func makeViewModel(appIcons: AppIconService) -> SettingsViewModel {
+        makeViewModel(refresh: GatedRefresh(), appIcons: appIcons, appState: appState, toastClock: ImmediateClock())
+    }
+
+    private func makeViewModel(
+        refresh: AllDataRefreshing,
+        appIcons: AppIconService,
+        appState: AppState,
+        toastClock: ClockService
+    ) -> SettingsViewModel {
         Self.makeViewModel(
             refresh: refresh,
             preferences: preferences,
             favorites: favorites,
             watchlist: watchlist,
             language: language,
+            appIcons: appIcons,
             appState: appState,
             clock: toastClock
         )
@@ -105,6 +123,12 @@ struct SettingsViewModelTests {
     func accentColorDestination() {
         viewModel.accentColorTapped()
         #expect(viewModel.destination == .accentColorPicker)
+    }
+
+    @Test("appIconTapped presents the app icon picker destination")
+    func appIconDestination() {
+        viewModel.appIconTapped()
+        #expect(viewModel.destination == .appIconPicker)
     }
 
     @Test("addFavoriteTapped presents the add-currency sheet and dismissing clears it")
@@ -304,5 +328,48 @@ struct SettingsViewModelTests {
         viewModel.confirmAlert(.resetPreferences)
 
         #expect(viewModel.language == AppLanguage(identifier: "en"))
+    }
+
+    @Test("the App Icon row starts on the icon the Home Screen shows")
+    func appIconStartsOnHomeScreenIcon() {
+        let viewModel = makeViewModel(appIcons: InMemoryAppIconService(alternateIconName: "AppIconCoins"))
+
+        #expect(viewModel.appIcon == .coins)
+    }
+
+    @Test("choosing Coins puts the Coins icon on the Home Screen")
+    func choosingCoinsSwitchesHomeScreenIcon() async {
+        await viewModel.selectAppIcon(.coins)
+
+        #expect(appIcons.requestedNames == ["AppIconCoins"])
+        #expect(viewModel.appIcon == .coins)
+    }
+
+    @Test("choosing Dollar from Coins puts the default icon back on the Home Screen")
+    func choosingDollarRestoresDefaultIcon() async {
+        let appIcons = InMemoryAppIconService(alternateIconName: "AppIconCoins")
+        let viewModel = makeViewModel(appIcons: appIcons)
+
+        await viewModel.selectAppIcon(.dollar)
+
+        #expect(appIcons.requestedNames == [nil])
+        #expect(viewModel.appIcon == .dollar)
+    }
+
+    @Test("when iOS refuses the change, the row keeps the current icon and a toast says it didn't change")
+    func refusedIconChangeKeepsCurrentIcon() async {
+        appIcons.failure = CocoaError(.featureUnsupported)
+
+        await viewModel.selectAppIcon(.coins)
+
+        #expect(viewModel.appIcon == .dollar)
+        #expect(viewModel.toast?.type == .appIconUnchanged)
+    }
+
+    @Test("choosing the icon already on the Home Screen leaves iOS alone")
+    func choosingCurrentIconIsSilent() async {
+        await viewModel.selectAppIcon(.dollar)
+
+        #expect(appIcons.requestedNames.isEmpty)
     }
 }

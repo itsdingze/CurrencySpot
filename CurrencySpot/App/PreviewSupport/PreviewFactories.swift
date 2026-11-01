@@ -34,7 +34,8 @@
                 historicalRepository: historicalRepository,
                 cameraPermissionService: StubCameraPermissionService(status: .authorized),
                 stillTextRecognizer: StubStillTextRecognizer(),
-                torchService: InMemoryTorchService()
+                torchService: InMemoryTorchService(),
+                appIconService: InMemoryAppIconService()
             )
         }
     }

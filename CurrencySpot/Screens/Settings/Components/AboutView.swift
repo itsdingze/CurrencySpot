@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AboutView: View {
+    @Environment(SettingsViewModel.self) private var settingsViewModel: SettingsViewModel
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
@@ -28,7 +29,7 @@ struct AboutView: View {
 
     private var appHeader: some View {
         VStack(spacing: Spacing.tight) {
-            Image(.icon)
+            Image(settingsViewModel.appIcon.artwork)
                 .resizable()
                 .scaledToFit()
                 .frame(width: iconSide, height: iconSide)
@@ -102,5 +103,6 @@ struct AboutView: View {
                 AcknowledgementsView()
             }
     }
+    .withDependencyContainer(DependencyContainer.preview())
 }
 #endif

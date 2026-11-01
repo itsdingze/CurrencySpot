@@ -41,7 +41,8 @@ final class DependencyContainer {
         clockService: ClockService = ContinuousClockService(),
         cameraPermissionService: CameraPermissionService = AVCameraPermissionService(),
         stillTextRecognizer: StillTextRecognitionService = StillImageTextRecognizer(),
-        torchService: TorchService = AVTorchService()
+        torchService: TorchService = AVTorchService(),
+        appIconService: AppIconService = UIKitAppIconService()
     ) {
         let preferences = preferences ?? UserDefaultsPreferencesStore(userDefaults: userDefaults)
         let languageStore = languageStore ?? UserDefaultsAppLanguageStore(
@@ -169,6 +170,7 @@ final class DependencyContainer {
             manageFavoritesUseCase: ManageFavoritesUseCase(favorites: favoritesStore),
             preferences: preferences,
             languageStore: languageStore,
+            appIconService: appIconService,
             appState: appState,
             clock: clockService
         )

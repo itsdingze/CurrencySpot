@@ -11,6 +11,7 @@ final class SettingsViewModel {
     nonisolated enum Destination: Equatable {
         case alert(SettingsAlert)
         case accentColorPicker
+        case appIconPicker
         case addFavoriteCurrency
         case onboarding
         case languageChangeNotice
@@ -59,6 +60,7 @@ final class SettingsViewModel {
     private let manageFavoritesUseCase: ManageFavoritesUseCase
     private let preferences: PreferencesStore
     private let languageStore: AppLanguageStore
+    private let appIconService: AppIconService
     private let appState: AppState
     private let clock: ClockService
     private let logger = Logger(category: .viewModel)
@@ -71,6 +73,7 @@ final class SettingsViewModel {
         manageFavoritesUseCase: ManageFavoritesUseCase,
         preferences: PreferencesStore,
         languageStore: AppLanguageStore,
+        appIconService: AppIconService,
         appState: AppState,
         clock: ClockService
     ) {
@@ -80,6 +83,8 @@ final class SettingsViewModel {
         self.preferences = preferences
         self.languageStore = languageStore
         selectedLanguage = languageStore.selectedLanguage
+        self.appIconService = appIconService
+        appIcon = AppIconOption(alternateIconName: appIconService.alternateIconName)
         self.appState = appState
         self.clock = clock
     }
@@ -96,6 +101,10 @@ final class SettingsViewModel {
 
     func accentColorTapped() {
         destination = .accentColorPicker
+    }
+
+    func appIconTapped() {
+        destination = .appIconPicker
     }
 
     func addFavoriteTapped() {
@@ -206,6 +215,21 @@ final class SettingsViewModel {
             languageStore.selectedLanguage = newValue
             selectedLanguage = newValue
             destination = .languageChangeNotice
+        }
+    }
+
+    // MARK: - App Icon
+
+    private(set) var appIcon: AppIconOption
+
+    func selectAppIcon(_ icon: AppIconOption) async {
+        guard icon != appIcon else { return }
+        do {
+            try await appIconService.setAlternateIconName(icon.alternateIconName)
+            appIcon = icon
+        } catch {
+            logger.error("Failed to change app icon: \(error.localizedDescription, privacy: .public)")
+            showToast(.appIconUnchanged)
         }
     }
 

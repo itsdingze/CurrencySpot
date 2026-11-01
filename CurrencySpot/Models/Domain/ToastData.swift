@@ -1,7 +1,7 @@
 import Foundation
 
 nonisolated enum ToastType: Sendable {
-    case dataRefreshing, preferencesReset
+    case dataRefreshing, preferencesReset, appIconUnchanged
 }
 
 nonisolated struct ToastData: Identifiable, Sendable {
@@ -12,6 +12,7 @@ nonisolated struct ToastData: Identifiable, Sendable {
         switch type {
         case .dataRefreshing: .toastDataRefreshingMessage
         case .preferencesReset: .toastPreferencesResetMessage
+        case .appIconUnchanged: .toastAppIconUnchangedMessage
         }
     }
 
@@ -19,6 +20,7 @@ nonisolated struct ToastData: Identifiable, Sendable {
         switch type {
         case .dataRefreshing: "arrow.clockwise.circle.fill"
         case .preferencesReset: "arrow.triangle.2.circlepath.circle.fill"
+        case .appIconUnchanged: "exclamationmark.circle.fill"
         }
     }
 }

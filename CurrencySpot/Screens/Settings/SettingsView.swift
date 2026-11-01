@@ -73,6 +73,7 @@ struct SettingsView: View {
     private var appearanceSection: some View {
         Section(header: Text(.settingsAppearanceHeader)) {
             AccentColorPickerSheet()
+            AppIconPickerSheet()
             pickerRow(label: colorSchemeLabel, picker: colorSchemePicker)
             pickerRow(label: languageLabel, picker: languagePicker)
         }
