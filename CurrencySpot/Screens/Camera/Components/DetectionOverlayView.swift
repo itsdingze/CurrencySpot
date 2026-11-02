@@ -18,6 +18,7 @@ struct DetectionOverlayView: View {
     @Environment(\.legibilityWeight) private var legibilityWeight
     @State private var viewSize = CGSize.zero
     @State private var layout = PlateLayout.Result.empty
+    @State private var layoutMemory = PlateLayoutMemory(tracksFrames: true)
     @State private var promotions: [UUID] = []
     @State private var pendingReveal: UUID?
 
@@ -63,6 +64,7 @@ struct DetectionOverlayView: View {
             relayout()
         }
         .onChange(of: isLive) { _, _ in
+            layoutMemory = PlateLayoutMemory(tracksFrames: true)
             relayout()
         }
         .onChange(of: legibilityWeight) { _, _ in
@@ -85,9 +87,11 @@ struct DetectionOverlayView: View {
 
     private func relayout() {
         guard viewSize.width > 0, viewSize.height > 0 else { return }
+        var memory = isLive ? layoutMemory : PlateLayoutMemory(tracksFrames: false)
         let legibilityWeight = legibilityWeight
         layout = PlateLayout(frame: layoutFrame, measureText: { PlateTextWidth.of($0, fontSize: $1, legibilityWeight: legibilityWeight) })
-            .layout(items, text: plateText)
+            .layout(items, text: plateText, memory: &memory)
+        if isLive { layoutMemory = memory }
     }
 
     private var layoutFrame: CGRect {

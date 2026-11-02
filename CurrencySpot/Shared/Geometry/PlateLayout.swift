@@ -6,6 +6,7 @@ struct PlateLayout {
         let id: UUID
         let text: String
         let fontSize: CGFloat
+        let alignment: PlateLayoutMemory.Alignment
         let quad: Quad
         let size: CGSize
         let cornerRadius: CGFloat
@@ -36,16 +37,20 @@ struct PlateLayout {
         static let empty = Result(angle: 0, plates: [], outlines: [])
     }
 
-    private enum Alignment {
-        case centered
-        case leading
-        case trailing
-    }
-
     private struct Anchor {
         let item: DetectedItem
         let text: String
         let token: PageRect
+        init(item: DetectedItem, text: String, token: PageRect, lockedSize: CGSize) {
+            self.item = item
+            self.text = text
+            self.token = PageRect(
+                u0: token.midU - lockedSize.width / 2,
+                u1: token.midU + lockedSize.width / 2,
+                v0: token.midV - lockedSize.height / 2,
+                v1: token.midV + lockedSize.height / 2
+            )
+        }
 
         var textHeight: CGFloat { token.height }
     }
@@ -57,14 +62,16 @@ struct PlateLayout {
         var width: CGFloat
         let coveredHeight: CGFloat
         let baseHeight: CGFloat
+        var alignment = PlateLayoutMemory.Alignment.centered
         var u0: CGFloat = 0
 
         var token: PageRect { anchor.token }
         var id: UUID { anchor.item.id }
         var span: PageRect { PageRect(u0: u0, u1: u0 + width, v0: token.midV - baseHeight / 2, v1: token.midV + baseHeight / 2) }
 
-        func positioned(_ alignment: Alignment, within room: ClosedRange<CGFloat>) -> Sized {
+        func positioned(_ alignment: PlateLayoutMemory.Alignment, within room: ClosedRange<CGFloat>) -> Sized {
             var copy = self
+            copy.alignment = alignment
             copy.u0 = switch alignment {
             case .centered: token.midU - width / 2
             case .leading: max(token.u0 - ConvertedPlateMetrics.tokenOverhang, room.lowerBound)
@@ -85,6 +92,17 @@ struct PlateLayout {
             return copy
         }
 
+        func resized(to newWidth: CGFloat) -> Sized {
+            var copy = self
+            copy.width = newWidth
+            copy.u0 = switch alignment {
+            case .leading: u0
+            case .trailing: u0 + width - newWidth
+            case .centered: u0 + (width - newWidth) / 2
+            }
+            return copy
+        }
+
         func room(among obstacles: [PageRect]) -> ClosedRange<CGFloat> {
             let row = obstacles.filter { min($0.v1, span.v1) > max($0.v0, span.v0) }
             let leading = row.filter { $0.midU < token.midU }.map { min($0.u1, token.u0) }.max() ?? -.infinity
@@ -98,22 +116,40 @@ struct PlateLayout {
     private static let duplicateOverlap: CGFloat = 0.5
     private static let frameInset: CGFloat = 2
     private static let plateGap: CGFloat = 1
+    private static let columnMargin: CGFloat = 2
 
     let frame: CGRect
     let measureText: (String, CGFloat) -> CGFloat
 
-    func layout(_ items: [DetectedItem], text: (DetectedItem) -> String) -> Result {
+    func layout(
+        _ items: [DetectedItem],
+        text: (DetectedItem) -> String,
+        memory: inout PlateLayoutMemory
+    ) -> Result {
         let prices = Self.withoutDuplicates(items.filter(\.conversion.isPrice))
-        let measured = Self.medianLineAngle(of: prices)
-        let axes = PageAxes(angle: abs(measured) < Self.pageAngleSnap ? 0 : measured)
-        let anchors = prices.map { Anchor(item: $0, text: text($0), token: Self.token($0.tokenQuad, on: axes)) }
+        let axes = PageAxes(angle: memory.pageAngle(measured: Self.medianLineAngle(of: prices), snappingBelow: Self.pageAngleSnap))
+        let anchors = prices.map { price in
+            let token = Self.token(price.tokenQuad, on: axes)
+            return Anchor(
+                item: price,
+                text: text(price),
+                token: token,
+                lockedSize: memory.tokenSize(for: price.id, measured: CGSize(width: token.width, height: token.height))
+            )
+        }
         let outlines = items.filter { !$0.conversion.isPrice }.map { outline($0, axes: axes) }
 
-        var sized = anchors.map { size($0, among: anchors) }
-        align(&sized, axes: axes, outlines: outlines)
+        var sized = anchors.map { size($0, among: anchors, memory: &memory) }
+        align(&sized, axes: axes, outlines: outlines, memory: &memory)
         let plates = sized.map { item in
-            plate(item, height: height(of: item, among: sized, outlines: outlines), axes: axes)
+            plate(
+                item,
+                height: height(of: item, among: sized, outlines: outlines, memory: &memory),
+                axes: axes,
+                roundsOrigin: memory.tracksFrames
+            )
         }
+        memory.forget(allBut: Set(plates.map(\.id)))
         return Self.resolvingHitTargets(Result(angle: axes.angle, plates: plates, outlines: outlines.map(\.placed)), in: frame)
     }
 
@@ -143,12 +179,12 @@ struct PlateLayout {
             .median
     }
 
-    private func size(_ anchor: Anchor, among anchors: [Anchor]) -> Sized {
+    private func size(_ anchor: Anchor, among anchors: [Anchor], memory: inout PlateLayoutMemory) -> Sized {
         let peers = anchors.map(\.textHeight).filter {
             $0 >= anchor.textHeight / ConvertedPlateMetrics.fontPeerRatio
                 && $0 <= anchor.textHeight * ConvertedPlateMetrics.fontPeerRatio
         }
-        let fontSize = ConvertedPlateMetrics.fontSize(forTextHeight: peers.median)
+        let fontSize = memory.fontSize(for: anchor.item.id, textHeight: peers.median)
         let padding = ConvertedPlateMetrics.horizontalPadding(forFontSize: fontSize)
         let content = (measureText(anchor.text, fontSize) + 2 * padding).rounded(.up)
         let required = max((anchor.token.width + 2 * ConvertedPlateMetrics.tokenOverhang).rounded(.up), content)
@@ -163,22 +199,36 @@ struct PlateLayout {
         )
     }
 
-    private func align(_ items: inout [Sized], axes: PageAxes, outlines: [PlacedOutline]) {
+    private func align(_ items: inout [Sized], axes: PageAxes, outlines: [PlacedOutline], memory: inout PlateLayoutMemory) {
         var placed: [PageRect] = []
         for index in Self.readingOrder(of: items) {
             let item = items[index]
             let obstacles = alignmentObstacles(for: item, among: items, outlines: outlines, placed: placed, axes: axes)
             let room = item.room(among: obstacles)
             let fitsToken = item.width <= (item.token.width + 2 * ConvertedPlateMetrics.tokenOverhang).rounded(.up)
-            if fitsToken {
-                items[index] = item.centered(within: room).centered(within: room)
-            } else {
-                let scored = [Alignment.leading, .trailing, .centered].map { alignment in
-                    (alignment, measureIntrusion(of: item.positioned(alignment, within: room).span, by: obstacles, axes: axes).area)
-                }
-                let alignment = (scored.first { $0.1 <= 0.01 } ?? scored.min { $0.1 < $1.1 })?.0 ?? .centered
-                items[index] = item.positioned(alignment, within: room)
+            let intrusion = { (alignment: PlateLayoutMemory.Alignment) in
+                measureIntrusion(of: item.positioned(alignment, within: room).span, by: obstacles, axes: axes)
             }
+            let alignment = memory.alignment(
+                for: item.id,
+                choosing: {
+                    guard !fitsToken else { return .centered }
+                    let scored = [PlateLayoutMemory.Alignment.leading, .trailing, .centered].map { ($0, intrusion($0).area) }
+                    return (scored.first { $0.1 <= 0.01 } ?? scored.min { $0.1 < $1.1 })?.0 ?? .centered
+                },
+                intrusionDepth: { intrusion($0).depth }
+            )
+            let aligned = fitsToken && alignment == .centered
+                ? item.centered(within: room)
+                : item.positioned(alignment, within: room)
+            let isRoomBound = fitsToken && alignment == .centered
+            let width = memory.width(
+                for: item.id,
+                required: aligned.width,
+                limit: isRoomBound ? room.upperBound - room.lowerBound : .infinity,
+                floor: item.contentWidth
+            )
+            items[index] = isRoomBound ? aligned.resized(to: width).centered(within: room) : aligned.resized(to: width)
             placed.append(items[index].span)
         }
     }
@@ -229,8 +279,8 @@ struct PlateLayout {
         return (area, depth)
     }
 
-    private func height(of item: Sized, among items: [Sized], outlines: [PlacedOutline]) -> CGFloat {
-        let span = item.span
+    private func height(of item: Sized, among items: [Sized], outlines: [PlacedOutline], memory: inout PlateLayoutMemory) -> CGFloat {
+        let span = item.span.grown(along: memory.tracksFrames ? Self.columnMargin : 0, across: 0)
         let priceLimits = items
             .filter { $0.id != item.id && span.sharesColumn(with: $0.span) && !$0.token.sharesRow(with: item.token) }
             .map { abs($0.token.midV - item.token.midV) }
@@ -238,21 +288,30 @@ struct PlateLayout {
             .filter { span.sharesColumn(with: $0.shape) && !$0.shape.sharesRow(with: item.token) }
             .map { 2 * (abs($0.shape.midV - item.token.midV) - $0.shape.height / 2) }
         let limit = (priceLimits + outlineLimits).min() ?? .infinity
-        let floor = max(item.coveredHeight, ConvertedPlateMetrics.minimumHeight(forFontSize: item.fontSize))
-        return max(floor, min((limit - Self.plateGap).rounded(.down), item.baseHeight))
+        let clearance = limit - Self.plateGap
+        let fontFloor = ConvertedPlateMetrics.minimumHeight(forFontSize: item.fontSize)
+        let floor = max(item.coveredHeight, fontFloor)
+        let required = max(floor, min(clearance.rounded(.down), item.baseHeight))
+        let holdFloor = memory.tracksFrames ? max(item.token.height.rounded(.up), fontFloor) : floor
+        return memory.height(for: item.id, required: required, limit: clearance, floor: holdFloor)
     }
 
-    private func plate(_ item: Sized, height: CGFloat, axes: PageAxes) -> Plate {
+    private func plate(_ item: Sized, height: CGFloat, axes: PageAxes, roundsOrigin: Bool) -> Plate {
         let rect = PageRect(u0: item.u0, u1: item.u0 + item.width, v0: item.token.midV - height / 2, v1: item.token.midV + height / 2)
         let box = axes.quad(of: rect).boundingBox
         let dx = max(0, frame.minX - box.minX) - max(0, box.maxX - frame.maxX)
         let dy = max(0, frame.minY - box.minY) - max(0, box.maxY - frame.maxY)
         let shift = axes.shift(of: CGPoint(x: dx, y: dy))
+        let shifted = rect.shifted(u: shift.u, v: shift.v)
+        let rounded = roundsOrigin
+            ? shifted.shifted(u: shifted.u0.rounded() - shifted.u0, v: shifted.v0.rounded() - shifted.v0)
+            : shifted
         return Plate(
             id: item.id,
             text: item.anchor.text,
             fontSize: item.fontSize,
-            quad: axes.quad(of: rect.shifted(u: shift.u, v: shift.v)),
+            alignment: item.alignment,
+            quad: axes.quad(of: rounded),
             size: CGSize(width: item.width, height: height),
             cornerRadius: ConvertedPlateMetrics.cornerRadius(forHeight: height),
             hitTarget: .null

@@ -111,9 +111,14 @@ struct PlateLayoutFixture {
         item.conversion.converted.formatted(.currency(code: targetCurrency.rawValue).locale(Locale(identifier: "en_US")))
     }
 
-    func layout() -> PlateLayout.Result {
+    func layout(_ items: [DetectedItem]? = nil, memory: inout PlateLayoutMemory) -> PlateLayout.Result {
         PlateLayout(frame: imageFrame, measureText: { PlateTextWidth.of($0, fontSize: $1, legibilityWeight: .regular) })
-            .layout(detected, text: plateText)
+            .layout(items ?? detected, text: plateText, memory: &memory)
+    }
+
+    func layout() -> PlateLayout.Result {
+        var memory = PlateLayoutMemory(tracksFrames: false)
+        return layout(memory: &memory)
     }
 
     private static func quad(from values: [Double]) -> Quad {

@@ -33,7 +33,8 @@ struct PlateLayoutTests {
     }
 
     private func layout(_ items: [DetectedItem], text: String = "€6.50") -> PlateLayout.Result {
-        plateLayout.layout(items, text: { _ in text })
+        var memory = PlateLayoutMemory(tracksFrames: false)
+        return plateLayout.layout(items, text: { _ in text }, memory: &memory)
     }
 
     private func tiltedLine(degrees: CGFloat) -> Quad {
@@ -112,6 +113,49 @@ struct PlateLayoutTests {
 
         #expect(plate.visibleBounds.minX <= 98.01)
         #expect(plate.visibleBounds.maxX >= 141.99)
+    }
+
+    @Test func heldLiveWidthNeverSpillsPastTheTextBesideIt() throws {
+        var memory = PlateLayoutMemory(tracksFrames: true)
+        let layout = plateLayout
+        let id = UUID()
+        let name = CGRect(x: 40, y: 100, width: 59, height: 12)
+        func plate(nextWordAt start: CGFloat) -> PlateLayout.Plate? {
+            let item = price(
+                CGRect(x: 100, y: 100, width: 40, height: 12),
+                lineText: [name, CGRect(x: start, y: 100, width: 30, height: 12)],
+                id: id
+            )
+            return layout.layout([item], text: { _ in "€5" }, memory: &memory).plates.first
+        }
+
+        _ = plate(nextWordAt: 144)
+        let squeezed = try #require(plate(nextWordAt: 142.5))
+
+        #expect(squeezed.visibleBounds.minX >= name.maxX - 0.01)
+        #expect(squeezed.visibleBounds.maxX <= 142.51)
+    }
+
+    @Test func livePageStaysLevelUntilItTiltsPastTwoDegrees() {
+        var memory = PlateLayoutMemory(tracksFrames: true)
+        let layout = plateLayout
+        func angle(atDegrees degrees: CGFloat) -> CGFloat {
+            let item = price(CGRect(x: 150, y: 0, width: 40, height: 20), line: tiltedLine(degrees: degrees))
+            return layout.layout([item], text: { _ in "€6.50" }, memory: &memory).angle * 180 / .pi
+        }
+
+        let angles = [1.0, 1.8, 2.2, 1.8, 1.4].map { angle(atDegrees: $0) }
+
+        #expect(angles.map { ($0 * 10).rounded() / 10 } == [0, 0, 2.2, 1.8, 0])
+    }
+
+    @Test func firstLiveFrameUsesTheExactSnap() {
+        var memory = PlateLayoutMemory(tracksFrames: true)
+        let item = price(CGRect(x: 150, y: 0, width: 40, height: 20), line: tiltedLine(degrees: 1.8))
+
+        let result = plateLayout.layout([item], text: { _ in "€6.50" }, memory: &memory)
+
+        #expect(abs(result.angle * 180 / .pi - 1.8) < 0.01)
     }
 
     @Test func stillPageSnapsLevelOnlyBelowOneAndAHalfDegrees() {

@@ -45,14 +45,34 @@ struct LiveDetectionStabilizer {
         let steadiest = steadiestReading(in: readings, previousIsPrice: previousIsPrice) ?? reading
         tracks[reading.id] = Track(
             readings: readings,
-            shown: steadiest.replacing(
-                tokenQuad: reading.tokenQuad,
-                lineQuad: reading.lineQuad,
-                lineTextQuads: reading.lineTextQuads,
-                rowNeighbourCenter: reading.rowNeighbourCenter
-            ),
+            shown: smoothedGeometry(of: steadiest, latest: reading, over: readings),
             vanishedAt: nil
         )
+    }
+
+    private func smoothedGeometry(of shown: DetectedItem, latest: DetectedItem, over readings: [DetectedItem]) -> DetectedItem {
+        let line = Quad.cornerMedian(of: readings.map(\.lineQuad))
+        return shown.replacing(
+            tokenQuad: Quad.cornerMedian(of: readings.map(\.tokenQuad)),
+            lineQuad: line,
+            lineTextQuads: smoothedLineText(latest: latest, line: line, over: readings),
+            rowNeighbourCenter: smoothedRowNeighbour(latest: latest, over: readings)
+        )
+    }
+
+    private func smoothedRowNeighbour(latest: DetectedItem, over readings: [DetectedItem]) -> CGPoint? {
+        guard latest.rowNeighbourCenter != nil else { return nil }
+        let neighbours = readings.compactMap(\.rowNeighbourCenter)
+        return CGPoint(x: neighbours.map(\.x).median, y: neighbours.map(\.y).median)
+    }
+
+    private func smoothedLineText(latest: DetectedItem, line: Quad, over readings: [DetectedItem]) -> [Quad] {
+        let count = latest.lineTextQuads.count
+        guard readings.allSatisfy({ $0.lineTextQuads.count == count }) else {
+            let shift = line.center - latest.lineQuad.center
+            return latest.lineTextQuads.map { $0.mapped { CGPoint(x: $0.x + shift.x, y: $0.y + shift.y) } }
+        }
+        return (0 ..< count).map { index in Quad.cornerMedian(of: readings.map { $0.lineTextQuads[index] }) }
     }
 
     private func steadiestReading(in readings: [DetectedItem], previousIsPrice: Bool) -> DetectedItem? {
@@ -63,5 +83,19 @@ struct LiveDetectionStabilizer {
         let amountVotes = Dictionary(grouping: candidates, by: \.conversion.amount).mapValues(\.count)
         let topVotes = amountVotes.values.max() ?? 0
         return candidates.last { amountVotes[$0.conversion.amount] == topVotes }
+    }
+}
+
+private extension Quad {
+    static func cornerMedian(of quads: [Quad]) -> Quad {
+        func median(_ corner: (Quad) -> CGPoint) -> CGPoint {
+            CGPoint(x: quads.map { corner($0).x }.median, y: quads.map { corner($0).y }.median)
+        }
+        return Quad(
+            topLeft: median(\.topLeft),
+            topRight: median(\.topRight),
+            bottomRight: median(\.bottomRight),
+            bottomLeft: median(\.bottomLeft)
+        )
     }
 }
