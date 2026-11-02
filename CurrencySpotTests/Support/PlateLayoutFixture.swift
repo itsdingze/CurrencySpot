@@ -109,6 +109,7 @@ struct PlateLayoutFixture {
 
     func plateText(_ item: DetectedItem) -> String {
         item.conversion.converted.formatted(.currency(code: targetCurrency.rawValue).locale(Locale(identifier: "en_US")))
+            + (item.perUnitSuffix ?? "")
     }
 
     func layout(_ items: [DetectedItem]? = nil, memory: inout PlateLayoutMemory) -> PlateLayout.Result {

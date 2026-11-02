@@ -9,6 +9,7 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
     let lineQuad: Quad
     let lineTextQuads: [Quad]
     let rowNeighbourCenter: CGPoint?
+    let perUnitSuffix: String?
     let conversion: ScannedConversion
 
     init(
@@ -19,6 +20,7 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
         lineQuad: Quad,
         lineTextQuads: [Quad],
         rowNeighbourCenter: CGPoint? = nil,
+        perUnitSuffix: String?,
         conversion: ScannedConversion
     ) {
         self.id = id
@@ -28,6 +30,7 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
         self.lineQuad = lineQuad
         self.lineTextQuads = lineTextQuads
         self.rowNeighbourCenter = rowNeighbourCenter
+        self.perUnitSuffix = perUnitSuffix
         self.conversion = conversion
     }
 
@@ -39,6 +42,7 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
             tokenQuad: Quad(bounds),
             lineQuad: Quad(bounds),
             lineTextQuads: [],
+            perUnitSuffix: nil,
             conversion: conversion
         )
     }
@@ -56,6 +60,7 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
             lineQuad: lineQuad,
             lineTextQuads: lineTextQuads,
             rowNeighbourCenter: rowNeighbourCenter,
+            perUnitSuffix: perUnitSuffix,
             conversion: conversion
         )
     }
@@ -69,6 +74,7 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
             lineQuad: lineQuad,
             lineTextQuads: lineTextQuads,
             rowNeighbourCenter: rowNeighbourCenter,
+            perUnitSuffix: perUnitSuffix,
             conversion: conversion
         )
     }

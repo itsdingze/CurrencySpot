@@ -100,7 +100,7 @@ struct DetectionOverlayView: View {
     }
 
     private func plateText(for item: DetectedItem) -> String {
-        item.conversion.converted.formatted(.currency(code: targetCurrency.rawValue))
+        item.conversion.converted.formatted(.currency(code: targetCurrency.rawValue)) + (item.perUnitSuffix ?? "")
     }
 
     @ViewBuilder

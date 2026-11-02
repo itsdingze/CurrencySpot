@@ -336,6 +336,25 @@ struct ScanConversionUseCaseTests {
         #expect(result.foundPrices == false)
     }
 
+    @Test(arguments: [
+        ("¥615/kg", "JPY", "/kg"),
+        ("Äpfel 1.5 kg €3,49/kg", "EUR", "/kg"),
+        ("Beef ¥300 / 100 g", "JPY", "/100g"),
+        ("Cola $2/pc", "USD", "/pc"),
+    ])
+    func perUnitSuffixFollowsThePrice(transcript: String, base: CurrencyCode, suffix: String) throws {
+        let detected = try #require(detect([item(transcript, width: 200)], base: base).items.first)
+
+        #expect(detected.perUnitSuffix == suffix)
+    }
+
+    @Test(arguments: ["Coke $2", "Beer ¥600 /lunch", "Tea ¥300 / day"])
+    func priceWithoutAUnitHasNoSuffix(transcript: String) throws {
+        let detected = try #require(detect([item(transcript, width: 200)]).items.first)
+
+        #expect(detected.perUnitSuffix == nil)
+    }
+
     @Test func standaloneMarkerThatCannotReachTheNumberLeavesAnOutline() throws {
         let number = item("No. 12", at: 14)
         let result = detect([item("¥", at: 0, width: 10), number])

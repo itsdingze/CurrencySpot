@@ -8,6 +8,7 @@ final class ScanConversionUseCase {
 
     private struct AnchoredReading {
         let reading: LinePriceReader.Reading
+        let perUnitSuffix: PerUnitSuffix?
         let coveredCharacters: Range<Int>
         let span: ClosedRange<CGFloat>
     }
@@ -55,6 +56,7 @@ final class ScanConversionUseCase {
                 lineQuad: item.quad,
                 lineTextQuads: lineText,
                 rowNeighbourCenter: rowNeighbourCenter,
+                perUnitSuffix: anchored.perUnitSuffix?.text,
                 conversion: ScannedConversion(
                     amount: anchored.reading.amount,
                     converted: convert(anchored.reading.amount),
@@ -67,10 +69,15 @@ final class ScanConversionUseCase {
     private func anchored(_ readings: [LinePriceReader.Reading], on item: RecognizedTextItem) -> [AnchoredReading] {
         let glyphs = LineGlyphSpans(item)
         return readings.map { reading in
-            AnchoredReading(
+            let suffix = reading.isPrice
+                ? PerUnitSuffix.following(reading.tokenIncludingMarker.upperBound, in: item.transcript)
+                : nil
+            let covered = reading.tokenIncludingMarker.lowerBound..<(suffix?.end ?? reading.tokenIncludingMarker.upperBound)
+            return AnchoredReading(
                 reading: reading,
-                coveredCharacters: reading.tokenIncludingMarker,
-                span: glyphs.tokenSpan(of: reading.token, includingMarker: reading.tokenIncludingMarker)
+                perUnitSuffix: suffix,
+                coveredCharacters: covered,
+                span: glyphs.tokenSpan(of: reading.token, includingMarker: covered)
             )
         }
     }

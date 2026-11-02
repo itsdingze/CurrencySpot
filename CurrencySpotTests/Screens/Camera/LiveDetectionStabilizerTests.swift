@@ -89,6 +89,7 @@ struct LiveDetectionStabilizerTests {
                 tokenQuad: Quad(CGRect(x: 140, y: 80, width: 60, height: 30)),
                 lineQuad: Quad(line),
                 lineTextQuads: [Quad(name.offsetBy(dx: 0, dy: offset))],
+                perUnitSuffix: nil,
                 conversion: .init(amount: 980, converted: 6.5, isPrice: true)
             )])
         }
@@ -109,6 +110,7 @@ struct LiveDetectionStabilizerTests {
                 lineQuad: Quad(CGRect(x: 140, y: 80, width: 60, height: 30)),
                 lineTextQuads: [],
                 rowNeighbourCenter: CGPoint(x: neighbour.x + offset, y: neighbour.y - offset),
+                perUnitSuffix: nil,
                 conversion: .init(amount: 680, converted: 4.5, isPrice: true)
             )])
         }

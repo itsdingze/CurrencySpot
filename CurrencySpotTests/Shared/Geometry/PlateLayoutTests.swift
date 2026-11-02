@@ -28,6 +28,7 @@ struct PlateLayoutTests {
             tokenQuad: Quad(token),
             lineQuad: line ?? Quad(token),
             lineTextQuads: lineText.map(Quad.init),
+            perUnitSuffix: nil,
             conversion: ScannedConversion(amount: amount, converted: 6.5, isPrice: isPrice)
         )
     }
