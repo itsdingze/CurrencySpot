@@ -217,6 +217,27 @@ struct CalculatorViewModelTests {
         #expect(rates == viewModel.availableRates)
     }
 
+    @Test("a first stale check shows saved rates while the refresh is still loading", .timeLimit(.minutes(1)))
+    func firstStaleCheckShowsSavedRatesWhileRefreshing() async throws {
+        let viewModel = makeViewModel()
+        repository.ratesAreStale = true
+        await setConnected(true)
+        let saved = [ExchangeRate(currencyCode: "EUR", rate: 0.9)]
+        repository.loadExchangeRatesResult = .success(saved)
+        let (gate, openGate) = AsyncStream.makeStream(of: Void.self)
+        repository.fetchBarrier = { for await _ in gate {} }
+
+        await viewModel.checkIfShouldFetch()
+        await waitUntil { repository.fetchExchangeRatesCallCount == 1 }
+
+        #expect(viewModel.availableRates == saved)
+        #expect(viewModel.loadState == .loading(previous: saved))
+        #expect(viewModel.rateBanner == .updating)
+
+        openGate.finish()
+        await waitUntilSettled(viewModel)
+    }
+
     @Test("fetchExchangeRates transitions loading(previous:) → loaded", .timeLimit(.minutes(1)))
     func fetchTransitionsThroughLoadingToLoaded() async throws {
         let viewModel = makeViewModel()

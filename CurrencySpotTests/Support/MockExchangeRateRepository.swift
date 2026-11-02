@@ -37,6 +37,12 @@ final class MockExchangeRateRepository: ExchangeRateRepository {
         return try loadExchangeRatesResult.get()
     }
 
+    func loadSavedExchangeRates() async -> [ExchangeRate] {
+        loadExchangeRatesCallCount += 1
+        await loadBarrier?()
+        return (try? loadExchangeRatesResult.get()) ?? []
+    }
+
     func lastFetchDate() -> Date? {
         lastFetch
     }

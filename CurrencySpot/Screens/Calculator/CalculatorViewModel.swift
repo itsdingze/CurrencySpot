@@ -311,6 +311,15 @@ final class CalculatorViewModel {
 
         if shouldFetch, appState.networkMonitor.isConnected {
             guard fetchTask == nil else { return }
+            if case .idle = loadState {
+                let generation = fetchGeneration
+                let outcome = await loadExchangeRatesUseCase.savedOnDevice()
+                guard generation == fetchGeneration, fetchTask == nil else { return }
+                if case let .rates(rates, lastUpdated, _) = outcome, !rates.isEmpty {
+                    publish(rates: rates, lastUpdated: lastUpdated, isShowingSampleRates: false)
+                    loadState = .loading(previous: rates)
+                }
+            }
             startFetchTask()
         } else {
             let generation = fetchGeneration

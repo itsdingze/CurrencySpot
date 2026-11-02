@@ -34,6 +34,11 @@ struct LoadExchangeRatesUseCase {
         }
     }
 
+    func savedOnDevice() async -> Outcome {
+        let rates = await repository.loadSavedExchangeRates()
+        return .rates(rates, lastUpdated: repository.lastFetchDate(), refreshFailed: false)
+    }
+
     func saved(surfacing pendingError: AppError? = nil) async -> Outcome {
         do {
             let rates = try await repository.loadExchangeRates()

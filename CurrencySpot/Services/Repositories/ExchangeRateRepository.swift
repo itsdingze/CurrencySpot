@@ -5,5 +5,7 @@ protocol ExchangeRateRepository {
 
     func loadExchangeRates() async throws -> [ExchangeRate]
 
+    func loadSavedExchangeRates() async -> [ExchangeRate]
+
     func lastFetchDate() -> Date?
 }

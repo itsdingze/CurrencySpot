@@ -23,6 +23,10 @@ struct PreviewExchangeRateRepository: ExchangeRateRepository, HistoricalRateRepo
         SampleExchangeRates.getCurrencyRates()
     }
 
+    func loadSavedExchangeRates() async -> [ExchangeRate] {
+        SampleExchangeRates.getCurrencyRates()
+    }
+
     func lastFetchDate() -> Date? {
         today
     }

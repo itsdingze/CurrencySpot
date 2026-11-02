@@ -92,6 +92,8 @@
             try await fetchExchangeRates()
         }
 
+        func loadSavedExchangeRates() async -> [ExchangeRate] { [] }
+
         func lastFetchDate() -> Date? { nil }
     }
 

@@ -20,6 +20,7 @@ struct CurrencySpotApp: App {
                 .withDependencyContainer(dependencyContainer)
                 .task {
                     dependencyContainer.currencyListViewModel.warmUp()
+                    await dependencyContainer.calculatorViewModel.checkIfShouldFetch()
                 }
                 .onOpenURL { url in
                     guard let link = HistoryLink(url: url) else { return }

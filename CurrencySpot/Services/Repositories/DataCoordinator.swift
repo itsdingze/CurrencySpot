@@ -92,7 +92,7 @@ extension DataCoordinator: ExchangeRateRepository {
         return domainRates
     }
 
-    func loadExchangeRates() async throws -> [ExchangeRate] {
+    func loadSavedExchangeRates() async -> [ExchangeRate] {
         if let cachedRates = await cacheService.getCachedExchangeRates(), !cachedRates.isEmpty {
             return cachedRates
         }
@@ -101,10 +101,18 @@ extension DataCoordinator: ExchangeRateRepository {
             let persistedRates = try await persistenceService.loadExchangeRates()
             if !persistedRates.isEmpty {
                 await cacheService.cacheExchangeRates(persistedRates)
-                return persistedRates
             }
+            return persistedRates
         } catch {
             logger.warning("Failed to load saved rates: \(error.localizedDescription, privacy: .public)")
+            return []
+        }
+    }
+
+    func loadExchangeRates() async throws -> [ExchangeRate] {
+        let savedRates = await loadSavedExchangeRates()
+        if !savedRates.isEmpty {
+            return savedRates
         }
 
         do {
