@@ -16,13 +16,12 @@ nonisolated enum PlateCoverage {
         return count
     }
 
-    static func overlappingHitTargets(_ result: PlateLayout.Result) -> Int {
-        let targets = result.plates.map(\.hitTarget) + result.outlines.map(\.hitTarget)
+    static func overlappingShapes(_ result: PlateLayout.Result) -> Int {
+        let shapes = result.plates.map(\.quad) + result.outlines.map(\.quad)
         var count = 0
-        for first in targets.indices {
-            for second in targets.indices where second > first {
-                let shared = targets[first].intersection(targets[second])
-                if !shared.isNull, shared.width * shared.height > 0.01 { count += 1 }
+        for first in shapes.indices {
+            for second in shapes.indices where second > first && intersectionArea(shapes[first], shapes[second]) > 0.01 {
+                count += 1
             }
         }
         return count

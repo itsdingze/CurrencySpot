@@ -2,7 +2,6 @@ import CoreGraphics
 
 enum ConvertedPlateMetrics {
     static let tokenOverhang: CGFloat = 2
-    static let minimumHitTarget: CGFloat = 44
     static let outlineGrowthAlong: CGFloat = 3
     static let fontPeerRatio: CGFloat = 1.5
 

@@ -182,15 +182,7 @@ struct PlateLayoutTests {
         #expect(outline.quad.boundingBox.contains(token))
     }
 
-    @Test func lonePlateGetsAFullSizeTouchTarget() throws {
-        let plate = try #require(layout([price(CGRect(x: 100, y: 100, width: 30, height: 12))]).plates.first)
-
-        #expect(plate.hitTarget.width >= 44)
-        #expect(plate.hitTarget.height >= 44)
-        #expect(plate.hitTarget.contains(plate.visibleBounds))
-    }
-
-    @Test func stackedPlatesSplitTheirTouchTargets() throws {
+    @Test func stackedPlatesStayApart() throws {
         let upper = price(CGRect(x: 100, y: 100, width: 60, height: 14))
         let lower = price(CGRect(x: 100, y: 120, width: 60, height: 14), amount: 450)
 
@@ -198,9 +190,6 @@ struct PlateLayoutTests {
 
         let first = try #require(result.plates.first)
         let second = try #require(result.plates.last)
-        #expect(first.hitTarget.intersection(second.hitTarget).height <= 0.001)
-        #expect(first.hitTarget.contains(first.visibleBounds))
-        #expect(second.hitTarget.contains(second.visibleBounds))
         #expect(first.visibleBounds.maxY <= second.visibleBounds.minY)
     }
 

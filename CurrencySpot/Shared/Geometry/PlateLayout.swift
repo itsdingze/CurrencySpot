@@ -10,7 +10,6 @@ struct PlateLayout {
         let quad: Quad
         let size: CGSize
         let cornerRadius: CGFloat
-        fileprivate(set) var hitTarget: CGRect
 
         var center: CGPoint { quad.center }
         var visibleBounds: CGRect { quad.boundingBox }
@@ -21,7 +20,6 @@ struct PlateLayout {
         let quad: Quad
         let size: CGSize
         let cornerRadius: CGFloat
-        fileprivate(set) var hitTarget: CGRect
 
         var center: CGPoint { quad.center }
         var visibleBounds: CGRect { quad.boundingBox.insetBy(dx: -Self.strokeOutset, dy: -Self.strokeOutset) }
@@ -150,7 +148,7 @@ struct PlateLayout {
             )
         }
         memory.forget(allBut: Set(plates.map(\.id)))
-        return Self.resolvingHitTargets(Result(angle: axes.angle, plates: plates, outlines: outlines.map(\.placed)), in: frame)
+        return Result(angle: axes.angle, plates: plates, outlines: outlines.map(\.placed))
     }
 
     private static func token(_ quad: Quad, on axes: PageAxes) -> PageRect {
@@ -313,8 +311,7 @@ struct PlateLayout {
             alignment: item.alignment,
             quad: axes.quad(of: rounded),
             size: CGSize(width: item.width, height: height),
-            cornerRadius: ConvertedPlateMetrics.cornerRadius(forHeight: height),
-            hitTarget: .null
+            cornerRadius: ConvertedPlateMetrics.cornerRadius(forHeight: height)
         )
     }
 
@@ -325,16 +322,6 @@ struct PlateLayout {
             across: ConvertedPlateMetrics.outlineGrowthAcross(forTokenHeight: token.height)
         )
         return PlacedOutline(id: item.id, lineID: item.lineID, shape: shape, axes: axes)
-    }
-
-    private static func resolvingHitTargets(_ result: Result, in frame: CGRect) -> Result {
-        let visible = result.plates.map(\.visibleBounds) + result.outlines.map(\.visibleBounds)
-        let targets = PlateHitTargets.resolve(visible: visible, in: frame)
-        var plates = result.plates
-        var outlines = result.outlines
-        for index in plates.indices { plates[index].hitTarget = targets[index] }
-        for index in outlines.indices { outlines[index].hitTarget = targets[plates.count + index] }
-        return Result(angle: result.angle, plates: plates, outlines: outlines)
     }
 }
 
@@ -349,8 +336,7 @@ private struct PlacedOutline {
             id: id,
             quad: axes.quad(of: shape),
             size: CGSize(width: shape.width, height: shape.height),
-            cornerRadius: ConvertedPlateMetrics.cornerRadius(forHeight: shape.height),
-            hitTarget: .null
+            cornerRadius: ConvertedPlateMetrics.cornerRadius(forHeight: shape.height)
         )
     }
 }

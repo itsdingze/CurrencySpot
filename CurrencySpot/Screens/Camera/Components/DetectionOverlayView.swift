@@ -108,14 +108,13 @@ struct DetectionOverlayView: View {
         let button = Button {
             handlePlateTap(item.id, depth: depth)
         } label: {
-            HitTargetFrame(target: plate.hitTarget, visibleCenter: plate.center) {
-                ConvertedPlate(plate: plate)
-                    .rotationEffect(.radians(layout.angle))
-                    .opacity(opacity(forDepth: depth))
-            }
+            ConvertedPlate(plate: plate)
+                .contentShape(.rect(cornerRadius: plate.cornerRadius))
+                .opacity(opacity(forDepth: depth))
         }
         .buttonStyle(.plain)
-        .position(x: plate.hitTarget.midX, y: plate.hitTarget.midY)
+        .rotationEffect(.radians(layout.angle))
+        .position(plate.center)
         .zIndex(Double(layout.plates.count - depth))
         .accessibilityLabel(.cameraDetectionPlateAccessibilityLabel(
             transcript: item.transcript,
@@ -174,23 +173,6 @@ struct DetectionOverlayView: View {
     }
 }
 
-private struct HitTargetFrame<Content: View>: View {
-    let target: CGRect
-    let visibleCenter: CGPoint
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        Color.clear
-            .frame(width: target.width, height: target.height)
-            .overlay(alignment: .topLeading) {
-                content
-                    .position(x: visibleCenter.x - target.minX, y: visibleCenter.y - target.minY)
-                    .allowsHitTesting(false)
-            }
-            .contentShape(.rect)
-    }
-}
-
 private struct DetectionOutline: View {
     let item: DetectedItem
     let outline: PlateLayout.Outline
@@ -202,19 +184,18 @@ private struct DetectionOutline: View {
         Button {
             onTap(item.id)
         } label: {
-            HitTargetFrame(target: outline.hitTarget, visibleCenter: outline.center) {
-                RoundedRectangle(cornerRadius: outline.cornerRadius)
-                    .stroke(.black.opacity(0.55), lineWidth: 3.5)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: outline.cornerRadius)
-                            .stroke(.white, lineWidth: 1.75)
-                    }
-                    .frame(width: outline.size.width, height: outline.size.height)
-                    .rotationEffect(.radians(angle))
-            }
+            RoundedRectangle(cornerRadius: outline.cornerRadius)
+                .stroke(.black.opacity(0.55), lineWidth: 3.5)
+                .overlay {
+                    RoundedRectangle(cornerRadius: outline.cornerRadius)
+                        .stroke(.white, lineWidth: 1.75)
+                }
+                .frame(width: outline.size.width, height: outline.size.height)
+                .contentShape(.rect(cornerRadius: outline.cornerRadius))
         }
         .buttonStyle(.plain)
-        .position(x: outline.hitTarget.midX, y: outline.hitTarget.midY)
+        .rotationEffect(.radians(angle))
+        .position(outline.center)
         .accessibilityLabel(.cameraDetectionOutlineAccessibilityLabel(number: item.transcript))
         .accessibilityHint(.cameraDetectionOutlineAccessibilityHint)
         .accessibilityHidden(isLive)

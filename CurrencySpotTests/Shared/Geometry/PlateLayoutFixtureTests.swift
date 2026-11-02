@@ -12,10 +12,10 @@ struct PlateLayoutFixtureTests {
     }
 
     @Test(arguments: PlateLayoutFixture.names)
-    func hitTargetsNeverOverlap(photo: String) throws {
+    func platesAndOutlinesNeverOverlap(photo: String) throws {
         let result = try PlateLayoutFixture(photo).layout()
 
-        #expect(PlateCoverage.overlappingHitTargets(result) == 0)
+        #expect(PlateCoverage.overlappingShapes(result) == 0)
     }
 
     @Test(arguments: PlateLayoutFixture.names)
