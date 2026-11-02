@@ -185,7 +185,8 @@ final class DependencyContainer {
             calculateConversionUseCase: calculateConversionUseCase,
             localeCurrencyCode: Locale.current.currency.flatMap { CurrencyCode($0.identifier) },
             fallbackBaseCurrency: preferences.defaultBaseCurrency,
-            defaultTargetCurrency: preferences.defaultTargetCurrency
+            defaultTargetCurrency: preferences.defaultTargetCurrency,
+            clock: clockService
         )
 
         sharedSettingsMirror = SharedSettingsMirror(

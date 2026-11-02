@@ -47,6 +47,9 @@ final class CameraViewModel {
     private var manualBaseCurrency: CurrencyCode?
     private var badgeOverrides = BadgePriceOverrides()
 
+    @ObservationIgnored private var liveStabilizer = LiveDetectionStabilizer()
+    private let lingerDuration = Duration.milliseconds(200)
+
     private var freezeRequestID = 0
 
     private var stillRecognition = StillRecognitionResult.empty
@@ -63,6 +66,7 @@ final class CameraViewModel {
     private let calculateConversionUseCase: CalculateConversionUseCase
     private let localeCurrencyCode: CurrencyCode?
     private let fallbackBaseCurrency: CurrencyCode
+    private let clock: ClockService
     private let logger = Logger(category: .viewModel)
 
     init(
@@ -75,7 +79,8 @@ final class CameraViewModel {
         calculateConversionUseCase: CalculateConversionUseCase,
         localeCurrencyCode: CurrencyCode?,
         fallbackBaseCurrency: CurrencyCode,
-        defaultTargetCurrency: CurrencyCode
+        defaultTargetCurrency: CurrencyCode,
+        clock: ClockService
     ) {
         self.ratesStore = ratesStore
         self.appState = appState
@@ -86,6 +91,7 @@ final class CameraViewModel {
         self.calculateConversionUseCase = calculateConversionUseCase
         self.localeCurrencyCode = localeCurrencyCode
         self.fallbackBaseCurrency = fallbackBaseCurrency
+        self.clock = clock
         targetCurrency = defaultTargetCurrency
         authorization = permissionService.currentStatus()
     }
@@ -147,6 +153,7 @@ final class CameraViewModel {
         isScanning = true
         isRecognizingStill = false
         stillRecognition = .empty
+        resetLiveSmoothing()
         updateRecognizedItems([])
     }
 
@@ -154,7 +161,8 @@ final class CameraViewModel {
 
     func updateLiveRecognizedItems(_ items: [RecognizedTextItem]) {
         guard frozenImage == nil else { return }
-        updateRecognizedItems(items)
+        recognizedItems = items
+        recordLiveFrame()
     }
 
     func recognizeStill(in image: UIImage) async {
@@ -193,14 +201,14 @@ final class CameraViewModel {
     func toggleConversion(for id: UUID) {
         guard let item = detectedItems[id: id] else { return }
         badgeOverrides.toggle(id: id, isPrice: item.conversion.isPrice)
-        reconvert()
+        republish()
     }
 
     func hideConversion(for id: UUID) {
         guard let item = detectedItems[id: id], item.conversion.isPrice else { return }
         badgeOverrides.hide(id: id)
         destination = nil
-        reconvert()
+        republish()
     }
 
     func showBadgeDetail(for id: UUID) {
@@ -240,6 +248,7 @@ final class CameraViewModel {
         isScanning = false
         isRecognizingStill = true
         stillRecognition = .empty
+        resetLiveSmoothing()
         updateRecognizedItems([])
     }
 
@@ -252,14 +261,44 @@ final class CameraViewModel {
 
     private func updateRecognizedItems(_ items: [RecognizedTextItem]) {
         recognizedItems = items
-        let result = scanConversionUseCase.detect(
+        let result = detect(in: items)
+        publish(result.items, foundPrices: result.foundPrices)
+    }
+
+    private func recordLiveFrame() {
+        let result = detect(in: recognizedItems)
+        if let emission = liveStabilizer.record(result.items) {
+            expireLingeringItems(through: emission)
+        }
+        publishLiveItems()
+    }
+
+    private func publishLiveItems() {
+        let items = liveStabilizer.items
+        publish(items, foundPrices: items.contains { $0.conversion.isPrice })
+    }
+
+    private func expireLingeringItems(through emission: Int) {
+        Task { [weak self, clock, lingerDuration] in
+            try? await clock.sleep(for: lingerDuration)
+            guard let self, !Task.isCancelled, frozenImage == nil else { return }
+            liveStabilizer.expireLingering(through: emission)
+            publishLiveItems()
+        }
+    }
+
+    private func detect(in items: [RecognizedTextItem]) -> ScanConversionUseCase.DetectionResult {
+        scanConversionUseCase.detect(
             in: items,
             baseCurrency: baseCurrency,
             targetCurrency: targetCurrency,
             exchangeRates: ratesStore.rates
         )
-        detectedItems = IdentifiedArray(uniqueElements: result.items.map(applyingOverride))
-        classifierFoundPrices = result.foundPrices
+    }
+
+    private func publish(_ items: [DetectedItem], foundPrices: Bool) {
+        detectedItems = IdentifiedArray(uniqueElements: items.map(applyingOverride))
+        classifierFoundPrices = foundPrices
     }
 
     private func applyingOverride(_ item: DetectedItem) -> DetectedItem {
@@ -272,7 +311,24 @@ final class CameraViewModel {
     }
 
     private func reconvert() {
-        updateRecognizedItems(recognizedItems)
+        if frozenImage == nil {
+            liveStabilizer.reset()
+            recordLiveFrame()
+        } else {
+            updateRecognizedItems(recognizedItems)
+        }
+    }
+
+    private func republish() {
+        if frozenImage == nil {
+            publishLiveItems()
+        } else {
+            updateRecognizedItems(recognizedItems)
+        }
+    }
+
+    private func resetLiveSmoothing() {
+        liveStabilizer.reset()
     }
 
     private var autodetectedBaseCurrency: CurrencyCode {

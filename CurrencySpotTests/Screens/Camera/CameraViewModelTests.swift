@@ -33,7 +33,8 @@ struct CameraViewModelTests {
         stillRecognizer: StillTextRecognitionService = StubStillTextRecognizer(),
         localeCurrencyCode: CurrencyCode? = "JPY",
         fallbackBaseCurrency: CurrencyCode = "USD",
-        defaultTargetCurrency: CurrencyCode = "USD"
+        defaultTargetCurrency: CurrencyCode = "USD",
+        clock: ClockService = ManualClock()
     ) -> CameraViewModel {
         CameraViewModel(
             ratesStore: ratesStore ?? makeRatesStore(),
@@ -45,8 +46,22 @@ struct CameraViewModelTests {
             calculateConversionUseCase: CalculateConversionUseCase(),
             localeCurrencyCode: localeCurrencyCode,
             fallbackBaseCurrency: fallbackBaseCurrency,
-            defaultTargetCurrency: defaultTargetCurrency
+            defaultTargetCurrency: defaultTargetCurrency,
+            clock: clock
         )
+    }
+
+    private static func feed(_ viewModel: CameraViewModel, _ transcript: String, id: UUID, frames: Int = 1) {
+        for _ in 0..<frames {
+            viewModel.updateLiveRecognizedItems([RecognizedTextItem(id: id, transcript: transcript, bounds: .zero)])
+        }
+    }
+
+    private static func letTheLastPlateExpire(_ viewModel: CameraViewModel, clock: ManualClock) async {
+        viewModel.updateLiveRecognizedItems([])
+        await waitUntil { clock.pendingSleepCount == 1 }
+        clock.advance(by: .seconds(1))
+        await waitUntil { viewModel.detectedItems.isEmpty }
     }
 
     private static func pngData() throws -> Data {
@@ -380,6 +395,96 @@ struct CameraViewModelTests {
         await viewModel.freezeFrame(capturing: { UIImage() })
 
         #expect(viewModel.isTorchOn == false)
+    }
+
+    // MARK: - Live Smoothing
+
+    @Test func oneMisreadFrameKeepsALivePlate() {
+        let viewModel = Self.makeViewModel()
+        let id = UUID()
+        Self.feed(viewModel, "¥1,200", id: id, frames: 2)
+
+        Self.feed(viewModel, "1200", id: id)
+
+        #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == true)
+    }
+
+    @Test func togglingABadgeDoesNotCountAsANewFrame() {
+        let viewModel = Self.makeViewModel()
+        let plateID = UUID()
+        let otherID = UUID()
+        func frame(_ transcript: String) -> [RecognizedTextItem] {
+            [
+                RecognizedTextItem(id: plateID, transcript: transcript, bounds: .zero),
+                RecognizedTextItem(id: otherID, transcript: "850", bounds: CGRect(x: 0, y: 200, width: 40, height: 20)),
+            ]
+        }
+        viewModel.updateLiveRecognizedItems(frame("¥1,200"))
+        viewModel.updateLiveRecognizedItems(frame("1200"))
+
+        viewModel.toggleConversion(for: otherID)
+        viewModel.toggleConversion(for: otherID)
+
+        #expect(viewModel.detectedItems[id: plateID]?.conversion.isPrice == true)
+    }
+
+    @Test func changingTheCurrencyPairRestartsSmoothingFromTheCurrentFrame() {
+        let viewModel = Self.makeViewModel()
+        let id = UUID()
+        Self.feed(viewModel, "¥1,200", id: id)
+        Self.feed(viewModel, "1200", id: id)
+
+        viewModel.targetCurrency = "EUR"
+
+        #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == false)
+    }
+
+    @Test func resumingLiveScanningStartsSmoothingAfresh() async {
+        let viewModel = Self.makeViewModel()
+        let id = UUID()
+        Self.feed(viewModel, "¥1,200", id: id, frames: 3)
+        await viewModel.freezeFrame(capturing: { UIImage() })
+        viewModel.resumeLiveScanning()
+
+        Self.feed(viewModel, "1200", id: id)
+
+        #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == false)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func aVanishedPlateLingersBrieflyThenClears() async {
+        let clock = ManualClock()
+        let viewModel = Self.makeViewModel(clock: clock)
+        let id = UUID()
+        Self.feed(viewModel, "¥1,200", id: id)
+
+        viewModel.updateLiveRecognizedItems([])
+
+        #expect(viewModel.detectedItems[id: id] != nil)
+        await waitUntil { clock.pendingSleepCount == 1 }
+        clock.advance(by: .seconds(1))
+        await waitUntil { viewModel.detectedItems.isEmpty }
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func aLingerEndingAfterFreezeKeepsTheStillItems() async {
+        let clock = ManualClock()
+        let viewModel = Self.makeViewModel(
+            stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult),
+            clock: clock
+        )
+        Self.feed(viewModel, "¥980", id: UUID())
+        viewModel.updateLiveRecognizedItems([])
+        await waitUntil { clock.pendingSleepCount == 1 }
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        await viewModel.recognizeStill(in: image)
+
+        clock.advance(by: .seconds(1))
+        for _ in 0..<10 { await Task.yield() }
+
+        #expect(viewModel.detectedItems.map(\.transcript) == ["¥1,200"])
     }
 
     // MARK: - Freeze and Resume
