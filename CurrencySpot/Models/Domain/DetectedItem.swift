@@ -3,6 +3,7 @@ import Foundation
 
 nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
     let id: UUID
+    let lineID: UUID
     let transcript: String
     let tokenQuad: Quad
     let lineQuad: Quad
@@ -10,12 +11,14 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
 
     init(
         id: UUID,
+        lineID: UUID,
         transcript: String,
         tokenQuad: Quad,
         lineQuad: Quad,
         conversion: ScannedConversion
     ) {
         self.id = id
+        self.lineID = lineID
         self.transcript = transcript
         self.tokenQuad = tokenQuad
         self.lineQuad = lineQuad
@@ -25,6 +28,7 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
     init(id: UUID, transcript: String, bounds: CGRect, conversion: ScannedConversion) {
         self.init(
             id: id,
+            lineID: id,
             transcript: transcript,
             tokenQuad: Quad(bounds),
             lineQuad: Quad(bounds),
@@ -39,6 +43,7 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
     func replacing(conversion: ScannedConversion) -> DetectedItem {
         DetectedItem(
             id: id,
+            lineID: lineID,
             transcript: transcript,
             tokenQuad: tokenQuad,
             lineQuad: lineQuad,
@@ -49,6 +54,7 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
     func replacing(tokenQuad: Quad, lineQuad: Quad) -> DetectedItem {
         DetectedItem(
             id: id,
+            lineID: lineID,
             transcript: transcript,
             tokenQuad: tokenQuad,
             lineQuad: lineQuad,

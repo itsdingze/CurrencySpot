@@ -139,6 +139,39 @@ struct ScanConversionUseCaseTests {
         #expect(detected.conversion.isPrice)
     }
 
+    @Test func eachPriceOnALineGetsItsOwnItem() {
+        let line = item("Was $12.99 Now $9.99", width: 200)
+
+        let first = detect([line], base: "USD").items
+        let second = detect([line], base: "USD").items
+
+        #expect(first.map(\.conversion.amount) == [Decimal(string: "12.99"), Decimal(string: "9.99")])
+        #expect(first.map(\.lineID) == [line.id, line.id])
+        #expect(first.first?.id == line.id)
+        #expect(first.last?.id != line.id)
+        #expect(first.map(\.id) == second.map(\.id))
+    }
+
+    @Test(arguments: [
+        ("780円(税込858円)", "JPY", ["780", "858"]),
+        ("S $3.50 M $4.00 L $4.50", "USD", ["3.5", "4", "4.5"]),
+    ])
+    func everyPriceOnALineIsKept(transcript: String, base: CurrencyCode, amounts: [String]) {
+        let result = detect([item(transcript, width: 200)], base: base)
+
+        #expect(result.items.map(\.conversion.amount) == amounts.map { Decimal(string: $0) })
+        #expect(Set(result.items.map(\.id)).count == amounts.count)
+    }
+
+    @Test func eachPriceSitsOverItsOwnToken() throws {
+        let result = detect([item("Was $12.99 Now $9.99", width: 200)], base: "USD")
+
+        let later = try #require(result.items.dropFirst().first)
+        #expect(result.items.map(\.bounds.maxX) == [100, 200])
+        #expect(result.items.map(\.bounds.minX).allSatisfy { $0 > 30 })
+        #expect(later.bounds.minX > 140)
+    }
+
     @Test func tokenFollowsTheCharacterIndexWithoutMeasuredGlyphs() throws {
         let detected = try #require(detect([item("Edamame 350", width: 110)]).items.first)
 
@@ -195,6 +228,14 @@ struct ScanConversionUseCaseTests {
         let detected = try #require(detect([item("定食¥1,050", width: 100)]).items.first)
 
         #expect(detected.bounds.minX == 40)
+    }
+
+    @Test func standaloneMarkerPriceSitsOverTheNumbersOwnLine() throws {
+        let number = item("980", at: 14, width: 30)
+        let result = detect([item("¥", at: 0, width: 10), number])
+
+        let detected = try #require(result.items.first { $0.lineID == number.id })
+        #expect(detected.bounds == number.bounds)
     }
 
     @Test func standaloneMarkerThatCannotReachTheNumberLeavesAnOutline() throws {
