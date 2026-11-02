@@ -6,17 +6,20 @@ nonisolated struct RecognizedTextItem: Equatable, Sendable {
     let transcript: String
     let quad: Quad
     let characterSpans: [ClosedRange<CGFloat>]?
+    let alternateTranscripts: [String]
 
     init(
         id: UUID,
         transcript: String,
         quad: Quad,
-        characterSpans: [ClosedRange<CGFloat>]? = nil
+        characterSpans: [ClosedRange<CGFloat>]? = nil,
+        alternateTranscripts: [String] = []
     ) {
         self.id = id
         self.transcript = transcript
         self.quad = quad
         self.characterSpans = characterSpans
+        self.alternateTranscripts = alternateTranscripts
     }
 
     init(id: UUID, transcript: String, bounds: CGRect) {
@@ -32,7 +35,8 @@ nonisolated struct RecognizedTextItem: Equatable, Sendable {
             id: id,
             transcript: transcript,
             quad: quad.mapped(transform),
-            characterSpans: characterSpans
+            characterSpans: characterSpans,
+            alternateTranscripts: alternateTranscripts
         )
     }
 }

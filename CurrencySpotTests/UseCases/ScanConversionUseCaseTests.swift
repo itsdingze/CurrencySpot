@@ -238,6 +238,35 @@ struct ScanConversionUseCaseTests {
         #expect(detected.bounds == number.bounds)
     }
 
+    @Test func alternateReadingWithACurrencyGlyphRescuesAPrice() throws {
+        let line = RecognizedTextItem(
+            id: UUID(),
+            transcript: "S4.50",
+            quad: Quad(CGRect(x: 0, y: 0, width: 50, height: 10)),
+            alternateTranscripts: ["$4.50"]
+        )
+
+        let detected = try #require(detect([line], base: "USD").items.first)
+
+        #expect(detected.conversion.isPrice)
+        #expect(detected.conversion.amount == Decimal(string: "4.5"))
+        #expect(detected.transcript == "S4.50")
+    }
+
+    @Test(arguments: ["$4.80", "$4.50 off", "S$4.5"])
+    func alternateReadingThatChangesMoreThanAGlyphIsIgnored(alternate: String) {
+        let line = RecognizedTextItem(
+            id: UUID(),
+            transcript: "S4.50",
+            quad: Quad(CGRect(x: 0, y: 0, width: 50, height: 10)),
+            alternateTranscripts: [alternate]
+        )
+
+        let result = detect([line], base: "USD")
+
+        #expect(result.foundPrices == false)
+    }
+
     @Test func standaloneMarkerThatCannotReachTheNumberLeavesAnOutline() throws {
         let number = item("No. 12", at: 14)
         let result = detect([item("¥", at: 0, width: 10), number])

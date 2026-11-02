@@ -27,7 +27,17 @@ final class LinePriceReader {
             let shift = marker.side == .leading ? 1 : 0
             return readings(in: joined, shiftedBy: shift, within: item.transcript.count, baseCurrency: baseCurrency)
         }
-        return readings(in: item.transcript, shiftedBy: 0, within: item.transcript.count, baseCurrency: baseCurrency)
+        let top = candidates(in: item.transcript, baseCurrency: baseCurrency)
+        guard !top.contains(where: \.isPrice) else {
+            return Self.readings(of: top, in: item.transcript, shiftedBy: 0, within: item.transcript.count)
+        }
+        let alternate = item.alternateTranscripts
+            .filter { Self.differsOnlyInMarkerGlyphs($0, from: item.transcript) }
+            .first { candidates(in: $0, baseCurrency: baseCurrency).contains(where: \.isPrice) }
+        guard let alternate else {
+            return Self.readings(of: top, in: item.transcript, shiftedBy: 0, within: item.transcript.count)
+        }
+        return readings(in: alternate, shiftedBy: 0, within: item.transcript.count, baseCurrency: baseCurrency)
     }
 
     private func readings(in transcript: String, shiftedBy shift: Int, within length: Int, baseCurrency: CurrencyCode) -> [Reading] {
@@ -60,6 +70,18 @@ final class LinePriceReader {
                 token: offsets(candidate.range),
                 tokenIncludingMarker: offsets(candidate.rangeIncludingMarker)
             )
+        }
+    }
+
+    private static func differsOnlyInMarkerGlyphs(_ alternate: String, from top: String) -> Bool {
+        let alternateCharacters = NormalizedTranscript(alternate).characters
+        let topCharacters = NormalizedTranscript(top).characters
+        guard alternateCharacters.count == topCharacters.count,
+              alternateCharacters != topCharacters
+        else { return false }
+        return zip(alternateCharacters, topCharacters).allSatisfy { alternateCharacter, topCharacter in
+            alternateCharacter == topCharacter
+                || CurrencyMarkerVocabulary.isSymbolGlyph(alternateCharacter) && !topCharacter.isNumber
         }
     }
 }

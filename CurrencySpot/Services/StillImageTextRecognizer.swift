@@ -8,6 +8,7 @@ nonisolated protocol StillTextRecognitionService: Sendable {
 
 nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
     private static let supportedLanguages = RecognizeTextRequest().supportedRecognitionLanguages
+    private static let maximumReadings = 5
 
     private let languagePolicy: RecognitionLanguagePolicy
 
@@ -45,7 +46,8 @@ nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
         let regionOfInterest = region.normalizedRect(in: imageSize)
         request.regionOfInterest = regionOfInterest
         return try await request.perform(on: image).compactMap { observation in
-            guard let topCandidate = observation.topCandidates(1).first else { return nil }
+            let readings = observation.topCandidates(maximumReadings)
+            guard let topCandidate = readings.first else { return nil }
             let bounds = observation.boundingBox.toImageCoordinates(from: regionOfInterest, imageSize: imageSize, origin: .upperLeft)
             guard region.keeps(bounds) else { return nil }
             func imagePoint(_ point: NormalizedPoint) -> CGPoint {
@@ -60,7 +62,8 @@ nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
                     bottomRight: imagePoint(observation.bottomRight),
                     bottomLeft: imagePoint(observation.bottomLeft)
                 ),
-                characterSpans: characterSpans(of: topCandidate, along: Quad(normalized: observation))
+                characterSpans: characterSpans(of: topCandidate, along: Quad(normalized: observation)),
+                alternateTranscripts: readings.dropFirst().map(\.string)
             )
             return RecognizedTextCandidate(item: item, confidence: topCandidate.confidence)
         }
