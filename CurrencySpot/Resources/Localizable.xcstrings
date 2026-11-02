@@ -6191,6 +6191,66 @@
         }
       }
     },
+    "camera.tip.takePhoto" : {
+      "comment" : "One-time tip pointing at the camera shutter. The live camera converts only prices with a currency sign; a photo reads every price.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Für alle Preise ein Foto aufnehmen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take a photo for every price"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz una foto para ver todos los precios"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toma una foto para ver todos los precios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prenez une photo pour voir tous les prix"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を撮ってすべての価格を確認"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진을 찍어 모든 가격을 확인하세요"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍照查看所有价格"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拍照查看所有價格"
+          }
+        }
+      }
+    },
     "currencyPicker.currency.accessibilityLabel" : {
       "comment" : "VoiceOver label for a currency in the currency picker. code: currency code such as EUR. name: localized currency name.",
       "extractionState" : "manual",

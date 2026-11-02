@@ -1,5 +1,6 @@
 import AppIntents
 import SwiftUI
+import TipKit
 
 @main
 struct CurrencySpotApp: App {
@@ -10,6 +11,7 @@ struct CurrencySpotApp: App {
         let convertCurrency = dependencyContainer.convertCurrencyUseCase
         AppDependencyManager.shared.add(dependency: convertCurrency)
         self.dependencyContainer = dependencyContainer
+        try? Tips.configure()
     }
 
     var body: some Scene {

@@ -1,11 +1,13 @@
 import PhotosUI
 import SwiftUI
+import TipKit
 
 struct CameraControlsBar: View {
     let capturePhoto: () async throws -> UIImage?
 
     @Environment(CameraViewModel.self) private var viewModel
     @State private var pickedPhoto: PhotosPickerItem?
+    private let takePhotoTip = TakePhotoTip()
 
     var body: some View {
         AdaptiveGlassContainer {
@@ -34,6 +36,7 @@ struct CameraControlsBar: View {
         if viewModel.frozenImage != nil {
             viewModel.resumeLiveScanning()
         } else {
+            takePhotoTip.invalidate(reason: .actionPerformed)
             Task { await viewModel.freezeFrame(capturing: capturePhoto) }
         }
     }
@@ -47,6 +50,7 @@ struct CameraControlsBar: View {
                 }
         }
         .accessibilityLabel(shutterLabel)
+        .popoverTip(viewModel.frozenImage == nil ? takePhotoTip : nil, arrowEdge: .bottom)
         .accessibilityShowsLargeContentViewer {
             if viewModel.frozenImage == nil {
                 Label(.cameraShutterFreeze, systemImage: "circle.fill")
