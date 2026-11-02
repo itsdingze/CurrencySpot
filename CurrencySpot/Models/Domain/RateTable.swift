@@ -23,6 +23,12 @@ nonisolated struct RateTable: Equatable, Sendable {
         usdRates[code] ?? (code == .usd ? 1.0 : nil)
     }
 
+    func canConvert(from base: CurrencyCode, to target: CurrencyCode) -> Bool {
+        guard base != target else { return true }
+        guard let baseRate = usdRate(for: base), usdRate(for: target) != nil else { return false }
+        return abs(baseRate) > .ulpOfOne
+    }
+
     func crossRate(from base: CurrencyCode, to target: CurrencyCode) -> Double {
         guard base != target else { return 1.0 }
         let targetRate = usdRate(for: target) ?? 1.0

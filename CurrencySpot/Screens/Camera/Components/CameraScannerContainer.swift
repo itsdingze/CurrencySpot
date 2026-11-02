@@ -48,20 +48,23 @@ struct CameraScannerContainer: View {
             .overlay(alignment: .top) {
                 VStack(spacing: Spacing.element) {
                     CurrencyPairControl()
-                    if viewModel.isShowingSampleRates {
-                        SampleRatesCapsule()
+                    if let notice = viewModel.ratesNotice {
+                        RatesNoticeCapsule(notice: notice)
+                            .padding(.horizontal, Spacing.screenInset)
                     }
                 }
                 .padding(.top, Spacing.screenInset)
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: Spacing.section) {
-                    ScanStatusCapsule(
-                        isLive: viewModel.frozenImage == nil,
-                        hasPrices: viewModel.hasSettledPrices,
-                        hasOutlines: viewModel.hasSettledNumbers,
-                        isRecognizingStill: viewModel.isRecognizingStill
-                    )
+                    if viewModel.canConvertPrices {
+                        ScanStatusCapsule(
+                            isLive: viewModel.frozenImage == nil,
+                            hasPrices: viewModel.hasSettledPrices,
+                            hasOutlines: viewModel.hasSettledNumbers,
+                            isRecognizingStill: viewModel.isRecognizingStill
+                        )
+                    }
                     CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
                 }
                 .padding(.bottom, Spacing.screenInset)
@@ -86,6 +89,11 @@ struct CameraScannerContainer: View {
                 AccessibilityNotification.Announcement(String(localized: frozenEmptyAnnouncement)).post()
             }
         }
+        .onChange(of: viewModel.ratesNotice) { _, notice in
+            if let notice, notice == .missingPairRate, appState.selectedTab == .camera {
+                AccessibilityNotification.Announcement(String(localized: notice.accessibilityLabel)).post()
+            }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 scannerProxy.syncScanning()
@@ -107,7 +115,8 @@ struct CameraScannerContainer: View {
     }
 
     private var frozenEmptyAnnouncement: LocalizedStringResource {
-        viewModel.hasSettledNumbers ? .cameraAnnouncementNumbersOnly : .cameraAnnouncementNoPricesFound
+        if !viewModel.canConvertPrices, let notice = viewModel.ratesNotice { return notice.accessibilityLabel }
+        return viewModel.hasSettledNumbers ? .cameraAnnouncementNumbersOnly : .cameraAnnouncementNoPricesFound
     }
 
     private func detectionOverlay(isLive: Bool) -> some View {

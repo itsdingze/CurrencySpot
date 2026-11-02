@@ -14,6 +14,12 @@ final class CameraViewModel {
         var id: Self { self }
     }
 
+    nonisolated enum RatesNotice {
+        case missingRates
+        case missingPairRate
+        case sampleRates
+    }
+
     private nonisolated enum Finding: Comparable {
         case nothing
         case numbers
@@ -34,6 +40,15 @@ final class CameraViewModel {
 
     var hasSettledPrices: Bool { settledFinding == .prices }
     var hasSettledNumbers: Bool { settledFinding == .numbers }
+
+    var canConvertPrices: Bool {
+        RateTable(ratesStore.rates).canConvert(from: baseCurrency, to: targetCurrency)
+    }
+
+    var ratesNotice: RatesNotice? {
+        if !canConvertPrices { return ratesStore.rates.isEmpty ? .missingRates : .missingPairRate }
+        return isShowingSampleRates ? .sampleRates : nil
+    }
 
     private(set) var isTorchOn = false
     var destination: Destination?
@@ -311,6 +326,11 @@ final class CameraViewModel {
     }
 
     private func publish(_ items: [DetectedItem], foundPrices: Bool) {
+        guard canConvertPrices else {
+            detectedItems = []
+            classifierFoundPrices = false
+            return
+        }
         detectedItems = IdentifiedArray(uniqueElements: items.map(applyingOverride))
         classifierFoundPrices = foundPrices
     }

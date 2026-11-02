@@ -547,6 +547,108 @@ struct CameraViewModelTests {
         #expect(viewModel.hasSettledPrices)
     }
 
+    // MARK: - Missing Rates
+
+    @Test func pricesStayUnconvertedWithoutRates() {
+        let viewModel = Self.makeViewModel(ratesStore: ExchangeRatesStore(), defaultTargetCurrency: "EUR")
+
+        Self.feed(viewModel, "¥1,200", id: UUID())
+
+        #expect(viewModel.detectedItems.isEmpty)
+        #expect(viewModel.hasPrices == false)
+        #expect(viewModel.ratesNotice == .missingRates)
+    }
+
+    @Test func aCurrencyWithoutARateBlocksConversion() {
+        let ratesStore = ExchangeRatesStore()
+        ratesStore.update(
+            rates: [ExchangeRate(currencyCode: "EUR", rate: 0.9), ExchangeRate(currencyCode: "USD", rate: 1)],
+            lastUpdated: nil,
+            isShowingSampleRates: false
+        )
+        let viewModel = Self.makeViewModel(ratesStore: ratesStore, defaultTargetCurrency: "EUR")
+        viewModel.baseCurrency = "JPY"
+
+        Self.feed(viewModel, "¥1,200", id: UUID())
+
+        #expect(viewModel.detectedItems.isEmpty)
+        #expect(viewModel.ratesNotice == .missingPairRate)
+    }
+
+    @Test func aZeroRateCountsAsMissing() {
+        let viewModel = Self.makeViewModel(ratesStore: Self.makeRatesStore(jpyRate: 0))
+
+        Self.feed(viewModel, "¥1,200", id: UUID())
+
+        #expect(viewModel.detectedItems.isEmpty)
+        #expect(viewModel.ratesNotice == .missingPairRate)
+    }
+
+    @Test func sampleRatesWithoutThePairShowThePairNotice() {
+        let ratesStore = ExchangeRatesStore()
+        ratesStore.update(
+            rates: [ExchangeRate(currencyCode: "EUR", rate: 0.9), ExchangeRate(currencyCode: "USD", rate: 1)],
+            lastUpdated: nil,
+            isShowingSampleRates: true
+        )
+
+        let viewModel = Self.makeViewModel(ratesStore: ratesStore, defaultTargetCurrency: "KRW")
+
+        #expect(viewModel.ratesNotice == .missingPairRate)
+    }
+
+    @Test func aSameCurrencyPairNeedsNoRates() {
+        let viewModel = Self.makeViewModel(
+            ratesStore: ExchangeRatesStore(),
+            fallbackBaseCurrency: "EUR",
+            defaultTargetCurrency: "EUR"
+        )
+
+        Self.feed(viewModel, "¥1,200", id: UUID())
+
+        #expect(viewModel.detectedItems.first?.conversion.converted == 1200)
+        #expect(viewModel.ratesNotice == nil)
+    }
+
+    @Test func arrivingRatesConvertTheWaitingPrices() {
+        let ratesStore = ExchangeRatesStore()
+        let viewModel = Self.makeViewModel(ratesStore: ratesStore, fallbackBaseCurrency: "JPY")
+        Self.feed(viewModel, "¥1,200", id: UUID())
+        #expect(viewModel.detectedItems.isEmpty)
+
+        ratesStore.update(rates: Self.makeRatesStore().rates, lastUpdated: nil, isShowingSampleRates: false)
+        viewModel.refreshConversions()
+
+        #expect(viewModel.detectedItems.first?.conversion.converted == 8)
+        #expect(viewModel.ratesNotice == nil)
+    }
+
+    @Test func frozenPricesStayUnconvertedWithoutRates() async {
+        let viewModel = Self.makeViewModel(
+            ratesStore: ExchangeRatesStore(),
+            stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult),
+            defaultTargetCurrency: "EUR"
+        )
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+
+        await viewModel.recognizeStill(in: image)
+
+        #expect(viewModel.detectedItems.isEmpty)
+        #expect(viewModel.hasPrices == false)
+    }
+
+    @Test func sampleRatesShowTheSampleNotice() {
+        let ratesStore = Self.makeRatesStore()
+        let viewModel = Self.makeViewModel(ratesStore: ratesStore)
+        #expect(viewModel.ratesNotice == nil)
+
+        ratesStore.update(rates: ratesStore.rates, lastUpdated: nil, isShowingSampleRates: true)
+
+        #expect(viewModel.ratesNotice == .sampleRates)
+    }
+
     // MARK: - Freeze and Resume
 
     @Test func liveUpdatesAreIgnoredWhileFrozen() async {

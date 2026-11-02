@@ -5651,6 +5651,126 @@
         }
       }
     },
+    "camera.ratesNotice.missing" : {
+      "comment" : "Notice on the camera screen when exchange rates for the chosen currencies aren't loaded, so no prices are converted. Convert is the name of the converter tab.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine Kurse. Öffne „Umrechnen“, um sie zu laden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rates yet. Open Convert to load them."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay tipos de cambio. Abre Convertir para cargarlos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay tasas de cambio. Abre Convertir para cargarlas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun taux pour l’instant. Ouvrez Convertir pour les charger."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "為替レートがまだありません。“換算”を開いて読み込んでください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 환율이 없어요. ‘환율 계산’을 열어 불러와 주세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "还没有汇率。打开“换算”即可加载。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有匯率。打開「換算」即可載入。"
+          }
+        }
+      }
+    },
+    "camera.ratesNotice.missingPair" : {
+      "comment" : "Notice and VoiceOver announcement on the camera screen when exchange rates are loaded but none covers the chosen From or To currency, so no prices are converted.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Kurs für dieses Währungspaar. Wähle eine andere Währung."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rate for this currency pair. Choose another currency."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay tipo de cambio para este par de divisas. Elige otra divisa."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay tasa de cambio para este par de divisas. Elige otra divisa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun taux pour cette paire de devises. Choisissez une autre devise."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この通貨ペアのレートがありません。別の通貨を選択してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 통화 쌍의 환율이 없어요. 다른 통화를 선택해 주세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这组币种没有汇率。请选择其他币种。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這組幣別沒有匯率。請選擇其他幣別。"
+          }
+        }
+      }
+    },
     "camera.shutter.freeze" : {
       "comment" : "VoiceOver label and large content title for the camera shutter button while the camera is live.",
       "extractionState" : "manual",
