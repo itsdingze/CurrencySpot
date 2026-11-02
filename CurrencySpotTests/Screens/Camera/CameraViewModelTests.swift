@@ -706,6 +706,32 @@ struct CameraViewModelTests {
 
     // MARK: - Freeze and Resume
 
+    @Test(.timeLimit(.minutes(1)))
+    func aSecondShutterPressWhileCapturingIsIgnored() async {
+        let viewModel = Self.makeViewModel()
+        let (shutterReleased, release) = AsyncStream<Void>.makeStream()
+        let firstImage = UIImage()
+        let firstCapture = Task {
+            await viewModel.freezeFrame(capturing: {
+                for await _ in shutterReleased { break }
+                return firstImage
+            })
+        }
+        await waitUntil { viewModel.isCapturing }
+        var secondCaptureStarted = false
+
+        await viewModel.freezeFrame(capturing: {
+            secondCaptureStarted = true
+            return UIImage()
+        })
+        release.yield()
+        await firstCapture.value
+
+        #expect(secondCaptureStarted == false)
+        #expect(viewModel.frozenImage === firstImage)
+        #expect(viewModel.isCapturing == false)
+    }
+
     @Test func liveUpdatesAreIgnoredWhileFrozen() async {
         let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
         let image = UIImage()

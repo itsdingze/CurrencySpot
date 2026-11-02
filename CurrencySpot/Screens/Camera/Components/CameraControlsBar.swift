@@ -66,6 +66,9 @@ struct CameraControlsBar: View {
             Circle()
                 .fill(.white)
                 .frame(width: 56, height: 56)
+                .scaleEffect(viewModel.isCapturing ? 0.8 : 1)
+                .opacity(viewModel.isCapturing ? 0.6 : 1)
+                .animation(.appQuickFade, value: viewModel.isCapturing)
         } else {
             Image(systemName: "xmark")
                 .font(.appTitle2)

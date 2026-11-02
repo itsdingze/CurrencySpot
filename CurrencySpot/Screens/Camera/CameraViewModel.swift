@@ -33,6 +33,7 @@ final class CameraViewModel {
     private(set) var frozenImage: UIImage?
     private(set) var isScanning = true
     private(set) var isRecognizingStill = false
+    private(set) var isCapturing = false
 
     var hasPrices: Bool {
         classifierFoundPrices || detectedItems.contains { $0.conversion.isPrice }
@@ -145,6 +146,9 @@ final class CameraViewModel {
     // MARK: - Freeze and Resume
 
     func freezeFrame(capturing capture: () async throws -> UIImage?) async {
+        guard !isCapturing else { return }
+        isCapturing = true
+        defer { isCapturing = false }
         let request = beginFreezeRequest()
         do {
             guard let image = try await capture() else { return }
