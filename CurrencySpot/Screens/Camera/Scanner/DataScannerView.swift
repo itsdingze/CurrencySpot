@@ -10,7 +10,7 @@ struct DataScannerView: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> ScannerHostController {
         let scanner = DataScannerViewController(
-            recognizedDataTypes: [.text()],
+            recognizedDataTypes: [.text(textContentType: .currency)],
             qualityLevel: .balanced,
             recognizesMultipleItems: true,
             isHighFrameRateTrackingEnabled: true,
@@ -49,6 +49,7 @@ struct DataScannerView: UIViewControllerRepresentable {
         fileprivate var onItemsChanged: ([RecognizedTextItem]) -> Void
         fileprivate var onItemTapped: (UUID) -> Void
         private var observationTask: Task<Void, Never>?
+        private var identities = LiveItemIdentities()
 
         init(onItemsChanged: @escaping ([RecognizedTextItem]) -> Void, onItemTapped: @escaping (UUID) -> Void) {
             self.onItemsChanged = onItemsChanged
@@ -57,11 +58,12 @@ struct DataScannerView: UIViewControllerRepresentable {
 
         fileprivate func observeRecognizedItems(of scanner: DataScannerViewController) {
             observationTask?.cancel()
+            identities = LiveItemIdentities()
             observationTask = Task { [weak self, weak scanner] in
                 guard let scanner else { return }
                 for await items in scanner.recognizedItems {
                     guard let self, !Task.isCancelled else { return }
-                    self.onItemsChanged(items.compactMap(RecognizedTextItem.init))
+                    self.onItemsChanged(self.identities.identify(items.compactMap(RecognizedTextItem.init)))
                 }
                 guard let self, !Task.isCancelled else { return }
                 self.onItemsChanged([])
