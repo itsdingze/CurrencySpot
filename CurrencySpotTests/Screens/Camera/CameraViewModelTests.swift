@@ -525,6 +525,28 @@ struct CameraViewModelTests {
         await waitUntil { viewModel.hasSettledPrices == false }
     }
 
+    @Test func liveNumbersWithoutPricesCountAsNumbersOnly() {
+        let viewModel = Self.makeViewModel()
+
+        Self.feed(viewModel, "850", id: UUID())
+
+        #expect(viewModel.hasSettledNumbers)
+        #expect(viewModel.hasSettledPrices == false)
+    }
+
+    @Test func frozenFoundStateFollowsTheStillAtOnce() async {
+        let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
+        Self.feed(viewModel, "850", id: UUID())
+        let image = UIImage()
+
+        await viewModel.freezeFrame(capturing: { image })
+        #expect(viewModel.hasSettledNumbers == false)
+
+        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        await viewModel.recognizeStill(in: image)
+        #expect(viewModel.hasSettledPrices)
+    }
+
     // MARK: - Freeze and Resume
 
     @Test func liveUpdatesAreIgnoredWhileFrozen() async {

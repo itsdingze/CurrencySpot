@@ -3803,6 +3803,66 @@
         }
       }
     },
+    "camera.announcement.numbersOnly" : {
+      "comment" : "VoiceOver announcement when a frozen camera frame contains numbers but no prices.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Preise gefunden, nur Zahlen. Zum Umrechnen wähle eine Zahl aus und tippe zweimal."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No prices found, only numbers. To convert one, select it and double-tap."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se han encontrado precios, solo números. Para convertir uno, selecciónalo y toca dos veces."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se encontraron precios, solo números. Para convertir uno, selecciónalo y toca dos veces."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun prix trouvé, seulement des nombres. Pour en convertir un, sélectionnez-le, puis touchez deux fois."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "価格は見つかりませんでしたが、数字が見つかりました。数字を選択してダブルタップすると、換算できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "가격은 찾지 못했지만 숫자를 찾았어요. 환산하려면 숫자를 선택하고 두 번 탭해 주세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未识别到价格，只有数字。选择一个数字并轻点两下，即可换算。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未辨識到價格，只有數字。選取一個數字並點兩下，即可換算。"
+          }
+        }
+      }
+    },
     "camera.announcement.pointHint" : {
       "comment" : "VoiceOver announcement when the camera has found no price after a few seconds.",
       "extractionState" : "manual",
@@ -4519,6 +4579,180 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "換算後"
+          }
+        }
+      }
+    },
+    "camera.detection.numbersSummary.accessibilityLabel" : {
+      "comment" : "VoiceOver label summarizing the numbers the live camera found when none of them is a price. count: number of numbers. Freeze frame is the shutter button label.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld Zahl erkannt, keine Preise. Zum Prüfen wähle „Bild anhalten“ und tippe zweimal."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld Zahlen erkannt, keine Preise. Zum Prüfen wähle „Bild anhalten“ und tippe zweimal."
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld number detected, no prices. To review it, select Freeze frame and double-tap."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld numbers detected, no prices. To review them, select Freeze frame and double-tap."
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld número detectado, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlo."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                }
+              }
+            }
+          }
+        },
+        "es-419" : {
+          "variations" : {
+            "plural" : {
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld número detectado, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlo."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "many" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld nombres détectés, aucun prix. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld nombre détecté, aucun prix. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld nombres détectés, aucun prix. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%(count)lld件の数字が見つかりましたが、価格はありません。“画面を停止”を選択してダブルタップすると、詳しく確認できます。"
+                }
+              }
+            }
+          }
+        },
+        "ko" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "숫자 %(count)lld개를 찾았지만 가격은 없어요. 자세히 보려면 ‘화면 멈추기’를 선택하고 두 번 탭해 주세요."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已识别到 %(count)lld 个数字，没有价格。选择“定格画面”并轻点两下，即可查看。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已识别到 %(count)lld 个数字，没有价格。选择“定格画面”并轻点两下，即可查看。"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已辨識到 %(count)lld 個數字，沒有價格。選取「定格畫面」並點兩下，即可查看。"
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已辨識到 %(count)lld 個數字，沒有價格。選取「定格畫面」並點兩下，即可查看。"
+                }
+              }
+            }
           }
         }
       }
@@ -5593,6 +5827,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未辨識到價格"
+          }
+        }
+      }
+    },
+    "camera.status.numbersOnly" : {
+      "comment" : "Camera screen status capsule when the camera found numbers but no prices. Tapping a number converts it.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf eine Zahl, um sie umzurechnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a number to convert it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca un número para convertirlo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca un número para convertirlo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez un nombre pour le convertir"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "数字をタップすると換算できます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "숫자를 탭하면 환산할 수 있어요"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点数字即可换算"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下數字即可換算"
           }
         }
       }

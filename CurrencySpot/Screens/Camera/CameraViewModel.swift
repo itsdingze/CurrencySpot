@@ -33,6 +33,7 @@ final class CameraViewModel {
     }
 
     var hasSettledPrices: Bool { settledFinding == .prices }
+    var hasSettledNumbers: Bool { settledFinding == .numbers }
 
     private(set) var isTorchOn = false
     var destination: Destination?

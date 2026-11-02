@@ -48,12 +48,18 @@ struct DetectionOverlayView: View {
         .animation(.appTrack, value: promotions)
         .onChange(of: items) { _, _ in syncRevealPromotion() }
         .overlay {
-            if isLive && !priceItems.isEmpty {
+            if isLive, let liveSummary = liveSummary(priceCount: priceItems.count) {
                 Color.clear
                     .accessibilityElement()
-                    .accessibilityLabel(.cameraDetectionSummaryAccessibilityLabel(count: priceItems.count))
+                    .accessibilityLabel(liveSummary)
             }
         }
+    }
+
+    private func liveSummary(priceCount: Int) -> LocalizedStringResource? {
+        if priceCount > 0 { return .cameraDetectionSummaryAccessibilityLabel(count: priceCount) }
+        if !items.isEmpty { return .cameraDetectionNumbersSummaryAccessibilityLabel(count: items.count) }
+        return nil
     }
 
     @ViewBuilder

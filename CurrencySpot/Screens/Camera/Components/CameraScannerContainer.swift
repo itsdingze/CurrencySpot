@@ -59,6 +59,7 @@ struct CameraScannerContainer: View {
                     ScanStatusCapsule(
                         isLive: viewModel.frozenImage == nil,
                         hasPrices: viewModel.hasSettledPrices,
+                        hasOutlines: viewModel.hasSettledNumbers,
                         isRecognizingStill: viewModel.isRecognizingStill
                     )
                     CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
@@ -82,7 +83,7 @@ struct CameraScannerContainer: View {
         }
         .onChange(of: viewModel.frozenImage != nil && !viewModel.isRecognizingStill && !viewModel.hasPrices) { _, empty in
             if empty {
-                AccessibilityNotification.Announcement(String(localized: .cameraAnnouncementNoPricesFound)).post()
+                AccessibilityNotification.Announcement(String(localized: frozenEmptyAnnouncement)).post()
             }
         }
         .onChange(of: scenePhase) { _, phase in
@@ -103,6 +104,10 @@ struct CameraScannerContainer: View {
             currencyPicker(for: destination)
                 .preferredColorScheme(.dark)
         }
+    }
+
+    private var frozenEmptyAnnouncement: LocalizedStringResource {
+        viewModel.hasSettledNumbers ? .cameraAnnouncementNumbersOnly : .cameraAnnouncementNoPricesFound
     }
 
     private func detectionOverlay(isLive: Bool) -> some View {

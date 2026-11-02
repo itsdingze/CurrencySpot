@@ -21,6 +21,29 @@ struct PointHintAnnouncerTests {
         #expect(count == 1)
     }
 
+    @Test func numbersComingAndGoingDoNotRepeatTheHint() {
+        var announcer = PointHintAnnouncer()
+        _ = announcements([(.scanning, false), (.pointHint, true)], with: &announcer)
+
+        let count = announcements(
+            [true, true, false, false, true, false, true, true, false].map { ($0 ? .numbersOnly : .pointHint, true) },
+            with: &announcer
+        )
+
+        #expect(count == 0)
+    }
+
+    @Test func theWaitEndingUnderNumbersStaysSilent() {
+        var announcer = PointHintAnnouncer()
+
+        let count = announcements(
+            [(.scanning, false), (.numbersOnly, true), (.pointHint, true)],
+            with: &announcer
+        )
+
+        #expect(count == 0)
+    }
+
     @Test func theHintAnnouncesOnlyOncePerLiveSession() {
         var announcer = PointHintAnnouncer()
         _ = announcements([(.scanning, false), (.pointHint, true)], with: &announcer)

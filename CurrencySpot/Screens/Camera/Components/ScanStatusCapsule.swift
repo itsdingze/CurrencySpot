@@ -3,6 +3,7 @@ import SwiftUI
 struct ScanStatusCapsule: View {
     let isLive: Bool
     let hasPrices: Bool
+    let hasOutlines: Bool
     let isRecognizingStill: Bool
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -14,7 +15,8 @@ struct ScanStatusCapsule: View {
             isLive: isLive,
             hasPrices: hasPrices,
             isRecognizingStill: isRecognizingStill,
-            hintElapsed: hintElapsed
+            hintElapsed: hintElapsed,
+            hasOutlines: hasOutlines
         )
     }
 
@@ -61,6 +63,7 @@ struct ScanStatusCapsule: View {
         case .scanning: .cameraStatusScanning
         case .pointHint: .cameraStatusPointHint
         case .notFound: .cameraStatusNotFound
+        case .numbersOnly: .cameraStatusNumbersOnly
         }
     }
 }
@@ -103,13 +106,20 @@ private struct Shimmer: ViewModifier {
 #Preview("Live, scanning") {
     ZStack {
         Color(white: 0.2).ignoresSafeArea()
-        ScanStatusCapsule(isLive: true, hasPrices: false, isRecognizingStill: false)
+        ScanStatusCapsule(isLive: true, hasPrices: false, hasOutlines: false, isRecognizingStill: false)
     }
 }
 
 #Preview("Frozen, no prices") {
     ZStack {
         Color(white: 0.2).ignoresSafeArea()
-        ScanStatusCapsule(isLive: false, hasPrices: false, isRecognizingStill: false)
+        ScanStatusCapsule(isLive: false, hasPrices: false, hasOutlines: false, isRecognizingStill: false)
+    }
+}
+
+#Preview("Frozen, numbers only") {
+    ZStack {
+        Color(white: 0.2).ignoresSafeArea()
+        ScanStatusCapsule(isLive: false, hasPrices: false, hasOutlines: true, isRecognizingStill: false)
     }
 }
