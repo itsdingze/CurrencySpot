@@ -40,7 +40,7 @@ struct DetectionOverlayView: View {
                 if item.conversion.isPrice {
                     plate(for: item, depth: depths[item.id], plateCount: priceItems.count)
                 } else {
-                    DetectionOutline(item: item, onTap: handleOutlineTap)
+                    DetectionOutline(item: item, isLive: isLive, onTap: handleOutlineTap)
                 }
             }
         }
@@ -80,6 +80,11 @@ struct DetectionOverlayView: View {
         .position(x: item.bounds.midX, y: item.bounds.midY)
         .opacity(opacity(forDepth: depth))
         .zIndex(zIndex(forDepth: depth, plateCount: plateCount))
+        .accessibilityLabel(.cameraDetectionPlateAccessibilityLabel(
+            transcript: item.transcript,
+            price: item.conversion.converted.formatted(.currency(code: targetCurrency.rawValue))
+        ))
+        .accessibilityAddTraits(isLive ? .updatesFrequently : [])
         .accessibilityHidden(isLive)
         if depth > 0 {
             button.accessibilityHint(.cameraDetectionPlatePromoteAccessibilityHint)
@@ -146,6 +151,7 @@ struct DetectionOverlayView: View {
 
 private struct DetectionOutline: View {
     let item: DetectedItem
+    let isLive: Bool
     let onTap: (UUID) -> Void
 
     var body: some View {
@@ -158,12 +164,13 @@ private struct DetectionOutline: View {
                     width: item.bounds.width + ConvertedPlateMetrics.horizontalInflation,
                     height: item.bounds.height + ConvertedPlateMetrics.verticalInflation
                 )
-                .contentShape(.rect)
+                .minimumHitTarget()
         }
         .buttonStyle(.plain)
         .position(x: item.bounds.midX, y: item.bounds.midY)
         .accessibilityLabel(.cameraDetectionOutlineAccessibilityLabel(number: item.transcript))
         .accessibilityHint(.cameraDetectionOutlineAccessibilityHint)
+        .accessibilityHidden(isLive)
     }
 }
 
@@ -186,8 +193,6 @@ private struct ConvertedPlate: View {
             )
             .background(.black.mix(with: .white, by: 0.15).opacity(0.9), in: .rect(cornerRadius: cornerRadius))
             .overlay { RoundedRectangle(cornerRadius: cornerRadius).stroke(.white.opacity(0.25), lineWidth: 0.5) }
-            .accessibilityLabel(.cameraDetectionPlateAccessibilityLabel(price: amount.formatted(.currency(code: currencyCode.rawValue))))
-            .accessibilityAddTraits(.updatesFrequently)
     }
 
     private var cornerRadius: CGFloat {

@@ -3690,55 +3690,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preis erkannt. Streiche nach rechts, um die Umrechnung zu hören. Zum Prüfen wähle „Bild anhalten“ und tippe zweimal."
+            "value" : "Preis erkannt. Zum Prüfen wähle „Bild anhalten“ und tippe zweimal."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Price detected. Swipe right to hear the conversion. To review it, select Freeze frame and double-tap."
+            "value" : "Price detected. To review it, select Freeze frame and double-tap."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Precio detectado. Desliza a la derecha para oír la conversión. Selecciona “Congelar imagen” y toca dos veces para revisarla."
+            "value" : "Precio detectado. Selecciona “Congelar imagen” y toca dos veces para revisarlo."
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Precio detectado. Desliza a la derecha para oír la conversión. Selecciona “Congelar imagen” y toca dos veces para revisarla."
+            "value" : "Precio detectado. Selecciona “Congelar imagen” y toca dos veces para revisarlo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prix détecté. Balayez vers la droite pour entendre la conversion. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+            "value" : "Prix détecté. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "価格が見つかりました。右にスワイプすると換算結果を読み上げます。“画面を停止”を選択してダブルタップすると、詳しく確認できます。"
+            "value" : "価格が見つかりました。“画面を停止”を選択してダブルタップすると、詳しく確認できます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "가격을 찾았어요. 오른쪽으로 쓸어넘기면 환산 결과를 들을 수 있어요. 자세히 보려면 ‘화면 멈추기’를 선택하고 두 번 탭해 주세요."
+            "value" : "가격을 찾았어요. 자세히 보려면 ‘화면 멈추기’를 선택하고 두 번 탭해 주세요."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已识别到价格。向右轻扫可听取换算结果，或选择“定格画面”并轻点两下查看。"
+            "value" : "已识别到价格。选择“定格画面”并轻点两下，即可查看。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已辨識到價格。向右滑動可聽取換算結果，或選取「定格畫面」並點兩下查看。"
+            "value" : "已辨識到價格。選取「定格畫面」並點兩下，即可查看。"
           }
         }
       }
@@ -4938,61 +4938,61 @@
       }
     },
     "camera.detection.plate.accessibilityLabel" : {
-      "comment" : "VoiceOver label for a converted price shown over a price tag on the camera screen. price: amount formatted as currency.",
+      "comment" : "VoiceOver label for a converted price shown over a price tag on the camera screen. transcript: the text the camera read from the tag. price: the converted amount formatted as currency.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Umgerechneter Preis %(price)@"
+            "value" : "%(transcript)@, %(price)@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Converted price %(price)@"
+            "value" : "%(transcript)@, %(price)@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Precio convertido %(price)@"
+            "value" : "%(transcript)@, %(price)@"
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Precio convertido %(price)@"
+            "value" : "%(transcript)@, %(price)@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prix converti %(price)@"
+            "value" : "%(transcript)@, %(price)@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "換算後の価格 %(price)@"
+            "value" : "%(transcript)@、%(price)@"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "환산 가격 %(price)@"
+            "value" : "%(transcript)@, %(price)@"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "换算后的价格 %(price)@"
+            "value" : "%(transcript)@，%(price)@"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "換算後的價格 %(price)@"
+            "value" : "%(transcript)@，%(price)@"
           }
         }
       }
