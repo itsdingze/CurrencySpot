@@ -120,4 +120,19 @@ struct CameraViewModelStillRecognitionTests {
         await yenRead.value
     }
 
+    @Test func importedPhotoLargerThanTheCapFreezesAtTheCappedSize() async throws {
+        let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer())
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let wideStrip = UIGraphicsImageRenderer(size: CGSize(width: 5000, height: 200), format: format).image { context in
+            UIColor.gray.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 5000, height: 200))
+        }
+        let photo = try #require(wideStrip.jpegData(compressionQuality: 0.8))
+
+        await viewModel.importPhoto(loading: { photo })
+
+        let frozen = try #require(viewModel.frozenImage?.cgImage)
+        #expect(frozen.width == 4096)
+    }
 }

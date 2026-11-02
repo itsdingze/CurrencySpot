@@ -165,12 +165,11 @@ final class CameraViewModel {
     func importPhoto(loading load: () async throws -> Data?) async {
         let request = beginFreezeRequest()
         do {
-            guard let data = try await load(), let image = UIImage(data: data) else {
+            guard let data = try await load(), let image = await StillImageDecoder().decode(data) else {
                 throw AppError.photoImportFailed
             }
-            let decoded = await image.byPreparingForDisplay() ?? image
             guard request == freezeRequestID else { return }
-            freeze(with: decoded)
+            freeze(with: image)
         } catch is CancellationError {
         } catch {
             guard request == freezeRequestID else { return }
