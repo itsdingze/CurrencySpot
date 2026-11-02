@@ -111,7 +111,8 @@ struct DetectionOverlayView: View {
                 pendingReveal = nil
             }
         }
-        promotions.removeAll { !visible.contains($0) }
+        let present = Set(items.map(\.id))
+        promotions.removeAll { !present.contains($0) }
         plateSizes = plateSizes.filter { visible.contains($0.key) }
     }
 

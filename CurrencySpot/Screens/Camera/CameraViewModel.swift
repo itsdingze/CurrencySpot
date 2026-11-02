@@ -181,6 +181,7 @@ final class CameraViewModel {
         isScanning = true
         isRecognizingStill = false
         stillRecognition = .empty
+        badgeOverrides = BadgePriceOverrides()
         resetLiveSmoothing()
         updateRecognizedItems([])
     }

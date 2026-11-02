@@ -12,25 +12,19 @@ struct BadgePriceOverrides {
 
     mutating func toggle(id: UUID, isPrice: Bool) {
         if isPrice {
-            if pinned.contains(id) {
-                pinned.remove(id)
-            } else {
-                suppressed.insert(id)
-            }
+            hide(id: id)
         } else {
-            if suppressed.contains(id) {
-                suppressed.remove(id)
-            } else {
-                pinned.insert(id)
-            }
+            show(id: id)
         }
     }
 
     mutating func hide(id: UUID) {
-        if pinned.contains(id) {
-            pinned.remove(id)
-        } else {
-            suppressed.insert(id)
-        }
+        pinned.remove(id)
+        suppressed.insert(id)
+    }
+
+    private mutating func show(id: UUID) {
+        suppressed.remove(id)
+        pinned.insert(id)
     }
 }

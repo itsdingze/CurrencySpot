@@ -309,6 +309,45 @@ struct CameraViewModelTests {
         #expect(viewModel.detectedItems.first?.conversion.isPrice == false)
     }
 
+    @Test func hidingAPinnedNumberStaysHiddenAfterItReadsAsAPrice() {
+        let viewModel = Self.makeViewModel()
+        let id = UUID()
+        Self.feed(viewModel, "850", id: id)
+        viewModel.toggleConversion(for: id)
+        Self.feed(viewModel, "¥850", id: id, frames: 3)
+        #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == true)
+
+        viewModel.hideConversion(for: id)
+
+        #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == false)
+    }
+
+    @Test func restoringAHiddenPriceShowsItAfterItReadsAsANumber() {
+        let viewModel = Self.makeViewModel()
+        let id = UUID()
+        Self.feed(viewModel, "¥850", id: id)
+        viewModel.toggleConversion(for: id)
+        Self.feed(viewModel, "850", id: id, frames: 3)
+        #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == false)
+
+        viewModel.toggleConversion(for: id)
+
+        #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == true)
+    }
+
+    @Test func resumingLiveScanningForgetsOverrides() async {
+        let viewModel = Self.makeViewModel()
+        let id = UUID()
+        Self.feed(viewModel, "¥1,200", id: id)
+        viewModel.toggleConversion(for: id)
+        await viewModel.freezeFrame(capturing: { UIImage() })
+        viewModel.resumeLiveScanning()
+
+        Self.feed(viewModel, "¥1,200", id: id)
+
+        #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == true)
+    }
+
     @Test func openInConverterPrefillsCalculatorAndSwitchesToConvertTab() throws {
         let appState = Self.makeAppState()
         let calculator = makeIsolatedCalculatorViewModel(defaults: try isolatedDefaults.make(), appState: appState)
