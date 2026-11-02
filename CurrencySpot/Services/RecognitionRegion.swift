@@ -1,0 +1,41 @@
+import CoreGraphics
+
+nonisolated struct RecognitionRegion: Equatable, Sendable {
+    private static let minimumBandedImageHeight: CGFloat = 1350
+    private static let bandCount = 3
+    private static let bandOverlapFraction: CGFloat = 0.15
+    private static let cutEdgeToleranceFraction: CGFloat = 0.02
+
+    let rect: CGRect
+    private let isCutAtTop: Bool
+    private let isCutAtBottom: Bool
+    private let minimumLineHeight: CGFloat
+
+    static func regions(covering imageSize: CGSize) -> [RecognitionRegion] {
+        let frame = CGRect(origin: .zero, size: imageSize)
+        guard imageSize.height >= minimumBandedImageHeight else {
+            return [RecognitionRegion(rect: frame, isCutAtTop: false, isCutAtBottom: false, minimumLineHeight: 0)]
+        }
+        let bandHeight = (imageSize.height / CGFloat(bandCount) * (1 + bandOverlapFraction)).rounded()
+        let lastBandTop = imageSize.height - bandHeight
+        let bandTops = (0 ..< bandCount).map { (lastBandTop * CGFloat($0) / CGFloat(bandCount - 1)).rounded() }
+        let bands = bandTops.enumerated().map { index, top in
+            RecognitionRegion(
+                rect: CGRect(x: 0, y: top, width: imageSize.width, height: bandHeight),
+                isCutAtTop: index > 0,
+                isCutAtBottom: index < bandCount - 1,
+                minimumLineHeight: 0
+            )
+        }
+        let overlap = bandHeight - bandTops[1]
+        let wholeFrame = RecognitionRegion(rect: frame, isCutAtTop: false, isCutAtBottom: false, minimumLineHeight: overlap / 2)
+        return bands + [wholeFrame]
+    }
+
+    func keeps(_ lineBounds: CGRect) -> Bool {
+        let tolerance = rect.height * Self.cutEdgeToleranceFraction
+        if isCutAtTop, lineBounds.minY <= rect.minY + tolerance { return false }
+        if isCutAtBottom, lineBounds.maxY >= rect.maxY - tolerance { return false }
+        return lineBounds.height >= minimumLineHeight
+    }
+}

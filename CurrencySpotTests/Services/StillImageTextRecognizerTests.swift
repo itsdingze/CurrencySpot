@@ -100,6 +100,87 @@ struct StillImageTextRecognizerTests {
         #expect(unread.isEmpty, "read: \(transcripts)")
     }
 
+    @Test("small prices on a tall menu are each read once, whole, where they are printed")
+    func readsSmallPricesOnATallMenu() async throws {
+        let size = CGSize(width: 2016, height: 4032)
+        let prices = (1 ... 30).map { "$\($0 + 3).50" }
+        let font = UIFont.systemFont(ofSize: 28)
+        let pitch = size.height * 0.88 / CGFloat(prices.count)
+        let drawnTops = prices.indices.map { size.height * 0.06 + pitch * CGFloat($0) }
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let menu = UIGraphicsImageRenderer(size: size, format: format).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            for (index, price) in prices.enumerated() {
+                NSAttributedString(string: "Item \(index + 1) ........ \(price)", attributes: [.font: font, .foregroundColor: UIColor.black])
+                    .draw(at: CGPoint(x: 160, y: drawnTops[index]))
+            }
+        }
+
+        let result = try await recognizer.recognize(menu, menuCurrency: "USD")
+
+        let amounts = result.items.flatMap { item in item.transcript.matches(of: /\$\d+(?:\.\d+)?/).map { String($0.output) } }
+        #expect(Set(prices).subtracting(amounts).sorted().isEmpty, "read: \(amounts)")
+        #expect(amounts.count == Set(amounts).count, "read: \(amounts)")
+        #expect(amounts.filter { !prices.contains($0) }.isEmpty, "read: \(amounts)")
+        for index in [prices.startIndex, prices.endIndex - 1] {
+            let line = try #require(result.items.first { $0.transcript.contains(prices[index]) })
+            #expect(abs(line.bounds.minY - drawnTops[index]) < size.height * 0.01, "\(prices[index]) at \(line.bounds)")
+        }
+    }
+
+    @Test("every price on a menu photographed at a tilt is read, short lines beside long ones included")
+    func readsEveryPriceOnATiltedMenu() async throws {
+        let size = CGSize(width: 1200, height: 1000)
+        let prices = (1 ... 14).map { "$\($0 + 10).50" }
+        let lines = prices.enumerated().map { index, price in
+            index.isMultiple(of: 3) ? "Soup \(price)" : "Grilled dish number \(index + 1) with seasonal vegetables ........ \(price)"
+        }
+        let font = try #require(UIFont(name: "Helvetica", size: 30))
+        let pitch: CGFloat = 54
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let menu = UIGraphicsImageRenderer(size: size, format: format).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            context.cgContext.translateBy(x: size.width / 2, y: size.height / 2)
+            context.cgContext.rotate(by: 5 * .pi / 180)
+            context.cgContext.translateBy(x: -size.width / 2, y: -size.height / 2)
+            for (index, line) in lines.enumerated() {
+                NSAttributedString(string: line, attributes: [.font: font, .foregroundColor: UIColor.black])
+                    .draw(at: CGPoint(x: 96, y: (size.height - pitch * CGFloat(lines.count)) / 2 + pitch * CGFloat(index)))
+            }
+        }
+
+        let result = try await recognizer.recognize(menu, menuCurrency: "USD")
+
+        let amounts = result.items.flatMap { item in item.transcript.matches(of: /\$\d+\.\d\d/).map { String($0.output) } }
+        #expect(Set(prices).subtracting(amounts).sorted().isEmpty, "read: \(result.items.map(\.transcript))")
+    }
+
+    @Test("a price tag too tall for one band, straddling the seam between bands, is read once")
+    func readsALargePriceTagAcrossABandSeam() async throws {
+        let size = CGSize(width: 2016, height: 4032)
+        let bands = RecognitionRegion.regions(covering: size).map(\.rect).filter { $0.height < size.height }
+        let seam = (bands[0].maxY + bands[1].minY) / 2
+        let font = UIFont.systemFont(ofSize: 560, weight: .bold)
+        try #require(font.capHeight > bands[0].maxY - bands[1].minY)
+        let capTop = seam - font.capHeight / 2
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let photo = UIGraphicsImageRenderer(size: size, format: format).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            NSAttributedString(string: "$4.99", attributes: [.font: font, .foregroundColor: UIColor.black])
+                .draw(at: CGPoint(x: 100, y: capTop - (font.ascender - font.capHeight)))
+        }
+
+        let result = try await recognizer.recognize(photo, menuCurrency: "USD")
+
+        #expect(result.items.filter { $0.transcript.contains("4.99") }.count == 1, "read: \(result.items.map(\.transcript))")
+    }
+
     @Test("the empty result carries no items and no pixel size")
     func emptyResultIsInert() {
         #expect(StillRecognitionResult.empty.items.isEmpty)

@@ -25,18 +25,45 @@ nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
 
         var request = RecognizeTextRequest()
         request.recognitionLanguages = recognitionLanguages(forMenuPricedIn: menuCurrency)
-        let observations = try await request.perform(on: cgImage)
-
         let imageSize = CGSize(width: cgImage.width, height: cgImage.height)
-        let items = observations.compactMap { observation -> RecognizedTextItem? in
-            guard let transcript = observation.topCandidates(1).first?.string else { return nil }
-            return RecognizedTextItem(
-                id: observation.uuid,
-                transcript: transcript,
-                bounds: observation.boundingBox.toImageCoordinates(imageSize, origin: .upperLeft)
+
+        var candidates: [RecognizedTextCandidate] = []
+        for region in RecognitionRegion.regions(covering: imageSize) {
+            try Task.checkCancellation()
+            candidates += try await Self.candidates(in: region, of: cgImage, sized: imageSize, using: request)
+        }
+        return StillRecognitionResult(items: RecognizedTextMerger.merge(candidates), imagePixelSize: imageSize)
+    }
+
+    private static func candidates(
+        in region: RecognitionRegion,
+        of image: CGImage,
+        sized imageSize: CGSize,
+        using request: RecognizeTextRequest
+    ) async throws -> [RecognizedTextCandidate] {
+        var request = request
+        let regionOfInterest = region.normalizedRect(in: imageSize)
+        request.regionOfInterest = regionOfInterest
+        return try await request.perform(on: image).compactMap { observation in
+            guard let topCandidate = observation.topCandidates(1).first else { return nil }
+            let bounds = observation.boundingBox.toImageCoordinates(from: regionOfInterest, imageSize: imageSize, origin: .upperLeft)
+            guard region.keeps(bounds) else { return nil }
+            return RecognizedTextCandidate(
+                item: RecognizedTextItem(id: observation.uuid, transcript: topCandidate.string, bounds: bounds),
+                confidence: topCandidate.confidence
             )
         }
-        return StillRecognitionResult(items: items, imagePixelSize: imageSize)
+    }
+}
+
+private nonisolated extension RecognitionRegion {
+    func normalizedRect(in imageSize: CGSize) -> NormalizedRect {
+        NormalizedRect(
+            x: rect.minX / imageSize.width,
+            y: 1 - rect.maxY / imageSize.height,
+            width: rect.width / imageSize.width,
+            height: rect.height / imageSize.height
+        )
     }
 }
 
