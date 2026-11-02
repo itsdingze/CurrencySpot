@@ -12,21 +12,22 @@ struct ScanConversionUseCaseTests {
         ExchangeRate(currencyCode: "USD", rate: 1),
     ]
 
-    private func item(_ transcript: String, at originX: CGFloat = 0) -> RecognizedTextItem {
+    private func item(_ transcript: String, at originX: CGFloat = 0, width: CGFloat = 40) -> RecognizedTextItem {
         RecognizedTextItem(
             id: UUID(),
             transcript: transcript,
-            bounds: CGRect(x: originX, y: 0, width: 40, height: 10)
+            bounds: CGRect(x: originX, y: 0, width: width, height: 10)
         )
     }
 
     private func detect(
         _ items: [RecognizedTextItem],
+        base: CurrencyCode = "JPY",
         rates: [ExchangeRate]? = nil
     ) -> ScanConversionUseCase.DetectionResult {
         useCase.detect(
             in: items,
-            baseCurrency: "JPY",
+            baseCurrency: base,
             targetCurrency: "USD",
             exchangeRates: rates ?? self.rates
         )
@@ -65,5 +66,65 @@ struct ScanConversionUseCaseTests {
         ]
         let second = try #require(detect([item("¥1,200")], rates: updatedRates).items.first)
         #expect(second.conversion.converted == 12)
+    }
+
+    @Test func classificationFollowsTheBaseCurrency() throws {
+        let ringgit = item("RM 12")
+
+        let underRinggit = try #require(detect([ringgit], base: "MYR").items.first)
+        let underDollar = try #require(detect([ringgit], base: "USD").items.first)
+        let underRinggitAgain = try #require(detect([ringgit], base: "MYR").items.first)
+
+        #expect(underRinggit.conversion.isPrice)
+        #expect(underDollar.conversion.isPrice == false)
+        #expect(underRinggitAgain.conversion.isPrice)
+    }
+
+    @Test func numberBesideAStandaloneMarkerIsReadWithThatMarker() throws {
+        let number = item("Combo 2 98", at: 0, width: 60)
+        let result = detect([number, item("円", at: 64, width: 10)])
+
+        let detected = try #require(result.items.first { $0.id == number.id })
+        #expect(detected.conversion.amount == 98)
+        #expect(detected.conversion.isPrice)
+        #expect(detected.transcript == "Combo 2 98")
+        #expect(result.foundPrices)
+    }
+
+    @Test func prefixMarkerIsReadBeforeTheNumber() throws {
+        let number = item("680 Ramen", at: 14)
+        let result = detect([item("¥", at: 0, width: 10), number])
+
+        let detected = try #require(result.items.first { $0.id == number.id })
+        #expect(detected.conversion.amount == 680)
+        #expect(detected.conversion.isPrice)
+    }
+
+    @Test(arguments: [("Poutine 12", "$", "12"), ("Pad Thai 120", "฿", "120"), ("2 for 5", "$", "5")])
+    func standaloneMarkerRightOfTheNumberIsReadAfterIt(transcript: String, glyph: String, amount: String) throws {
+        let number = item(transcript, at: 0, width: 60)
+        let result = detect([number, item(glyph, at: 64, width: 10)])
+
+        let detected = try #require(result.items.first { $0.id == number.id })
+        #expect(detected.conversion.amount == (try #require(Decimal(string: amount))))
+        #expect(detected.conversion.isPrice)
+    }
+
+    @Test func standaloneMarkerLeftOfTheNumberIsReadBeforeIt() throws {
+        let number = item("12 Pizza", at: 14, width: 60)
+        let result = detect([item("€", at: 0, width: 10), number])
+
+        let detected = try #require(result.items.first { $0.id == number.id })
+        #expect(detected.conversion.amount == 12)
+        #expect(detected.conversion.isPrice)
+    }
+
+    @Test func standaloneMarkerThatCannotReachTheNumberLeavesAnOutline() throws {
+        let number = item("No. 12", at: 14)
+        let result = detect([item("¥", at: 0, width: 10), number])
+
+        let detected = try #require(result.items.first { $0.id == number.id })
+        #expect(detected.conversion.isPrice == false)
+        #expect(result.foundPrices == false)
     }
 }

@@ -5,13 +5,24 @@ struct CurrencyMarkerResolver {
     let maxGap: CGFloat
     let minLineOverlap: CGFloat
 
-    func numbersAdjacentToMarker(in items: [RecognizedTextItem]) -> Set<UUID> {
-        let markers = items.filter { PriceClassifier.isStandaloneCurrencyMarker($0.transcript) }
-        guard !markers.isEmpty else { return [] }
+    func markersBesideNumbers(in items: [RecognizedTextItem]) -> [UUID: StandaloneCurrencyMarker] {
+        let markers = items.compactMap { item in
+            StandaloneCurrencyMarker.glyph(in: item.transcript).map { (bounds: item.bounds, glyph: $0) }
+        }
+        guard !markers.isEmpty else { return [:] }
         let numbers = items.filter { $0.transcript.contains(where: \.isNumber) }
-        guard !numbers.isEmpty else { return [] }
+        guard !numbers.isEmpty else { return [:] }
 
-        return Set(markers.compactMap { marker in nearestNumber(to: marker.bounds, among: numbers)?.id })
+        let promotions = markers.compactMap { marker in
+            nearestNumber(to: marker.bounds, among: numbers).map { number in
+                (number.id, StandaloneCurrencyMarker(glyph: marker.glyph, side: side(of: marker.bounds, beside: number.bounds)))
+            }
+        }
+        return Dictionary(promotions) { first, _ in first }
+    }
+
+    private func side(of marker: CGRect, beside number: CGRect) -> StandaloneCurrencyMarker.Side {
+        marker.minX >= number.midX ? .trailing : .leading
     }
 
     private func nearestNumber(to marker: CGRect, among numbers: [RecognizedTextItem]) -> RecognizedTextItem? {
