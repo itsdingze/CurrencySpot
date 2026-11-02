@@ -18,9 +18,19 @@ struct RecognizeStillImageTextUseCaseTests {
     func recognitionReturnsTheRecognizedText() async throws {
         let useCase = RecognizeStillImageTextUseCase(recognizer: StubStillTextRecognizer(result: squareResult))
 
-        let result = try await useCase.recognizeText(in: UIImage())
+        let result = try await useCase.recognizeText(in: UIImage(), menuCurrency: "JPY")
 
         #expect(result == squareResult)
+    }
+
+    @Test("the image is read as a menu priced in the given currency")
+    func recognitionReadsTheMenuInItsCurrency() async throws {
+        let recognizer = MenuCurrencyRecordingRecognizer()
+        let useCase = RecognizeStillImageTextUseCase(recognizer: recognizer)
+
+        _ = try await useCase.recognizeText(in: UIImage(), menuCurrency: "KRW")
+
+        #expect(recognizer.recordedCurrencies == ["KRW"])
     }
 
     @Test("a recognition failure reaches the caller")
@@ -29,7 +39,7 @@ struct RecognizeStillImageTextUseCaseTests {
         let useCase = RecognizeStillImageTextUseCase(recognizer: StubStillTextRecognizer(failure: RecognitionError()))
 
         await #expect(throws: RecognitionError.self) {
-            try await useCase.recognizeText(in: UIImage())
+            try await useCase.recognizeText(in: UIImage(), menuCurrency: "JPY")
         }
     }
 

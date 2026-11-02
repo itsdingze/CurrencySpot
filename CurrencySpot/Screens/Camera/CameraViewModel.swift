@@ -198,16 +198,21 @@ final class CameraViewModel {
         recordLiveFrame()
     }
 
+    var stillRecognitionLanguages: [Locale.Language] {
+        recognizeStillImageTextUseCase.recognitionLanguages(forMenuPricedIn: baseCurrency)
+    }
+
     func recognizeStill(in image: UIImage) async {
+        if frozenImage === image { isRecognizingStill = true }
         do {
-            let result = try await recognizeStillImageTextUseCase.recognizeText(in: image)
+            let result = try await recognizeStillImageTextUseCase.recognizeText(in: image, menuCurrency: baseCurrency)
             guard !Task.isCancelled, frozenImage === image else { return }
             stillRecognition = result
             pushStillItems()
             isRecognizingStill = false
         } catch is CancellationError {
         } catch {
-            guard frozenImage === image else { return }
+            guard !Task.isCancelled, frozenImage === image else { return }
             logger.error("Still-image text recognition failed: \(error.localizedDescription, privacy: .public)")
             appState.errorHandler.handle(AppError.textRecognitionFailed)
             isRecognizingStill = false

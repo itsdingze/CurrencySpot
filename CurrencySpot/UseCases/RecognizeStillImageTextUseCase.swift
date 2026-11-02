@@ -9,8 +9,12 @@ final class RecognizeStillImageTextUseCase {
         self.recognizer = recognizer
     }
 
-    func recognizeText(in image: UIImage) async throws -> StillRecognitionResult {
-        try await recognizer.recognize(image)
+    func recognitionLanguages(forMenuPricedIn currency: CurrencyCode) -> [Locale.Language] {
+        recognizer.recognitionLanguages(forMenuPricedIn: currency)
+    }
+
+    func recognizeText(in image: UIImage, menuCurrency: CurrencyCode) async throws -> StillRecognitionResult {
+        try await recognizer.recognize(image, menuCurrency: menuCurrency)
     }
 
     func textItems(in result: StillRecognitionResult, fittedTo viewSize: CGSize) -> [RecognizedTextItem] {

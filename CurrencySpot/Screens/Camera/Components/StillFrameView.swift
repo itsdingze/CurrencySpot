@@ -17,10 +17,15 @@ struct StillFrameView: View {
         } action: { size in
             viewModel.stillViewportChanged(size)
         }
-        .task(id: image) {
+        .task(id: StillRecognitionTrigger(image: image, languages: viewModel.stillRecognitionLanguages)) {
             await viewModel.recognizeStill(in: image)
         }
     }
+}
+
+private nonisolated struct StillRecognitionTrigger: Equatable {
+    let image: UIImage
+    let languages: [Locale.Language]
 }
 
 #if DEBUG

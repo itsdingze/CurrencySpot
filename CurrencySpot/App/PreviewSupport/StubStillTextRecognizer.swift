@@ -13,8 +13,12 @@
             outcome = .failure(failure)
         }
 
+        func recognitionLanguages(forMenuPricedIn _: CurrencyCode) -> [Locale.Language] {
+            []
+        }
+
         @concurrent
-        func recognize(_: UIImage) async throws -> StillRecognitionResult {
+        func recognize(_: UIImage, menuCurrency _: CurrencyCode) async throws -> StillRecognitionResult {
             try outcome.get()
         }
     }

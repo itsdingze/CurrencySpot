@@ -2,15 +2,29 @@ import UIKit
 import Vision
 
 nonisolated protocol StillTextRecognitionService: Sendable {
-    @concurrent func recognize(_ image: UIImage) async throws -> StillRecognitionResult
+    func recognitionLanguages(forMenuPricedIn currency: CurrencyCode) -> [Locale.Language]
+    @concurrent func recognize(_ image: UIImage, menuCurrency: CurrencyCode) async throws -> StillRecognitionResult
 }
 
 nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
+    private static let supportedLanguages = RecognizeTextRequest().supportedRecognitionLanguages
+
+    private let languagePolicy: RecognitionLanguagePolicy
+
+    init(languagePolicy: RecognitionLanguagePolicy = RecognitionLanguagePolicy(preferredLanguageIdentifiers: Locale.preferredLanguages)) {
+        self.languagePolicy = languagePolicy
+    }
+
+    func recognitionLanguages(forMenuPricedIn currency: CurrencyCode) -> [Locale.Language] {
+        languagePolicy.languages(forMenuPricedIn: currency, supportedBy: Self.supportedLanguages)
+    }
+
     @concurrent
-    func recognize(_ image: UIImage) async throws -> StillRecognitionResult {
+    func recognize(_ image: UIImage, menuCurrency: CurrencyCode) async throws -> StillRecognitionResult {
         guard let cgImage = image.orientationNormalized.cgImage else { return .empty }
 
-        let request = RecognizeTextRequest()
+        var request = RecognizeTextRequest()
+        request.recognitionLanguages = recognitionLanguages(forMenuPricedIn: menuCurrency)
         let observations = try await request.perform(on: cgImage)
 
         let imageSize = CGSize(width: cgImage.width, height: cgImage.height)
