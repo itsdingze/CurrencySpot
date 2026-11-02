@@ -45,12 +45,7 @@ struct LiveDetectionStabilizer {
         let steadiest = steadiestReading(in: readings, previousIsPrice: previousIsPrice) ?? reading
         tracks[reading.id] = Track(
             readings: readings,
-            shown: DetectedItem(
-                id: reading.id,
-                transcript: steadiest.transcript,
-                bounds: reading.bounds,
-                conversion: steadiest.conversion
-            ),
+            shown: steadiest.replacing(tokenQuad: reading.tokenQuad, lineQuad: reading.lineQuad),
             vanishedAt: nil
         )
     }

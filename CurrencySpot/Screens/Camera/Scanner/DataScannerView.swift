@@ -1,4 +1,5 @@
 import SwiftUI
+import Vision
 import VisionKit
 
 struct DataScannerView: UIViewControllerRepresentable {
@@ -81,16 +82,44 @@ struct DataScannerView: UIViewControllerRepresentable {
 private extension RecognizedTextItem {
     init?(item: RecognizedItem) {
         guard case let .text(text) = item else { return nil }
-        self.init(id: item.id, transcript: text.transcript, bounds: CGRect(quad: item.bounds))
+        self.init(
+            id: item.id,
+            transcript: text.transcript,
+            quad: Quad(
+                topLeft: item.bounds.topLeft,
+                topRight: item.bounds.topRight,
+                bottomRight: item.bounds.bottomRight,
+                bottomLeft: item.bounds.bottomLeft
+            ),
+            characterSpans: Self.characterSpans(of: text.observation, matching: text.transcript)
+        )
+    }
+
+    static func characterSpans(of observation: VNRecognizedTextObservation, matching transcript: String) -> [ClosedRange<CGFloat>]? {
+        guard transcript.contains(where: \.isNumber),
+              let reading = observation.topCandidates(1).first,
+              reading.string == transcript
+        else { return nil }
+        let line = Quad(observation)
+        var spans: [ClosedRange<CGFloat>] = []
+        var index = transcript.startIndex
+        while index < transcript.endIndex {
+            let next = transcript.index(after: index)
+            guard let glyph = try? reading.boundingBox(for: index ..< next) else { return nil }
+            spans.append(line.baselineSpan(of: Quad(glyph)))
+            index = next
+        }
+        return spans
     }
 }
 
-private extension CGRect {
-    init(quad: RecognizedItem.Bounds) {
-        let minX = min(quad.topLeft.x, quad.topRight.x, quad.bottomLeft.x, quad.bottomRight.x)
-        let maxX = max(quad.topLeft.x, quad.topRight.x, quad.bottomLeft.x, quad.bottomRight.x)
-        let minY = min(quad.topLeft.y, quad.topRight.y, quad.bottomLeft.y, quad.bottomRight.y)
-        let maxY = max(quad.topLeft.y, quad.topRight.y, quad.bottomLeft.y, quad.bottomRight.y)
-        self.init(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+private extension Quad {
+    init(_ rectangle: VNRectangleObservation) {
+        self.init(
+            topLeft: rectangle.topLeft,
+            topRight: rectangle.topRight,
+            bottomRight: rectangle.bottomRight,
+            bottomLeft: rectangle.bottomLeft
+        )
     }
 }

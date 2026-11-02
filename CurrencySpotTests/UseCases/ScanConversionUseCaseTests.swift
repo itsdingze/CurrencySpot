@@ -33,6 +33,26 @@ struct ScanConversionUseCaseTests {
         )
     }
 
+    private func glyphItem(_ transcript: String, width: CGFloat, numberSpan: ClosedRange<CGFloat>) -> RecognizedTextItem {
+        let count = transcript.count
+        let numberStart = count - 3
+        let spans = (0..<count).map { offset -> ClosedRange<CGFloat> in
+            guard offset >= numberStart else {
+                let step = numberSpan.lowerBound / CGFloat(numberStart)
+                return CGFloat(offset) * step...CGFloat(offset + 1) * step
+            }
+            let step = (numberSpan.upperBound - numberSpan.lowerBound) / 3
+            let position = CGFloat(offset - numberStart)
+            return numberSpan.lowerBound + position * step...numberSpan.lowerBound + (position + 1) * step
+        }
+        return RecognizedTextItem(
+            id: UUID(),
+            transcript: transcript,
+            quad: Quad(CGRect(x: 0, y: 0, width: width, height: 10)),
+            characterSpans: spans
+        )
+    }
+
     @Test func convertsAPriceFromBaseToTarget() throws {
         let result = detect([item("¥1,200")])
 
@@ -117,6 +137,64 @@ struct ScanConversionUseCaseTests {
         let detected = try #require(result.items.first { $0.id == number.id })
         #expect(detected.conversion.amount == 12)
         #expect(detected.conversion.isPrice)
+    }
+
+    @Test func tokenFollowsTheCharacterIndexWithoutMeasuredGlyphs() throws {
+        let detected = try #require(detect([item("Edamame 350", width: 110)]).items.first)
+
+        #expect(detected.bounds == CGRect(x: 80, y: 0, width: 30, height: 10))
+    }
+
+    @Test func wideCharactersTakeTwoSlotsInTheCharacterIndex() throws {
+        let detected = try #require(detect([item("ラーメン 850", width: 120)]).items.first)
+
+        #expect(detected.bounds == CGRect(x: 90, y: 0, width: 30, height: 10))
+    }
+
+    @Test func measuredGlyphsPlaceTheToken() throws {
+        let line = glyphItem("Edamame 350", width: 100, numberSpan: 0.6...0.9)
+
+        let detected = try #require(detect([line]).items.first)
+
+        #expect(abs(detected.bounds.minX - 60) < 0.001)
+        #expect(abs(detected.bounds.maxX - 90) < 0.001)
+    }
+
+    @Test func measuredSpacesDoNotStretchTheToken() throws {
+        let word: ClosedRange<CGFloat> = 0...0.378
+        let number: ClosedRange<CGFloat> = 0.401...0.824
+        let space: ClosedRange<CGFloat> = -0.216...(-0.216)
+        let line = RecognizedTextItem(
+            id: UUID(),
+            transcript: "Brot 2,49 €",
+            quad: Quad(CGRect(x: 0, y: 0, width: 100, height: 10)),
+            characterSpans: [word, word, word, word, space, number, number, number, number, space, 0.846...1]
+        )
+
+        let detected = try #require(detect([line], base: "EUR").items.first)
+
+        #expect(abs(detected.bounds.minX - 40.1) < 0.001)
+    }
+
+    @Test func implausibleMeasuredGlyphsFallBackToTheCharacterIndex() throws {
+        let line = glyphItem("Edamame 350", width: 110, numberSpan: 0...0.05)
+
+        let detected = try #require(detect([line]).items.first)
+
+        #expect(detected.bounds == CGRect(x: 80, y: 0, width: 30, height: 10))
+    }
+
+    @Test func markerSideReachesAcrossLeaderDotsToCoverTheWholeMarker() throws {
+        let detected = try #require(detect([item("Curry ..¥1,200", width: 140)]).items.first)
+
+        #expect(detected.bounds.minX == 76)
+        #expect(detected.bounds.maxX == 140)
+    }
+
+    @Test func markerSideStopsAtTheLetterBeforeIt() throws {
+        let detected = try #require(detect([item("定食¥1,050", width: 100)]).items.first)
+
+        #expect(detected.bounds.minX == 40)
     }
 
     @Test func standaloneMarkerThatCannotReachTheNumberLeavesAnOutline() throws {

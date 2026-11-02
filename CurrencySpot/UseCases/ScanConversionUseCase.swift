@@ -6,17 +6,11 @@ final class ScanConversionUseCase {
         let foundPrices: Bool
     }
 
-    private struct ClassificationKey: Hashable {
-        let transcript: String
-        let baseCurrency: CurrencyCode
-    }
-
     private let markerResolver = CurrencyMarkerResolver(maxGap: 1.0, minLineOverlap: 0.4)
+    private let reader = LinePriceReader()
 
     private var cachedRates: [ExchangeRate] = []
     private var cachedTable = RateTable([])
-
-    private var classificationMemo: [ClassificationKey: PriceClassification?] = [:]
 
     func detect(
         in items: [RecognizedTextItem],
@@ -25,55 +19,24 @@ final class ScanConversionUseCase {
         exchangeRates: [ExchangeRate]
     ) -> DetectionResult {
         let markers = markerResolver.markersBesideNumbers(in: items)
-        var foundPrices = false
-
         let detected = items.compactMap { item -> DetectedItem? in
-            let transcript = markers[item.id].map { $0.attached(to: item.transcript) } ?? item.transcript
-            guard let conversion = evaluate(
-                transcript: transcript,
-                baseCurrency: baseCurrency,
-                targetCurrency: targetCurrency,
-                exchangeRates: exchangeRates
-            ) else { return nil }
-
-            foundPrices = foundPrices || conversion.isPrice
-
+            guard let reading = reader.readings(of: item, marker: markers[item.id], baseCurrency: baseCurrency).first else {
+                return nil
+            }
+            let span = LineGlyphSpans(item).tokenSpan(of: reading.token, includingMarker: reading.tokenIncludingMarker)
             return DetectedItem(
                 id: item.id,
                 transcript: item.transcript,
-                bounds: item.bounds,
-                conversion: conversion
+                tokenQuad: item.quad.slice(span),
+                lineQuad: item.quad,
+                conversion: ScannedConversion(
+                    amount: reading.amount,
+                    converted: convert(reading.amount, from: baseCurrency, to: targetCurrency, in: exchangeRates),
+                    isPrice: reading.isPrice
+                )
             )
         }
-
-        return DetectionResult(items: detected, foundPrices: foundPrices)
-    }
-
-    private func evaluate(
-        transcript: String,
-        baseCurrency: CurrencyCode,
-        targetCurrency: CurrencyCode,
-        exchangeRates: [ExchangeRate]
-    ) -> ScannedConversion? {
-        let key = ClassificationKey(transcript: transcript, baseCurrency: baseCurrency)
-        guard let classification = memoizedClassification(of: key) else { return nil }
-        return ScannedConversion(
-            amount: classification.amount,
-            converted: convert(classification.amount, from: baseCurrency, to: targetCurrency, in: exchangeRates),
-            isPrice: classification.isPrice
-        )
-    }
-
-    private func memoizedClassification(of key: ClassificationKey) -> PriceClassification? {
-        if let memoized = classificationMemo[key] {
-            return memoized
-        }
-        if classificationMemo.count >= 512 {
-            classificationMemo.removeAll(keepingCapacity: true)
-        }
-        let classification = PriceClassifier(baseCurrency: key.baseCurrency).classify(key.transcript)
-        classificationMemo[key] = classification
-        return classification
+        return DetectionResult(items: detected, foundPrices: detected.contains { $0.conversion.isPrice })
     }
 
     private func convert(

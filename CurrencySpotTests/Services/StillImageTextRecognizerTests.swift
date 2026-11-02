@@ -75,6 +75,33 @@ struct StillImageTextRecognizerTests {
         #expect(CGRect(origin: .zero, size: size).contains(item.bounds))
     }
 
+    @Test("each glyph of a price line is placed along the line")
+    func priceLineCarriesItsGlyphPositions() async throws {
+        let image = try menuImage(lines: ["Tonkotsu Ramen ¥980"], fontName: "Helvetica", width: 600)
+
+        let result = try await recognizer.recognize(image, menuCurrency: "JPY")
+
+        let item = try #require(result.items.first { $0.transcript.contains("980") })
+        let spans = try #require(item.characterSpans)
+        let nine = try #require(item.transcript.firstIndex(of: "9"))
+        let nineSpan = spans[item.transcript.distance(from: item.transcript.startIndex, to: nine)]
+        #expect(spans.count == item.transcript.count)
+        #expect(try #require(spans.first).lowerBound < 0.05)
+        #expect(nineSpan.lowerBound > 0.75)
+        #expect(nineSpan.upperBound < 0.95)
+        #expect(item.quad.width > item.quad.height * 5)
+    }
+
+    @Test("a line without digits carries no glyph positions")
+    func plainTextLineCarriesNoGlyphPositions() async throws {
+        let image = try menuImage(lines: ["Tonkotsu Ramen"], fontName: "Helvetica", width: 600)
+
+        let result = try await recognizer.recognize(image, menuCurrency: "JPY")
+
+        let item = try #require(result.items.first)
+        #expect(item.characterSpans == nil)
+    }
+
     @Test("a menu is read in the policy's languages, limited to those this system can read")
     func readingLanguagesComeFromThePolicyAndTheSystem() {
         let policy = RecognitionLanguagePolicy(preferredLanguageIdentifiers: ["fr-FR", "hu-HU"])

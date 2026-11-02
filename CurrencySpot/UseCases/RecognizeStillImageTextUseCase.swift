@@ -19,8 +19,6 @@ final class RecognizeStillImageTextUseCase {
 
     func textItems(in result: StillRecognitionResult, fittedTo viewSize: CGSize) -> [RecognizedTextItem] {
         let mapping = AspectFitMapping(imageSize: result.imagePixelSize, viewSize: viewSize)
-        return result.items.map { item in
-            RecognizedTextItem(id: item.id, transcript: item.transcript, bounds: mapping.viewRect(for: item.bounds))
-        }
+        return result.items.map { $0.mapped(mapping.viewPoint) }
     }
 }

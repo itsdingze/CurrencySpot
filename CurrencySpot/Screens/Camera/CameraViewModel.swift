@@ -340,12 +340,7 @@ final class CameraViewModel {
     }
 
     private func applyingOverride(_ item: DetectedItem) -> DetectedItem {
-        DetectedItem(
-            id: item.id,
-            transcript: item.transcript,
-            bounds: item.bounds,
-            conversion: badgeOverrides.effective(item.conversion, for: item.id)
-        )
+        item.replacing(conversion: badgeOverrides.effective(item.conversion, for: item.id))
     }
 
     private func reconvert() {
