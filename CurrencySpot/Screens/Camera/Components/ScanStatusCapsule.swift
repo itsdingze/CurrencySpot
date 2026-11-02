@@ -7,6 +7,7 @@ struct ScanStatusCapsule: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var hintElapsed = false
+    @State private var hintAnnouncer = PointHintAnnouncer()
 
     private var phase: ScanStatusPhase {
         .resolve(
@@ -37,14 +38,18 @@ struct ScanStatusCapsule: View {
             guard !Task.isCancelled else { return }
             hintElapsed = true
         }
-        .onChange(of: phase == .pointHint) { _, showing in
-            if showing {
-                AccessibilityNotification.Announcement(String(localized: .cameraAnnouncementPointHint)).post()
-            }
-        }
+        .onChange(of: phase) { announcePointHintIfNeeded() }
+        .onChange(of: hintElapsed) { announcePointHintIfNeeded() }
+        .onChange(of: isLive) { hintAnnouncer = PointHintAnnouncer() }
     }
 
     private var isAwaitingFirstPrice: Bool { isLive && !hasPrices }
+
+    private func announcePointHintIfNeeded() {
+        if hintAnnouncer.shouldAnnounce(phase: phase, hintElapsed: hintElapsed) {
+            AccessibilityNotification.Announcement(String(localized: .cameraAnnouncementPointHint)).post()
+        }
+    }
 
     private var backgroundShape: AnyShape {
         dynamicTypeSize.isAccessibilitySize ? AnyShape(.rect(cornerRadius: Radius.container)) : AnyShape(.capsule)

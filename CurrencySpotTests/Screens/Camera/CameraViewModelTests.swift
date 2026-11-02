@@ -487,6 +487,44 @@ struct CameraViewModelTests {
         #expect(viewModel.detectedItems.map(\.transcript) == ["¥1,200"])
     }
 
+    // MARK: - Settled Found State
+
+    @Test func livePricesCountAsFoundAtOnce() {
+        let viewModel = Self.makeViewModel()
+
+        Self.feed(viewModel, "¥1,200", id: UUID())
+
+        #expect(viewModel.hasSettledPrices)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func liveFoundStateOutlastsABriefAbsence() async {
+        let clock = ManualClock()
+        let viewModel = Self.makeViewModel(clock: clock)
+        Self.feed(viewModel, "¥1,200", id: UUID())
+        await Self.letTheLastPlateExpire(viewModel, clock: clock)
+        await waitUntil { clock.pendingSleepCount == 1 }
+
+        clock.advance(by: .milliseconds(1100))
+        for _ in 0..<10 { await Task.yield() }
+
+        #expect(viewModel.hasPrices == false)
+        #expect(viewModel.hasSettledPrices)
+    }
+
+    @Test(.timeLimit(.minutes(1)))
+    func liveFoundStateClearsAfterASustainedAbsence() async {
+        let clock = ManualClock()
+        let viewModel = Self.makeViewModel(clock: clock)
+        Self.feed(viewModel, "¥1,200", id: UUID())
+        await Self.letTheLastPlateExpire(viewModel, clock: clock)
+        await waitUntil { clock.pendingSleepCount == 1 }
+
+        clock.advance(by: .seconds(5))
+
+        await waitUntil { viewModel.hasSettledPrices == false }
+    }
+
     // MARK: - Freeze and Resume
 
     @Test func liveUpdatesAreIgnoredWhileFrozen() async {

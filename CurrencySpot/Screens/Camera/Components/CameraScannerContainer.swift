@@ -58,7 +58,7 @@ struct CameraScannerContainer: View {
                 VStack(spacing: Spacing.section) {
                     ScanStatusCapsule(
                         isLive: viewModel.frozenImage == nil,
-                        hasPrices: viewModel.hasPrices,
+                        hasPrices: viewModel.hasSettledPrices,
                         isRecognizingStill: viewModel.isRecognizingStill
                     )
                     CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
@@ -75,8 +75,8 @@ struct CameraScannerContainer: View {
                 AccessibilityNotification.Announcement(String(localized: .cameraAnnouncementStillPricesDetected)).post()
             }
         }
-        .onChange(of: viewModel.frozenImage == nil && viewModel.hasPrices) { _, detected in
-            if detected {
+        .onChange(of: viewModel.frozenImage == nil && viewModel.hasSettledPrices) { _, detected in
+            if detected, viewModel.destination == nil {
                 AccessibilityNotification.Announcement(String(localized: .cameraAnnouncementLivePriceDetected)).post()
             }
         }

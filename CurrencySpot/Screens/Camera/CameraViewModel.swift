@@ -14,6 +14,12 @@ final class CameraViewModel {
         var id: Self { self }
     }
 
+    private nonisolated enum Finding: Comparable {
+        case nothing
+        case numbers
+        case prices
+    }
+
     // MARK: - UI State
 
     private(set) var authorization: CameraAuthorizationStatus = .notDetermined
@@ -25,6 +31,9 @@ final class CameraViewModel {
     var hasPrices: Bool {
         classifierFoundPrices || detectedItems.contains { $0.conversion.isPrice }
     }
+
+    var hasSettledPrices: Bool { settledFinding == .prices }
+
     private(set) var isTorchOn = false
     var destination: Destination?
 
@@ -48,7 +57,10 @@ final class CameraViewModel {
     private var badgeOverrides = BadgePriceOverrides()
 
     @ObservationIgnored private var liveStabilizer = LiveDetectionStabilizer()
+    private var liveFinding = Finding.nothing
+    @ObservationIgnored private var findingDropTask: Task<Void, Never>?
     private let lingerDuration = Duration.milliseconds(200)
+    private let absenceGracePeriod = Duration.milliseconds(1200)
 
     private var freezeRequestID = 0
 
@@ -276,6 +288,7 @@ final class CameraViewModel {
     private func publishLiveItems() {
         let items = liveStabilizer.items
         publish(items, foundPrices: items.contains { $0.conversion.isPrice })
+        settleLiveFinding()
     }
 
     private func expireLingeringItems(through emission: Int) {
@@ -327,8 +340,38 @@ final class CameraViewModel {
         }
     }
 
+    // MARK: - Settled Found State
+
+    private var currentFinding: Finding {
+        if hasPrices { return .prices }
+        return detectedItems.isEmpty ? .nothing : .numbers
+    }
+
+    private var settledFinding: Finding {
+        frozenImage == nil ? liveFinding : currentFinding
+    }
+
+    private func settleLiveFinding() {
+        let finding = currentFinding
+        if finding >= liveFinding {
+            findingDropTask?.cancel()
+            findingDropTask = nil
+            if finding != liveFinding { liveFinding = finding }
+        } else if findingDropTask == nil {
+            findingDropTask = Task { [weak self, clock, absenceGracePeriod] in
+                try? await clock.sleep(for: absenceGracePeriod)
+                guard let self, !Task.isCancelled else { return }
+                findingDropTask = nil
+                liveFinding = currentFinding
+            }
+        }
+    }
+
     private func resetLiveSmoothing() {
         liveStabilizer.reset()
+        findingDropTask?.cancel()
+        findingDropTask = nil
+        liveFinding = .nothing
     }
 
     private var autodetectedBaseCurrency: CurrencyCode {
