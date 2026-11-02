@@ -3690,55 +3690,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preis erkannt. Zum Prüfen wähle „Bild anhalten“ und tippe zweimal."
+            "value" : "Preis erkannt. Zum Prüfen wähle „Foto aufnehmen“ und tippe zweimal."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Price detected. To review it, select Freeze frame and double-tap."
+            "value" : "Price detected. To review it, select Take photo and double-tap."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Precio detectado. Selecciona “Congelar imagen” y toca dos veces para revisarlo."
+            "value" : "Precio detectado. Selecciona “Hacer foto” y toca dos veces para revisarlo."
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Precio detectado. Selecciona “Congelar imagen” y toca dos veces para revisarlo."
+            "value" : "Precio detectado. Selecciona “Tomar foto” y toca dos veces para revisarlo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prix détecté. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+            "value" : "Prix détecté. Pour examiner l’image, sélectionnez « Prendre une photo », puis touchez deux fois."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "価格が見つかりました。“画面を停止”を選択してダブルタップすると、詳しく確認できます。"
+            "value" : "価格が見つかりました。“写真を撮る”を選択してダブルタップすると、詳しく確認できます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "가격을 찾았어요. 자세히 보려면 ‘화면 멈추기’를 선택하고 두 번 탭해 주세요."
+            "value" : "가격을 찾았어요. 자세히 보려면 ‘사진 찍기’를 선택하고 두 번 탭해 주세요."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已识别到价格。选择“定格画面”并轻点两下，即可查看。"
+            "value" : "已识别到价格。选择“拍照”并轻点两下，即可查看。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已辨識到價格。選取「定格畫面」並點兩下，即可查看。"
+            "value" : "已辨識到價格。選取「拍照」並點兩下，即可查看。"
           }
         }
       }
@@ -4644,7 +4644,7 @@
       }
     },
     "camera.detection.numbersSummary.accessibilityLabel" : {
-      "comment" : "VoiceOver label summarizing the numbers the live camera found when none of them is a price. count: number of numbers. Freeze frame is the shutter button label.",
+      "comment" : "VoiceOver label summarizing the numbers the live camera found when none of them is a price. count: number of numbers. Take photo is the shutter button label.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -4653,13 +4653,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld Zahl erkannt, keine Preise. Zum Prüfen wähle „Bild anhalten“ und tippe zweimal."
+                  "value" : "%(count)lld Zahl erkannt, keine Preise. Zum Prüfen wähle „Foto aufnehmen“ und tippe zweimal."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld Zahlen erkannt, keine Preise. Zum Prüfen wähle „Bild anhalten“ und tippe zweimal."
+                  "value" : "%(count)lld Zahlen erkannt, keine Preise. Zum Prüfen wähle „Foto aufnehmen“ und tippe zweimal."
                 }
               }
             }
@@ -4671,13 +4671,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld number detected, no prices. To review it, select Freeze frame and double-tap."
+                  "value" : "%(count)lld number detected, no prices. To review it, select Take photo and double-tap."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld numbers detected, no prices. To review them, select Freeze frame and double-tap."
+                  "value" : "%(count)lld numbers detected, no prices. To review them, select Take photo and double-tap."
                 }
               }
             }
@@ -4689,19 +4689,19 @@
               "many" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Hacer foto” y toca dos veces para revisarlos."
                 }
               },
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld número detectado, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlo."
+                  "value" : "%(count)lld número detectado, sin precios. Selecciona “Hacer foto” y toca dos veces para revisarlo."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Hacer foto” y toca dos veces para revisarlos."
                 }
               }
             }
@@ -4713,19 +4713,19 @@
               "many" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Tomar foto” y toca dos veces para revisarlos."
                 }
               },
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld número detectado, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlo."
+                  "value" : "%(count)lld número detectado, sin precios. Selecciona “Tomar foto” y toca dos veces para revisarlo."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                  "value" : "%(count)lld números detectados, sin precios. Selecciona “Tomar foto” y toca dos veces para revisarlos."
                 }
               }
             }
@@ -4737,19 +4737,19 @@
               "many" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld nombres détectés, aucun prix. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+                  "value" : "%(count)lld nombres détectés, aucun prix. Pour examiner l’image, sélectionnez « Prendre une photo », puis touchez deux fois."
                 }
               },
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld nombre détecté, aucun prix. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+                  "value" : "%(count)lld nombre détecté, aucun prix. Pour examiner l’image, sélectionnez « Prendre une photo », puis touchez deux fois."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld nombres détectés, aucun prix. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+                  "value" : "%(count)lld nombres détectés, aucun prix. Pour examiner l’image, sélectionnez « Prendre une photo », puis touchez deux fois."
                 }
               }
             }
@@ -4761,7 +4761,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld件の数字が見つかりましたが、価格はありません。“画面を停止”を選択してダブルタップすると、詳しく確認できます。"
+                  "value" : "%(count)lld件の数字が見つかりましたが、価格はありません。“写真を撮る”を選択してダブルタップすると、詳しく確認できます。"
                 }
               }
             }
@@ -4773,7 +4773,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "숫자 %(count)lld개를 찾았지만 가격은 없어요. 자세히 보려면 ‘화면 멈추기’를 선택하고 두 번 탭해 주세요."
+                  "value" : "숫자 %(count)lld개를 찾았지만 가격은 없어요. 자세히 보려면 ‘사진 찍기’를 선택하고 두 번 탭해 주세요."
                 }
               }
             }
@@ -4785,13 +4785,13 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "已识别到 %(count)lld 个数字，没有价格。选择“定格画面”并轻点两下，即可查看。"
+                  "value" : "已识别到 %(count)lld 个数字，没有价格。选择“拍照”并轻点两下，即可查看。"
                 }
               },
               "zero" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "已识别到 %(count)lld 个数字，没有价格。选择“定格画面”并轻点两下，即可查看。"
+                  "value" : "已识别到 %(count)lld 个数字，没有价格。选择“拍照”并轻点两下，即可查看。"
                 }
               }
             }
@@ -4803,13 +4803,13 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "已辨識到 %(count)lld 個數字，沒有價格。選取「定格畫面」並點兩下，即可查看。"
+                  "value" : "已辨識到 %(count)lld 個數字，沒有價格。選取「拍照」並點兩下，即可查看。"
                 }
               },
               "zero" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "已辨識到 %(count)lld 個數字，沒有價格。選取「定格畫面」並點兩下，即可查看。"
+                  "value" : "已辨識到 %(count)lld 個數字，沒有價格。選取「拍照」並點兩下，即可查看。"
                 }
               }
             }
@@ -5127,13 +5127,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld Preis erkannt. Zum Prüfen wähle „Bild anhalten“ und tippe zweimal."
+                  "value" : "%(count)lld Preis erkannt. Zum Prüfen wähle „Foto aufnehmen“ und tippe zweimal."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld Preise erkannt. Zum Prüfen wähle „Bild anhalten“ und tippe zweimal."
+                  "value" : "%(count)lld Preise erkannt. Zum Prüfen wähle „Foto aufnehmen“ und tippe zweimal."
                 }
               }
             }
@@ -5145,13 +5145,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld price detected. To review it, select Freeze frame and double-tap."
+                  "value" : "%(count)lld price detected. To review it, select Take photo and double-tap."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld prices detected. To review them, select Freeze frame and double-tap."
+                  "value" : "%(count)lld prices detected. To review them, select Take photo and double-tap."
                 }
               }
             }
@@ -5163,19 +5163,19 @@
               "many" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld precios detectados. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                  "value" : "%(count)lld precios detectados. Selecciona “Hacer foto” y toca dos veces para revisarlos."
                 }
               },
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld precio detectado. Selecciona “Congelar imagen” y toca dos veces para revisarlo."
+                  "value" : "%(count)lld precio detectado. Selecciona “Hacer foto” y toca dos veces para revisarlo."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld precios detectados. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                  "value" : "%(count)lld precios detectados. Selecciona “Hacer foto” y toca dos veces para revisarlos."
                 }
               }
             }
@@ -5187,19 +5187,19 @@
               "many" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld precios detectados. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                  "value" : "%(count)lld precios detectados. Selecciona “Tomar foto” y toca dos veces para revisarlos."
                 }
               },
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld precio detectado. Selecciona “Congelar imagen” y toca dos veces para revisarlo."
+                  "value" : "%(count)lld precio detectado. Selecciona “Tomar foto” y toca dos veces para revisarlo."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld precios detectados. Selecciona “Congelar imagen” y toca dos veces para revisarlos."
+                  "value" : "%(count)lld precios detectados. Selecciona “Tomar foto” y toca dos veces para revisarlos."
                 }
               }
             }
@@ -5211,19 +5211,19 @@
               "many" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld prix détectés. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+                  "value" : "%(count)lld prix détectés. Pour examiner l’image, sélectionnez « Prendre une photo », puis touchez deux fois."
                 }
               },
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld prix détecté. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+                  "value" : "%(count)lld prix détecté. Pour examiner l’image, sélectionnez « Prendre une photo », puis touchez deux fois."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld prix détectés. Pour examiner l’image, sélectionnez « Figer l’image », puis touchez deux fois."
+                  "value" : "%(count)lld prix détectés. Pour examiner l’image, sélectionnez « Prendre une photo », puis touchez deux fois."
                 }
               }
             }
@@ -5235,7 +5235,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld件の価格が見つかりました。“画面を停止”を選択してダブルタップすると、詳しく確認できます。"
+                  "value" : "%(count)lld件の価格が見つかりました。“写真を撮る”を選択してダブルタップすると、詳しく確認できます。"
                 }
               }
             }
@@ -5247,7 +5247,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "가격 %(count)lld개를 찾았어요. 자세히 보려면 ‘화면 멈추기’를 선택하고 두 번 탭해 주세요."
+                  "value" : "가격 %(count)lld개를 찾았어요. 자세히 보려면 ‘사진 찍기’를 선택하고 두 번 탭해 주세요."
                 }
               }
             }
@@ -5259,13 +5259,13 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "已识别到 %(count)lld 个价格。选择“定格画面”并轻点两下，即可查看。"
+                  "value" : "已识别到 %(count)lld 个价格。选择“拍照”并轻点两下，即可查看。"
                 }
               },
               "zero" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "已识别到 %(count)lld 个价格。选择“定格画面”并轻点两下，即可查看。"
+                  "value" : "已识别到 %(count)lld 个价格。选择“拍照”并轻点两下，即可查看。"
                 }
               }
             }
@@ -5277,13 +5277,13 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "已辨識到 %(count)lld 個價格。選取「定格畫面」並點兩下，即可查看。"
+                  "value" : "已辨識到 %(count)lld 個價格。選取「拍照」並點兩下，即可查看。"
                 }
               },
               "zero" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "已辨識到 %(count)lld 個價格。選取「定格畫面」並點兩下，即可查看。"
+                  "value" : "已辨識到 %(count)lld 個價格。選取「拍照」並點兩下，即可查看。"
                 }
               }
             }
@@ -5838,55 +5838,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bild anhalten"
+            "value" : "Foto aufnehmen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Freeze frame"
+            "value" : "Take photo"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Congelar imagen"
+            "value" : "Hacer foto"
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Congelar imagen"
+            "value" : "Tomar foto"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Figer l’image"
+            "value" : "Prendre une photo"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "画面を停止"
+            "value" : "写真を撮る"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "화면 멈추기"
+            "value" : "사진 찍기"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "定格画面"
+            "value" : "拍照"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "定格畫面"
+            "value" : "拍照"
           }
         }
       }
