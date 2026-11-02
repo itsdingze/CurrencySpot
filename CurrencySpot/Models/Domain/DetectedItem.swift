@@ -7,6 +7,8 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
     let transcript: String
     let tokenQuad: Quad
     let lineQuad: Quad
+    let lineTextQuads: [Quad]
+    let rowNeighbourCenter: CGPoint?
     let conversion: ScannedConversion
 
     init(
@@ -15,6 +17,8 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
         transcript: String,
         tokenQuad: Quad,
         lineQuad: Quad,
+        lineTextQuads: [Quad],
+        rowNeighbourCenter: CGPoint? = nil,
         conversion: ScannedConversion
     ) {
         self.id = id
@@ -22,6 +26,8 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
         self.transcript = transcript
         self.tokenQuad = tokenQuad
         self.lineQuad = lineQuad
+        self.lineTextQuads = lineTextQuads
+        self.rowNeighbourCenter = rowNeighbourCenter
         self.conversion = conversion
     }
 
@@ -32,6 +38,7 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
             transcript: transcript,
             tokenQuad: Quad(bounds),
             lineQuad: Quad(bounds),
+            lineTextQuads: [],
             conversion: conversion
         )
     }
@@ -47,17 +54,21 @@ nonisolated struct DetectedItem: Identifiable, Hashable, Sendable {
             transcript: transcript,
             tokenQuad: tokenQuad,
             lineQuad: lineQuad,
+            lineTextQuads: lineTextQuads,
+            rowNeighbourCenter: rowNeighbourCenter,
             conversion: conversion
         )
     }
 
-    func replacing(tokenQuad: Quad, lineQuad: Quad) -> DetectedItem {
+    func replacing(tokenQuad: Quad, lineQuad: Quad, lineTextQuads: [Quad], rowNeighbourCenter: CGPoint?) -> DetectedItem {
         DetectedItem(
             id: id,
             lineID: lineID,
             transcript: transcript,
             tokenQuad: tokenQuad,
             lineQuad: lineQuad,
+            lineTextQuads: lineTextQuads,
+            rowNeighbourCenter: rowNeighbourCenter,
             conversion: conversion
         )
     }

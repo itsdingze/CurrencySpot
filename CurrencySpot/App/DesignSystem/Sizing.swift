@@ -13,8 +13,6 @@ nonisolated enum Spacing {
     // MARK: - Interior padding
 
     static let chipPadding: CGFloat = 8
-    static let badgePaddingHorizontal: CGFloat = 8
-    static let badgePaddingVertical: CGFloat = 4
     static let cardPadding: CGFloat = 16
     static let screenInset: CGFloat = 24
     static let instructionInset: CGFloat = 32

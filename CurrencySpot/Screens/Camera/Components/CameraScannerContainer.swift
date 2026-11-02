@@ -128,6 +128,7 @@ struct CameraScannerContainer: View {
             items: viewModel.detectedItems.elements,
             targetCurrency: viewModel.targetCurrency,
             isLive: isLive,
+            imageSize: isLive ? nil : viewModel.frozenImage?.size,
             onOutlineTap: { viewModel.toggleConversion(for: $0) },
             onPlateTap: { viewModel.showBadgeDetail(for: $0) }
         )

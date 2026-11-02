@@ -2,12 +2,14 @@ import CoreGraphics
 
 nonisolated struct LineGlyphSpans {
     private static let markerReachInLineHeights: CGFloat = 0.4
+    private static let inkGapReachInLineHeights: CGFloat = 0.75
     private static let plausibleWidthRatio: CGFloat = 3
     private static let plausibleCenterShift: CGFloat = 0.25
 
     private let characters: [Character]
     private let estimated: [ClosedRange<CGFloat>]
     private let measured: [ClosedRange<CGFloat>]?
+    private let inkGaps: [ClosedRange<CGFloat>]?
     private let lineHeightFraction: CGFloat
 
     init(_ item: RecognizedTextItem) {
@@ -15,8 +17,13 @@ nonisolated struct LineGlyphSpans {
         self.characters = characters
         estimated = Self.estimatedSpans(of: characters)
         measured = item.characterSpans.flatMap { $0.count == characters.count ? $0 : nil }
+        inkGaps = item.inkGaps
         let width = item.quad.width
         lineHeightFraction = width > 0 ? item.quad.height / width : 0
+    }
+
+    private func span(of range: Range<Int>) -> ClosedRange<CGFloat> {
+        spans(for: range).map { union(of: range, in: $0) } ?? 0...0
     }
 
     func tokenSpan(of token: Range<Int>, includingMarker withMarker: Range<Int>) -> ClosedRange<CGFloat> {
@@ -26,16 +33,38 @@ nonisolated struct LineGlyphSpans {
         let start = withMarker.lowerBound < token.lowerBound
             ? min(
                 span.lowerBound,
-                max(span.lowerBound - reach, precedingTextEnd(before: withMarker.lowerBound, in: spans))
+                inkEdge(before: span.lowerBound)
+                    ?? max(span.lowerBound - reach, precedingTextEnd(before: withMarker.lowerBound, in: spans))
             )
             : span.lowerBound
         let end = withMarker.upperBound > token.upperBound
             ? max(
                 span.upperBound,
-                min(span.upperBound + reach, followingTextStart(after: withMarker.upperBound, in: spans))
+                inkEdge(after: span.upperBound)
+                    ?? min(span.upperBound + reach, followingTextStart(after: withMarker.upperBound, in: spans))
             )
             : span.upperBound
         return start...end
+    }
+
+    private func inkEdge(before markerStart: CGFloat) -> CGFloat? {
+        guard let gap = inkGaps?.last(where: { $0.lowerBound < markerStart }) else { return nil }
+        return acceptedInkEdge(gap.midpoint, near: markerStart)
+    }
+
+    private func inkEdge(after markerEnd: CGFloat) -> CGFloat? {
+        guard let gap = inkGaps?.first(where: { $0.upperBound > markerEnd }) else { return nil }
+        return acceptedInkEdge(gap.midpoint, near: markerEnd)
+    }
+
+    private func acceptedInkEdge(_ edge: CGFloat, near boxEdge: CGFloat) -> CGFloat? {
+        abs(edge - boxEdge) <= Self.inkGapReachInLineHeights * lineHeightFraction ? edge : nil
+    }
+
+    func textSpans(outside excluded: [Range<Int>], clearOf covered: [ClosedRange<CGFloat>]) -> [ClosedRange<CGFloat>] {
+        words(outside: excluded)
+            .map { span(of: $0) }
+            .flatMap { $0.subtracting(covered) }
     }
 
     private func spans(for range: Range<Int>) -> [ClosedRange<CGFloat>]? {
@@ -72,6 +101,21 @@ nonisolated struct LineGlyphSpans {
         return text.map { spans[$0].lowerBound } ?? 1
     }
 
+    private func words(outside excluded: [Range<Int>]) -> [Range<Int>] {
+        var words: [Range<Int>] = []
+        var start: Int?
+        for offset in characters.indices {
+            let isText = !characters[offset].isWhitespace && !excluded.contains { $0.contains(offset) }
+            if isText, start == nil { start = offset }
+            if !isText, let wordStart = start {
+                words.append(wordStart..<offset)
+                start = nil
+            }
+        }
+        if let start { words.append(start..<characters.count) }
+        return words
+    }
+
     private static func estimatedSpans(of characters: [Character]) -> [ClosedRange<CGFloat>] {
         let widths = characters.map { $0.isWide ? CGFloat(2) : 1 }
         let total = max(widths.reduce(0, +), 1)
@@ -86,6 +130,18 @@ nonisolated struct LineGlyphSpans {
 private nonisolated extension ClosedRange where Bound == CGFloat {
     var midpoint: CGFloat {
         (lowerBound + upperBound) / 2
+    }
+
+    func subtracting(_ others: [ClosedRange<CGFloat>]) -> [ClosedRange<CGFloat>] {
+        others.reduce([self]) { pieces, other in
+            pieces.flatMap { piece -> [ClosedRange<CGFloat>] in
+                guard piece.overlaps(other) else { return [piece] }
+                var rest: [ClosedRange<CGFloat>] = []
+                if piece.lowerBound < other.lowerBound { rest.append(piece.lowerBound...other.lowerBound) }
+                if piece.upperBound > other.upperBound { rest.append(other.upperBound...piece.upperBound) }
+                return rest
+            }
+        }
     }
 }
 

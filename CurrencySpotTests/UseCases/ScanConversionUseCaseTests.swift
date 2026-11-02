@@ -53,6 +53,17 @@ struct ScanConversionUseCaseTests {
         )
     }
 
+    private func swallowingLine(inkGaps: [ClosedRange<CGFloat>]) -> RecognizedTextItem {
+        let letters: [ClosedRange<CGFloat>] = [0...0.1, 0.1...0.2, 0.2...0.3, 0.3...0.4, 0.4...0.6]
+        return RecognizedTextItem(
+            id: UUID(),
+            transcript: "Ramen ¥980",
+            quad: Quad(CGRect(x: 0, y: 0, width: 100, height: 10)),
+            characterSpans: letters + [0.13...0.13, 0.605...0.66, 0.66...0.77, 0.77...0.88, 0.88...1],
+            inkGaps: inkGaps
+        )
+    }
+
     @Test func convertsAPriceFromBaseToTarget() throws {
         let result = detect([item("¥1,200")])
 
@@ -172,6 +183,15 @@ struct ScanConversionUseCaseTests {
         #expect(later.bounds.minX > 140)
     }
 
+    @Test func priceRemembersTheNameBesideItOnItsRow() throws {
+        let name = item("Maguro", at: 0, width: 60)
+        let price = item("¥680", at: 120, width: 40)
+
+        let detected = try #require(detect([name, price]).items.first)
+
+        #expect(detected.rowNeighbourCenter == name.quad.center)
+    }
+
     @Test func tokenFollowsTheCharacterIndexWithoutMeasuredGlyphs() throws {
         let detected = try #require(detect([item("Edamame 350", width: 110)]).items.first)
 
@@ -224,10 +244,59 @@ struct ScanConversionUseCaseTests {
         #expect(detected.bounds.maxX == 140)
     }
 
+    @Test func markerEdgeMovesToTheInkGapBeforeTheMarker() throws {
+        let line = swallowingLine(inkGaps: [0.08...0.1, 0.53...0.57, 0.66...0.67])
+
+        let detected = try #require(detect([line]).items.first)
+
+        #expect(abs(detected.bounds.minX - 55) < 0.001)
+    }
+
+    @Test func inkEdgeNeverPullsTheTokenIntoItsMarker() throws {
+        let line = RecognizedTextItem(
+            id: UUID(),
+            transcript: "Udon ¥1,050",
+            quad: Quad(CGRect(x: 0, y: 0, width: 100, height: 10)),
+            inkGaps: [0...1]
+        )
+
+        let detected = try #require(detect([line]).items.first)
+
+        #expect(detected.bounds.minX <= 100 * 5 / 11 + 0.001)
+    }
+
+    @Test func inkGapBeyondTheMarkersReachIsIgnored() throws {
+        let line = swallowingLine(inkGaps: [0.2...0.25])
+
+        let detected = try #require(detect([line]).items.first)
+
+        #expect(abs(detected.bounds.minX - 60) < 0.001)
+    }
+
+    @Test func trailingMarkerEdgeMovesToTheInkGapAfterIt() throws {
+        let line = RecognizedTextItem(
+            id: UUID(),
+            transcript: "850円 Ramen",
+            quad: Quad(CGRect(x: 0, y: 0, width: 100, height: 10)),
+            characterSpans: [0...0.1, 0.1...0.2, 0.2...0.3, 0.3...0.36, 0.5...0.5, 0.36...0.5, 0.5...0.6, 0.6...0.7, 0.7...0.8, 0.8...1],
+            inkGaps: [0.4...0.44]
+        )
+
+        let detected = try #require(detect([line]).items.first)
+
+        #expect(abs(detected.bounds.maxX - 42) < 0.001)
+    }
+
     @Test func markerSideStopsAtTheLetterBeforeIt() throws {
         let detected = try #require(detect([item("定食¥1,050", width: 100)]).items.first)
 
         #expect(detected.bounds.minX == 40)
+    }
+
+    @Test func lineTextOutsideThePriceIsKeptAsObstacles() throws {
+        let detected = try #require(detect([item("Ramen ¥980", width: 100)]).items.first)
+
+        #expect(detected.lineTextQuads.map(\.boundingBox) == [CGRect(x: 0, y: 0, width: 50, height: 10)])
     }
 
     @Test func standaloneMarkerPriceSitsOverTheNumbersOwnLine() throws {

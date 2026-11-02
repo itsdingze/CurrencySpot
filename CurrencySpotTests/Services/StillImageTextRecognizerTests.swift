@@ -92,6 +92,22 @@ struct StillImageTextRecognizerTests {
         #expect(item.quad.width > item.quad.height * 5)
     }
 
+    @Test("a price line reports the blank gap between the name and the yen sign")
+    func priceLineReportsTheGapBeforeItsMarker() async throws {
+        let font = try #require(UIFont(name: "Helvetica", size: 40))
+        let image = try menuImage(lines: ["Tonkotsu Ramen ¥980"], fontName: "Helvetica", width: 600)
+        let nameEnd = 40 + ("Tonkotsu Ramen" as NSString).size(withAttributes: [.font: font]).width
+        let markerStart = 40 + ("Tonkotsu Ramen " as NSString).size(withAttributes: [.font: font]).width
+
+        let result = try await recognizer.recognize(image, menuCurrency: "JPY")
+
+        let item = try #require(result.items.first { $0.transcript.contains("980") })
+        let gaps = try #require(item.inkGaps).map { gap in
+            item.quad.topLeft.x + gap.lowerBound * item.quad.width...item.quad.topLeft.x + gap.upperBound * item.quad.width
+        }
+        #expect(gaps.contains { $0.lowerBound <= nameEnd && $0.upperBound >= markerStart })
+    }
+
     @Test("a line without digits carries no glyph positions")
     func plainTextLineCarriesNoGlyphPositions() async throws {
         let image = try menuImage(lines: ["Tonkotsu Ramen"], fontName: "Helvetica", width: 600)

@@ -4,6 +4,7 @@ struct DetectionOverlayView: View {
     let items: [DetectedItem]
     let targetCurrency: CurrencyCode
     let isLive: Bool
+    let imageSize: CGSize?
     let onOutlineTap: (UUID) -> Void
     let onPlateTap: (UUID) -> Void
 
@@ -12,7 +13,11 @@ struct DetectionOverlayView: View {
         verticalOverlapTolerance: 1.0 / 3.0
     )
 
-    @State private var plateSizes: [UUID: CGSize] = [:]
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+    @Environment(\.legibilityWeight) private var legibilityWeight
+    @State private var viewSize = CGSize.zero
+    @State private var layout = PlateLayout.Result.empty
     @State private var promotions: [UUID] = []
     @State private var pendingReveal: UUID?
 
@@ -20,33 +25,49 @@ struct DetectionOverlayView: View {
         items.filter { $0.conversion.isPrice }
     }
 
-    private func depths(for priceItems: [DetectedItem]) -> [UUID: Int] {
-        let plates = priceItems.compactMap { item -> BadgeClusterResolver.Badge? in
-            guard let size = plateSizes[item.id] else { return nil }
-            return BadgeClusterResolver.Badge(
-                id: item.id,
-                frame: frame(for: item, size: size),
-                boxMidY: item.bounds.midY
-            )
+    private func depths(for plates: [PlateLayout.Plate]) -> [UUID: Int] {
+        let midYs = Dictionary(items.map { ($0.id, $0.tokenQuad.center.y) }) { first, _ in first }
+        let badges = plates.map { plate in
+            BadgeClusterResolver.Badge(id: plate.id, frame: plate.visibleBounds, boxMidY: midYs[plate.id] ?? plate.center.y)
         }
-        return resolver.depths(for: plates, promotions: promotions)
+        return resolver.depths(for: badges, promotions: promotions)
     }
 
     var body: some View {
-        let priceItems = priceItems
-        let depths = depths(for: priceItems)
+        let itemsByID = Dictionary(items.map { ($0.id, $0) }) { first, _ in first }
+        let depths = depths(for: layout.plates)
         ZStack {
-            ForEach(items) { item in
-                if item.conversion.isPrice {
-                    plate(for: item, depth: depths[item.id], plateCount: priceItems.count)
-                } else {
-                    DetectionOutline(item: item, isLive: isLive, onTap: handleOutlineTap)
+            ForEach(layout.outlines, id: \.id) { outline in
+                if let item = itemsByID[outline.id] {
+                    DetectionOutline(item: item, outline: outline, angle: layout.angle, isLive: isLive, onTap: handleOutlineTap)
+                }
+            }
+            ForEach(layout.plates, id: \.id) { plate in
+                if let item = itemsByID[plate.id] {
+                    plateButton(for: item, plate: plate, depth: depths[plate.id] ?? 0)
                 }
             }
         }
-        .animation(.appTrack, value: items)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(.appTrack, value: layout)
         .animation(.appTrack, value: promotions)
-        .onChange(of: items) { _, _ in syncRevealPromotion() }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+            viewSize = size
+            relayout()
+        }
+        .onChange(of: items) { _, _ in
+            syncRevealPromotion()
+            relayout()
+        }
+        .onChange(of: targetCurrency) { _, _ in
+            relayout()
+        }
+        .onChange(of: isLive) { _, _ in
+            relayout()
+        }
+        .onChange(of: legibilityWeight) { _, _ in
+            relayout()
+        }
         .overlay {
             if isLive, let liveSummary = liveSummary(priceCount: priceItems.count) {
                 Color.clear
@@ -62,27 +83,39 @@ struct DetectionOverlayView: View {
         return nil
     }
 
+    private func relayout() {
+        guard viewSize.width > 0, viewSize.height > 0 else { return }
+        let legibilityWeight = legibilityWeight
+        layout = PlateLayout(frame: layoutFrame, measureText: { PlateTextWidth.of($0, fontSize: $1, legibilityWeight: legibilityWeight) })
+            .layout(items, text: plateText)
+    }
+
+    private var layoutFrame: CGRect {
+        guard let imageSize else { return CGRect(origin: .zero, size: viewSize) }
+        return AspectFitMapping(imageSize: imageSize, viewSize: viewSize).viewRect(for: CGRect(origin: .zero, size: imageSize))
+    }
+
+    private func plateText(for item: DetectedItem) -> String {
+        item.conversion.converted.formatted(.currency(code: targetCurrency.rawValue))
+    }
+
     @ViewBuilder
-    private func plate(for item: DetectedItem, depth: Int?, plateCount: Int) -> some View {
-        let depth = depth ?? 0
+    private func plateButton(for item: DetectedItem, plate: PlateLayout.Plate, depth: Int) -> some View {
         let button = Button {
             handlePlateTap(item.id, depth: depth)
         } label: {
-            ConvertedPlate(
-                amount: item.conversion.converted,
-                currencyCode: targetCurrency,
-                boxSize: item.bounds.size
-            )
-            .onGeometryChange(for: CGSize.self) { $0.size } action: { plateSizes[item.id] = $0 }
-            .minimumHitTarget()
+            HitTargetFrame(target: plate.hitTarget, visibleCenter: plate.center) {
+                ConvertedPlate(plate: plate)
+                    .rotationEffect(.radians(layout.angle))
+                    .opacity(opacity(forDepth: depth))
+            }
         }
         .buttonStyle(.plain)
-        .position(x: item.bounds.midX, y: item.bounds.midY)
-        .opacity(opacity(forDepth: depth))
-        .zIndex(zIndex(forDepth: depth, plateCount: plateCount))
+        .position(x: plate.hitTarget.midX, y: plate.hitTarget.midY)
+        .zIndex(Double(layout.plates.count - depth))
         .accessibilityLabel(.cameraDetectionPlateAccessibilityLabel(
             transcript: item.transcript,
-            price: item.conversion.converted.formatted(.currency(code: targetCurrency.rawValue))
+            price: plate.text
         ))
         .accessibilityAddTraits(isLive ? .updatesFrequently : [])
         .accessibilityHidden(isLive)
@@ -118,7 +151,6 @@ struct DetectionOverlayView: View {
         }
         let present = Set(items.map(\.id))
         promotions.removeAll { !present.contains($0) }
-        plateSizes = plateSizes.filter { visible.contains($0.key) }
     }
 
     private func promote(_ id: UUID) {
@@ -126,31 +158,39 @@ struct DetectionOverlayView: View {
         promotions.append(id)
     }
 
-    private func frame(for item: DetectedItem, size: CGSize) -> CGRect {
-        CGRect(
-            x: item.bounds.midX - size.width / 2,
-            y: item.bounds.midY - size.height / 2,
-            width: size.width,
-            height: size.height
-        )
-    }
-
     private func opacity(forDepth depth: Int) -> Double {
-        switch depth {
+        let opacity = switch depth {
         case 0: 1.0
         case 1: 0.55
         case 2: 0.4
         default: 0.3
         }
+        let needsSolidPlates = reduceTransparency || colorSchemeContrast == .increased
+        return needsSolidPlates ? max(opacity, 0.85) : opacity
     }
+}
 
-    private func zIndex(forDepth depth: Int, plateCount: Int) -> Double {
-        Double(plateCount - depth)
+private struct HitTargetFrame<Content: View>: View {
+    let target: CGRect
+    let visibleCenter: CGPoint
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        Color.clear
+            .frame(width: target.width, height: target.height)
+            .overlay(alignment: .topLeading) {
+                content
+                    .position(x: visibleCenter.x - target.minX, y: visibleCenter.y - target.minY)
+                    .allowsHitTesting(false)
+            }
+            .contentShape(.rect)
     }
 }
 
 private struct DetectionOutline: View {
     let item: DetectedItem
+    let outline: PlateLayout.Outline
+    let angle: CGFloat
     let isLive: Bool
     let onTap: (UUID) -> Void
 
@@ -158,16 +198,19 @@ private struct DetectionOutline: View {
         Button {
             onTap(item.id)
         } label: {
-            RoundedRectangle(cornerRadius: ConvertedPlateMetrics.cornerRadius(forBoxHeight: item.bounds.height))
-                .stroke(.white, lineWidth: 2)
-                .frame(
-                    width: item.bounds.width + ConvertedPlateMetrics.horizontalInflation,
-                    height: item.bounds.height + ConvertedPlateMetrics.verticalInflation
-                )
-                .minimumHitTarget()
+            HitTargetFrame(target: outline.hitTarget, visibleCenter: outline.center) {
+                RoundedRectangle(cornerRadius: outline.cornerRadius)
+                    .stroke(.black.opacity(0.55), lineWidth: 3.5)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: outline.cornerRadius)
+                            .stroke(.white, lineWidth: 1.75)
+                    }
+                    .frame(width: outline.size.width, height: outline.size.height)
+                    .rotationEffect(.radians(angle))
+            }
         }
         .buttonStyle(.plain)
-        .position(x: item.bounds.midX, y: item.bounds.midY)
+        .position(x: outline.hitTarget.midX, y: outline.hitTarget.midY)
         .accessibilityLabel(.cameraDetectionOutlineAccessibilityLabel(number: item.transcript))
         .accessibilityHint(.cameraDetectionOutlineAccessibilityHint)
         .accessibilityHidden(isLive)
@@ -175,28 +218,20 @@ private struct DetectionOutline: View {
 }
 
 private struct ConvertedPlate: View {
-    let amount: Decimal
-    let currencyCode: CurrencyCode
-    let boxSize: CGSize
+    let plate: PlateLayout.Plate
 
     var body: some View {
-        Text(amount, format: .currency(code: currencyCode.rawValue))
-            .font(.system(size: ConvertedPlateMetrics.fontSize(forBoxHeight: boxSize.height), design: .rounded).weight(.semibold))
+        Text(verbatim: plate.text)
+            .font(.system(size: plate.fontSize, weight: .semibold, design: .rounded))
             .lineLimit(1)
-            .minimumScaleFactor(0.5)
+            .fixedSize()
             .foregroundStyle(.tint)
-            .padding(.horizontal, Spacing.badgePaddingHorizontal)
-            .padding(.vertical, Spacing.badgePaddingVertical)
-            .frame(
-                minWidth: boxSize.width + ConvertedPlateMetrics.horizontalInflation,
-                minHeight: boxSize.height + ConvertedPlateMetrics.verticalInflation
-            )
-            .background(.black.mix(with: .white, by: 0.15).opacity(0.9), in: .rect(cornerRadius: cornerRadius))
-            .overlay { RoundedRectangle(cornerRadius: cornerRadius).stroke(.white.opacity(0.25), lineWidth: 0.5) }
-    }
-
-    private var cornerRadius: CGFloat {
-        ConvertedPlateMetrics.cornerRadius(forBoxHeight: boxSize.height)
+            .frame(width: plate.size.width, height: plate.size.height)
+            .background(.black.mix(with: .white, by: 0.15), in: .rect(cornerRadius: plate.cornerRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: plate.cornerRadius)
+                    .stroke(.white.opacity(0.25), lineWidth: 0.5)
+            }
     }
 }
 
@@ -214,7 +249,7 @@ private struct ConvertedPlate: View {
                 DetectedItem(
                     id: UUID(),
                     transcript: "¥980",
-                    bounds: CGRect(x: 128, y: 312, width: 96, height: 34),
+                    bounds: CGRect(x: 128, y: 290, width: 96, height: 34),
                     conversion: .init(amount: 980, converted: 6.59, isPrice: true)
                 ),
                 DetectedItem(
@@ -232,6 +267,7 @@ private struct ConvertedPlate: View {
             ],
             targetCurrency: .usd,
             isLive: false,
+            imageSize: nil,
             onOutlineTap: { _ in },
             onPlateTap: { _ in }
         )

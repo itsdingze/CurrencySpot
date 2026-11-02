@@ -6,6 +6,12 @@ final class ScanConversionUseCase {
         let foundPrices: Bool
     }
 
+    private struct AnchoredReading {
+        let reading: LinePriceReader.Reading
+        let coveredCharacters: Range<Int>
+        let span: ClosedRange<CGFloat>
+    }
+
     private let markerResolver = CurrencyMarkerResolver(maxGap: 1.0, minLineOverlap: 0.4)
     private let reader = LinePriceReader()
 
@@ -19,10 +25,13 @@ final class ScanConversionUseCase {
         exchangeRates: [ExchangeRate]
     ) -> DetectionResult {
         let markers = markerResolver.markersBesideNumbers(in: items)
+        let lines = items.map(\.quad)
         let detected = items.flatMap { item in
-            detectedItems(
+            let readings = reader.readings(of: item, marker: markers[item.id], baseCurrency: baseCurrency)
+            return detectedItems(
                 on: item,
-                reading: reader.readings(of: item, marker: markers[item.id], baseCurrency: baseCurrency),
+                reading: readings,
+                rowNeighbourCenter: readings.isEmpty ? nil : RowSlope.neighbourCenter(leftOf: item.quad, among: lines),
                 convert: { self.convert($0, from: baseCurrency, to: targetCurrency, in: exchangeRates) }
             )
         }
@@ -32,23 +41,44 @@ final class ScanConversionUseCase {
     private func detectedItems(
         on item: RecognizedTextItem,
         reading readings: [LinePriceReader.Reading],
+        rowNeighbourCenter: CGPoint?,
         convert: (Decimal) -> Decimal
     ) -> [DetectedItem] {
-        let glyphs = LineGlyphSpans(item)
-        return readings.enumerated().map { ordinal, reading in
+        let anchoredReadings = anchored(readings, on: item)
+        let lineText = textQuads(of: item, outside: anchoredReadings)
+        return anchoredReadings.enumerated().map { ordinal, anchored in
             DetectedItem(
                 id: Self.itemID(line: item.id, ordinal: ordinal),
                 lineID: item.id,
                 transcript: item.transcript,
-                tokenQuad: item.quad.slice(glyphs.tokenSpan(of: reading.token, includingMarker: reading.tokenIncludingMarker)),
+                tokenQuad: item.quad.slice(anchored.span),
                 lineQuad: item.quad,
+                lineTextQuads: lineText,
+                rowNeighbourCenter: rowNeighbourCenter,
                 conversion: ScannedConversion(
-                    amount: reading.amount,
-                    converted: convert(reading.amount),
-                    isPrice: reading.isPrice
+                    amount: anchored.reading.amount,
+                    converted: convert(anchored.reading.amount),
+                    isPrice: anchored.reading.isPrice
                 )
             )
         }
+    }
+
+    private func anchored(_ readings: [LinePriceReader.Reading], on item: RecognizedTextItem) -> [AnchoredReading] {
+        let glyphs = LineGlyphSpans(item)
+        return readings.map { reading in
+            AnchoredReading(
+                reading: reading,
+                coveredCharacters: reading.tokenIncludingMarker,
+                span: glyphs.tokenSpan(of: reading.token, includingMarker: reading.tokenIncludingMarker)
+            )
+        }
+    }
+
+    private func textQuads(of item: RecognizedTextItem, outside readings: [AnchoredReading]) -> [Quad] {
+        LineGlyphSpans(item)
+            .textSpans(outside: readings.map(\.coveredCharacters), clearOf: readings.map(\.span))
+            .map(item.quad.slice)
     }
 
     private static func itemID(line: UUID, ordinal: Int) -> UUID {

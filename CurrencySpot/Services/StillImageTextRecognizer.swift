@@ -33,7 +33,15 @@ nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
             try Task.checkCancellation()
             candidates += try await Self.candidates(in: region, of: cgImage, sized: imageSize, using: request)
         }
-        return StillRecognitionResult(items: RecognizedTextMerger.merge(candidates), imagePixelSize: imageSize)
+        try Task.checkCancellation()
+        let items = Self.withInkGaps(RecognizedTextMerger.merge(candidates), in: cgImage)
+        return StillRecognitionResult(items: items, imagePixelSize: imageSize)
+    }
+
+    private static func withInkGaps(_ items: [RecognizedTextItem], in image: CGImage) -> [RecognizedTextItem] {
+        let hasDigits = { (item: RecognizedTextItem) in item.transcript.contains(where: \.isNumber) }
+        guard items.contains(where: hasDigits), let grayscale = GrayscaleImage(image) else { return items }
+        return items.map { hasDigits($0) ? $0.with(inkGaps: LineInkGaps.gaps(along: $0.quad, in: grayscale)) : $0 }
     }
 
     private static func candidates(
