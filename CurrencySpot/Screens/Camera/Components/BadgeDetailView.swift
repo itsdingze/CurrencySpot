@@ -6,23 +6,34 @@ struct BadgeDetailView: View {
     let targetCurrency: CurrencyCode
     let openInConverter: () -> Void
     let hideConversion: () -> Void
+    var onFittedHeightChange: (CGFloat) -> Void = { _ in }
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         NavigationStack {
-            AccessibilitySizeOverflowScrollView {
+            ScrollView {
                 VStack(spacing: 32) {
                     VStack(spacing: Spacing.tight) {
-                        amountLine(item.conversion.amount, code: baseCurrency)
-                            .foregroundStyle(.secondary)
+                        scannedText
+
+                        amountLine(
+                            item.conversion.amount,
+                            code: baseCurrency,
+                            fractionDigits: AmountFractionDigits.showing(item.conversion.amount, in: baseCurrency)
+                        )
+                        .foregroundStyle(.secondary)
 
                         Image(systemName: "arrow.down")
                             .font(.appHeadline)
                             .foregroundStyle(.secondary)
                             .accessibilityHidden(true)
 
-                        amountLine(item.conversion.converted, code: targetCurrency, fractionDigits: 2)
+                        amountLine(
+                            item.conversion.converted,
+                            code: targetCurrency,
+                            fractionDigits: AmountFractionDigits.usual(for: targetCurrency)
+                        )
                     }
 
                     VStack(spacing: Spacing.section) {
@@ -41,6 +52,12 @@ struct BadgeDetailView: View {
                 }
                 .padding()
             }
+            .scrollBounceBehavior(.basedOnSize)
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentSize.height + geometry.contentInsets.top
+            } action: { _, fittedHeight in
+                onFittedHeightChange(fittedHeight)
+            }
             .navigationTitle(.cameraBadgeDetailTitle)
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
@@ -58,9 +75,20 @@ struct BadgeDetailView: View {
         dynamicTypeSize.isAccessibilitySize
     }
 
-    private func amountLine(_ amount: Decimal, code: CurrencyCode, fractionDigits: Int? = nil) -> some View {
+    private var scannedText: some View {
+        AdaptiveStack(alignment: .firstTextBaseline, stackedAlignment: .center, spacing: Spacing.tight) {
+            Text(.cameraBadgeDetailScannedText)
+                .foregroundStyle(.secondary)
+            Text(verbatim: item.transcript)
+        }
+        .font(.appSubheadline)
+        .multilineTextAlignment(.center)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func amountLine(_ amount: Decimal, code: CurrencyCode, fractionDigits: Int) -> some View {
         AdaptiveStack(alignment: .lastTextBaseline, stackedAlignment: .center, spacing: Spacing.tight) {
-            Text(amount, format: fractionDigits.map { .number.precision(.fractionLength($0)) } ?? .number)
+            Text(amount, format: .number.precision(.fractionLength(fractionDigits)))
                 .font(.appLargeTitle)
                 .lineLimit(isAccessibilitySize ? 1 : nil)
                 .minimumScaleFactor(isAccessibilitySize ? 0.5 : 1)
@@ -68,6 +96,7 @@ struct BadgeDetailView: View {
                 .font(.appTitle3)
         }
         .multilineTextAlignment(.center)
+        .accessibilityElement(children: .combine)
     }
 }
 

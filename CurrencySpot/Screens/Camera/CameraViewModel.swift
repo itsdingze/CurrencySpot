@@ -234,7 +234,6 @@ final class CameraViewModel {
     }
 
     func hideConversion(for id: UUID) {
-        guard let item = detectedItems[id: id], item.conversion.isPrice else { return }
         badgeOverrides.hide(id: id)
         destination = nil
         republish()
@@ -243,10 +242,6 @@ final class CameraViewModel {
     func showBadgeDetail(for id: UUID) {
         guard let item = detectedItems[id: id], item.conversion.isPrice else { return }
         destination = .badgeDetail(item)
-    }
-
-    func detectedItem(for id: UUID) -> DetectedItem? {
-        detectedItems[id: id]
     }
 
     // MARK: - Shared Rates for the Overlay UI

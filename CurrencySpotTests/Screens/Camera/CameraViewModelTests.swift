@@ -309,6 +309,22 @@ struct CameraViewModelTests {
         #expect(viewModel.detectedItems.first?.conversion.isPrice == false)
     }
 
+    @Test(.timeLimit(.minutes(1)))
+    func hidingFromDetailAfterThePriceLeftTheFrameStillClosesTheSheet() async {
+        let clock = ManualClock()
+        let viewModel = Self.makeViewModel(clock: clock)
+        let id = UUID()
+        Self.feed(viewModel, "¥1,200", id: id)
+        viewModel.showBadgeDetail(for: id)
+        await Self.letTheLastPlateExpire(viewModel, clock: clock)
+
+        viewModel.hideConversion(for: id)
+
+        #expect(viewModel.destination == nil)
+        Self.feed(viewModel, "¥1,200", id: id)
+        #expect(viewModel.detectedItems[id: id]?.conversion.isPrice == false)
+    }
+
     @Test func hidingAPinnedNumberStaysHiddenAfterItReadsAsAPrice() {
         let viewModel = Self.makeViewModel()
         let id = UUID()

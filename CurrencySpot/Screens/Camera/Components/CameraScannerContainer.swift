@@ -6,8 +6,11 @@ struct CameraScannerContainer: View {
     @Environment(AppState.self) private var appState
     @Environment(SettingsViewModel.self) private var settingsViewModel
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var scannerProxy = DataScannerProxy()
+    @State private var containerHeight: CGFloat = 0
+    @State private var badgeDetailFittedHeight: CGFloat?
+
+    private static let fittedSheetHeightLimit: CGFloat = 0.75
 
     var body: some View {
         @Bindable var viewModel = viewModel
@@ -71,6 +74,7 @@ struct CameraScannerContainer: View {
             }
             .padding(.bottom, Spacing.screenInset)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { containerHeight = $0 }
         .onChange(of: viewModel.availableRates) {
             viewModel.refreshConversions()
         }
@@ -156,17 +160,19 @@ struct CameraScannerContainer: View {
     }
 
     private var badgeDetailDetents: Set<PresentationDetent> {
-        dynamicTypeSize.isAccessibilitySize ? [.large] : [.fraction(0.4)]
+        guard let badgeDetailFittedHeight else { return [.medium] }
+        guard badgeDetailFittedHeight <= containerHeight * Self.fittedSheetHeightLimit else { return [.large] }
+        return [.height(badgeDetailFittedHeight)]
     }
 
     private func badgeDetail(for snapshot: DetectedItem) -> some View {
-        let item = viewModel.detectedItem(for: snapshot.id) ?? snapshot
-        return BadgeDetailView(
-            item: item,
+        BadgeDetailView(
+            item: snapshot,
             baseCurrency: viewModel.baseCurrency,
             targetCurrency: viewModel.targetCurrency,
-            openInConverter: { viewModel.openInConverter(item) },
-            hideConversion: { viewModel.hideConversion(for: item.id) }
+            openInConverter: { viewModel.openInConverter(snapshot) },
+            hideConversion: { viewModel.hideConversion(for: snapshot.id) },
+            onFittedHeightChange: { badgeDetailFittedHeight = $0 }
         )
     }
 }
