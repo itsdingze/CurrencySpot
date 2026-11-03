@@ -48,6 +48,15 @@ struct CalculatorExpressionTests {
         #expect(entering("50%").result == Decimal(string: "0.5"))
     }
 
+    @Test("percent with only a zero to apply it to is ignored, and typing continues")
+    func percentOnZeroIsIgnored() {
+        var start = CalculatorExpression(settledAt: 0)
+
+        #expect(start.apply(.percent) == false)
+        #expect(entering("%5", into: CalculatorExpression(settledAt: 0)).result == 5)
+        #expect(entering("0.%5").result == Decimal(string: "0.5"))
+    }
+
     @Test("percent shares compound along a chain of plus and minus", .timeLimit(.minutes(1)))
     func percentChainCompounds() {
         #expect(entering("200+10%+10%-50%").result == 121)

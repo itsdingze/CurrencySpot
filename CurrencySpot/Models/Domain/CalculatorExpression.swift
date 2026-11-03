@@ -107,7 +107,10 @@ nonisolated struct CalculatorExpression: Codable, Equatable, Sendable {
             guard !current.contains("."), !current.hasSuffix(Self.percentSign) else { return false }
             operands[operands.count - 1] = current.isEmpty ? "0." : current + "."
         case .percent:
-            guard !current.isEmpty, !current.hasSuffix(Self.percentSign) else { return false }
+            guard !current.isEmpty,
+                  !current.hasSuffix(Self.percentSign),
+                  hasOperator || Self.number(in: current)?.value != 0
+            else { return false }
             operands[operands.count - 1] = current + Self.percentSign
         case let .operation(op):
             if current.isEmpty {
