@@ -8,6 +8,8 @@ enum CurrencyMarkerVocabulary {
 
     static let centSign: Character = "¢"
 
+    static let euroSign: Character = "€"
+
     static let kuai: Character = "块"
 
     static let kuaiBaseCurrency = CurrencyCode.cny

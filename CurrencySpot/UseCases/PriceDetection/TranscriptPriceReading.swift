@@ -35,7 +35,7 @@ struct TranscriptPriceReading {
 
         for (index, token) in tokens.enumerated() {
             let range = text.originalRange(token.span)
-            if let marker = bindings[index] {
+            if let marker = bindings[index] ?? markers.first(where: { token.span.contains($0.span.lowerBound) }) {
                 let spanIncludingMarker = min(token.span.lowerBound, marker.span.lowerBound)
                     ..< max(token.span.upperBound, marker.span.upperBound)
                 recordMarked(

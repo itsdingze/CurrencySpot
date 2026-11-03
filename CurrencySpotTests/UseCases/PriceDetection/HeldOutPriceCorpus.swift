@@ -195,13 +195,11 @@ nonisolated enum HeldOutPriceCorpus {
         .init("円", .notPrice, group: "fragment"),
         .init("€", .notPrice, group: "fragment"),
         .init("Udon", .notPrice, group: "fragment"),
+        .init("Formule midi 14€90", .price("14.90"), group: "menu-europe"),
+        .init("Le kilo 3€50", .price("3.50"), group: "shelf"),
     ]
 
     static let knownGaps: [PriceCorpusGap] = [
-        .init(
-            "Formule midi 14€90", .price("14.90"), group: "menu-europe",
-            reason: "A euro sign used as the decimal separator is not read"
-        ),
         .init(
             "Kanelbulle 35:-", .price("35"), group: "menu-europe",
             reason: "The Swedish ':-' notation is not read"
@@ -229,10 +227,6 @@ nonisolated enum HeldOutPriceCorpus {
         .init(
             "Mie Ayam Bakso 18rb", .price("18000"), group: "shorthand",
             reason: "K and rb thousand shorthand is not read"
-        ),
-        .init(
-            "Le kilo 3€50", .price("3.50"), group: "shelf",
-            reason: "A euro sign used as the decimal separator is not read"
         ),
         .init(
             "Diesel 1,659 €/l", .price("1.659"), group: "fuel",

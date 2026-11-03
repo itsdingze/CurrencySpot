@@ -121,6 +121,17 @@ struct PriceClassifierMarkerTests {
         #expect(classifier.classify(transcript) == (try .price(amount)))
     }
 
+    @Test(arguments: [("Formule midi 14€90", "14.90"), ("Le kilo 3€50", "3.50"), ("Plat 12€00", "12")])
+    func euroSignBetweenEurosAndCentsIsTheDecimalPoint(transcript: String, amount: String) throws {
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test func euroSignDecimalPriceStaysBesideAnotherMarkedPrice() throws {
+        let amounts = classifier.candidates(in: "Menu 14€90 Café 2 €").map(\.amount)
+
+        #expect(amounts == [try #require(Decimal(string: "14.90")), 2])
+    }
+
     @Test(arguments: [("149.9¢", "1.499"), ("12.5¢", "0.125")])
     func centSignDividesADecimalAmountByAHundred(transcript: String, amount: String) throws {
         #expect(classifier.classify(transcript) == (try .price(amount)))

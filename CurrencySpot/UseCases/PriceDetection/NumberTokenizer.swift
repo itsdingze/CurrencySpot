@@ -50,7 +50,17 @@ enum NumberTokenizer {
             groups.append(text.string(end + 1..<groupEnd))
             end = groupEnd
         }
+        if hasEuroCents(at: end, in: text) {
+            separators.append(separators.contains(".") ? "," : ".")
+            groups.append(text.string(end + 1..<end + 3))
+            end += 3
+        }
         return NumberToken(span: start..<end, groups: groups, separators: separators)
+    }
+
+    private static func hasEuroCents(at offset: Int, in text: NormalizedTranscript) -> Bool {
+        text.character(at: offset) == CurrencyMarkerVocabulary.euroSign
+            && text.isDigit(offset + 1) && text.isDigit(offset + 2) && !text.isDigit(offset + 3)
     }
 
     private static func decorated(
