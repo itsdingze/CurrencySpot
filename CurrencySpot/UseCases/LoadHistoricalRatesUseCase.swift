@@ -5,7 +5,6 @@ import OSLog
 
 final class LoadHistoricalRatesUseCase {
     private static let residentWindowDays = 370
-    private static let storedArchiveSlackDays = 7
 
     // MARK: - Dependencies
 
@@ -243,25 +242,12 @@ final class LoadHistoricalRatesUseCase {
     ) async throws -> [HistoricalRateSnapshot]? {
         guard try isArchiveCovered(dateRange) else { return nil }
         if let alreadyRead { return alreadyRead }
-
-        do {
-            let rows = try await archive.loadStoredHistoricalRates(in: dateRange)
-            return rows.isEmpty ? nil : rows
-        } catch {
-            logger.warning("Archive store read failed: \(error.localizedDescription, privacy: .public)")
-            return nil
-        }
+        return await completeStoredArchive(in: dateRange)
     }
 
     private func completeStoredArchive(in dateRange: DateRange) async -> [HistoricalRateSnapshot]? {
-        let calendar = CETCalendar.calendar
         guard let earliest = try? await archive.earliestStoredDate(),
-              let coverageFloor = calendar.date(
-                  byAdding: .day,
-                  value: Self.storedArchiveSlackDays,
-                  to: calendar.startOfDay(for: dateRange.start)
-              ),
-              calendar.startOfDay(for: earliest) <= coverageFloor,
+              analysis.storedDataReachesStart(of: dateRange, earliestStored: earliest),
               let rows = try? await archive.loadStoredHistoricalRates(in: dateRange),
               !rows.isEmpty
         else { return nil }

@@ -4,6 +4,8 @@ import OSLog
 // MARK: - HistoricalDataAnalysisUseCase
 
 final class HistoricalDataAnalysisUseCase {
+    private static let storedStartSlackDays = 7
+
     // MARK: - Dependencies
 
     private let syncCoverage: SyncCoverageRepository
@@ -134,6 +136,33 @@ final class HistoricalDataAnalysisUseCase {
 
     func repairCoverage(from: Date, through: Date) {
         syncCoverage.recordCoverage(from: from, through: through, at: dateProvider.now())
+    }
+
+    func coverageClaimsStart(of range: DateRange) -> Bool {
+        guard let from = syncCoverage.coveredFrom else { return false }
+        let calendar = CETCalendar.calendar
+        return calendar.startOfDay(for: from) <= calendar.startOfDay(for: range.start)
+    }
+
+    func trimCoverage(toStoredFrom earliestStored: Date?, through latestStored: Date?) {
+        let (through, checkedAt) = (syncCoverage.coveredThrough, syncCoverage.coverageCheckedAt)
+        syncCoverage.resetCoverage()
+        guard let earliestStored, let through, let checkedAt else { return }
+        let end = max(through, latestStored ?? through)
+        guard earliestStored <= end else { return }
+        syncCoverage.recordCoverage(from: earliestStored, through: end, at: checkedAt)
+    }
+
+    func storedDataReachesStart(of range: DateRange, earliestStored: Date?) -> Bool {
+        let calendar = CETCalendar.calendar
+        guard let earliestStored,
+              let latestAcceptedStart = calendar.date(
+                  byAdding: .day,
+                  value: Self.storedStartSlackDays,
+                  to: calendar.startOfDay(for: range.start)
+              )
+        else { return false }
+        return calendar.startOfDay(for: earliestStored) <= latestAcceptedStart
     }
 
     func isRangeCovered(_ range: DateRange) -> Bool {

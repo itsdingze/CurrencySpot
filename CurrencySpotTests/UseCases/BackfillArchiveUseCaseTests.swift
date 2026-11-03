@@ -153,6 +153,83 @@ struct BackfillArchiveUseCaseTests {
         #expect(syncStore.from == Self.day(-1827))
     }
 
+    @Test("backfillArchive downloads the archive when the watermark claims days the store does not reach")
+    func downloadsWhenWatermarkOverClaims() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
+        repository.syncStoreForPersist = syncStore
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        #expect(repository.fetchAndPersistCalls.count == 8)
+        #expect(repository.fetchAndPersistCalls.first?.to == Self.day(-365))
+        #expect(repository.fetchAndPersistCalls.last?.from == Self.archiveRange.start)
+        #expect(syncStore.from == Self.archiveRange.start)
+    }
+
+    @Test("backfillArchive downloads the archive in one run when an over-claiming watermark stops before the saved days do")
+    func downloadsWhenAnOverClaimingWatermarkStopsBeforeTheStore() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(-1), checkedAt: Self.day(-1))
+        repository.syncStoreForPersist = syncStore
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        #expect(repository.fetchAndPersistCalls.count == 8)
+        #expect(repository.fetchAndPersistCalls.first?.to == Self.day(-365))
+        #expect(syncStore.from == Self.archiveRange.start)
+        #expect(syncStore.through == Self.day(0))
+    }
+
+    @Test("an archive downloaded after an over-claiming watermark is not downloaded again")
+    func overClaimRepairDownloadsOnce() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-365)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
+        repository.syncStoreForPersist = syncStore
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+        await useCase.backfillArchive()
+
+        #expect(repository.fetchAndPersistCalls.count == 8)
+    }
+
+    @Test("backfillArchive downloads the whole archive when the watermark claims days over an empty store")
+    func downloadsWhenWatermarkClaimsAnEmptyStore() async throws {
+        let repository = MockHistoricalRateRepository()
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
+        repository.syncStoreForPersist = syncStore
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        #expect(repository.fetchAndPersistCalls.first?.to == Self.day(0))
+        #expect(repository.fetchAndPersistCalls.last?.from == Self.archiveRange.start)
+        #expect(syncStore.from == Self.archiveRange.start)
+    }
+
+    @Test("backfillArchive leaves a store that starts within a week of the archive start alone")
+    func toleratesAStoreStartingDaysAfterTheArchiveStart() async throws {
+        let repository = MockHistoricalRateRepository()
+        repository.earliestStoredDateResult = Self.day(-1820)
+        repository.latestStoredDateResult = Self.day(0)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        await useCase.backfillArchive()
+
+        #expect(repository.fetchAndPersistCalls.isEmpty)
+        #expect(syncStore.from == Self.day(-1827))
+    }
+
     // MARK: - Pruning
 
     @Test("a complete backfill drops stored days older than the five-year window")

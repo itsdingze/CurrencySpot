@@ -350,6 +350,10 @@ extension DataCoordinator: SyncCoverageRepository {
     func recordCoverage(from: Date, through: Date, at now: Date) {
         syncStore.record(from: from, through: through, at: now)
     }
+
+    func resetCoverage() {
+        syncStore.reset()
+    }
 }
 
 // MARK: - CETDayRange

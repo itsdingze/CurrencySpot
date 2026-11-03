@@ -28,6 +28,10 @@ final class MockHistoricalSyncStore: HistoricalSyncStore, SyncCoverageRepository
         record(from: newFrom, through: newThrough, at: now)
     }
 
+    func resetCoverage() {
+        reset()
+    }
+
     func reset() {
         from = nil
         through = nil

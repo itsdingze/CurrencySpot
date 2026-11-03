@@ -6,4 +6,6 @@ protocol SyncCoverageRepository: AnyObject {
     var coverageCheckedAt: Date? { get }
 
     func recordCoverage(from: Date, through: Date, at now: Date)
+
+    func resetCoverage()
 }

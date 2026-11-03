@@ -377,11 +377,27 @@ struct LoadHistoricalRatesUseCaseTests {
 
     // MARK: - Archive ranges
 
-    @Test("a covered archive range loads from the store without touching the shared series")
+    @Test("an archive range the sync note claims but the store does not reach is downloaded, not served")
+    func coveredArchiveShortOfItsStartIsDownloaded() async throws {
+        let repository = MockHistoricalRateRepository()
+        let stored = Self.snapshots(on: [Self.day(-365), Self.day(-1)])
+        repository.storedRows = stored
+        repository.earliestStoredDateResult = Self.day(-365)
+        let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
+        let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
+
+        let result = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
+
+        #expect(repository.fetchTransientCalls.count == 1)
+        #expect(result.snapshots != stored)
+    }
+
+    @Test("a covered archive range that reaches back to its start loads from the store without refetching")
     func coveredArchiveLoadsFromTheStore() async throws {
         let repository = MockHistoricalRateRepository()
-        let stored = Self.snapshots(on: [Self.day(-1000), Self.day(-1)])
+        let stored = Self.snapshots(on: [Self.day(-1824), Self.day(-1)])
         repository.storedRows = stored
+        repository.earliestStoredDateResult = Self.day(-1824)
         let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
         let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
 
@@ -481,8 +497,9 @@ struct LoadHistoricalRatesUseCaseTests {
     @Test("an archive covered through yesterday still loads from the store")
     func archiveCoveredThroughYesterdayLoadsFromTheStore() async throws {
         let repository = MockHistoricalRateRepository()
-        let stored = Self.snapshots(on: [Self.day(-1000), Self.day(-1)])
+        let stored = Self.snapshots(on: [Self.day(-1824), Self.day(-1)])
         repository.storedRows = stored
+        repository.earliestStoredDateResult = Self.day(-1824)
         let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(-1), checkedAt: Self.day(-1))
         let useCase = Self.makeUseCase(repository: repository, syncStore: syncStore)
 
@@ -516,6 +533,7 @@ struct LoadHistoricalRatesUseCaseTests {
     func failedArchiveStoreReadBridges() async throws {
         let repository = MockHistoricalRateRepository()
         repository.shouldThrowErrorOnLoad = true
+        repository.earliestStoredDateResult = Self.day(-1827)
         let bridged = Self.snapshots(on: [Self.day(-1000)])
         repository.transientDataToReturn = bridged
         let syncStore = MockHistoricalSyncStore(from: Self.day(-1827), through: Self.day(0), checkedAt: Self.day(0))
@@ -523,6 +541,7 @@ struct LoadHistoricalRatesUseCaseTests {
 
         let result = try await useCase.loadHistoricalData(for: "EUR", base: "USD", dateRange: Self.archiveRange)
 
+        #expect(repository.storedReadCount == 1)
         #expect(result.snapshots == bridged)
         #expect(repository.fetchTransientCalls.count == 1)
     }

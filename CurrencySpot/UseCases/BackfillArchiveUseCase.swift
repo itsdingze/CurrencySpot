@@ -107,6 +107,7 @@ final class BackfillArchiveUseCase {
         let archiveRange = analysis.calculateDateRange(for: .fiveYears)
         do {
             let stored = try await archive.archiveStoredBounds()
+            trimCoverageIfOverClaiming(for: archiveRange, storedFrom: stored.earliest, storedThrough: stored.latest)
             guard let gap = analysis.fetchableGap(for: archiveRange, storedFrom: stored.earliest, storedThrough: stored.latest) else {
                 repairCoverageIfUnderClaiming(for: archiveRange, storedFrom: stored.earliest, storedThrough: stored.latest)
                 return true
@@ -146,6 +147,14 @@ final class BackfillArchiveUseCase {
             chunkEnd = nextEnd
         }
         return true
+    }
+
+    private func trimCoverageIfOverClaiming(for archiveRange: DateRange, storedFrom earliest: Date?, storedThrough latest: Date?) {
+        guard analysis.coverageClaimsStart(of: archiveRange),
+              !analysis.storedDataReachesStart(of: archiveRange, earliestStored: earliest)
+        else { return }
+        analysis.trimCoverage(toStoredFrom: earliest, through: latest)
+        logger.info("Coverage watermark trimmed to the stored days")
     }
 
     private func repairCoverageIfUnderClaiming(for archiveRange: DateRange, storedFrom earliest: Date?, storedThrough latest: Date?) {
