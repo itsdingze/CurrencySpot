@@ -164,6 +164,17 @@ struct ScanConversionUseCaseTests {
     }
 
     @Test(arguments: [
+        ("Small ¥500 Large ¥800", "JPY", ["Small ¥500", "Large ¥800"]),
+        ("S $3.50 M $4.00 L $4.50", "USD", ["S $3.50", "M $4.00", "L $4.50"]),
+        ("500円 / 800円", "JPY", ["500円", "800円"]),
+    ])
+    func eachPriceOnALineNamesItsOwnPartOfTheLine(transcript: String, base: CurrencyCode, names: [String]) {
+        let result = detect([item(transcript, width: 200)], base: base)
+
+        #expect(result.items.map(\.transcript) == names)
+    }
+
+    @Test(arguments: [
         ("780円(税込858円)", "JPY", ["780", "858"]),
         ("S $3.50 M $4.00 L $4.50", "USD", ["3.5", "4", "4.5"]),
     ])

@@ -51,7 +51,9 @@ final class ScanConversionUseCase {
             DetectedItem(
                 id: Self.itemID(line: item.id, ordinal: ordinal),
                 lineID: item.id,
-                transcript: item.transcript,
+                transcript: anchoredReadings.count > 1
+                    ? Self.partOfLine(naming: anchored, among: anchoredReadings, in: item.transcript)
+                    : item.transcript,
                 tokenQuad: item.quad.slice(anchored.span),
                 lineQuad: item.quad,
                 lineTextQuads: lineText,
@@ -80,6 +82,17 @@ final class ScanConversionUseCase {
                 span: glyphs.tokenSpan(of: reading.token, includingMarker: covered)
             )
         }
+    }
+
+    private static func partOfLine(naming reading: AnchoredReading, among readings: [AnchoredReading], in transcript: String) -> String {
+        let characters = Array(transcript)
+        let start = readings
+            .map(\.coveredCharacters.upperBound)
+            .filter { $0 <= reading.coveredCharacters.lowerBound }
+            .max() ?? 0
+        let end = min(reading.coveredCharacters.upperBound, characters.count)
+        guard start < end else { return transcript }
+        return String(characters[start..<end].drop { $0.isWhitespace || $0.isPunctuation || $0 == "|" })
     }
 
     private func textQuads(of item: RecognizedTextItem, outside readings: [AnchoredReading]) -> [Quad] {
