@@ -95,6 +95,27 @@ struct PlateLayoutTests {
         #expect(abs(result.angle - angle) < 0.001)
     }
 
+    @Test func aLoneTiltedPriceIsCoveredCornerToCorner() throws {
+        let angle = 15 * CGFloat.pi / 180
+        let token = Quad(CGRect(x: -30, y: -10, width: 60, height: 20)).mapped { point in
+            CGPoint(x: 200 + point.x * cos(angle) - point.y * sin(angle), y: 300 + point.x * sin(angle) + point.y * cos(angle))
+        }
+        let lone = DetectedItem(
+            id: UUID(),
+            lineID: lineID,
+            transcript: "¥980",
+            tokenQuad: token,
+            lineQuad: token,
+            lineTextQuads: [],
+            perUnitSuffix: nil,
+            conversion: ScannedConversion(amount: 980, converted: 6.5, isPrice: true)
+        )
+
+        let plate = try #require(layout([lone]).plates.first)
+
+        #expect(token.corners.allSatisfy(plate.quad.contains))
+    }
+
     @Test func slightTiltIsDrawnLevel() {
         let angle = 1 * CGFloat.pi / 180
         let tilted = Quad(CGRect(x: 0, y: 0, width: 200, height: 20)).mapped { point in

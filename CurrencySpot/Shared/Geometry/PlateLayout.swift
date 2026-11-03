@@ -170,9 +170,10 @@ struct PlateLayout {
 
     private static func medianLineAngle(of prices: [DetectedItem]) -> CGFloat {
         var seen: Set<UUID> = []
-        return prices
-            .filter { seen.insert($0.lineID).inserted }
-            .compactMap { RowSlope.sample(of: $0.lineQuad, rowNeighbourCenter: $0.rowNeighbourCenter) }
+        let lines = prices.filter { seen.insert($0.lineID).inserted }
+        let rowSlopes = lines.compactMap { RowSlope.sample(of: $0.lineQuad, rowNeighbourCenter: $0.rowNeighbourCenter) }
+        let samples = rowSlopes.isEmpty ? lines.map(\.lineQuad.angle) : rowSlopes
+        return samples
             .filter { abs($0) <= maximumPageAngle }
             .median
     }
