@@ -210,6 +210,7 @@ final class DependencyContainer {
     static func bootstrap(appState: AppState) -> DependencyContainer {
         let container = ModelContainerFactory.persistentContainer(
             storeURL: ModelConfiguration().url,
+            legacyStoreURL: .applicationSupportDirectory.appending(path: "default.store"),
             defaults: .standard,
             errorHandler: appState.errorHandler
         )

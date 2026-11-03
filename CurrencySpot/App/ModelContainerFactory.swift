@@ -5,14 +5,14 @@ import SwiftData
 enum ModelContainerFactory {
     private static let logger = Logger(category: .app)
 
-    static func persistentContainer(storeURL: URL, defaults: UserDefaults, errorHandler: ErrorHandler) -> ModelContainer {
+    static func persistentContainer(storeURL: URL, legacyStoreURL: URL, defaults: UserDefaults, errorHandler: ErrorHandler) -> ModelContainer {
         do {
             let container = try PersistentStoreLoader(storeURL: storeURL).load {
                 logger.fault("Persistent store could not be opened; rebuilt it empty")
                 UserDefaultsHistoricalSyncStore(defaults: defaults).reset()
                 UserDefaultsRatesFetchDateStore(defaults: defaults).lastFetchDate = nil
             }
-            DataMigration.runIfNeeded(modelContainer: container, defaults: defaults)
+            DataMigration.runIfNeeded(modelContainer: container, defaults: defaults, legacyStoreURL: legacyStoreURL)
             return container
         } catch {
             logger.fault("Failed to create persistent ModelContainer: \(error.localizedDescription, privacy: .public)")
