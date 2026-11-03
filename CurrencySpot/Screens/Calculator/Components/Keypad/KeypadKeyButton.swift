@@ -33,14 +33,34 @@ struct KeypadKeyButton: View, Animatable {
 
     private var label: some View {
         ZStack {
-            Text(verbatim: role.glyph)
-                .id(role.glyph)
-                .transition(.blurReplace)
+            if key.amountRole == key.calculatorRole {
+                Text(verbatim: role.glyph)
+            } else {
+                Capsule()
+                    .fill(departingRole.fill(accent: accent))
+                    .opacity(departingShare)
+                Text(verbatim: key.amountRole.glyph)
+                    .opacity(1 - blend)
+                Text(verbatim: key.calculatorRole.glyph)
+                    .opacity(blend)
+            }
         }
     }
 
+    private var departingRole: KeypadKey.Role {
+        mode == .calculator ? key.amountRole : key.calculatorRole
+    }
+
+    private var departingShare: CGFloat {
+        mode == .calculator ? 1 - blend : blend
+    }
+
     private var fill: Color {
-        key.amountRole.fill(accent: accent).mix(with: key.calculatorRole.fill(accent: accent), by: blend)
+        if key.amountRole == key.calculatorRole {
+            key.amountRole.fill(accent: accent)
+        } else {
+            role.fill(accent: accent)
+        }
     }
 
     private var foreground: Color {

@@ -79,6 +79,7 @@ struct NumberPadKeyButtonStyle: ButtonStyle {
             .adaptiveGlassBackground(in: Capsule(), isInteractive: true, tint: fill) {
                 Capsule().fill(fill)
             }
+            .animation(nil, value: fill)
             .contentShape(.rect)
             .opacity(configuration.isPressed ? pressedOpacity : 1)
             .onChange(of: configuration.isPressed) { _, isPressed in
