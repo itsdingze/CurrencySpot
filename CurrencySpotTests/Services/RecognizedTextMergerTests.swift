@@ -77,6 +77,40 @@ struct RecognizedTextMergerTests {
         #expect(merged == [price.item, setMenu.item])
     }
 
+    private func tiltedCandidate(_ transcript: String, center: CGPoint, degrees: CGFloat) -> RecognizedTextCandidate {
+        let angle = degrees * .pi / 180
+        let along = CGPoint(x: 400 * cos(angle), y: 400 * sin(angle))
+        let across = CGPoint(x: -10 * sin(angle), y: 10 * cos(angle))
+        func corner(_ alongSign: CGFloat, _ acrossSign: CGFloat) -> CGPoint {
+            CGPoint(
+                x: center.x + alongSign * along.x + acrossSign * across.x,
+                y: center.y + alongSign * along.y + acrossSign * across.y
+            )
+        }
+        let quad = Quad(topLeft: corner(-1, -1), topRight: corner(1, -1), bottomRight: corner(1, 1), bottomLeft: corner(-1, 1))
+        return RecognizedTextCandidate(item: RecognizedTextItem(id: UUID(), transcript: transcript, quad: quad), confidence: 1)
+    }
+
+    @Test("two neighboring lines on a tilted photo are both kept")
+    func neighboringTiltedLinesAreBothKept() {
+        let salmon = tiltedCandidate("Grilled salmon set ........ $18.50", center: CGPoint(x: 500, y: 300), degrees: 8)
+        let curry = tiltedCandidate("Seasonal vegetable curry ........ $14.00", center: CGPoint(x: 500, y: 340), degrees: 8)
+
+        let merged = RecognizedTextMerger.merge([salmon, curry])
+
+        #expect(merged == [salmon.item, curry.item])
+    }
+
+    @Test("two reads of one tilted line become one")
+    func twoReadsOfOneTiltedLineBecomeOne() {
+        let bandRead = tiltedCandidate("Grilled salmon set ........ $18.50", center: CGPoint(x: 500, y: 300), degrees: 8)
+        let frameRead = tiltedCandidate("Grilled salmon set ........ $18.5O", center: CGPoint(x: 503, y: 302), degrees: 8)
+
+        let merged = RecognizedTextMerger.merge([bandRead, frameRead])
+
+        #expect(merged.count == 1)
+    }
+
     @Test("separate lines are all kept in the order they were read")
     func separateLinesAreAllKeptInOrder() {
         let lines = [

@@ -37,12 +37,16 @@ nonisolated enum RecognizedTextMerger {
     }
 
     private static func readSameText(_ first: RecognizedTextCandidate, _ second: RecognizedTextCandidate) -> Bool {
-        let shared = first.item.bounds.intersection(second.item.bounds)
-        guard !shared.isNull else { return false }
-        let sharedArea = shared.width * shared.height
-        let unionArea = first.area + second.area - sharedArea
+        let axes = PageAxes(angle: first.item.quad.angle)
+        let firstSpan = axes.span(of: first.item.quad)
+        let secondSpan = axes.span(of: second.item.quad)
+        let sharedArea = firstSpan.overlap(with: secondSpan).area
+        guard sharedArea > 0 else { return false }
+        let firstArea = firstSpan.width * firstSpan.height
+        let secondArea = secondSpan.width * secondSpan.height
+        let unionArea = firstArea + secondArea - sharedArea
         return sharedArea / unionArea > sameLineOverlap
-            || sharedArea / min(first.area, second.area) >= fragmentContainment && isFragment(first, of: second)
+            || sharedArea / min(firstArea, secondArea) >= fragmentContainment && isFragment(first, of: second)
     }
 
     private static func isFragment(_ first: RecognizedTextCandidate, of second: RecognizedTextCandidate) -> Bool {
