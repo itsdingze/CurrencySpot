@@ -11,6 +11,13 @@ struct KeypadGeometryTests {
         return geometry.frame(for: key.slot, progress: progress)
     }
 
+    @Test("keys may draw above the keypad only once it has settled on a page", arguments: [0, 0.05, 0.2, 0.5, 0.95, 1] as [CGFloat])
+    func topOverflowOpensOnlyWhenSettled(progress: CGFloat) {
+        let overflow = KeypadGeometry.topOverflow(at: progress, whileSwitching: 12, whenSettled: 40)
+
+        #expect(overflow == (progress == 0 || progress == 1 ? 40 : 12))
+    }
+
     @Test("the amount keypad is a 3 by 4 grid and the calculator keypad a 4 by 5 grid filling the bounds")
     func endpointsFillTheirGrids() throws {
         let seven = try frame(of: "7", at: 0)

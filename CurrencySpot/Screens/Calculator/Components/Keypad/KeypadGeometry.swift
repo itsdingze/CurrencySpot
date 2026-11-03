@@ -44,6 +44,10 @@ nonisolated struct KeypadGeometry {
     private var amountGrid: KeyGrid { KeyGrid(bounds: bounds, columns: 3, rows: 4, spacing: spacing) }
     private var calculatorGrid: KeyGrid { KeyGrid(bounds: bounds, columns: 4, rows: 5, spacing: spacing) }
 
+    static func topOverflow(at progress: CGFloat, whileSwitching switching: CGFloat, whenSettled settled: CGFloat) -> CGFloat {
+        progress <= 0 || progress >= 1 ? settled : switching
+    }
+
     func frame(for slot: KeySlot, progress: CGFloat) -> CGRect {
         let start = slot.amount.map(amountGrid.frame) ?? hiddenFrame(for: slot)
         let end = slot.calculator.map(calculatorGrid.frame) ?? hiddenFrame(for: slot)

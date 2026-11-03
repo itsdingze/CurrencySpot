@@ -54,21 +54,11 @@ struct CalculatorKeypadView: View {
                 keys
             }
         }
-        .mask { keypadMask }
+        .mask { KeypadMask(progress: progress, topFadeHeight: topFadeHeight, overflow: shadowOverflow) }
         .contentShape(.rect)
         .simultaneousGesture(swipe)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(.calculatorNumberPadAccessibilityLabel)
-    }
-
-    private var keypadMask: some View {
-        VStack(spacing: 0) {
-            LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
-                .frame(height: topFadeHeight)
-            Rectangle()
-        }
-        .padding(.top, -topFadeHeight)
-        .padding([.horizontal, .bottom], -shadowOverflow)
     }
 
     private var keys: some View {
