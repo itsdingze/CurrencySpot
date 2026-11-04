@@ -8,11 +8,6 @@ struct DetectionOverlayView: View {
     let onOutlineTap: (UUID) -> Void
     let onPlateTap: (UUID) -> Void
 
-    private let resolver = BadgeClusterResolver(
-        horizontalOverlapTolerance: 0.25,
-        verticalOverlapTolerance: 1.0 / 3.0
-    )
-
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @Environment(\.legibilityWeight) private var legibilityWeight
@@ -26,17 +21,9 @@ struct DetectionOverlayView: View {
         items.filter { $0.conversion.isPrice }
     }
 
-    private func depths(for plates: [PlateLayout.Plate]) -> [UUID: Int] {
-        let midYs = Dictionary(items.map { ($0.id, $0.tokenQuad.center.y) }) { first, _ in first }
-        let badges = plates.map { plate in
-            BadgeClusterResolver.Badge(id: plate.id, frame: plate.visibleBounds, boxMidY: midYs[plate.id] ?? plate.center.y)
-        }
-        return resolver.depths(for: badges, promotions: promotions)
-    }
-
     var body: some View {
         let itemsByID = Dictionary(items.map { ($0.id, $0) }) { first, _ in first }
-        let depths = depths(for: layout.plates)
+        let depths = PlateStacking.depths(of: layout, promotions: promotions)
         ZStack {
             ForEach(layout.outlines, id: \.id) { outline in
                 if let item = itemsByID[outline.id] {

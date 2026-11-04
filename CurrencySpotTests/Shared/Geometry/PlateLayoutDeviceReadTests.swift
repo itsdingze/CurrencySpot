@@ -42,4 +42,15 @@ struct PlateLayoutDeviceReadTests {
 
         #expect(abs(angle - -(rowsRiseByDegreesBeforeTurning + counterclockwiseDegrees)) <= 1.5, "turned \(counterclockwiseDegrees)°, plates at \(angle)°")
     }
+
+    @Test(arguments: [15.0, 30.0, -20.0])
+    func platesOfATurnedPhotoAllStayInFront(counterclockwiseDegrees: Double) async throws {
+        let fixture = try await PlateLayoutFixture.readOnThisDevice("6-real-sushi-menu", turnedCounterclockwiseBy: counterclockwiseDegrees)
+        let layout = fixture.layout()
+
+        let stacked = PlateStacking.depths(of: layout, promotions: []).filter { $0.value > 0 }
+
+        #expect(layout.plates.count >= 30)
+        #expect(stacked.isEmpty, "turned \(counterclockwiseDegrees)°: \(stacked.count) of \(layout.plates.count) plates drawn behind another")
+    }
 }
