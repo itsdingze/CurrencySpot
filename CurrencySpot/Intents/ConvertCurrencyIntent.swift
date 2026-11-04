@@ -24,7 +24,14 @@ struct ConvertCurrencyIntent: AppIntent {
             value: NSDecimalNumber(decimal: conversion.converted).doubleValue,
             dialog: IntentDialog(.intentConvertResult(amount: formatted.amount, converted: formatted.converted)),
             view: ConversionSnippetView(conversion: formatted)
+                .environment(\.colorScheme, systemColorScheme)
         )
+    }
+
+    // iOS gives App Intent snippets a light colorScheme in Dark Mode (FB17603899).
+    @MainActor
+    private var systemColorScheme: ColorScheme {
+        UIScreen.main.traitCollection.userInterfaceStyle == .dark ? .dark : .light
     }
 }
 
