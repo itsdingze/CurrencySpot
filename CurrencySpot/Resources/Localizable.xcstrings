@@ -13346,6 +13346,66 @@
         "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "到" } }
       }
     },
+    "intent.currency.convertTo" : {
+      "comment" : "Label of a one-tap Spotlight and Shortcuts action that converts into one currency. currency: currency code, such as CNY.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %(currency)@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To %(currency)@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A %(currency)@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A %(currency)@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En %(currency)@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%(currency)@に換算"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%(currency)@(으)로 환산"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "换算成%(currency)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "換算成%(currency)@"
+          }
+        }
+      }
+    },
     "intent.currency.type" : {
       "comment" : "Type name of the currency a shortcut or widget setting picks.",
       "extractionState" : "manual",
