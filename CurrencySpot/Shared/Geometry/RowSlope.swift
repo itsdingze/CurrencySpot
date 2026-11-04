@@ -6,18 +6,23 @@ nonisolated enum RowSlope {
     private static let touchingShareOfHeight: CGFloat = 0.5
     private static let wideLineAspect: CGFloat = 4
 
-    static func neighbourCenter(leftOf line: Quad, among lines: [Quad]) -> CGPoint? {
-        lines
-            .filter { isLeftNeighbour($0, of: line) }
-            .max { $0.boundingBox.maxX < $1.boundingBox.maxX }?
-            .center
+    static func page(of lines: [Quad]) -> PageAxes {
+        PageAxes(angle: lines.map(\.angle).median)
     }
 
-    private static func isLeftNeighbour(_ other: Quad, of line: Quad) -> Bool {
-        let height = line.height
-        let endsBeforeLine = other.boundingBox.maxX <= line.boundingBox.minX + touchingShareOfHeight * height
-        let sharesRow = abs(other.center.y - line.center.y) <= sameRowShareOfHeight * height
-        let isWithinReach = line.center.x - other.center.x <= maximumReachInHeights * height
+    static func neighbourCenter(leftOf line: Quad, among lines: [Quad], on page: PageAxes) -> CGPoint? {
+        let span = page.span(of: line)
+        return lines
+            .map { (quad: $0, span: page.span(of: $0)) }
+            .filter { isLeftNeighbour($0.span, of: span, height: line.height) }
+            .max { $0.span.u1 < $1.span.u1 }?
+            .quad.center
+    }
+
+    private static func isLeftNeighbour(_ other: PageRect, of line: PageRect, height: CGFloat) -> Bool {
+        let endsBeforeLine = other.u1 <= line.u0 + touchingShareOfHeight * height
+        let sharesRow = abs(other.midV - line.midV) <= sameRowShareOfHeight * height
+        let isWithinReach = line.midU - other.midU <= maximumReachInHeights * height
         return endsBeforeLine && sharesRow && isWithinReach
     }
 

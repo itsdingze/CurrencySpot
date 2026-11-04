@@ -32,4 +32,14 @@ struct PlateLayoutDeviceReadTests {
 
         #expect(degrees.contains(angle), "\(photo) \(angle)°")
     }
+
+    @Test(arguments: [15.0, 30.0, 45.0, -20.0])
+    func platesFollowTheRowsOfAPhotoTurnedFarFromLevel(counterclockwiseDegrees: Double) async throws {
+        let fixture = try await PlateLayoutFixture.readOnThisDevice("6-real-sushi-menu", turnedCounterclockwiseBy: counterclockwiseDegrees)
+        let rowsRiseByDegreesBeforeTurning = 4.0
+
+        let angle = Double(fixture.layout().angle * 180 / .pi)
+
+        #expect(abs(angle - -(rowsRiseByDegreesBeforeTurning + counterclockwiseDegrees)) <= 1.5, "turned \(counterclockwiseDegrees)°, plates at \(angle)°")
+    }
 }

@@ -27,12 +27,13 @@ final class ScanConversionUseCase {
     ) -> DetectionResult {
         let markers = markerResolver.markersBesideNumbers(in: items)
         let lines = items.map(\.quad)
+        let page = RowSlope.page(of: lines)
         let detected = items.flatMap { item in
             let readings = reader.readings(of: item, marker: markers[item.id], baseCurrency: baseCurrency)
             return detectedItems(
                 on: item,
                 reading: readings,
-                rowNeighbourCenter: readings.isEmpty ? nil : RowSlope.neighbourCenter(leftOf: item.quad, among: lines),
+                rowNeighbourCenter: readings.isEmpty ? nil : RowSlope.neighbourCenter(leftOf: item.quad, among: lines, on: page),
                 convert: { self.convert($0, from: baseCurrency, to: targetCurrency, in: exchangeRates) }
             )
         }

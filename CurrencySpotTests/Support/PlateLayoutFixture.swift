@@ -65,13 +65,14 @@ struct PlateLayoutFixture {
         try self.init(name: name, recording: recording, imageItems: items)
     }
 
-    static func readOnThisDevice(_ name: String) async throws -> PlateLayoutFixture {
+    static func readOnThisDevice(_ name: String, turnedCounterclockwiseBy degrees: Double = 0) async throws -> PlateLayoutFixture {
         let recording = try recording(named: name)
         let photoURL = try #require(resource(named: recording.photo, in: bundleDirectory))
-        let image = try #require(UIImage(contentsOfFile: photoURL.path))
+        let photo = try #require(UIImage(contentsOfFile: photoURL.path))
+        let image = degrees == 0 ? photo : photo.turnedCounterclockwise(by: degrees)
         let recognizer = StillImageTextRecognizer(languagePolicy: RecognitionLanguagePolicy(preferredLanguageIdentifiers: ["en-US"]))
         let result = try await recognizer.recognize(image, menuCurrency: CurrencyCode(validating: recording.baseCurrency))
-        return try PlateLayoutFixture(name: name, recording: recording, imageItems: result.items)
+        return try PlateLayoutFixture(name: name, recording: recording, imageItems: result.items, imageSize: result.imagePixelSize)
     }
 
     private static var bundleDirectory: URL {
@@ -83,9 +84,9 @@ struct PlateLayoutFixture {
         return try JSONDecoder().decode(Recording.self, from: Data(contentsOf: jsonURL))
     }
 
-    private init(name: String, recording: Recording, imageItems: [RecognizedTextItem]) throws {
+    private init(name: String, recording: Recording, imageItems: [RecognizedTextItem], imageSize: CGSize? = nil) throws {
         let directory = Self.bundleDirectory
-        let imageSize = CGSize(width: recording.imageWidth, height: recording.imageHeight)
+        let imageSize = imageSize ?? CGSize(width: recording.imageWidth, height: recording.imageHeight)
         let mapping = AspectFitMapping(imageSize: imageSize, viewSize: Self.frameSize)
         let items = imageItems.map { $0.mapped(mapping.viewPoint) }
         let base = try CurrencyCode(validating: recording.baseCurrency)
@@ -146,3 +147,22 @@ struct PlateLayoutFixture {
 }
 
 private final class FixtureBundleMarker {}
+
+private extension UIImage {
+    func turnedCounterclockwise(by degrees: Double) -> UIImage {
+        let radians = CGFloat(degrees * .pi / 180)
+        let turnedSize = CGSize(
+            width: abs(size.width * cos(radians)) + abs(size.height * sin(radians)),
+            height: abs(size.width * sin(radians)) + abs(size.height * cos(radians))
+        )
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = scale
+        return UIGraphicsImageRenderer(size: turnedSize, format: format).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(origin: .zero, size: turnedSize))
+            context.cgContext.translateBy(x: turnedSize.width / 2, y: turnedSize.height / 2)
+            context.cgContext.rotate(by: -radians)
+            draw(in: CGRect(x: -size.width / 2, y: -size.height / 2, width: size.width, height: size.height))
+        }
+    }
+}

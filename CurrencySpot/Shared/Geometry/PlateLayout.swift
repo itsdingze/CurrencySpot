@@ -109,7 +109,6 @@ struct PlateLayout {
         }
     }
 
-    private static let maximumPageAngle: CGFloat = .pi / 6
     private static let pageAngleSnap: CGFloat = 1.5 * .pi / 180
     private static let duplicateOverlap: CGFloat = 0.5
     private static let frameInset: CGFloat = 2
@@ -172,10 +171,7 @@ struct PlateLayout {
         var seen: Set<UUID> = []
         let lines = prices.filter { seen.insert($0.lineID).inserted }
         let rowSlopes = lines.compactMap { RowSlope.sample(of: $0.lineQuad, rowNeighbourCenter: $0.rowNeighbourCenter) }
-        let samples = rowSlopes.isEmpty ? lines.map(\.lineQuad.angle) : rowSlopes
-        return samples
-            .filter { abs($0) <= maximumPageAngle }
-            .median
+        return (rowSlopes.isEmpty ? lines.map(\.lineQuad.angle) : rowSlopes).median
     }
 
     private func size(_ anchor: Anchor, among anchors: [Anchor], memory: inout PlateLayoutMemory) -> Sized {
