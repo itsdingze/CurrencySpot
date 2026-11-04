@@ -33,6 +33,28 @@ struct ScanStatusPhaseTests {
         #expect(phase == .hidden)
     }
 
+    @Test func livePricesSuggestFreezingUntilTheFirstFreeze() {
+        let phase = ScanStatusPhase.resolve(
+            isLive: true,
+            hasPrices: true,
+            isRecognizingStill: false,
+            hintElapsed: true,
+            suggestsFreezing: true
+        )
+        #expect(phase == .freezeHint)
+    }
+
+    @Test func aFrozenFrameWithPricesNeverSuggestsFreezing() {
+        let phase = ScanStatusPhase.resolve(
+            isLive: false,
+            hasPrices: true,
+            isRecognizingStill: false,
+            hintElapsed: true,
+            suggestsFreezing: true
+        )
+        #expect(phase == .hidden)
+    }
+
     @Test func frozenFrameStaysSilentWhileStillRecognitionRuns() {
         let phase = ScanStatusPhase.resolve(
             isLive: false,

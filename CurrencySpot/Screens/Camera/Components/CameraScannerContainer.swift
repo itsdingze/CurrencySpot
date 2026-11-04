@@ -1,5 +1,6 @@
 import IdentifiedCollections
 import SwiftUI
+import TipKit
 
 struct CameraScannerContainer: View {
     @Environment(CameraViewModel.self) private var viewModel
@@ -9,6 +10,7 @@ struct CameraScannerContainer: View {
     @State private var scannerProxy = DataScannerProxy()
     @State private var containerHeight: CGFloat = 0
     @State private var badgeDetailFittedHeight: CGFloat?
+    @State private var suggestsFreezing = false
 
     private static let fittedSheetHeightLimit: CGFloat = 0.75
 
@@ -65,7 +67,8 @@ struct CameraScannerContainer: View {
                             isLive: viewModel.frozenImage == nil,
                             hasPrices: viewModel.hasSettledPrices,
                             hasOutlines: viewModel.hasSettledNumbers,
-                            isRecognizingStill: viewModel.isRecognizingStill
+                            isRecognizingStill: viewModel.isRecognizingStill,
+                            suggestsFreezing: suggestsFreezing
                         )
                     }
                     CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
@@ -75,6 +78,11 @@ struct CameraScannerContainer: View {
             .padding(.bottom, Spacing.screenInset)
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { containerHeight = $0 }
+        .task {
+            for await shouldDisplay in FreezeFrameTip().shouldDisplayUpdates {
+                suggestsFreezing = shouldDisplay
+            }
+        }
         .onChange(of: viewModel.availableRates) {
             viewModel.refreshConversions()
         }

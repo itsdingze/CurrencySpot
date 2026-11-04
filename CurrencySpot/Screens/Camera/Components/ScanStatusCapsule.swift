@@ -5,6 +5,7 @@ struct ScanStatusCapsule: View {
     let hasPrices: Bool
     let hasOutlines: Bool
     let isRecognizingStill: Bool
+    var suggestsFreezing = false
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var hintElapsed = false
@@ -16,7 +17,8 @@ struct ScanStatusCapsule: View {
             hasPrices: hasPrices,
             isRecognizingStill: isRecognizingStill,
             hintElapsed: hintElapsed,
-            hasOutlines: hasOutlines
+            hasOutlines: hasOutlines,
+            suggestsFreezing: suggestsFreezing
         )
     }
 
@@ -64,6 +66,7 @@ struct ScanStatusCapsule: View {
         case .pointHint: .cameraStatusPointHint
         case .notFound: .cameraStatusNotFound
         case .numbersOnly: .cameraStatusNumbersOnly
+        case .freezeHint: .cameraStatusFreezeHint
         }
     }
 }
@@ -107,6 +110,13 @@ private struct Shimmer: ViewModifier {
     ZStack {
         Color(white: 0.2).ignoresSafeArea()
         ScanStatusCapsule(isLive: true, hasPrices: false, hasOutlines: false, isRecognizingStill: false)
+    }
+}
+
+#Preview("Live prices, before the first freeze") {
+    ZStack {
+        Color(white: 0.2).ignoresSafeArea()
+        ScanStatusCapsule(isLive: true, hasPrices: true, hasOutlines: false, isRecognizingStill: false, suggestsFreezing: true)
     }
 }
 
