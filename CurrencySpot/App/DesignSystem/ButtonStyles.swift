@@ -38,9 +38,11 @@ extension ButtonStyle where Self == ControlButtonStyle {
 }
 
 // @ScaledMetric tracks Dynamic Type only inside a View, not inside a ButtonStyle.
-private struct ControlButtonChrome<Label: View>: View {
+struct ControlButtonChrome<Label: View>: View {
     let glass: Bool
+    var isInteractive = true
     let isPressed: Bool
+    var growth: CGFloat = 1
     @ViewBuilder var label: Label
 
     @ScaledMetric(relativeTo: .headline) private var size: CGFloat = ControlMetrics.buttonSize
@@ -49,15 +51,16 @@ private struct ControlButtonChrome<Label: View>: View {
         box
             .contentShape(.rect)
             .opacity(isPressed ? pressedOpacity : 1)
+            .frame(width: size, height: size)
     }
 
     @ViewBuilder
     private var box: some View {
         let framed = label
             .font(.appHeadline)
-            .frame(width: size, height: size)
+            .frame(width: size * growth, height: size * growth)
         if glass {
-            framed.adaptiveGlassBackground(in: .circle, isInteractive: true)
+            framed.adaptiveGlassBackground(in: .circle, isInteractive: isInteractive)
         } else {
             framed
         }

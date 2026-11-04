@@ -17,7 +17,7 @@ struct CameraControlsBar: View {
                     photoImportButton
                     Spacer()
                     if viewModel.frozenImage == nil {
-                        torchButton
+                        TorchButton(isOn: viewModel.isTorchOn, toggle: viewModel.toggleTorch)
                     }
                 }
                 .padding(.horizontal, 32)
@@ -77,28 +77,6 @@ struct CameraControlsBar: View {
                 .font(.appTitle2)
                 .foregroundStyle(.white)
         }
-    }
-
-    private var torchSymbol: String {
-        viewModel.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill"
-    }
-
-    private var torchButton: some View {
-        Button(.cameraFlashlight, systemImage: torchSymbol) {
-            viewModel.toggleTorch()
-        }
-        .labelStyle(.iconOnly)
-        .foregroundStyle(viewModel.isTorchOn ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.primary))
-        .buttonStyle(.controlButton)
-        .accessibilityValue(torchState)
-        .accessibilityAddTraits(.isToggle)
-        .accessibilityShowsLargeContentViewer {
-            Label(.cameraFlashlight, systemImage: torchSymbol)
-        }
-    }
-
-    private var torchState: LocalizedStringResource {
-        viewModel.isTorchOn ? .cameraFlashlightOn : .cameraFlashlightOff
     }
 
     private var photoImportButton: some View {
