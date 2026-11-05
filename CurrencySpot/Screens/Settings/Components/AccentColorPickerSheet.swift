@@ -18,7 +18,6 @@ struct AccentColorPickerSheet: View {
                 ColorCustomizationSheet(
                     selectedColor: Bindable(settingsViewModel).accentColor
                 )
-                .presentationDetents([.fraction(0.25)])
         }
     }
 
@@ -76,10 +75,11 @@ private struct ColorCustomizationSheet: View {
     @ViewBuilder
     private var sheetContent: some View {
         NavigationStack {
-            VStack(spacing: contentSpacing) {
-                colorSelectionGrid
+            SheetFittingScrollView {
+                VStack(spacing: contentSpacing) {
+                    colorSelectionGrid
+                }
             }
-            .padding()
             .navigationTitle(.settingsAccentColorTitle)
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
