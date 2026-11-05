@@ -130,7 +130,14 @@
             }
           ],
           "image-name" : "euro-sign.png",
-          "name" : "Euro Sign"
+          "name" : "Euro Sign",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              2.08,
+              0
+            ]
+          }
         },
         {
           "fill-specializations" : [
