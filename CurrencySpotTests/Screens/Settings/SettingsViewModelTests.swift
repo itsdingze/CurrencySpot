@@ -344,6 +344,11 @@ struct SettingsViewModelTests {
             ("AppIconYen", .yen),
             ("AppIconPound", .pound),
             ("AppIconWon", .won),
+            ("AppIconDollarYenCoins", .dollarYenCoins),
+            ("AppIconDollarPoundCoins", .dollarPoundCoins),
+            ("AppIconDollarWonCoins", .dollarWonCoins),
+            ("AppIconPoundEuroCoins", .poundEuroCoins),
+            ("AppIconWonYenCoins", .wonYenCoins),
         ]
     )
     func appIconStartsOnCurrencyIcon(alternateIconName: String, expected: AppIconOption) {

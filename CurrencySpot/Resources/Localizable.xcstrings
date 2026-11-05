@@ -19068,55 +19068,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Münzen"
+            "value" : "Dollar- und Euromünzen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Coins"
+            "value" : "Dollar and Euro Coins"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Monedas"
+            "value" : "Monedas de dólar y euro"
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Monedas"
+            "value" : "Monedas de dólar y euro"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pièces"
+            "value" : "Pièces en dollar et en euro"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "コイン"
+            "value" : "ドルとユーロのコイン"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "동전"
+            "value" : "달러와 유로 동전"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "硬币"
+            "value" : "美元和欧元硬币"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "硬幣"
+            "value" : "美元和歐元硬幣"
           }
         }
       }
@@ -19177,6 +19177,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "美元"
+          }
+        }
+      }
+    },
+    "settings.appIcon.dollarPoundCoins" : {
+      "comment" : "VoiceOver name of the app icon that shows a dollar coin and a pound coin.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dollar- und Pfundmünzen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dollar and Pound Coins"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monedas de dólar y libra"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monedas de dólar y libra"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pièces en dollar et en livre"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ドルとポンドのコイン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "달러와 파운드 동전"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "美元和英镑硬币"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "美元和英鎊硬幣"
+          }
+        }
+      }
+    },
+    "settings.appIcon.dollarWonCoins" : {
+      "comment" : "VoiceOver name of the app icon that shows a dollar coin and a won coin.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dollar- und Wonmünzen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dollar and Won Coins"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monedas de dólar y won"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monedas de dólar y won"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pièces en dollar et en won"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ドルとウォンのコイン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "달러와 원 동전"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "美元和韩元硬币"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "美元和韓元硬幣"
+          }
+        }
+      }
+    },
+    "settings.appIcon.dollarYenCoins" : {
+      "comment" : "VoiceOver name of the app icon that shows a dollar coin and a yen or yuan coin. The same ¥ sign stands for both currencies, so each language names the same currencies as the Yen and Yuan icon.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dollar- und Yen- oder Yuanmünzen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dollar and Yen or Yuan Coins"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monedas de dólar y yen o yuan"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monedas de dólar y yen o yuan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pièces en dollar et en yen ou en yuan"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ドルと円のコイン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "달러와 엔 동전"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "美元和人民币硬币"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "美元和日圓硬幣"
           }
         }
       }
@@ -19481,6 +19661,66 @@
         }
       }
     },
+    "settings.appIcon.poundEuroCoins" : {
+      "comment" : "VoiceOver name of the app icon that shows a pound coin and a euro coin.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pfund- und Euromünzen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pound and Euro Coins"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monedas de libra y euro"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monedas de libra y euro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pièces en livre et en euro"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ポンドとユーロのコイン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "파운드와 유로 동전"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "英镑和欧元硬币"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "英鎊和歐元硬幣"
+          }
+        }
+      }
+    },
     "settings.appIcon.title" : {
       "comment" : "Navigation title of the app icon picker sheet.",
       "extractionState" : "manual",
@@ -19597,6 +19837,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "韓元"
+          }
+        }
+      }
+    },
+    "settings.appIcon.wonYenCoins" : {
+      "comment" : "VoiceOver name of the app icon that shows a won coin and a yen coin, for Korean travellers in Japan.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Won- und Yenmünzen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Won and Yen Coins"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monedas de won y yen"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monedas de won y yen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pièces en won et en yen"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ウォンと円のコイン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "원과 엔 동전"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "韩元和日元硬币"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "韓元和日圓硬幣"
           }
         }
       }
