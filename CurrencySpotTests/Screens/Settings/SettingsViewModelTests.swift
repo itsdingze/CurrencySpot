@@ -352,6 +352,17 @@ struct SettingsViewModelTests {
         #expect(viewModel.appIcon == expected)
     }
 
+    @Test("opening Settings shows the Home Screen icon that iOS hadn't reported yet at launch")
+    func openingSettingsRereadsHomeScreenIcon() async throws {
+        let appIcons = InMemoryAppIconService()
+        let viewModel = makeViewModel(appIcons: appIcons)
+        try await appIcons.setAlternateIconName("AppIconYen")
+
+        viewModel.screenAppeared()
+
+        #expect(viewModel.appIcon == .yen)
+    }
+
     @Test("choosing Coins puts the Coins icon on the Home Screen")
     func choosingCoinsSwitchesHomeScreenIcon() async {
         await viewModel.selectAppIcon(.coins)
