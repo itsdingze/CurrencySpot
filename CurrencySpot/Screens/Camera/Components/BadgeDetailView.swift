@@ -6,13 +6,13 @@ struct BadgeDetailView: View {
     let targetCurrency: CurrencyCode
     let openInConverter: () -> Void
     let hideConversion: () -> Void
-    var onFittedHeightChange: (CGFloat) -> Void = { _ in }
+    var fullHeightThreshold: CGFloat = .infinity
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            SheetFittingScrollView(fullHeightThreshold: fullHeightThreshold) {
                 VStack(spacing: 32) {
                     VStack(spacing: Spacing.tight) {
                         scannedText
@@ -50,13 +50,6 @@ struct BadgeDetailView: View {
                         .foregroundStyle(Color.secondary)
                     }
                 }
-                .padding()
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                geometry.contentSize.height + geometry.contentInsets.top
-            } action: { _, fittedHeight in
-                onFittedHeightChange(fittedHeight)
             }
             .navigationTitle(.cameraBadgeDetailTitle)
             .toolbarTitleDisplayMode(.inline)
@@ -118,7 +111,6 @@ struct BadgeDetailView: View {
                 openInConverter: {},
                 hideConversion: {}
             )
-            .presentationDetents([.fraction(0.4)])
         }
 }
 #endif

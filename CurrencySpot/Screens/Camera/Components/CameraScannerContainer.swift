@@ -9,7 +9,6 @@ struct CameraScannerContainer: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var scannerProxy = DataScannerProxy()
     @State private var containerHeight: CGFloat = 0
-    @State private var badgeDetailFittedHeight: CGFloat?
     @State private var suggestsFreezing = false
 
     private static let fittedSheetHeightLimit: CGFloat = 0.75
@@ -164,14 +163,7 @@ struct CameraScannerContainer: View {
             }
         case let .badgeDetail(snapshot):
             badgeDetail(for: snapshot)
-                .presentationDetents(badgeDetailDetents)
         }
-    }
-
-    private var badgeDetailDetents: Set<PresentationDetent> {
-        guard let badgeDetailFittedHeight else { return [.medium] }
-        guard badgeDetailFittedHeight <= containerHeight * Self.fittedSheetHeightLimit else { return [.large] }
-        return [.height(badgeDetailFittedHeight)]
     }
 
     private func badgeDetail(for snapshot: DetectedItem) -> some View {
@@ -181,7 +173,7 @@ struct CameraScannerContainer: View {
             targetCurrency: viewModel.targetCurrency,
             openInConverter: { viewModel.openInConverter(snapshot) },
             hideConversion: { viewModel.hideConversion(for: snapshot.id) },
-            onFittedHeightChange: { badgeDetailFittedHeight = $0 }
+            fullHeightThreshold: containerHeight * Self.fittedSheetHeightLimit
         )
     }
 }
