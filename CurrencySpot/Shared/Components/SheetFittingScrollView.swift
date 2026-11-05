@@ -1,12 +1,18 @@
 import SwiftUI
 
 struct SheetFittingScrollView<Content: View>: View {
+    private let paddedEdges: Edge.Set
     private let fullHeightThreshold: CGFloat
     private let content: Content
 
     @State private var fittedHeight: CGFloat?
 
-    init(fullHeightThreshold: CGFloat = .infinity, @ViewBuilder content: () -> Content) {
+    init(
+        padding paddedEdges: Edge.Set = .all,
+        fullHeightThreshold: CGFloat = .infinity,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.paddedEdges = paddedEdges
         self.fullHeightThreshold = fullHeightThreshold
         self.content = content()
     }
@@ -14,7 +20,7 @@ struct SheetFittingScrollView<Content: View>: View {
     var body: some View {
         ScrollView {
             content
-                .padding()
+                .padding(paddedEdges)
         }
         .scrollBounceBehavior(.basedOnSize)
         .onScrollGeometryChange(for: CGFloat.self) { geometry in
