@@ -337,6 +337,21 @@ struct SettingsViewModelTests {
         #expect(viewModel.appIcon == .coins)
     }
 
+    @Test(
+        "the App Icon row starts on the currency icon the Home Screen shows",
+        arguments: [
+            ("AppIconEuro", AppIconOption.euro),
+            ("AppIconYen", .yen),
+            ("AppIconPound", .pound),
+            ("AppIconWon", .won),
+        ]
+    )
+    func appIconStartsOnCurrencyIcon(alternateIconName: String, expected: AppIconOption) {
+        let viewModel = makeViewModel(appIcons: InMemoryAppIconService(alternateIconName: alternateIconName))
+
+        #expect(viewModel.appIcon == expected)
+    }
+
     @Test("choosing Coins puts the Coins icon on the Home Screen")
     func choosingCoinsSwitchesHomeScreenIcon() async {
         await viewModel.selectAppIcon(.coins)
