@@ -3,18 +3,9 @@ import Testing
 @testable import CurrencySpot
 
 struct PriceCorpusTests {
-    private let classifier = PriceClassifier()
-
     @Test(arguments: MainPriceCorpus.cases)
     func mainCorpusCaseMatchesItsLabel(_ corpusCase: PriceCorpusCase) throws {
         try expectLabel(of: corpusCase)
-    }
-
-    @Test(arguments: MainPriceCorpus.knownGaps)
-    func mainCorpusKnownGapStillMissesItsLabel(_ gap: PriceCorpusGap) {
-        withKnownIssue(Comment(rawValue: gap.reason)) {
-            try expectLabel(of: gap.corpusCase)
-        }
     }
 
     @Test(arguments: HeldOutPriceCorpus.cases)
@@ -30,6 +21,7 @@ struct PriceCorpusTests {
     }
 
     private func expectLabel(of corpusCase: PriceCorpusCase) throws {
+        let classifier = PriceClassifier(baseCurrency: corpusCase.base)
         let result = classifier.classify(corpusCase.text)
         switch corpusCase.label {
         case let .price(amount):

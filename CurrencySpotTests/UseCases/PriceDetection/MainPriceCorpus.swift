@@ -66,11 +66,13 @@ nonisolated enum MainPriceCorpus {
         .init("15 lei", .price("15"), group: "EU"),
         .init("₺49,90", .price("49.9"), group: "EU"),
         .init("49,90 TL", .price("49.9"), group: "EU"),
+        .init("49 TL", .price("49"), group: "EU", base: "TRY"),
         .init("4,50", .price("4.5"), group: "EU"),
         .init("Rp 25.000", .price("25000"), group: "SEA"),
         .init("Rp25.000", .price("25000"), group: "SEA"),
         .init("RM12.90", .price("12.9"), group: "SEA"),
         .init("RM 12.90", .price("12.9"), group: "SEA"),
+        .init("RM 12", .price("12"), group: "SEA", base: "MYR"),
         .init("₱150", .price("150"), group: "SEA"),
         .init("PHP 150", .price("150"), group: "SEA"),
         .init("₫50.000", .price("50000"), group: "SEA"),
@@ -182,16 +184,5 @@ nonisolated enum MainPriceCorpus {
         .init("ALL SIZES 8-12", .notPrice, group: "ISO"),
         .init("FUN 4 ALL", .notPrice, group: "ISO"),
         .init("MAD MAX 2", .notPrice, group: "ISO"),
-    ]
-
-    static let knownGaps: [PriceCorpusGap] = [
-        .init(
-            "49 TL", .price("49"), group: "EU",
-            reason: "TL marks a price only under base TRY"
-        ),
-        .init(
-            "RM 12", .price("12"), group: "SEA",
-            reason: "RM marks a price only under base MYR"
-        ),
     ]
 }

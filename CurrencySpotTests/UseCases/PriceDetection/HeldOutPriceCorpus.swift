@@ -36,6 +36,7 @@ nonisolated enum HeldOutPriceCorpus {
         .init("Pierogi ruskie 26 zł", .price("26"), group: "menu-europe"),
         .init("Pivo 0,5 l 62 Kč", .price("62"), group: "menu-europe"),
         .init("Çay ₺20", .price("20"), group: "menu-europe"),
+        .init("Adana Kebap 380 TL", .price("380"), group: "menu-europe", base: "TRY"),
         .init("Fish & Chips with mushy peas £14.95", .price("14.95"), group: "menu-europe"),
         .init("Борщ с пампушками 390 ₽", .price("390"), group: "menu-europe"),
         .init("Double Cheeseburger $11.49", .price("11.49"), group: "menu-americas"),
@@ -203,10 +204,6 @@ nonisolated enum HeldOutPriceCorpus {
         .init(
             "Kanelbulle 35:-", .price("35"), group: "menu-europe",
             reason: "The Swedish ':-' notation is not read"
-        ),
-        .init(
-            "Adana Kebap 380 TL", .price("380"), group: "menu-europe",
-            reason: "TL marks a price only under base TRY"
         ),
         .init(
             "Espresso £2\u{00B7}40", .price("2.40"), group: "menu-europe",
