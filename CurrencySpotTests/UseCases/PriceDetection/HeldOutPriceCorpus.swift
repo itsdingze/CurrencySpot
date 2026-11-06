@@ -62,6 +62,7 @@ nonisolated enum HeldOutPriceCorpus {
         .init("Nasi Campur 30", .bare, group: "menu-bare"),
         .init("Spaghetti alle vongole 16", .bare, group: "menu-bare"),
         .init("ランチセット 980", .bare, group: "menu-bare"),
+        .init("Bulgogi Jeongsik 15,000", .price("15000"), group: "menu-bare"),
         .init("냉면 9천원", .price("9000"), group: "shorthand"),
         .init("ノートPC 12.8万円", .price("128000"), group: "shorthand"),
         .init("Bánh mì thịt 25K", .price("25000"), group: "shorthand", base: "VND"),
@@ -208,21 +209,11 @@ nonisolated enum HeldOutPriceCorpus {
         .init("Katsu Curry ¥1, 200", .price("1200"), group: "ocr-glitch"),
         .init("Soup of the day 6,5 0 €", .price("6.50"), group: "ocr-glitch"),
         .init("¥1,480", .price("1480"), group: "fragment"),
+        .init("2,350", .price("2350"), group: "fragment"),
         .init("円", .notPrice, group: "fragment"),
         .init("€", .notPrice, group: "fragment"),
         .init("Udon", .notPrice, group: "fragment"),
         .init("Formule midi 14€90", .price("14.90"), group: "menu-europe"),
         .init("Le kilo 3€50", .price("3.50"), group: "shelf"),
-    ]
-
-    static let knownGaps: [PriceCorpusGap] = [
-        .init(
-            "Bulgogi Jeongsik 15,000", .bare, group: "menu-bare",
-            reason: "Label conflict: this set marks grouped numbers bare, bareGroupedNumberIsAPrice pins them as prices"
-        ),
-        .init(
-            "2,350", .bare, group: "fragment",
-            reason: "Label conflict: this set marks grouped numbers bare, bareGroupedNumberIsAPrice pins them as prices"
-        ),
     ]
 }

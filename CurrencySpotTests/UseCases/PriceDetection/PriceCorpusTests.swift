@@ -13,13 +13,6 @@ struct PriceCorpusTests {
         try expectLabel(of: corpusCase)
     }
 
-    @Test(arguments: HeldOutPriceCorpus.knownGaps)
-    func heldOutCorpusKnownGapStillMissesItsLabel(_ gap: PriceCorpusGap) {
-        withKnownIssue(Comment(rawValue: gap.reason)) {
-            try expectLabel(of: gap.corpusCase)
-        }
-    }
-
     private func expectLabel(of corpusCase: PriceCorpusCase) throws {
         let classifier = PriceClassifier(baseCurrency: corpusCase.base)
         let result = classifier.classify(corpusCase.text)

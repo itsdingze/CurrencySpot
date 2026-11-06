@@ -24,15 +24,3 @@ nonisolated struct PriceCorpusCase: Sendable, CustomTestStringConvertible {
 
     var testDescription: String { "[\(group)] \(text.debugDescription)" }
 }
-
-nonisolated struct PriceCorpusGap: Sendable, CustomTestStringConvertible {
-    let corpusCase: PriceCorpusCase
-    let reason: String
-
-    init(_ text: String, _ label: PriceCorpusCase.Label, group: String, reason: String) {
-        corpusCase = PriceCorpusCase(text, label, group: group)
-        self.reason = reason
-    }
-
-    var testDescription: String { corpusCase.testDescription }
-}
