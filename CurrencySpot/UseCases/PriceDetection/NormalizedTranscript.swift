@@ -22,7 +22,7 @@ struct NormalizedTranscript {
 
     init(_ transcript: String) {
         self.transcript = transcript
-        characters = Self.readingRaisedDotsAsDecimalPoints(transcript.map(Self.normalized))
+        characters = TranscriptOCRRepair.repaired(Self.readingRaisedDotsAsDecimalPoints(transcript.map(Self.normalized)))
         originalIndices = Array(transcript.indices) + [transcript.endIndex]
     }
 

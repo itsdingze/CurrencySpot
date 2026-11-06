@@ -25,7 +25,7 @@ struct TranscriptPriceReading {
             readsPerLitreFraction: BaseCurrencyNumberRules.readsPerLitreFraction(under: baseCurrency)
         )
         let tokens = SpacedGroupingMerger.merged(
-            readTokens,
+            OCRSplitNumberMerger.merged(readTokens, in: text, isMarked: binder.hasAdjacentUnambiguousMarker),
             in: text,
             isMarked: binder.hasAdjacentSpaceGroupingMarker
         )

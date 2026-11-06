@@ -12,11 +12,16 @@ struct CurrencyMarkerBinder {
     }
 
     func hasAdjacentSpaceGroupingMarker(_ span: Range<Int>) -> Bool {
-        markers.contains { marker in
-            guard marker.allowsSpacedGrouping else { return false }
-            return (span.upperBound <= marker.span.lowerBound && gap(fromNumber: span, toMarker: marker) != nil)
-                || (marker.span.upperBound <= span.lowerBound && gap(fromMarker: marker, toNumber: span) != nil)
-        }
+        markers.contains { $0.allowsSpacedGrouping && isAdjacent($0, to: span) }
+    }
+
+    func hasAdjacentUnambiguousMarker(_ span: Range<Int>) -> Bool {
+        markers.contains { !$0.needsMoneyShape && isAdjacent($0, to: span) }
+    }
+
+    private func isAdjacent(_ marker: CurrencyMarker, to span: Range<Int>) -> Bool {
+        (span.upperBound <= marker.span.lowerBound && gap(fromNumber: span, toMarker: marker) != nil)
+            || (marker.span.upperBound <= span.lowerBound && gap(fromMarker: marker, toNumber: span) != nil)
     }
 
     func bind(_ tokens: [NumberToken], canBind: (Int, CurrencyMarker) -> Bool) -> [Int: CurrencyMarker] {

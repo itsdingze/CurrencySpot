@@ -321,7 +321,7 @@ struct ScanConversionUseCaseTests {
     @Test func alternateReadingWithACurrencyGlyphRescuesAPrice() throws {
         let line = RecognizedTextItem(
             id: UUID(),
-            transcript: "S4.50",
+            transcript: "B4.50",
             quad: Quad(CGRect(x: 0, y: 0, width: 50, height: 10)),
             alternateTranscripts: ["$4.50"]
         )
@@ -330,14 +330,14 @@ struct ScanConversionUseCaseTests {
 
         #expect(detected.conversion.isPrice)
         #expect(detected.conversion.amount == Decimal(string: "4.5"))
-        #expect(detected.transcript == "S4.50")
+        #expect(detected.transcript == "B4.50")
     }
 
-    @Test(arguments: ["$4.80", "$4.50 off", "S$4.5"])
+    @Test(arguments: ["$4.80", "$4.50 off", "B$4.5"])
     func alternateReadingThatChangesMoreThanAGlyphIsIgnored(alternate: String) {
         let line = RecognizedTextItem(
             id: UUID(),
-            transcript: "S4.50",
+            transcript: "B4.50",
             quad: Quad(CGRect(x: 0, y: 0, width: 50, height: 10)),
             alternateTranscripts: [alternate]
         )

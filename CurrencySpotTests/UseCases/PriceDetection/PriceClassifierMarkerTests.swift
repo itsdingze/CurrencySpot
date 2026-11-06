@@ -43,7 +43,7 @@ struct PriceClassifierMarkerTests {
     }
 
     @Test func strayZeroBesideAMarkerIsNeverPriced() throws {
-        #expect(classifier.classify("Soup of the day 6,5 0 €") == (try .outline("6.5")))
+        #expect(classifier.classify("Soup of the day 6 0 €") == (try .outline("6")))
     }
 
     @Test(arguments: [

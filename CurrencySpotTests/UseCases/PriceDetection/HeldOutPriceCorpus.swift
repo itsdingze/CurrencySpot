@@ -199,6 +199,11 @@ nonisolated enum HeldOutPriceCorpus {
         .init("Hot dog \u{FF04}5.00", .price("5.00"), group: "ocr-glitch"),
         .init("C1osed Mon", .notPrice, group: "ocr-glitch"),
         .init("N0 Parking 8-18", .notPrice, group: "ocr-glitch"),
+        .init("Burger Deluxe S12.99", .price("12.99"), group: "ocr-glitch"),
+        .init("Combo B $1O.99", .price("10.99"), group: "ocr-glitch"),
+        .init("Salade niçoise 11,9O €", .price("11.90"), group: "ocr-glitch"),
+        .init("Katsu Curry ¥1, 200", .price("1200"), group: "ocr-glitch"),
+        .init("Soup of the day 6,5 0 €", .price("6.50"), group: "ocr-glitch"),
         .init("¥1,480", .price("1480"), group: "fragment"),
         .init("円", .notPrice, group: "fragment"),
         .init("€", .notPrice, group: "fragment"),
@@ -223,26 +228,6 @@ nonisolated enum HeldOutPriceCorpus {
         .init(
             "SAR 1.18 W/kg", .notPrice, group: "code-word",
             reason: "SAR stays an ordinary currency code outside the approved word-like set"
-        ),
-        .init(
-            "Burger Deluxe S12.99", .price("12.99"), group: "ocr-glitch",
-            reason: "OCR read the dollar sign as S"
-        ),
-        .init(
-            "Salade niçoise 11,9O €", .price("11.90"), group: "ocr-glitch",
-            reason: "OCR read 0 as O, so the euro sign no longer touches the number"
-        ),
-        .init(
-            "Katsu Curry ¥1, 200", .price("1200"), group: "ocr-glitch",
-            reason: "OCR put a space inside the grouping"
-        ),
-        .init(
-            "Soup of the day 6,5 0 €", .price("6.50"), group: "ocr-glitch",
-            reason: "OCR split the cents and the stray 0 is rejected as a zero amount"
-        ),
-        .init(
-            "Combo B $1O.99", .price("10.99"), group: "ocr-glitch",
-            reason: "OCR read 0 as O"
         ),
         .init(
             "2,350", .bare, group: "fragment",
