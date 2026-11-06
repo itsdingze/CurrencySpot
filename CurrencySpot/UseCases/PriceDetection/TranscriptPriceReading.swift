@@ -35,13 +35,18 @@ struct TranscriptPriceReading {
             let token = tokens[index]
             let shape = shapes[index]
             guard !noise.blocksBinding(token), shape.amount.map({ $0 != 0 }) ?? false else { return false }
+            if marker.doublesAsAcronym, marker.span.upperBound <= token.span.lowerBound,
+               shape.kind == .oneDecimal || (token.isYearShaped && noise.isFollowedByWord(token)) {
+                return false
+            }
             guard marker.needsMoneyShape else { return true }
             return (shape.isMoneyShaped || token.hasDashNotation) && !noise.opensARange(token)
         }
 
         for (index, token) in tokens.enumerated() {
             let range = text.originalRange(token.span)
-            if let marker = bindings[index] ?? markers.first(where: { token.span.contains($0.span.lowerBound) }) {
+            let markerInsideToken = noise.blocksBinding(token) ? nil : markers.first { token.span.contains($0.span.lowerBound) }
+            if let marker = bindings[index] ?? markerInsideToken {
                 let spanIncludingMarker = min(token.span.lowerBound, marker.span.lowerBound)
                     ..< max(token.span.upperBound, marker.span.upperBound)
                 recordMarked(

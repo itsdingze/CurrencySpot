@@ -29,6 +29,8 @@ enum CurrencyMarkerVocabulary {
         "MNT", "SCR",
     ]
 
+    static let acronymLikeISOCodes: Set<String> = ["PHP", "CNY", "SAR"]
+
     private static let isoCodes = Set(Locale.commonISOCurrencyCodes).union(["RMB"])
 
     private static let localWords: [String: LocalWord] = {

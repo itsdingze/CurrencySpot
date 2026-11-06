@@ -17,7 +17,7 @@ struct NumberNoiseRules {
     }
 
     func blocksBinding(_ token: NumberToken) -> Bool {
-        isTimeOrRatio(token.span)
+        isTimeOrRatio(token.span) || isFollowedByPowerDensityUnit(token.span)
     }
 
     func opensARange(_ token: NumberToken) -> Bool {
@@ -51,6 +51,11 @@ struct NumberNoiseRules {
     private func isTimeOrRatio(_ span: Range<Int>) -> Bool {
         (text.character(at: span.lowerBound - 1) == ":" && text.isDigit(span.lowerBound - 2))
             || (text.character(at: span.upperBound) == ":" && text.isDigit(span.upperBound + 1))
+    }
+
+    private func isFollowedByPowerDensityUnit(_ span: Range<Int>) -> Bool {
+        let unitStart = text.isSpace(span.upperBound) ? span.upperBound + 1 : span.upperBound
+        return MeasurementVocabulary.powerDensityUnits.contains { text.hasPrefix($0, at: unitStart) }
     }
 
     private func isGluedBefore(_ start: Int) -> Bool {

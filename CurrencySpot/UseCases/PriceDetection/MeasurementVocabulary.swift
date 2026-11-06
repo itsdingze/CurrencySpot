@@ -12,6 +12,8 @@ enum MeasurementVocabulary {
         "pcs", "pc", "pt", "pts", "x", "stk", "tbsp", "tsp",
     ]
 
+    static let powerDensityUnits = ["W/kg", "W/Kg"]
+
     static let countNouns: Set<String> = [
         "reviews", "review", "ratings", "rating", "votes", "sold", "views", "likes", "followers",
         "comments", "people", "persons", "guests", "seats", "members", "users", "steps",

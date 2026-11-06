@@ -184,6 +184,9 @@ nonisolated enum HeldOutPriceCorpus {
         .init("MOP & BUCKET SET 2 PCS", .notPrice, group: "code-word"),
         .init("CAD Lab Room 204", .notPrice, group: "code-word"),
         .init("EUR-Palette 1200 x 800 mm", .notPrice, group: "code-word"),
+        .init("PHP 8.3 Workshop Room 2", .notPrice, group: "code-word"),
+        .init("CNY 2026 Sale", .notPrice, group: "code-word"),
+        .init("SAR 1.18 W/kg", .notPrice, group: "code-word"),
         .init("28.10.2026", .notPrice, group: "misc"),
         .init("2026年11月1日", .notPrice, group: "misc"),
         .init("Best before 15.03.2027", .notPrice, group: "misc"),
@@ -216,18 +219,6 @@ nonisolated enum HeldOutPriceCorpus {
         .init(
             "Bulgogi Jeongsik 15,000", .bare, group: "menu-bare",
             reason: "Label conflict: this set marks grouped numbers bare, bareGroupedNumberIsAPrice pins them as prices"
-        ),
-        .init(
-            "PHP 8.3 Workshop Room 2", .notPrice, group: "code-word",
-            reason: "PHP stays an ordinary currency code outside the approved word-like set"
-        ),
-        .init(
-            "CNY 2026 Sale", .notPrice, group: "code-word",
-            reason: "CNY stays an ordinary currency code outside the approved word-like set"
-        ),
-        .init(
-            "SAR 1.18 W/kg", .notPrice, group: "code-word",
-            reason: "SAR stays an ordinary currency code outside the approved word-like set"
         ),
         .init(
             "2,350", .bare, group: "fragment",
