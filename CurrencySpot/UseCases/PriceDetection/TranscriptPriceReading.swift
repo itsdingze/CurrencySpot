@@ -18,8 +18,13 @@ struct TranscriptPriceReading {
         let fractionDigits = CurrencyFractionDigits.count(for: baseCurrency)
         let markers = CurrencyMarkerScanner.markers(in: text, baseCurrency: baseCurrency)
         let binder = CurrencyMarkerBinder(text: text, markers: markers)
+        let readTokens = NumberTokenizer.tokens(
+            in: text,
+            fractionDigits: fractionDigits,
+            readsThousandsShorthand: BaseCurrencyNumberRules.readsThousandsShorthand(under: baseCurrency)
+        )
         let tokens = SpacedGroupingMerger.merged(
-            NumberTokenizer.tokens(in: text, fractionDigits: fractionDigits),
+            readTokens,
             in: text,
             isMarked: binder.hasAdjacentSpaceGroupingMarker
         )
@@ -49,7 +54,7 @@ struct TranscriptPriceReading {
                     token,
                     shape: shapes[index],
                     range: range,
-                    isDashPrice: token.hasDashNotation && !noise.isFollowedByWord(token)
+                    isWholePrice: (token.hasDashNotation || token.isThousandsShorthand) && !noise.isFollowedByWord(token)
                 )
             }
         }
@@ -75,14 +80,14 @@ struct TranscriptPriceReading {
         _ token: NumberToken,
         shape: NumberShape,
         range: Range<String.Index>,
-        isDashPrice: Bool
+        isWholePrice: Bool
     ) {
         guard let amount = shape.amount else { return }
         let price = PriceCandidate(amount: amount, isPrice: true, range: range, rangeIncludingMarker: range)
         let outline = PriceCandidate(amount: amount, isPrice: false, range: range, rangeIncludingMarker: range)
         let isLong = shape.integerDigitCount >= Self.longIntegerDigitCount
 
-        if isDashPrice {
+        if isWholePrice {
             unmarkedPrices.append(price)
             unmarkedPricesWithCents.append(price)
             return

@@ -114,6 +114,36 @@ struct PriceClassifierNumberFormatTests {
     }
 
     @Test(arguments: [
+        ("25K", "VND", "25000"), ("25k", "VND", "25000"), ("1.5K", "VND", "1500"), ("18rb", "IDR", "18000"),
+        ("8K", "IDR", "8000"), ("Rp 18rb", "IDR", "18000"),
+    ])
+    func thousandsShorthandIsAPriceUnderItsBaseCurrency(
+        transcript: String,
+        base: CurrencyCode,
+        amount: String
+    ) throws {
+        let classifier = PriceClassifier(baseCurrency: base)
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test(arguments: [("25K", "USD"), ("8K", "EUR"), ("18rb", "JPY"), ("8Kg", "IDR"), ("25kW", "VND")])
+    func thousandsShorthandMeansNothingUnderAnotherBaseOrInsideAWord(transcript: String, base: CurrencyCode) {
+        #expect(PriceClassifier(baseCurrency: base).classify(transcript) == nil)
+    }
+
+    @Test func thousandsShorthandBeforeAWordIsAnOutline() throws {
+        let classifier = PriceClassifier(baseCurrency: "IDR")
+        #expect(classifier.classify("8K UHD") == (try .outline("8000")))
+    }
+
+    @Test func markedPriceReplacesThousandsShorthandOnItsLine() throws {
+        let classifier = PriceClassifier(baseCurrency: "VND")
+        let amounts = classifier.candidates(in: "Smart TV 4K 12.990.000đ").map(\.amount)
+
+        #expect(amounts == [12_990_000])
+    }
+
+    @Test(arguments: [
         ("KD 1.250", "KWD", "1.25"), ("1.250 KWD", "KWD", "1.25"), ("4.750", "KWD", "4.75"),
         ("BD 0.500", "BHD", "0.5"), ("OMR 2.500", "OMR", "2.5"), ("JOD 3.750", "JOD", "3.75"),
         ("TND 1.200", "TND", "1.2"), ("LYD 5.500", "LYD", "5.5"),

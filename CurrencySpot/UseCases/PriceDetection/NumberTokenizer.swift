@@ -6,6 +6,7 @@ struct NumberToken {
     var separators: [Character]
     var hasDashNotation = false
     var multipliedAmount: Decimal?
+    var isThousandsShorthand = false
 
     var isYearShaped: Bool {
         guard separators.isEmpty, !hasDashNotation, multipliedAmount == nil, let digits = groups.first,
@@ -24,7 +25,13 @@ enum NumberTokenizer {
         "億": 100_000_000, "亿": 100_000_000, "억": 100_000_000,
     ]
 
-    static func tokens(in text: NormalizedTranscript, fractionDigits: Int) -> [NumberToken] {
+    private static let thousandsShorthandWords: Set<String> = ["K", "k", "rb"]
+
+    static func tokens(
+        in text: NormalizedTranscript,
+        fractionDigits: Int,
+        readsThousandsShorthand: Bool
+    ) -> [NumberToken] {
         var tokens: [NumberToken] = []
         var offset = 0
         while offset < text.count {
@@ -32,7 +39,11 @@ enum NumberTokenizer {
                 offset += 1
                 continue
             }
-            let token = decorated(plainToken(at: offset, in: text), in: text, fractionDigits: fractionDigits)
+            let plain = plainToken(at: offset, in: text)
+            let shorthand = readsThousandsShorthand
+                ? thousandsShorthand(following: plain, in: text, fractionDigits: fractionDigits)
+                : nil
+            let token = shorthand ?? decorated(plain, in: text, fractionDigits: fractionDigits)
             tokens.append(token)
             offset = token.span.upperBound
         }
@@ -61,6 +72,24 @@ enum NumberTokenizer {
     private static func hasEuroCents(at offset: Int, in text: NormalizedTranscript) -> Bool {
         text.character(at: offset) == CurrencyMarkerVocabulary.euroSign
             && text.isDigit(offset + 1) && text.isDigit(offset + 2) && !text.isDigit(offset + 3)
+    }
+
+    private static func thousandsShorthand(
+        following token: NumberToken,
+        in text: NormalizedTranscript,
+        fractionDigits: Int
+    ) -> NumberToken? {
+        let word = text.word(startingAt: token.span.upperBound, where: \.isLetter)
+        guard thousandsShorthandWords.contains(word),
+              let amount = NumberShape(token, fractionDigits: fractionDigits).amount
+        else { return nil }
+        return NumberToken(
+            span: token.span.lowerBound..<token.span.upperBound + word.count,
+            groups: [],
+            separators: [],
+            multipliedAmount: amount * 1_000,
+            isThousandsShorthand: true
+        )
     }
 
     private static func decorated(

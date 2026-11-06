@@ -64,6 +64,9 @@ nonisolated enum HeldOutPriceCorpus {
         .init("ランチセット 980", .bare, group: "menu-bare"),
         .init("냉면 9천원", .price("9000"), group: "shorthand"),
         .init("ノートPC 12.8万円", .price("128000"), group: "shorthand"),
+        .init("Bánh mì thịt 25K", .price("25000"), group: "shorthand", base: "VND"),
+        .init("Es Teh Manis 8K", .price("8000"), group: "shorthand", base: "IDR"),
+        .init("Mie Ayam Bakso 18rb", .price("18000"), group: "shorthand", base: "IDR"),
         .init("Bananen lose 1,79 €/kg", .price("1.79"), group: "shelf"),
         .init("Grundpreis: 100 g = 0,89 €", .price("0.89"), group: "shelf"),
         .init("Tomates grappe 3,49 € le kg", .price("3.49"), group: "shelf"),
@@ -206,18 +209,6 @@ nonisolated enum HeldOutPriceCorpus {
         .init(
             "Bulgogi Jeongsik 15,000", .bare, group: "menu-bare",
             reason: "Label conflict: this set marks grouped numbers bare, bareGroupedNumberIsAPrice pins them as prices"
-        ),
-        .init(
-            "Bánh mì thịt 25K", .price("25000"), group: "shorthand",
-            reason: "K and rb thousand shorthand is not read"
-        ),
-        .init(
-            "Es Teh Manis 8K", .price("8000"), group: "shorthand",
-            reason: "K and rb thousand shorthand is not read"
-        ),
-        .init(
-            "Mie Ayam Bakso 18rb", .price("18000"), group: "shorthand",
-            reason: "K and rb thousand shorthand is not read"
         ),
         .init(
             "Diesel 1,659 €/l", .price("1.659"), group: "fuel",
