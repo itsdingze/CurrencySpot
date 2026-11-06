@@ -36,6 +36,7 @@ struct NumberShape {
         case 0: integerGroups.count > 1 ? .grouped : .integer
         case 1: .oneDecimal
         case 2, fractionDigits: .money
+        case 3 where token.hasFuelFraction: .money
         default: .otherDecimal
         }
         self.init(
@@ -63,7 +64,7 @@ struct NumberShape {
         guard punctuation.count == 1, let fraction = token.groups.last else { return nil }
         switch fraction.count {
         case 1...2: return lastIndex
-        case 3 where token.groups.first == "0": return lastIndex
+        case 3 where token.groups.first == "0" || token.hasFuelFraction: return lastIndex
         case 3 where fractionDigits == 3 && last == ".": return lastIndex
         default: return nil
         }

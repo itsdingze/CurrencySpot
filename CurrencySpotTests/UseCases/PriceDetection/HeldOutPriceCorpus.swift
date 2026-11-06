@@ -133,6 +133,8 @@ nonisolated enum HeldOutPriceCorpus {
         .init("Max stay 2 hours", .notPrice, group: "parking"),
         .init("Free after 6pm", .notPrice, group: "parking"),
         .init("Level B2 Spaces 1-120", .notPrice, group: "parking"),
+        .init("Diesel 1,659 €/l", .price("1.659"), group: "fuel", base: "EUR"),
+        .init("UNLEADED 3.29 9/10", .price("3.299"), group: "fuel"),
         .init("Akku 4.410 mAh", .notPrice, group: "spec"),
         .init("Display 6.1\" Super Retina XDR", .notPrice, group: "spec"),
         .init("Wi-Fi 6E 802.11ax", .notPrice, group: "spec"),
@@ -209,14 +211,6 @@ nonisolated enum HeldOutPriceCorpus {
         .init(
             "Bulgogi Jeongsik 15,000", .bare, group: "menu-bare",
             reason: "Label conflict: this set marks grouped numbers bare, bareGroupedNumberIsAPrice pins them as prices"
-        ),
-        .init(
-            "Diesel 1,659 €/l", .price("1.659"), group: "fuel",
-            reason: "A three-digit fuel price under a two-digit base reads as grouping"
-        ),
-        .init(
-            "UNLEADED 3.29 9/10", .price("3.299"), group: "fuel",
-            reason: "A fuel price with a 9/10 cent suffix is not read"
         ),
         .init(
             "PHP 8.3 Workshop Room 2", .notPrice, group: "code-word",

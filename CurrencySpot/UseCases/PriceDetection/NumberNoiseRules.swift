@@ -37,7 +37,7 @@ struct NumberNoiseRules {
             || hasMarkAfter(token.span.upperBound)
             || hasSpacedUnitWord(after: token.span.upperBound, shape: shape)
             || hasCounter(after: token.span.upperBound)
-            || dateOrPhoneSpans.contains { $0.overlaps(token.span) }
+            || (!token.hasFuelFraction && dateOrPhoneSpans.contains { $0.overlaps(token.span) })
             || (Self.isClockShaped(token) && usesDotTimes)
     }
 

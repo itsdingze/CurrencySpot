@@ -21,7 +21,8 @@ struct TranscriptPriceReading {
         let readTokens = NumberTokenizer.tokens(
             in: text,
             fractionDigits: fractionDigits,
-            readsThousandsShorthand: BaseCurrencyNumberRules.readsThousandsShorthand(under: baseCurrency)
+            readsThousandsShorthand: BaseCurrencyNumberRules.readsThousandsShorthand(under: baseCurrency),
+            readsPerLitreFraction: BaseCurrencyNumberRules.readsPerLitreFraction(under: baseCurrency)
         )
         let tokens = SpacedGroupingMerger.merged(
             readTokens,

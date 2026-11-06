@@ -114,6 +114,62 @@ struct PriceClassifierNumberFormatTests {
     }
 
     @Test(arguments: [
+        ("1,659 €/l", "EUR", "1.659"), ("1.729€/L", "EUR", "1.729"), ("€1,659/l", "EUR", "1.659"),
+        ("1.659/l", "EUR", "1.659"), ("CHF 1.899/l", "CHF", "1.899"), ("$1.659/L", "CAD", "1.659"),
+        ("1.659 € /l", "EUR", "1.659"), ("1,659 € / l", "EUR", "1.659"), ("1,659 €/ L", "EUR", "1.659"),
+    ])
+    func threeDigitsBeforeAPerLitreSuffixAreAFractionWhereFuelCostsSingleDigits(
+        transcript: String,
+        base: CurrencyCode,
+        amount: String
+    ) throws {
+        let classifier = PriceClassifier(baseCurrency: base)
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test(arguments: [
+        ("Rp 10.000/L", "IDR", "10000"), ("10.000/L", "IDR", "10000"), ("₫45.000/l", "VND", "45000"),
+        ("1,659원/L", "KRW", "1659"), ("$1.259/L", "CLP", "1259"), ("$1.259/l", "ARS", "1259"),
+    ])
+    func threeDigitsBeforeAPerLitreSuffixGroupThousandsWhereFuelCostsThousands(
+        transcript: String,
+        base: CurrencyCode,
+        amount: String
+    ) throws {
+        let classifier = PriceClassifier(baseCurrency: base)
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test(arguments: [
+        ("1,659 €/kg", "EUR", "1659"), ("1,659 €", "EUR", "1659"), ("10.000 €/l", "EUR", "10000"),
+        ("CHF 1'659/l", "CHF", "1659"),
+    ])
+    func threeDigitsBeforeAnyOtherSuffixGroupThousands(
+        transcript: String,
+        base: CurrencyCode,
+        amount: String
+    ) throws {
+        let classifier = PriceClassifier(baseCurrency: base)
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test(arguments: [("3.29 9/10", "3.299"), ("$3.29 9/10", "3.299")])
+    func nineTenthsAfterAPriceAddsToItsCents(transcript: String, amount: String) throws {
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test func everyNineTenthsPriceOnALineIsRead() throws {
+        let amounts = classifier.candidates(in: "Regular 3.29 9/10 Diesel 3.89 9/10").map(\.amount)
+
+        #expect(amounts == [try #require(Decimal(string: "3.299")), try #require(Decimal(string: "3.899"))])
+    }
+
+    @Test(arguments: ["$3.29 8/10", "$3.29 9/100", "$3,29 9/10"])
+    func otherFractionsAfterAPriceAreNotPartOfIt(transcript: String) throws {
+        #expect(classifier.classify(transcript) == (try .price("3.29")))
+    }
+
+    @Test(arguments: [
         ("25K", "VND", "25000"), ("25k", "VND", "25000"), ("1.5K", "VND", "1500"), ("18rb", "IDR", "18000"),
         ("8K", "IDR", "8000"), ("Rp 18rb", "IDR", "18000"),
     ])
