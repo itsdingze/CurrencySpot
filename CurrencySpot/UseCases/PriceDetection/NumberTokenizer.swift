@@ -17,7 +17,7 @@ struct NumberToken {
 
 enum NumberTokenizer {
     private static let groupSeparators: Set<Character> = [".", ",", "'"]
-    private static let dashNotationLeads: Set<Character> = [".", ",", "/"]
+    private static let dashNotationLeads: Set<Character> = [".", ",", "/", ":"]
     private static let multipliers: [Character: Decimal] = [
         "万": 10_000, "萬": 10_000, "만": 10_000,
         "千": 1_000, "천": 1_000,

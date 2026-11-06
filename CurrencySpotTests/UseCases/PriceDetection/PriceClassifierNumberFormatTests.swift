@@ -19,6 +19,19 @@ struct PriceClassifierNumberFormatTests {
         #expect(classifier.classify(transcript) == (try .price(amount)))
     }
 
+    @Test(arguments: [("£2\u{00B7}40", "2.40"), ("Fish £12\u{00B7}50", "12.50"), ("Espresso £2\u{2022}40", "2.40")])
+    func raisedDotBetweenDigitsIsADecimalPoint(transcript: String, amount: String) throws {
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test func middleDotAfterAWordStaysASeparator() throws {
+        #expect(classifier.classify("Kaffee\u{00B7}3,50") == (try .price("3.50")))
+    }
+
+    @Test func middleDotBeforeThreeDigitsIsNotADecimalPoint() throws {
+        #expect(classifier.classify("5\u{00B7}000") == (try .outline("5")))
+    }
+
     @Test(arguments: [("Pint 4.5", "4.5"), ("iOS 17.2", "17.2")])
     func unmarkedOneDecimalNumberIsAnOutline(transcript: String, amount: String) throws {
         #expect(classifier.classify(transcript) == (try .outline(amount)))
@@ -62,13 +75,13 @@ struct PriceClassifierNumberFormatTests {
 
     @Test(arguments: [
         ("12,-", "12"), ("12.-", "12"), ("120.-", "120"), ("12,\u{2013} €", "12"), ("1 200,- Kč", "1200"),
-        ("Rs 250/-", "250"), ("250/-", "250"), ("ข้าวมันไก่ 50.-", "50"),
+        ("Rs 250/-", "250"), ("250/-", "250"), ("ข้าวมันไก่ 50.-", "50"), ("35:-", "35"), ("35:- kr", "35"),
     ])
     func dashAfterTheDigitsMarksAWholePrice(transcript: String, amount: String) throws {
         #expect(classifier.classify(transcript) == (try .price(amount)))
     }
 
-    @Test(arguments: ["12.-15. Juni", "12.\u{2013}15. Juni", "1.-3. Klasse"])
+    @Test(arguments: ["12.-15. Juni", "12.\u{2013}15. Juni", "1.-3. Klasse", "10:-15 Uhr"])
     func dashFollowedByADigitIsARangeNotAPrice(transcript: String) {
         #expect(classifier.classify(transcript)?.isPrice != true)
     }

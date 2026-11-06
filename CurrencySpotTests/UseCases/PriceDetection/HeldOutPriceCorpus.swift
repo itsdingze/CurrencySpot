@@ -37,6 +37,8 @@ nonisolated enum HeldOutPriceCorpus {
         .init("Pivo 0,5 l 62 Kč", .price("62"), group: "menu-europe"),
         .init("Çay ₺20", .price("20"), group: "menu-europe"),
         .init("Adana Kebap 380 TL", .price("380"), group: "menu-europe", base: "TRY"),
+        .init("Kanelbulle 35:-", .price("35"), group: "menu-europe"),
+        .init("Espresso £2\u{00B7}40", .price("2.40"), group: "menu-europe"),
         .init("Fish & Chips with mushy peas £14.95", .price("14.95"), group: "menu-europe"),
         .init("Борщ с пампушками 390 ₽", .price("390"), group: "menu-europe"),
         .init("Double Cheeseburger $11.49", .price("11.49"), group: "menu-americas"),
@@ -201,14 +203,6 @@ nonisolated enum HeldOutPriceCorpus {
     ]
 
     static let knownGaps: [PriceCorpusGap] = [
-        .init(
-            "Kanelbulle 35:-", .price("35"), group: "menu-europe",
-            reason: "The Swedish ':-' notation is not read"
-        ),
-        .init(
-            "Espresso £2\u{00B7}40", .price("2.40"), group: "menu-europe",
-            reason: "A middle dot used as the decimal separator is not read"
-        ),
         .init(
             "Bulgogi Jeongsik 15,000", .bare, group: "menu-bare",
             reason: "Label conflict: this set marks grouped numbers bare, bareGroupedNumberIsAPrice pins them as prices"
