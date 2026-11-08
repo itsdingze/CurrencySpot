@@ -8,7 +8,6 @@ struct TorchButton: View {
     @State private var holdTimer: Task<Void, Never>?
     @State private var buzzes = 0
     @State private var size = CGSize.zero
-    @GestureState private var isTouching = false
 
     private static let heldScale: CGFloat = 1.15
 
@@ -20,18 +19,20 @@ struct TorchButton: View {
         .foregroundStyle(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.primary))
         .animation(press.isHeld ? .linear(duration: HoldToToggle.holdDuration) : .appQuickFade, value: press.isHeld)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-        .gesture(hold)
-        .onChange(of: isTouching) { _, isTouching in
-            if !isTouching { Task { abandonUnfinishedPress() } }
+        .overlay {
+            ImmediatePressArea(
+                largeContentTitle: String(localized: .cameraFlashlight),
+                largeContentSymbol: symbol,
+                onChange: touch,
+                onEnd: release,
+                onCancel: abandonUnfinishedPress
+            )
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: buzzes)
         .accessibilityRepresentation {
             Toggle(isOn: isOnBinding) {
                 Text(.cameraFlashlight)
             }
-        }
-        .accessibilityShowsLargeContentViewer {
-            Label(.cameraFlashlight, systemImage: symbol)
         }
     }
 
@@ -44,18 +45,15 @@ struct TorchButton: View {
         isOn ? "flashlight.on.fill" : "flashlight.off.fill"
     }
 
-    private var hold: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .updating($isTouching) { _, isTouching, _ in isTouching = true }
-            .onChanged { value in
-                let isNewPress = press.phase == .idle
-                press.touch(at: value.location, in: heldBounds)
-                if isNewPress { startHoldTimer() }
-            }
-            .onEnded { _ in
-                holdTimer?.cancel()
-                if press.release() { toggle() }
-            }
+    private func touch(at location: CGPoint) {
+        let isNewPress = press.phase == .idle
+        press.touch(at: location, in: heldBounds)
+        if isNewPress { startHoldTimer() }
+    }
+
+    private func release() {
+        holdTimer?.cancel()
+        if press.release() { toggle() }
     }
 
     private func startHoldTimer() {
