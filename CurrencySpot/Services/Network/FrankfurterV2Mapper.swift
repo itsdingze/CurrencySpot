@@ -2,24 +2,30 @@ import Foundation
 
 nonisolated enum FrankfurterV2Mapper {
     static func latest(from entries: [FrankfurterV2Rate], base: String) throws -> ExchangeRatesResponse {
-        guard !entries.isEmpty else {
+        let currencies = currencyEntries(entries)
+        guard !currencies.isEmpty else {
             throw AppError.dataValidationError("Rate response contained no entries")
         }
-        try validate(entries)
-        let rates = Dictionary(entries.map { ($0.quote, $0.rate) }, uniquingKeysWith: { _, latest in latest })
-        let date = entries.map(\.date).max() ?? ""
+        try validate(currencies)
+        let rates = Dictionary(currencies.map { ($0.quote, $0.rate) }, uniquingKeysWith: { _, latest in latest })
+        let date = currencies.map(\.date).max() ?? ""
         return ExchangeRatesResponse(base: base, date: date, rates: rates)
     }
 
+    private static func currencyEntries(_ entries: [FrankfurterV2Rate]) -> [FrankfurterV2Rate] {
+        entries.filter { CurrencyCode($0.quote) != nil }
+    }
+
     static func historical(from entries: [FrankfurterV2Rate], base: String, startingOn firstDay: String) throws -> HistoricalRatesResponse {
-        try validate(entries)
+        let currencies = currencyEntries(entries)
+        try validate(currencies)
         var grouped: [String: [String: Double]] = [:]
-        for entry in entries {
+        for entry in currencies {
             grouped[entry.date, default: [:]][entry.quote] = entry.rate
         }
 
         let sortedDates = grouped.keys.sorted()
-        let allCurrencies = Set(entries.map(\.quote))
+        let allCurrencies = Set(currencies.map(\.quote))
         var lastKnown: [String: Double] = [:]
         var rates: [String: [String: Double]] = [:]
 
@@ -48,7 +54,6 @@ nonisolated enum FrankfurterV2Mapper {
     private static func validate(_ entries: [FrankfurterV2Rate]) throws {
         var validDates = Set<String>()
         for entry in entries {
-            _ = try CurrencyCode(validating: entry.quote)
             guard entry.rate.isFinite, entry.rate > 0 else {
                 throw AppError.dataValidationError("Invalid rate \(entry.rate) for \(entry.quote)")
             }
