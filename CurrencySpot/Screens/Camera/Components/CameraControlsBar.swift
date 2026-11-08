@@ -10,17 +10,19 @@ struct CameraControlsBar: View {
     private let freezeFrameTip = FreezeFrameTip()
 
     var body: some View {
-        AdaptiveGlassContainer {
-            ZStack {
-                shutterButton
-                HStack {
+        ZStack {
+            AdaptiveGlassContainer {
+                ZStack {
+                    shutterButton
                     photoImportButton
-                    Spacer()
-                    if viewModel.frozenImage == nil {
-                        TorchButton(isOn: viewModel.isTorchOn, toggle: viewModel.toggleTorch)
-                    }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 32)
                 }
-                .padding(.horizontal, 32)
+            }
+            if viewModel.frozenImage == nil {
+                TorchButton(isOn: viewModel.isTorchOn, toggle: viewModel.toggleTorch)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.horizontal, 32)
             }
         }
         .onChange(of: pickedPhoto) { _, item in
