@@ -61,6 +61,7 @@ private struct AppIconSelectionSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var centeredIcon: AppIconOption?
+    @State private var isConfirmed = false
 
     init(selectedIcon: AppIconOption, onSelect: @escaping (AppIconOption) -> Void) {
         self.selectedIcon = selectedIcon
@@ -83,7 +84,7 @@ private struct AppIconSelectionSheet: View {
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(.settingsAppIconDone) { dismiss() }
+                    Button(.settingsAppIconDone, action: confirm)
                 }
             }
         }
@@ -91,10 +92,14 @@ private struct AppIconSelectionSheet: View {
 
     // MARK: - Private Methods
 
+    private func confirm() {
+        isConfirmed = true
+        dismiss()
+    }
+
     private func commitSelection() {
-        if let centeredIcon, centeredIcon != selectedIcon {
-            onSelect(centeredIcon)
-        }
+        guard isConfirmed, let centeredIcon, centeredIcon != selectedIcon else { return }
+        onSelect(centeredIcon)
     }
 }
 

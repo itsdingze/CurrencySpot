@@ -57,6 +57,7 @@ private struct ColorCustomizationSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var displaySelection: AccentColorOption?
+    @State private var isConfirmed = false
 
     private let gridColumns = Array(repeating: GridItem(.flexible()), count: 4)
     private let gridSpacing: CGFloat = 24
@@ -65,11 +66,7 @@ private struct ColorCustomizationSheet: View {
 
     var body: some View {
         sheetContent
-            .onDisappear {
-                if let displaySelection, displaySelection != selectedColor {
-                    selectedColor = displaySelection
-                }
-            }
+            .onDisappear(perform: commitSelection)
     }
 
     @ViewBuilder
@@ -84,7 +81,7 @@ private struct ColorCustomizationSheet: View {
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(.settingsAccentColorDone) { dismiss() }
+                    Button(.settingsAccentColorDone, action: confirm)
                 }
             }
         }
@@ -128,6 +125,16 @@ private struct ColorCustomizationSheet: View {
 
     private func selectColor(_ colorOption: AccentColorOption) {
         displaySelection = colorOption
+    }
+
+    private func confirm() {
+        isConfirmed = true
+        dismiss()
+    }
+
+    private func commitSelection() {
+        guard isConfirmed, let displaySelection, displaySelection != selectedColor else { return }
+        selectedColor = displaySelection
     }
 }
 
