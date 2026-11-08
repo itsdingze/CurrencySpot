@@ -61,6 +61,7 @@ struct CameraScannerContainer: View {
                         )
                     }
                     CameraControlsBar(capturePhoto: { try await liveCamera.capturePhoto() })
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 }
                 .padding(.bottom, Spacing.screenInset)
             }

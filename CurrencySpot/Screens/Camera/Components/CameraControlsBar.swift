@@ -7,6 +7,9 @@ struct CameraControlsBar: View {
 
     @Environment(CameraViewModel.self) private var viewModel
     @State private var pickedPhoto: PhotosPickerItem?
+    @ScaledMetric(relativeTo: .headline) private var shutterDiameter: CGFloat = 64
+    @ScaledMetric(relativeTo: .headline) private var shutterFaceDiameter: CGFloat = 56
+    @ScaledMetric(relativeTo: .headline) private var shutterRingWidth: CGFloat = 3
     private let freezeFrameTip = FreezeFrameTip()
 
     var body: some View {
@@ -46,9 +49,9 @@ struct CameraControlsBar: View {
     private var shutterButton: some View {
         Button(action: shutterTapped) {
             shutterContent
-                .frame(width: 64, height: 64)
+                .frame(width: shutterDiameter, height: shutterDiameter)
                 .adaptiveGlassBackground(in: .circle, isInteractive: true) {
-                    Circle().stroke(.white, lineWidth: 3)
+                    Circle().stroke(.white, lineWidth: shutterRingWidth)
                 }
         }
         .accessibilityLabel(shutterLabel)
@@ -70,7 +73,7 @@ struct CameraControlsBar: View {
         if viewModel.frozenImage == nil {
             Circle()
                 .fill(.white)
-                .frame(width: 56, height: 56)
+                .frame(width: shutterFaceDiameter, height: shutterFaceDiameter)
                 .scaleEffect(viewModel.isCapturing ? 0.8 : 1)
                 .opacity(viewModel.isCapturing ? 0.6 : 1)
                 .animation(.appQuickFade, value: viewModel.isCapturing)
