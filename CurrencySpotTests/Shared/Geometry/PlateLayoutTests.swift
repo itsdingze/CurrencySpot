@@ -158,6 +158,21 @@ struct PlateLayoutTests {
         #expect(squeezed.visibleBounds.maxX <= 142.51)
     }
 
+    @Test func liveZoomResizesThePlateAtOnce() throws {
+        var memory = PlateLayoutMemory(tracksFrames: true)
+        let layout = plateLayout
+        let id = UUID()
+        func plate(_ token: CGRect) -> PlateLayout.Plate? {
+            layout.layout([price(token, id: id)], text: { _ in "€6.50" }, memory: &memory).plates.first
+        }
+
+        let before = try #require(plate(CGRect(x: 100, y: 100, width: 80, height: 20)))
+        let zoomed = try #require(plate(CGRect(x: 60, y: 90, width: 160, height: 40)))
+
+        #expect(zoomed.size.width > before.size.width * 1.3)
+        #expect(zoomed.size.height > before.size.height * 1.3)
+    }
+
     @Test func livePageStaysLevelUntilItTiltsPastTwoDegrees() {
         var memory = PlateLayoutMemory(tracksFrames: true)
         let layout = plateLayout

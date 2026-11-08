@@ -507,18 +507,32 @@ struct CameraViewModelTests {
     }
 
     @Test(.timeLimit(.minutes(1)))
-    func aVanishedPlateLingersBrieflyThenClears() async {
+    func aVanishedPlateStaysHalfASecondThenClears() async {
         let clock = ManualClock()
         let viewModel = Self.makeViewModel(clock: clock)
         let id = UUID()
         Self.feed(viewModel, "¥1,200", id: id)
 
         viewModel.updateLiveRecognizedItems([])
+        await waitUntil { clock.pendingSleepCount == 1 }
+        clock.advance(by: .milliseconds(499))
+        for _ in 0..<10 { await Task.yield() }
 
         #expect(viewModel.detectedItems[id: id] != nil)
-        await waitUntil { clock.pendingSleepCount == 1 }
-        clock.advance(by: .seconds(1))
+        clock.advance(by: .milliseconds(1))
         await waitUntil { viewModel.detectedItems.isEmpty }
+    }
+
+    @Test func movingLiveLabelsMovesTheirPlates() {
+        let viewModel = Self.makeViewModel()
+        let id = UUID()
+        viewModel.updateLiveRecognizedItems([
+            RecognizedTextItem(id: id, transcript: "¥1,200", bounds: CGRect(x: 10, y: 20, width: 80, height: 20)),
+        ])
+
+        viewModel.moveLiveItems(by: CGAffineTransform(translationX: 30, y: -10))
+
+        #expect(viewModel.detectedItems[id: id]?.bounds == CGRect(x: 40, y: 10, width: 80, height: 20))
     }
 
     @Test(.timeLimit(.minutes(1)))

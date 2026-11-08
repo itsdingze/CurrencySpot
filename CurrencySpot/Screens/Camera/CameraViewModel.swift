@@ -76,7 +76,7 @@ final class CameraViewModel {
     @ObservationIgnored private var liveStabilizer = LiveDetectionStabilizer()
     private var liveFinding = Finding.nothing
     @ObservationIgnored private var findingDropTask: Task<Void, Never>?
-    private let lingerDuration = Duration.milliseconds(200)
+    private let lingerDuration = Duration.milliseconds(500)
     private let absenceGracePeriod = Duration.milliseconds(1200)
 
     private var freezeRequestID = 0
@@ -195,6 +195,19 @@ final class CameraViewModel {
         guard frozenImage == nil else { return }
         recognizedItems = items
         recordLiveFrame()
+    }
+
+    func moveLiveItems(by transform: CGAffineTransform) {
+        guard frozenImage == nil else { return }
+        recognizedItems = recognizedItems.map { $0.mapped { $0.applying(transform) } }
+        liveStabilizer.transform(by: transform)
+        publishLiveItems()
+    }
+
+    func clearLiveItems() {
+        guard frozenImage == nil else { return }
+        resetLiveSmoothing()
+        updateRecognizedItems([])
     }
 
     var stillRecognitionLanguages: [Locale.Language] {

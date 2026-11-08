@@ -4,12 +4,13 @@ import TipKit
 
 struct CameraScannerContainer: View {
     @Environment(CameraViewModel.self) private var viewModel
+    @Environment(LiveCameraController.self) private var liveCamera
     @Environment(AppState.self) private var appState
     @Environment(SettingsViewModel.self) private var settingsViewModel
     @Environment(\.scenePhase) private var scenePhase
-    @State private var scannerProxy = DataScannerProxy()
     @State private var containerHeight: CGFloat = 0
     @State private var suggestsFreezing = false
+    @State private var isVisible = false
 
     private static let fittedSheetHeightLimit: CGFloat = 0.75
 
@@ -21,18 +22,6 @@ struct CameraScannerContainer: View {
                 .ignoresSafeArea()
 
             ZStack {
-                #if !targetEnvironment(simulator)
-                DataScannerView(
-                    isScanning: viewModel.isScanning,
-                    proxy: scannerProxy,
-                    onItemsChanged: { viewModel.updateLiveRecognizedItems($0) },
-                    onItemTapped: { viewModel.toggleConversion(for: $0) }
-                )
-                .opacity(viewModel.frozenImage == nil ? 1 : 0)
-                #else
-                Color.black
-                #endif
-
                 if let frozenImage = viewModel.frozenImage {
                     ZoomableScrollView {
                         ZStack {
@@ -45,9 +34,10 @@ struct CameraScannerContainer: View {
                     }
                     .id(ObjectIdentifier(frozenImage))
                 } else {
-                    detectionOverlay(isLive: true)
+                    LiveViewfinder(overlay: detectionOverlay(isLive: true))
                 }
             }
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { liveCamera.previewSizeChanged($0) }
             .clipShape(.rect(cornerRadius: 32))
             .overlay(alignment: .top) {
                 VStack(spacing: Spacing.element) {
@@ -70,7 +60,7 @@ struct CameraScannerContainer: View {
                             suggestsFreezing: suggestsFreezing
                         )
                     }
-                    CameraControlsBar(capturePhoto: { try await scannerProxy.capturePhoto() })
+                    CameraControlsBar(capturePhoto: { try await liveCamera.capturePhoto() })
                 }
                 .padding(.bottom, Spacing.screenInset)
             }
@@ -106,16 +96,28 @@ struct CameraScannerContainer: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                scannerProxy.syncScanning()
-            } else {
+            if phase != .active {
                 viewModel.turnTorchOff()
             }
         }
         .onChange(of: appState.selectedTab) {
             viewModel.turnTorchOff()
         }
+        .onChange(of: runsCamera, initial: true) { _, runs in
+            if runs {
+                liveCamera.start()
+            } else {
+                liveCamera.stop()
+            }
+        }
+        .onChange(of: viewModel.stillRecognitionLanguages, initial: true) { _, languages in
+            liveCamera.setLanguages(languages)
+        }
+        .onAppear {
+            isVisible = true
+        }
         .onDisappear {
+            isVisible = false
             viewModel.turnTorchOff()
         }
         .sheet(item: $viewModel.destination) { destination in
@@ -128,6 +130,10 @@ struct CameraScannerContainer: View {
     private var frozenEmptyAnnouncement: LocalizedStringResource {
         if !viewModel.canConvertPrices, let notice = viewModel.ratesNotice { return notice.accessibilityLabel }
         return viewModel.hasSettledNumbers ? .cameraAnnouncementNumbersOnly : .cameraAnnouncementNoPricesFound
+    }
+
+    private var runsCamera: Bool {
+        isVisible && scenePhase == .active && appState.selectedTab == .camera && viewModel.isScanning
     }
 
     private func detectionOverlay(isLive: Bool) -> some View {

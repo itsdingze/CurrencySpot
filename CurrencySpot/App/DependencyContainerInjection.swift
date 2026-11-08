@@ -9,5 +9,6 @@ extension View {
             .environment(container.currencyListViewModel)
             .environment(container.settingsViewModel)
             .environment(container.cameraViewModel)
+            .environment(container.liveCameraController)
     }
 }

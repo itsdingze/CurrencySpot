@@ -21,12 +21,12 @@ struct PlateLayoutMemory {
         let slack: CGFloat
 
         func apply(to values: inout [UUID: CGFloat], for id: UUID, tracksFrames: Bool) -> CGFloat {
-            if let held = values[id], held >= floor, held <= max(limit, floor), abs(required - held) <= tolerance {
+            let target = tracksFrames ? max(floor, min(required, (limit - slack).rounded(.down))) : required
+            if let held = values[id], held >= floor, held <= max(limit, floor), abs(target - held) <= tolerance {
                 return held
             }
-            let value = tracksFrames ? max(floor, min(required, (limit - slack).rounded(.down))) : required
-            values[id] = value
-            return value
+            values[id] = target
+            return target
         }
     }
 
@@ -35,7 +35,7 @@ struct PlateLayoutMemory {
     private static let widthTolerance: CGFloat = 3
     private static let heightTolerance: CGFloat = 3
     private static let widthSlack: CGFloat = 1
-    private static let heightSlack: CGFloat = 1.5
+    private static let heightSlack: CGFloat = 3
     private static let alignmentIntrusionTolerance: CGFloat = 2
     private static let levelPageAngleHold: CGFloat = 2 * .pi / 180
     private static let historyWindow = 5
