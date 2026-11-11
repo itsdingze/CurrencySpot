@@ -13,7 +13,7 @@ struct RateStatusLine: View {
         content
             .font(.appCaption)
             .multilineTextAlignment(alignment)
-            .onAppear(perform: announce)
+            .onChange(of: status, initial: true) { announce() }
     }
 
     private var stackAlignment: HorizontalAlignment {
