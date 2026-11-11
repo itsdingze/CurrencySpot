@@ -19,6 +19,21 @@ struct PriceClassifierNumberFormatTests {
         #expect(classifier.classify(transcript) == (try .price(amount)))
     }
 
+    @Test(arguments: [
+        ("١٥٫٥٠", "15.5"),
+        ("١٬٢٥٠٫٠٠", "1250"),
+        ("۴۵٫۰۰", "45"),
+        ("₹१२०", "120"),
+        ("₹१,२५०", "1250"),
+    ])
+    func arabicPersianAndDevanagariDigitsReadAsTheirAsciiForms(transcript: String, amount: String) throws {
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test func arabicDigitsBindToALocalCurrencyWord() throws {
+        #expect(PriceClassifier(baseCurrency: "SAR").classify("SR ٢٥") == (try .price("25")))
+    }
+
     @Test(arguments: [("Pint 4.5", "4.5"), ("iOS 17.2", "17.2")])
     func unmarkedOneDecimalNumberIsAnOutline(transcript: String, amount: String) throws {
         #expect(classifier.classify(transcript) == (try .outline(amount)))

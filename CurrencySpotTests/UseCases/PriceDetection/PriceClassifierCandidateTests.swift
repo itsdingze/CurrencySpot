@@ -46,6 +46,13 @@ struct PriceClassifierCandidateTests {
         #expect(transcript[candidate.rangeIncludingMarker] == "１,２００円")
     }
 
+    @Test func devanagariDigitRangesPointIntoTheOriginalTranscript() throws {
+        let transcript = "मसाला चाय ₹१,२५०"
+        let candidate = try #require(classifier.candidates(in: transcript).first)
+        #expect(transcript[candidate.range] == "१,२५०")
+        #expect(transcript[candidate.rangeIncludingMarker] == "₹१,२५०")
+    }
+
     @Test(arguments: [
         ("Rs. 499", "499", "Rs. 499"),
         ("Total 1 200 € incl.", "1 200", "1 200 €"),

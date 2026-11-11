@@ -11,9 +11,12 @@ struct NormalizedTranscript {
             "￥": "¥", "＄": "$", "￡": "£", "￦": "₩",
             "\u{2019}": "'", "\u{02BC}": "'",
             "\u{2013}": "-", "\u{2014}": "-", "\u{2212}": "-", "\u{FF0D}": "-",
+            "٫": ".", "٬": ",",
         ]
-        for (fullwidth, ascii) in zip("０１２３４５６７８９", "0123456789") {
-            table[fullwidth] = ascii
+        for digits in ["０１２３４５６７８９", "٠١٢٣٤٥٦٧٨٩", "۰۱۲۳۴۵۶۷۸۹", "०१२३४५६७८९"] {
+            for (digit, ascii) in zip(digits, "0123456789") {
+                table[digit] = ascii
+            }
         }
         return table
     }()
