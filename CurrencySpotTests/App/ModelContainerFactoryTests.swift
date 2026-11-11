@@ -112,6 +112,24 @@ struct ModelContainerFactoryTests {
         #expect(UserDefaultsRatesFetchDateStore(defaults: defaults).lastFetchDate == Self.coveredThrough)
     }
 
+    @Test("a store the app can't read right now runs this launch from memory and keeps the sync coverage and the rates fetch date")
+    func unreadableStoreRunsFromMemory() throws {
+        let defaults = try isolatedDefaults.make()
+        try completeDataMigration(in: defaults)
+        Self.recordSyncState(in: defaults)
+        _ = try ModelContainer.currencySpot(storeURL: store.storeURL)
+        let storePath = store.storeURL.path(percentEncoded: false)
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: storePath)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: storePath) }
+
+        let container = makeContainer(storeURL: store.storeURL, defaults: defaults)
+
+        let configuration = try #require(container.configurations.first)
+        #expect(configuration.isStoredInMemoryOnly)
+        #expect(UserDefaultsHistoricalSyncStore(defaults: defaults).through == Self.coveredThrough)
+        #expect(UserDefaultsRatesFetchDateStore(defaults: defaults).lastFetchDate == Self.coveredThrough)
+    }
+
     @Test("a store that can't be opened even after a rebuild falls back to memory and reports storage unavailable")
     func unopenableStoreFallsBackToMemory() throws {
         let blocker = store.storeURL.deletingLastPathComponent().appending(path: "blocker")
