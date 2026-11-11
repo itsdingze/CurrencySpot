@@ -6,13 +6,6 @@ import UIKit
 struct StillImageTextRecognizerTests {
     private let recognizer = StillImageTextRecognizer()
 
-    private var isIOS27OrLaterSimulator: Bool {
-        #if targetEnvironment(simulator)
-        if #available(iOS 27, *) { return true }
-        #endif
-        return false
-    }
-
     private func solidImage(width: Int, height: Int, orientation: UIImage.Orientation = .up) throws -> UIImage {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
@@ -171,16 +164,8 @@ struct StillImageTextRecognizerTests {
         let result = try await recognizer.recognize(menu, menuCurrency: "USD")
 
         let amounts = result.items.flatMap { item in item.transcript.matches(of: /\$\d+(?:\.\d+)?/).map { String($0.output) } }
-        let unread = Set(prices).subtracting(amounts)
-        let repeated = Set(amounts.filter { amount in amounts.filter { $0 == amount }.count > 1 })
-        withKnownIssue("Vision on iOS 27 simulators reads $27.50 as $21.50", isIntermittent: true) {
-            #expect(!unread.contains("$27.50"), "read: \(amounts)")
-            #expect(!repeated.contains("$21.50"), "read: \(amounts)")
-        } when: {
-            isIOS27OrLaterSimulator
-        }
-        #expect(unread.subtracting(["$27.50"]).isEmpty, "read: \(amounts)")
-        #expect(repeated.subtracting(["$21.50"]).isEmpty, "read: \(amounts)")
+        #expect(Set(prices).subtracting(amounts).sorted().isEmpty, "read: \(amounts)")
+        #expect(amounts.count == Set(amounts).count, "read: \(amounts)")
         #expect(amounts.filter { !prices.contains($0) }.isEmpty, "read: \(amounts)")
         for index in [prices.startIndex, prices.endIndex - 1] {
             let line = try #require(result.items.first { $0.transcript.contains(prices[index]) })
