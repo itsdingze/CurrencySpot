@@ -8,7 +8,7 @@ struct RateListWidgetView: View {
 
     private let separatorGap: CGFloat = 5
 
-    private struct Arrangement: Hashable {
+    private struct Arrangement: Hashable, Encodable {
         let showsHeader: Bool
         let rowCount: Int
     }
