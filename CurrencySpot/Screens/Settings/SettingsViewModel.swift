@@ -53,6 +53,8 @@ final class SettingsViewModel {
 
     private var selectedLanguage: AppLanguage?
 
+    private var restoresIconAfterLanguageNotice = false
+
     // MARK: - Private Properties
 
     private let refreshAllDataUseCase: AllDataRefreshing
@@ -130,10 +132,39 @@ final class SettingsViewModel {
                 refreshTask = nil
             }
         case .resetPreferences:
-            resetPreferencesUseCase.execute()
-            selectedLanguage = nil
-            showToast(.preferencesReset)
+            resetPreferences()
         }
+    }
+
+    private func resetPreferences() {
+        let languageWasSaved = !languageStore.followsSystemLanguage
+        resetPreferencesUseCase.execute()
+        selectedLanguage = nil
+        showToast(.preferencesReset)
+        if languageWasSaved {
+            restoresIconAfterLanguageNotice = true
+            presentAfterConfirmationCloses(.languageChangeNotice)
+        } else {
+            restoreDefaultIcon()
+        }
+    }
+
+    private func presentAfterConfirmationCloses(_ next: Destination) {
+        Task { [clock] in
+            // SwiftUI drops an alert that is presented while the confirmation alert is still closing.
+            try? await clock.sleep(for: .seconds(0.6))
+            destination = next
+        }
+    }
+
+    func languageNoticeDismissed() {
+        guard restoresIconAfterLanguageNotice else { return }
+        restoresIconAfterLanguageNotice = false
+        restoreDefaultIcon()
+    }
+
+    private func restoreDefaultIcon() {
+        Task { await selectAppIcon(.dollar) }
     }
 
     func toastDismissed() {

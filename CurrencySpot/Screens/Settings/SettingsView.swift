@@ -36,7 +36,7 @@ struct SettingsView: View {
             onConfirm: { settingsViewModel.confirmAlert(.resetPreferences) }
         )
         .alert(.settingsLanguageChangedTitle, isPresented: bindableViewModel.destination.isPresenting(.languageChangeNotice)) {
-            Button(.settingsLanguageChangedOk) {}
+            Button(.settingsLanguageChangedOk, action: settingsViewModel.languageNoticeDismissed)
         } message: {
             Text(.settingsLanguageChangedMessage(language: settingsViewModel.nextLaunchLanguage.displayName))
         }

@@ -366,6 +366,73 @@ struct SettingsViewModelTests {
         #expect(viewModel.language == nil)
     }
 
+    @Test("a reset over a saved language says the language changes on the next launch", .timeLimit(.minutes(1)))
+    func resetOverSavedLanguageShowsNotice() async {
+        viewModel.language = AppLanguage(identifier: "zh-Hans")
+        viewModel.dismissDestination()
+
+        viewModel.confirmAlert(.resetPreferences)
+
+        await waitUntil { viewModel.destination == .languageChangeNotice }
+        #expect(viewModel.nextLaunchLanguage == AppLanguage(identifier: "en"))
+    }
+
+    @Test("a reset while the language follows the system shows no language notice", .timeLimit(.minutes(1)))
+    func resetOnSystemLanguageShowsNoNotice() async {
+        viewModel.confirmAlert(.resetPreferences)
+
+        await waitUntil { viewModel.toast == nil }
+        #expect(viewModel.destination == nil)
+    }
+
+    @Test("a reset puts the default Dollar icon back on the Home Screen", .timeLimit(.minutes(1)))
+    func resetRestoresDefaultIcon() async {
+        let appIcons = InMemoryAppIconService(alternateIconName: "AppIconCoins")
+        let viewModel = makeViewModel(appIcons: appIcons)
+
+        viewModel.confirmAlert(.resetPreferences)
+
+        await waitUntil { viewModel.appIcon == .dollar }
+        #expect(appIcons.requestedNames == [nil])
+    }
+
+    @Test("a reset over a saved language restores the icon once the language notice is dismissed", .timeLimit(.minutes(1)))
+    func resetRestoresIconAfterLanguageNotice() async {
+        let appIcons = InMemoryAppIconService(alternateIconName: "AppIconCoins")
+        let viewModel = makeViewModel(appIcons: appIcons)
+        viewModel.language = AppLanguage(identifier: "de")
+        viewModel.dismissDestination()
+
+        viewModel.confirmAlert(.resetPreferences)
+        await waitUntil { viewModel.toast == nil }
+        #expect(appIcons.requestedNames.isEmpty)
+
+        viewModel.languageNoticeDismissed()
+
+        await waitUntil { viewModel.appIcon == .dollar }
+        #expect(appIcons.requestedNames == [nil])
+    }
+
+    @Test("a reset on the default icon leaves iOS alone", .timeLimit(.minutes(1)))
+    func resetOnDefaultIconIsSilent() async {
+        viewModel.confirmAlert(.resetPreferences)
+
+        await waitUntil { viewModel.toast == nil }
+        #expect(appIcons.requestedNames.isEmpty)
+    }
+
+    @Test("when iOS refuses to restore the icon during a reset, a toast says it didn't change", .timeLimit(.minutes(1)))
+    func resetWithRefusedIconShowsToast() async {
+        let appIcons = InMemoryAppIconService(alternateIconName: "AppIconCoins")
+        appIcons.failure = CocoaError(.featureUnsupported)
+        let viewModel = makeViewModel(appIcons: appIcons)
+
+        viewModel.confirmAlert(.resetPreferences)
+
+        await waitUntil { viewModel.toast?.type == .appIconUnchanged }
+        #expect(viewModel.appIcon == .coins)
+    }
+
     @Test("the App Icon row starts on the icon the Home Screen shows")
     func appIconStartsOnHomeScreenIcon() {
         let viewModel = makeViewModel(appIcons: InMemoryAppIconService(alternateIconName: "AppIconCoins"))
