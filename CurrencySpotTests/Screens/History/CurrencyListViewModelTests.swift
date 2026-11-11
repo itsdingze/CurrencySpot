@@ -204,8 +204,8 @@ struct CurrencyListViewModelTests {
 
         viewModel.trendDisplayMode = .priceChange
 
-        #expect(viewModel.trendDisplayValue(rate: 150, weeklyChange: -2) == "3.00")
-        #expect(viewModel.trendDisplayValue(rate: 0.006351, weeklyChange: -2) == "0.000127")
+        #expect(viewModel.trendDisplayValue(rate: 150, weeklyChange: -2) == "3.06")
+        #expect(viewModel.trendDisplayValue(rate: 0.006351, weeklyChange: -2) == "0.000130")
     }
 
     // MARK: - Warm-up
