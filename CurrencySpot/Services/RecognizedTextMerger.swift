@@ -40,13 +40,15 @@ nonisolated enum RecognizedTextMerger {
         let axes = PageAxes(angle: first.item.quad.angle)
         let firstSpan = axes.span(of: first.item.quad)
         let secondSpan = axes.span(of: second.item.quad)
-        let sharedArea = firstSpan.overlap(with: secondSpan).area
-        guard sharedArea > 0 else { return false }
+        let overlap = firstSpan.overlap(with: secondSpan)
+        guard overlap.area > 0 else { return false }
         let firstArea = firstSpan.width * firstSpan.height
         let secondArea = secondSpan.width * secondSpan.height
-        let unionArea = firstArea + secondArea - sharedArea
-        return sharedArea / unionArea > sameLineOverlap
-            || sharedArea / min(firstArea, secondArea) >= fragmentContainment && isFragment(first, of: second)
+        let unionArea = firstArea + secondArea - overlap.area
+        return overlap.area / unionArea > sameLineOverlap
+            || firstSpan.sharesRow(with: secondSpan)
+            && overlap.depth / min(firstSpan.width, secondSpan.width) >= fragmentContainment
+            && isFragment(first, of: second)
     }
 
     private static func isFragment(_ first: RecognizedTextCandidate, of second: RecognizedTextCandidate) -> Bool {

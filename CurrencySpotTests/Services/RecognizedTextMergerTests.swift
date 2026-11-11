@@ -32,6 +32,16 @@ struct RecognizedTextMergerTests {
         #expect(merged == [line.item])
     }
 
+    @Test("a fragment whose box stands taller than its line still yields to the line")
+    func tallerFragmentYieldsToTheLine() {
+        let line = candidate("Item 21 ....... $24.50", CGRect(x: 152, y: 2611, width: 268, height: 37), confidence: 1)
+        let fragment = candidate("...$24.50", CGRect(x: 289, y: 2603, width: 134, height: 41), confidence: 1)
+
+        let merged = RecognizedTextMerger.merge([fragment, line])
+
+        #expect(merged == [line.item])
+    }
+
     @Test("a more confident fragment still yields to the whole line it came from")
     func confidentFragmentYieldsToTheWholeLine() {
         let line = candidate("Ramen ........ $12.50", CGRect(x: 40, y: 100, width: 300, height: 40), confidence: 0.9)
