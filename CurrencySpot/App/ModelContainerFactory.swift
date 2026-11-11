@@ -6,6 +6,7 @@ enum ModelContainerFactory {
     private static let logger = Logger(category: .app)
 
     static func persistentContainer(storeURL: URL, legacyStoreURL: URL, defaults: UserDefaults, errorHandler: ErrorHandler) -> ModelContainer {
+        DataMigration.moveLegacyStoreIfNeeded(from: legacyStoreURL, to: storeURL)
         do {
             let container = try PersistentStoreLoader(storeURL: storeURL).load {
                 logger.fault("Persistent store could not be opened; rebuilt it empty")

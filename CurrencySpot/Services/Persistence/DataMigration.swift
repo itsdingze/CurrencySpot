@@ -9,6 +9,18 @@ enum DataMigration {
 
     private static let logger = Logger(category: .data)
 
+    static func moveLegacyStoreIfNeeded(from legacyStoreURL: URL, to storeURL: URL) {
+        guard !PersistentStoreFiles.isSameStore(legacyStoreURL, storeURL),
+              PersistentStoreFiles.exists(at: legacyStoreURL),
+              !PersistentStoreFiles.exists(at: storeURL)
+        else { return }
+        do {
+            try PersistentStoreFiles.move(from: legacyStoreURL, to: storeURL)
+        } catch {
+            logger.error("Moving the earlier version's store failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     static func runIfNeeded(modelContainer: ModelContainer, defaults: UserDefaults, legacyStoreURL: URL) {
         migrateToV2IfNeeded(modelContainer: modelContainer, defaults: defaults)
         clearHistoryForArchiveIfNeeded(modelContainer: modelContainer, defaults: defaults)
