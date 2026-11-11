@@ -66,4 +66,34 @@ struct RecognitionRegionTests {
         #expect(wholeFrame.keeps(tooTallForABand))
         #expect(wholeFrame.keeps(smallLine) == false)
     }
+
+    @Test("a line that fits inside a band is left to the bands wherever it sits", arguments: [
+        CGSize(width: 2016, height: 4032), CGSize(width: 1651, height: 1919),
+    ])
+    func lineThatFitsABandIsLeftToTheBands(size: CGSize) throws {
+        let regions = RecognitionRegion.regions(covering: size)
+        let wholeFrame = try #require(regions.first { $0.rect == CGRect(origin: .zero, size: size) })
+        let bands = regions.filter { $0 != wholeFrame }
+        let overlap = try #require(zip(bands, bands.dropFirst()).map { upper, lower in upper.rect.maxY - lower.rect.minY }.min())
+        let lineHeight = (overlap * 0.75).rounded()
+        let lines = stride(from: 0, through: size.height - lineHeight, by: 7).map { top in
+            CGRect(x: 100, y: top, width: 400, height: lineHeight)
+        }
+
+        #expect(lines.filter { line in !bands.contains { $0.keeps(line) } } == [])
+        #expect(lines.filter { wholeFrame.keeps($0) } == [])
+    }
+
+    @Test("a tall image is read whole for text as small as each band reads")
+    func wholeFrameReadsTextAsSmallAsEachBand() throws {
+        let size = CGSize(width: 2016, height: 4032)
+        let regions = RecognitionRegion.regions(covering: size)
+        let wholeFrame = try #require(regions.first { $0.rect == CGRect(origin: .zero, size: size) })
+        let band = try #require(regions.first)
+
+        let smallestTextInBand = CGFloat(band.minimumTextHeightFraction) * band.rect.height
+        let smallestTextInWholeFrame = CGFloat(wholeFrame.minimumTextHeightFraction) * size.height
+
+        #expect(abs(smallestTextInWholeFrame - smallestTextInBand) < 1)
+    }
 }

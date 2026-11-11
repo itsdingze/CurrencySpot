@@ -13,7 +13,7 @@ nonisolated struct RecognitionRegion: Equatable, Sendable {
     private let minimumLineHeight: CGFloat
 
     var minimumTextHeightFraction: Float {
-        Float(max(minimumLineHeight, Self.smallestReadableTextHeight) / rect.height)
+        Float(Self.smallestReadableTextHeight / rect.height)
     }
 
     static func regions(covering imageSize: CGSize) -> [RecognitionRegion] {
@@ -33,7 +33,8 @@ nonisolated struct RecognitionRegion: Equatable, Sendable {
             )
         }
         let overlap = bandHeight - bandTops[1]
-        let wholeFrame = RecognitionRegion(rect: frame, isCutAtTop: false, isCutAtBottom: false, minimumLineHeight: overlap / 2)
+        let shortestLineEveryBandMayCut = overlap - 2 * bandHeight * cutEdgeToleranceFraction
+        let wholeFrame = RecognitionRegion(rect: frame, isCutAtTop: false, isCutAtBottom: false, minimumLineHeight: shortestLineEveryBandMayCut)
         return bands + [wholeFrame]
     }
 
