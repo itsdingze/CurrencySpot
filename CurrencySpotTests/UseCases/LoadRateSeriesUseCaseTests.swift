@@ -108,6 +108,17 @@ struct LoadRateSeriesUseCaseTests {
         #expect(await emptyLoad(request, now: now).snapshot == saved)
     }
 
+    @Test("a currency the server doesn't know costs only its own row")
+    func unknownCurrencyCostsOnlyItsRow() async throws {
+        let list = RateSeriesRequest(base: "USD", currencies: ["JPY", "BOV", "EUR"], period: .oneMonth)
+        let load = LoadRateSeriesUseCase(fetcher: CurrencyRejectingFetcher(unknown: "BOV", answer: response), cache: cache)
+
+        let result = await load(list, now: now)
+
+        #expect(result.isFresh)
+        #expect(result.snapshot?.series.map(\.rates) == [[160.0, 150.0], [], [0.80, 0.88]])
+    }
+
     @Test("a request with only the base currency answers one without going online")
     func baseOnlyRequestSkipsTheNetwork() async throws {
         let fetcher = StubHistoricalRatesFetcher(result: .failure(URLError(.notConnectedToInternet)))
@@ -127,6 +138,17 @@ struct LoadRateSeriesUseCaseTests {
         let otherPeriod = RateSeriesRequest(base: "USD", currencies: ["JPY", "USD", "EUR"], period: .oneYear)
 
         #expect(await offline(otherPeriod, now: now).snapshot == nil)
+    }
+}
+
+nonisolated private struct CurrencyRejectingFetcher: HistoricalRatesFetching {
+    let unknown: String
+    let answer: HistoricalRatesResponse
+
+    func fetchHistoricalRatesForRange(baseCurrency: String, startDate _: Date, endDate _: Date, quotes: [String]) async throws -> HistoricalRatesResponse {
+        guard !quotes.contains(unknown) else { throw AppError.httpError(statusCode: 422) }
+        let rates = answer.rates.mapValues { $0.filter { quotes.contains($0.key) } }
+        return HistoricalRatesResponse(base: baseCurrency, startDate: answer.startDate, endDate: answer.endDate, rates: rates)
     }
 }
 

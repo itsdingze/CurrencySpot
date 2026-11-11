@@ -20,6 +20,11 @@ struct CurrencyCatalogTests {
         #expect(Set(codes).count == codes.count)
     }
 
+    @Test("before the app shares its rates, the catalog leaves out retired currencies that have no rates", arguments: ["BGN", "CUC", "HRK", "SLL", "VEF"])
+    func catalogLeavesOutRetiredCurrencies(code: String) {
+        #expect(!CurrencyCatalog.currencies(in: shared).map(\.rawValue).contains(code))
+    }
+
     @Test("once the app shares its rates, the catalog offers only currencies that have a rate")
     func catalogFollowsSharedRates() {
         shared.set(["EUR", "JPY", "USD"], forKey: UserDefaultsKeys.rateCurrencies)

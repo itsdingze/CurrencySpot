@@ -1,11 +1,11 @@
 import Foundation
 
 enum CurrencyCatalog {
-    private static let commonCurrencies: [CurrencyCode] = Set(Locale.commonISOCurrencyCodes.compactMap { CurrencyCode($0) }).sorted()
+    private static let ratedBeforeFirstDownload: [CurrencyCode] = CurrencyDefaults.favoriteCurrencies.sorted()
 
     static func currencies(in shared: UserDefaults) -> [CurrencyCode] {
         let rated = shared.stringArray(forKey: UserDefaultsKeys.rateCurrencies)?.compactMap { CurrencyCode($0) } ?? []
-        return rated.isEmpty ? commonCurrencies : rated
+        return rated.isEmpty ? ratedBeforeFirstDownload : rated
     }
 
     static func search(_ text: String, in shared: UserDefaults) -> [CurrencyCode] {

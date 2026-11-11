@@ -55,6 +55,14 @@ nonisolated struct LoadRateSeriesUseCase: Sendable {
     }
 
     private func fetch(_ request: RateSeriesRequest, now: Date) async throws -> RateSeriesSnapshot {
+        do {
+            return RateSeriesSnapshot(series: try await series(for: request, now: now), fetchedAt: now)
+        } catch AppError.httpError(statusCode: 422) where request.quotes.count > 1 {
+            return RateSeriesSnapshot(series: try await seriesFetchedOneByOne(request, now: now), fetchedAt: now)
+        }
+    }
+
+    private func series(for request: RateSeriesRequest, now: Date) async throws -> [RateSeries] {
         let response = try await fetcher.fetchHistoricalRatesForRange(
             baseCurrency: request.base.rawValue,
             startDate: request.period.startDate(from: now),
@@ -64,6 +72,26 @@ nonisolated struct LoadRateSeriesUseCase: Sendable {
         guard !response.rates.isEmpty else {
             throw AppError.dataValidationError("Rate series response contained no days")
         }
-        return RateSeriesSnapshot(series: RateSeries.series(for: request.currencies, in: response), fetchedAt: now)
+        return RateSeries.series(for: request.currencies, in: response)
+    }
+
+    private func seriesFetchedOneByOne(_ request: RateSeriesRequest, now: Date) async throws -> [RateSeries] {
+        let fetched = await withTaskGroup(of: RateSeries?.self) { group in
+            for quote in request.quotes {
+                let single = RateSeriesRequest(base: request.base, currencies: [quote], period: request.period)
+                group.addTask { try? await series(for: single, now: now).first }
+            }
+            var fetched: [CurrencyCode: RateSeries] = [:]
+            for await series in group {
+                if let series { fetched[series.currency] = series }
+            }
+            return fetched
+        }
+        guard !fetched.isEmpty else {
+            throw AppError.dataValidationError("No currency in the list has rates")
+        }
+        return request.currencies.map { currency in
+            fetched[currency] ?? RateSeries(currency: currency, rates: currency == request.base ? [1, 1] : [])
+        }
     }
 }
