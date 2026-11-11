@@ -212,6 +212,26 @@ struct ChartDataPreparationUseCaseTests {
             #expect(abs((result.first?.rate ?? 0) - 1.5) < 0.0001, "1.2 / 0.8 via the current-rates fallback")
         }
 
+        @Test("A base currency with no rate on the day or today yields no chart point instead of a one-to-one rate")
+        func baseWithoutAnyRateYieldsNoPoint() async {
+            let useCase = makeUseCase()
+            let historicalData = [
+                HistoricalRateSnapshot(date: testStartDate, rates: [
+                    HistoricalRatePoint(currencyCode: "EUR", rate: 1.2),
+                ]),
+            ]
+
+            let result = await useCase.processHistoricalRateData(
+                historicalData: historicalData,
+                baseCurrency: "CHF",
+                targetCurrency: "EUR",
+                dateRange: DateRange.spanning(testStartDate, testEndDate),
+                exchangeRates: createTestExchangeRates()
+            )
+
+            #expect(result.isEmpty)
+        }
+
         @Test("Should use USD base currency without conversion")
         func shouldUseUSDBaseCurrencyWithoutConversion() async {
             let useCase = makeUseCase()

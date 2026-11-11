@@ -42,16 +42,14 @@ final class ChartDataPreparationUseCase {
 
             let historicalRates = RateTable(points: historicalEntry.rates)
 
-            guard let targetRate = historicalRates.usdRate(for: targetCurrency) else {
+            guard let targetRate = historicalRates.usdRate(for: targetCurrency),
+                  let baseRate = historicalRates.usdRate(for: baseCurrency) ?? currentRates.usdRate(for: baseCurrency),
+                  abs(baseRate) > .ulpOfOne
+            else {
                 continue
             }
 
-            let baseRate = historicalRates.usdRate(for: baseCurrency)
-                ?? currentRates.usdRate(for: baseCurrency)
-                ?? 1.0
-            let convertedRate = abs(baseRate) > .ulpOfOne ? targetRate / baseRate : targetRate
-
-            chartPoints.append(ChartDataPoint(date: date, rate: convertedRate))
+            chartPoints.append(ChartDataPoint(date: date, rate: targetRate / baseRate))
         }
 
         return chartPoints
