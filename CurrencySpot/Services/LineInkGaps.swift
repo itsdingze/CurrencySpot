@@ -6,6 +6,12 @@ nonisolated enum LineInkGaps {
     private static let backgroundPercentile = 0.85
     private static let inkShareOfBackground = 0.6
 
+    static func marking(_ items: [RecognizedTextItem], in image: @autoclosure () -> GrayscaleImage?) -> [RecognizedTextItem] {
+        let hasDigits = { (item: RecognizedTextItem) in item.transcript.contains(where: \.isNumber) }
+        guard items.contains(where: hasDigits), let grayscale = image() else { return items }
+        return items.map { hasDigits($0) ? $0.with(inkGaps: gaps(along: $0.quad, in: grayscale)) : $0 }
+    }
+
     static func gaps(along line: Quad, in image: GrayscaleImage) -> [ClosedRange<CGFloat>] {
         let columns = max(1, Int(line.width.rounded()))
         let darkest = (0 ..< columns).map { column in

@@ -37,7 +37,7 @@ struct DetectionOverlayView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(.appTrack, value: layout)
+        .animation(isLive ? nil : .appTrack, value: layout)
         .animation(.appTrack, value: promotions)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
             viewSize = size

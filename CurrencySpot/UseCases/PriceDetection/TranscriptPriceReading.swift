@@ -18,8 +18,14 @@ struct TranscriptPriceReading {
         let fractionDigits = CurrencyFractionDigits.count(for: baseCurrency)
         let markers = CurrencyMarkerScanner.markers(in: text, baseCurrency: baseCurrency)
         let binder = CurrencyMarkerBinder(text: text, markers: markers)
+        let readTokens = NumberTokenizer.tokens(
+            in: text,
+            fractionDigits: fractionDigits,
+            readsThousandsShorthand: BaseCurrencyNumberRules.readsThousandsShorthand(under: baseCurrency),
+            readsPerLitreFraction: BaseCurrencyNumberRules.readsPerLitreFraction(under: baseCurrency)
+        )
         let tokens = SpacedGroupingMerger.merged(
-            NumberTokenizer.tokens(in: text, fractionDigits: fractionDigits),
+            OCRSplitNumberMerger.merged(readTokens, in: text, isMarked: binder.hasAdjacentUnambiguousMarker),
             in: text,
             isMarked: binder.hasAdjacentSpaceGroupingMarker
         )
@@ -29,13 +35,18 @@ struct TranscriptPriceReading {
             let token = tokens[index]
             let shape = shapes[index]
             guard !noise.blocksBinding(token), shape.amount.map({ $0 != 0 }) ?? false else { return false }
+            if marker.doublesAsAcronym, marker.span.upperBound <= token.span.lowerBound,
+               shape.kind == .oneDecimal || (token.isYearShaped && noise.isFollowedByWord(token)) {
+                return false
+            }
             guard marker.needsMoneyShape else { return true }
             return (shape.isMoneyShaped || token.hasDashNotation) && !noise.opensARange(token)
         }
 
         for (index, token) in tokens.enumerated() {
             let range = text.originalRange(token.span)
-            if let marker = bindings[index] ?? markers.first(where: { token.span.contains($0.span.lowerBound) }) {
+            let markerInsideToken = noise.blocksBinding(token) ? nil : markers.first { token.span.contains($0.span.lowerBound) }
+            if let marker = bindings[index] ?? markerInsideToken {
                 let spanIncludingMarker = min(token.span.lowerBound, marker.span.lowerBound)
                     ..< max(token.span.upperBound, marker.span.upperBound)
                 recordMarked(
@@ -49,7 +60,7 @@ struct TranscriptPriceReading {
                     token,
                     shape: shapes[index],
                     range: range,
-                    isDashPrice: token.hasDashNotation && !noise.isFollowedByWord(token)
+                    isWholePrice: (token.hasDashNotation || token.isThousandsShorthand) && !noise.isFollowedByWord(token)
                 )
             }
         }
@@ -75,14 +86,14 @@ struct TranscriptPriceReading {
         _ token: NumberToken,
         shape: NumberShape,
         range: Range<String.Index>,
-        isDashPrice: Bool
+        isWholePrice: Bool
     ) {
         guard let amount = shape.amount else { return }
         let price = PriceCandidate(amount: amount, isPrice: true, range: range, rangeIncludingMarker: range)
         let outline = PriceCandidate(amount: amount, isPrice: false, range: range, rangeIncludingMarker: range)
         let isLong = shape.integerDigitCount >= Self.longIntegerDigitCount
 
-        if isDashPrice {
+        if isWholePrice {
             unmarkedPrices.append(price)
             unmarkedPricesWithCents.append(price)
             return

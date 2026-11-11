@@ -6,6 +6,8 @@ struct NumberToken {
     var separators: [Character]
     var hasDashNotation = false
     var multipliedAmount: Decimal?
+    var isThousandsShorthand = false
+    var hasFuelFraction = false
 
     var isYearShaped: Bool {
         guard separators.isEmpty, !hasDashNotation, multipliedAmount == nil, let digits = groups.first,
@@ -17,14 +19,22 @@ struct NumberToken {
 
 enum NumberTokenizer {
     private static let groupSeparators: Set<Character> = [".", ",", "'"]
-    private static let dashNotationLeads: Set<Character> = [".", ",", "/"]
+    private static let dashNotationLeads: Set<Character> = [".", ",", "/", ":"]
     private static let multipliers: [Character: Decimal] = [
         "万": 10_000, "萬": 10_000, "만": 10_000,
         "千": 1_000, "천": 1_000,
         "億": 100_000_000, "亿": 100_000_000, "억": 100_000_000,
     ]
 
-    static func tokens(in text: NormalizedTranscript, fractionDigits: Int) -> [NumberToken] {
+    private static let thousandsShorthandWords: Set<String> = ["K", "k", "rb"]
+    private static let nineTenthsSuffix = " 9/10"
+
+    static func tokens(
+        in text: NormalizedTranscript,
+        fractionDigits: Int,
+        readsThousandsShorthand: Bool,
+        readsPerLitreFraction: Bool
+    ) -> [NumberToken] {
         var tokens: [NumberToken] = []
         var offset = 0
         while offset < text.count {
@@ -32,7 +42,16 @@ enum NumberTokenizer {
                 offset += 1
                 continue
             }
-            let token = decorated(plainToken(at: offset, in: text), in: text, fractionDigits: fractionDigits)
+            let plain = plainToken(at: offset, in: text)
+            let shorthand = readsThousandsShorthand
+                ? thousandsShorthand(following: plain, in: text, fractionDigits: fractionDigits)
+                : nil
+            let token = shorthand ?? decorated(
+                plain,
+                in: text,
+                fractionDigits: fractionDigits,
+                readsPerLitreFraction: readsPerLitreFraction
+            )
             tokens.append(token)
             offset = token.span.upperBound
         }
@@ -63,11 +82,64 @@ enum NumberTokenizer {
             && text.isDigit(offset + 1) && text.isDigit(offset + 2) && !text.isDigit(offset + 3)
     }
 
+    private static func thousandsShorthand(
+        following token: NumberToken,
+        in text: NormalizedTranscript,
+        fractionDigits: Int
+    ) -> NumberToken? {
+        let word = text.word(startingAt: token.span.upperBound, where: \.isLetter)
+        guard thousandsShorthandWords.contains(word),
+              let amount = NumberShape(token, fractionDigits: fractionDigits).amount
+        else { return nil }
+        return NumberToken(
+            span: token.span.lowerBound..<token.span.upperBound + word.count,
+            groups: [],
+            separators: [],
+            multipliedAmount: amount * 1_000,
+            isThousandsShorthand: true
+        )
+    }
+
+    private static func fuelPrice(
+        _ token: NumberToken,
+        in text: NormalizedTranscript,
+        readsPerLitreFraction: Bool
+    ) -> NumberToken? {
+        guard token.groups.count == 2, token.separators != ["'"], let fraction = token.groups.last else { return nil }
+        let end = token.span.upperBound
+        var fuel = token
+        fuel.hasFuelFraction = true
+        if readsPerLitreFraction, token.groups[0].count == 1, fraction.count == 3, isFollowedByPerLitre(end, in: text) {
+            return fuel
+        }
+        guard fraction.count == 2, token.separators == ["."], text.hasPrefix(nineTenthsSuffix, at: end),
+              !text.isDigit(end + nineTenthsSuffix.count)
+        else { return nil }
+        fuel.groups[1] = fraction + "9"
+        fuel.span = token.span.lowerBound..<end + nineTenthsSuffix.count
+        return fuel
+    }
+
+    private static func isFollowedByPerLitre(_ end: Int, in text: NormalizedTranscript) -> Bool {
+        var offset = text.isSpace(end) ? end + 1 : end
+        if let symbol = text.character(at: offset), CurrencyMarkerVocabulary.symbols[symbol] != nil {
+            offset += text.isSpace(offset + 1) ? 2 : 1
+        }
+        guard text.character(at: offset) == "/" else { return false }
+        let unitStart = text.isSpace(offset + 1) ? offset + 2 : offset + 1
+        let unit = text.word(startingAt: unitStart, where: \.isLetter)
+        return unit == "l" || unit == "L"
+    }
+
     private static func decorated(
         _ token: NumberToken,
         in text: NormalizedTranscript,
-        fractionDigits: Int
+        fractionDigits: Int,
+        readsPerLitreFraction: Bool
     ) -> NumberToken {
+        if let fuel = fuelPrice(token, in: text, readsPerLitreFraction: readsPerLitreFraction) {
+            return fuel
+        }
         guard hasDashNotation(at: token.span.upperBound, in: text) else {
             return multiplierChain(startingWith: token, in: text, fractionDigits: fractionDigits) ?? token
         }

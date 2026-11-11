@@ -6,7 +6,7 @@ struct TimeRangePicker: View {
     @Environment(\.appAccent) private var accent
     @State private var segmentWidth: CGFloat = 0
     @State private var dragOffset: CGFloat?
-    @State private var isDragging = false
+    @State private var isPressed = false
     @State private var snappedIndex: Int?
     @State private var labelWidths: [TimeRange: CGFloat] = [:]
 
@@ -26,7 +26,7 @@ struct TimeRangePicker: View {
     }
 
     private var boxScale: CGFloat {
-        isDragging ? 1.2 : 1
+        isPressed ? 1.2 : 1
     }
 
     private var labelScale: CGFloat {
@@ -139,9 +139,8 @@ struct TimeRangePicker: View {
                     target = free
                 }
 
-                let firstTouch = dragOffset == nil
-                if !firstTouch, abs(value.translation.width) > 2, !isDragging {
-                    withAnimation(.appFlip) { isDragging = true }
+                if !isPressed {
+                    withAnimation(.appFlip) { isPressed = true }
                 }
                 snappedIndex = snapsOn ? nearest : nil
 
@@ -158,7 +157,7 @@ struct TimeRangePicker: View {
         selectedTimeRange = timeRanges[index]
         withAnimation(.appSelect) {
             dragOffset = nil
-            isDragging = false
+            isPressed = false
             snappedIndex = nil
         }
     }

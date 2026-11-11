@@ -15,6 +15,7 @@ final class DependencyContainer {
     let currencyListViewModel: CurrencyListViewModel
     let settingsViewModel: SettingsViewModel
     let cameraViewModel: CameraViewModel
+    let liveCameraController: LiveCameraController
     let convertCurrencyUseCase: ConvertCurrencyUseCase
     private let sharedSettingsMirror: SharedSettingsMirror
 
@@ -42,6 +43,7 @@ final class DependencyContainer {
         cameraPermissionService: CameraPermissionService = AVCameraPermissionService(),
         stillTextRecognizer: StillTextRecognitionService = StillImageTextRecognizer(),
         torchService: TorchService = AVTorchService(),
+        liveCamera: any LiveCameraService = LiveCamera(),
         appIconService: AppIconService = UIKitAppIconService()
     ) {
         let preferences = preferences ?? UserDefaultsPreferencesStore(userDefaults: userDefaults)
@@ -192,6 +194,7 @@ final class DependencyContainer {
             defaultTargetCurrency: preferences.defaultTargetCurrency,
             clock: clockService
         )
+        liveCameraController = LiveCameraController(camera: liveCamera, viewModel: cameraViewModel)
 
         sharedSettingsMirror = SharedSettingsMirror(
             favorites: favoritesStore,

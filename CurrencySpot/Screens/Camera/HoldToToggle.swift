@@ -9,7 +9,7 @@ nonisolated struct HoldToToggle: Equatable {
         case cancelled
     }
 
-    static let holdDuration: TimeInterval = 0.5
+    static let holdDuration: TimeInterval = 0.22
 
     private(set) var phase = Phase.idle
 

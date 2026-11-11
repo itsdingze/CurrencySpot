@@ -52,7 +52,8 @@ enum CurrencyMarkerScanner {
                 span: span,
                 placement: .beforeNumber,
                 needsMoneyShape: CurrencyMarkerVocabulary.wordLikeISOCodes.contains(word),
-                allowsPunctuationGap: true
+                allowsPunctuationGap: true,
+                doublesAsAcronym: CurrencyMarkerVocabulary.acronymLikeISOCodes.contains(word)
             )
         }
         guard let local = CurrencyMarkerVocabulary.localWord(word, baseCurrency: baseCurrency) else { return nil }

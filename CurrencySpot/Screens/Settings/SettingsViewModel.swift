@@ -264,6 +264,10 @@ final class SettingsViewModel {
 
     private(set) var appIcon: AppIconOption
 
+    func screenAppeared() {
+        appIcon = AppIconOption(alternateIconName: appIconService.alternateIconName)
+    }
+
     func selectAppIcon(_ icon: AppIconOption) async {
         guard icon != appIcon else { return }
         do {

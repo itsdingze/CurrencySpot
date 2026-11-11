@@ -14,4 +14,5 @@ struct CurrencyMarker {
     var isCents = false
     var ranksLast = false
     var allowsSpacedGrouping = true
+    var doublesAsAcronym = false
 }

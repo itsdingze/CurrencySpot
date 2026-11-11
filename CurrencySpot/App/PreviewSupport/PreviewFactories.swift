@@ -35,6 +35,7 @@
                 cameraPermissionService: StubCameraPermissionService(status: .authorized),
                 stillTextRecognizer: StubStillTextRecognizer(),
                 torchService: InMemoryTorchService(),
+                liveCamera: InMemoryLiveCamera(),
                 appIconService: InMemoryAppIconService()
             )
         }

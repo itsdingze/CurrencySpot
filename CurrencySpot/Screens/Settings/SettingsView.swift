@@ -19,6 +19,7 @@ struct SettingsView: View {
             aboutSection
         }
         .navigationTitle(.settingsTitle)
+        .onAppear(perform: settingsViewModel.screenAppeared)
         .navigationDestination(for: SettingsRoute.self) { route in
             destinationView(for: route)
         }

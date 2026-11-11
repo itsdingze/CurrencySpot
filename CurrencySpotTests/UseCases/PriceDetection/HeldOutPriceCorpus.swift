@@ -36,6 +36,9 @@ nonisolated enum HeldOutPriceCorpus {
         .init("Pierogi ruskie 26 zł", .price("26"), group: "menu-europe"),
         .init("Pivo 0,5 l 62 Kč", .price("62"), group: "menu-europe"),
         .init("Çay ₺20", .price("20"), group: "menu-europe"),
+        .init("Adana Kebap 380 TL", .price("380"), group: "menu-europe", base: "TRY"),
+        .init("Kanelbulle 35:-", .price("35"), group: "menu-europe"),
+        .init("Espresso £2\u{00B7}40", .price("2.40"), group: "menu-europe"),
         .init("Fish & Chips with mushy peas £14.95", .price("14.95"), group: "menu-europe"),
         .init("Борщ с пампушками 390 ₽", .price("390"), group: "menu-europe"),
         .init("Double Cheeseburger $11.49", .price("11.49"), group: "menu-americas"),
@@ -59,8 +62,12 @@ nonisolated enum HeldOutPriceCorpus {
         .init("Nasi Campur 30", .bare, group: "menu-bare"),
         .init("Spaghetti alle vongole 16", .bare, group: "menu-bare"),
         .init("ランチセット 980", .bare, group: "menu-bare"),
+        .init("Bulgogi Jeongsik 15,000", .price("15000"), group: "menu-bare"),
         .init("냉면 9천원", .price("9000"), group: "shorthand"),
         .init("ノートPC 12.8万円", .price("128000"), group: "shorthand"),
+        .init("Bánh mì thịt 25K", .price("25000"), group: "shorthand", base: "VND"),
+        .init("Es Teh Manis 8K", .price("8000"), group: "shorthand", base: "IDR"),
+        .init("Mie Ayam Bakso 18rb", .price("18000"), group: "shorthand", base: "IDR"),
         .init("Bananen lose 1,79 €/kg", .price("1.79"), group: "shelf"),
         .init("Grundpreis: 100 g = 0,89 €", .price("0.89"), group: "shelf"),
         .init("Tomates grappe 3,49 € le kg", .price("3.49"), group: "shelf"),
@@ -127,6 +134,8 @@ nonisolated enum HeldOutPriceCorpus {
         .init("Max stay 2 hours", .notPrice, group: "parking"),
         .init("Free after 6pm", .notPrice, group: "parking"),
         .init("Level B2 Spaces 1-120", .notPrice, group: "parking"),
+        .init("Diesel 1,659 €/l", .price("1.659"), group: "fuel", base: "EUR"),
+        .init("UNLEADED 3.29 9/10", .price("3.299"), group: "fuel"),
         .init("Akku 4.410 mAh", .notPrice, group: "spec"),
         .init("Display 6.1\" Super Retina XDR", .notPrice, group: "spec"),
         .init("Wi-Fi 6E 802.11ax", .notPrice, group: "spec"),
@@ -176,6 +185,9 @@ nonisolated enum HeldOutPriceCorpus {
         .init("MOP & BUCKET SET 2 PCS", .notPrice, group: "code-word"),
         .init("CAD Lab Room 204", .notPrice, group: "code-word"),
         .init("EUR-Palette 1200 x 800 mm", .notPrice, group: "code-word"),
+        .init("PHP 8.3 Workshop Room 2", .notPrice, group: "code-word"),
+        .init("CNY 2026 Sale", .notPrice, group: "code-word"),
+        .init("SAR 1.18 W/kg", .notPrice, group: "code-word"),
         .init("28.10.2026", .notPrice, group: "misc"),
         .init("2026年11月1日", .notPrice, group: "misc"),
         .init("Best before 15.03.2027", .notPrice, group: "misc"),
@@ -191,86 +203,17 @@ nonisolated enum HeldOutPriceCorpus {
         .init("Hot dog \u{FF04}5.00", .price("5.00"), group: "ocr-glitch"),
         .init("C1osed Mon", .notPrice, group: "ocr-glitch"),
         .init("N0 Parking 8-18", .notPrice, group: "ocr-glitch"),
+        .init("Burger Deluxe S12.99", .price("12.99"), group: "ocr-glitch"),
+        .init("Combo B $1O.99", .price("10.99"), group: "ocr-glitch"),
+        .init("Salade niçoise 11,9O €", .price("11.90"), group: "ocr-glitch"),
+        .init("Katsu Curry ¥1, 200", .price("1200"), group: "ocr-glitch"),
+        .init("Soup of the day 6,5 0 €", .price("6.50"), group: "ocr-glitch"),
         .init("¥1,480", .price("1480"), group: "fragment"),
+        .init("2,350", .price("2350"), group: "fragment"),
         .init("円", .notPrice, group: "fragment"),
         .init("€", .notPrice, group: "fragment"),
         .init("Udon", .notPrice, group: "fragment"),
         .init("Formule midi 14€90", .price("14.90"), group: "menu-europe"),
         .init("Le kilo 3€50", .price("3.50"), group: "shelf"),
-    ]
-
-    static let knownGaps: [PriceCorpusGap] = [
-        .init(
-            "Kanelbulle 35:-", .price("35"), group: "menu-europe",
-            reason: "The Swedish ':-' notation is not read"
-        ),
-        .init(
-            "Adana Kebap 380 TL", .price("380"), group: "menu-europe",
-            reason: "TL marks a price only under base TRY"
-        ),
-        .init(
-            "Espresso £2\u{00B7}40", .price("2.40"), group: "menu-europe",
-            reason: "A middle dot used as the decimal separator is not read"
-        ),
-        .init(
-            "Bulgogi Jeongsik 15,000", .bare, group: "menu-bare",
-            reason: "Label conflict: this set marks grouped numbers bare, bareGroupedNumberIsAPrice pins them as prices"
-        ),
-        .init(
-            "Bánh mì thịt 25K", .price("25000"), group: "shorthand",
-            reason: "K and rb thousand shorthand is not read"
-        ),
-        .init(
-            "Es Teh Manis 8K", .price("8000"), group: "shorthand",
-            reason: "K and rb thousand shorthand is not read"
-        ),
-        .init(
-            "Mie Ayam Bakso 18rb", .price("18000"), group: "shorthand",
-            reason: "K and rb thousand shorthand is not read"
-        ),
-        .init(
-            "Diesel 1,659 €/l", .price("1.659"), group: "fuel",
-            reason: "A three-digit fuel price under a two-digit base reads as grouping"
-        ),
-        .init(
-            "UNLEADED 3.29 9/10", .price("3.299"), group: "fuel",
-            reason: "A fuel price with a 9/10 cent suffix is not read"
-        ),
-        .init(
-            "PHP 8.3 Workshop Room 2", .notPrice, group: "code-word",
-            reason: "PHP stays an ordinary currency code outside the approved word-like set"
-        ),
-        .init(
-            "CNY 2026 Sale", .notPrice, group: "code-word",
-            reason: "CNY stays an ordinary currency code outside the approved word-like set"
-        ),
-        .init(
-            "SAR 1.18 W/kg", .notPrice, group: "code-word",
-            reason: "SAR stays an ordinary currency code outside the approved word-like set"
-        ),
-        .init(
-            "Burger Deluxe S12.99", .price("12.99"), group: "ocr-glitch",
-            reason: "OCR read the dollar sign as S"
-        ),
-        .init(
-            "Salade niçoise 11,9O €", .price("11.90"), group: "ocr-glitch",
-            reason: "OCR read 0 as O, so the euro sign no longer touches the number"
-        ),
-        .init(
-            "Katsu Curry ¥1, 200", .price("1200"), group: "ocr-glitch",
-            reason: "OCR put a space inside the grouping"
-        ),
-        .init(
-            "Soup of the day 6,5 0 €", .price("6.50"), group: "ocr-glitch",
-            reason: "OCR split the cents and the stray 0 is rejected as a zero amount"
-        ),
-        .init(
-            "Combo B $1O.99", .price("10.99"), group: "ocr-glitch",
-            reason: "OCR read 0 as O"
-        ),
-        .init(
-            "2,350", .bare, group: "fragment",
-            reason: "Label conflict: this set marks grouped numbers bare, bareGroupedNumberIsAPrice pins them as prices"
-        ),
     ]
 }

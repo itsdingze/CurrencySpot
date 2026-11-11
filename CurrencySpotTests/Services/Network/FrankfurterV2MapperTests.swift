@@ -78,35 +78,48 @@ struct FrankfurterV2MapperTests {
 
     // MARK: - Boundary validation
 
-    @Test("latest keeps currencies and leaves out crypto and other quotes that are not ISO currencies")
-    func latestLeavesOutQuotesThatAreNotCurrencies() throws {
+    @Test("latest skips quotes that are not currency codes")
+    func latestSkipsNonCurrencyQuotes() throws {
         let entries = [
-            FrankfurterV2Rate(date: "2026-11-10", base: "USD", quote: "AAVE", rate: 0.0080934),
+            FrankfurterV2Rate(date: "2026-11-07", base: "USD", quote: "AAVE", rate: 0.0076287),
+            FrankfurterV2Rate(date: "2026-11-08", base: "USD", quote: "EUR", rate: 0.89169),
+            FrankfurterV2Rate(date: "2026-11-07", base: "USD", quote: "USDT", rate: 1.0016),
+        ]
+
+        let response = try FrankfurterV2Mapper.latest(from: entries, base: "USD")
+
+        #expect(response.rates == ["EUR": 0.89169])
+    }
+
+    @Test("historical skips quotes that are not currency codes")
+    func historicalSkipsNonCurrencyQuotes() throws {
+        let entries = [
+            FrankfurterV2Rate(date: "2026-11-05", base: "USD", quote: "EUR", rate: 0.88),
+            FrankfurterV2Rate(date: "2026-11-05", base: "USD", quote: "USDT", rate: 1.0012),
+            FrankfurterV2Rate(date: "2026-11-06", base: "USD", quote: "EUR", rate: 0.89),
+            FrankfurterV2Rate(date: "2026-11-06", base: "USD", quote: "USDT", rate: 1.0016),
+        ]
+
+        let response = try FrankfurterV2Mapper.historical(from: entries, base: "USD", startingOn: "2026-11-05")
+
+        #expect(response.rates == ["2026-11-05": ["EUR": 0.88], "2026-11-06": ["EUR": 0.89]])
+    }
+
+    @Test("latest leaves out three-letter crypto, which is not an ISO currency")
+    func latestLeavesOutThreeLetterCrypto() throws {
+        let entries = [
             FrankfurterV2Rate(date: "2026-11-10", base: "USD", quote: "BTC", rate: 0.0000097),
-            FrankfurterV2Rate(date: "2026-11-10", base: "USD", quote: "EUR", rate: 0.89),
+            FrankfurterV2Rate(date: "2026-11-10", base: "USD", quote: "ETH", rate: 0.00029),
             FrankfurterV2Rate(date: "2026-11-10", base: "USD", quote: "JPY", rate: 150),
         ]
 
         let response = try FrankfurterV2Mapper.latest(from: entries, base: "USD")
 
-        #expect(response.rates == ["EUR": 0.89, "JPY": 150])
+        #expect(response.rates == ["JPY": 150])
     }
 
-    @Test("historical keeps currencies and leaves out crypto and other quotes that are not ISO currencies")
-    func historicalLeavesOutQuotesThatAreNotCurrencies() throws {
-        let entries = [
-            FrankfurterV2Rate(date: "2026-11-10", base: "USD", quote: "USDT", rate: 1.0002),
-            FrankfurterV2Rate(date: "2026-11-10", base: "USD", quote: "ETH", rate: 0.00029),
-            FrankfurterV2Rate(date: "2026-11-10", base: "USD", quote: "EUR", rate: 0.89),
-        ]
-
-        let response = try FrankfurterV2Mapper.historical(from: entries, base: "USD", startingOn: "2026-11-10")
-
-        #expect(response.rates == ["2026-11-10": ["EUR": 0.89]])
-    }
-
-    @Test("latest rejects a payload with no currency in it")
-    func latestThrowsWithoutCurrencies() {
+    @Test("latest throws when no quote is a currency code")
+    func latestThrowsWithoutCurrencyQuotes() {
         let entries = [FrankfurterV2Rate(date: "2026-06-07", base: "USD", quote: "eur1", rate: 0.86)]
         #expect(throws: AppError.self) {
             _ = try FrankfurterV2Mapper.latest(from: entries, base: "USD")

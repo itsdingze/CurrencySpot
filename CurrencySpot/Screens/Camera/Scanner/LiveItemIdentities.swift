@@ -17,6 +17,14 @@ nonisolated struct LiveItemIdentities {
 
     private var tracks: [Track] = []
 
+    mutating func transform(by transform: CGAffineTransform) {
+        let scale = hypot(transform.a, transform.b)
+        for index in tracks.indices {
+            tracks[index].center = tracks[index].center.applying(transform)
+            tracks[index].height *= scale
+        }
+    }
+
     mutating func identify(_ items: [RecognizedTextItem]) -> [RecognizedTextItem] {
         var ids = [UUID?](repeating: nil, count: items.count)
         var claimed: Set<Int> = []

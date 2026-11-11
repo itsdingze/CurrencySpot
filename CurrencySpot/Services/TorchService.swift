@@ -4,10 +4,9 @@ protocol TorchService: Sendable {
     func setTorch(enabled: Bool) -> Bool
 }
 
-// Locking any device but `userPreferredCamera` freezes DataScanner's session (Apple Developer Forums thread 717017).
 struct AVTorchService: TorchService {
     func setTorch(enabled: Bool) -> Bool {
-        guard let device = AVCaptureDevice.userPreferredCamera,
+        guard let device = BackCameraChoice.device(),
               device.hasTorch, device.isTorchAvailable
         else { return false }
         do {

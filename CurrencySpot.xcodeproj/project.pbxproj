@@ -502,7 +502,7 @@
 		0A42BCF72D6F14E6009B4F56 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = AppIconCoins;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconCoins AppIconEuro AppIconYen AppIconPound AppIconWon AppIconDollarYenCoins AppIconDollarPoundCoins AppIconDollarWonCoins AppIconPoundEuroCoins AppIconWonYenCoins";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
@@ -547,7 +547,7 @@
 		0A42BCF82D6F14E6009B4F56 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = AppIconCoins;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIconCoins AppIconEuro AppIconYen AppIconPound AppIconWon AppIconDollarYenCoins AppIconDollarPoundCoins AppIconDollarWonCoins AppIconPoundEuroCoins AppIconWonYenCoins";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;

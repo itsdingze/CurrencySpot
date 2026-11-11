@@ -8,7 +8,6 @@ nonisolated protocol StillTextRecognitionService: Sendable {
 
 nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
     private static let supportedLanguages = RecognizeTextRequest().supportedRecognitionLanguages
-    private static let maximumReadings = 5
 
     private let languagePolicy: RecognitionLanguagePolicy
 
@@ -34,14 +33,8 @@ nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
             candidates += try await Self.candidates(in: region, of: cgImage, sized: imageSize, using: request)
         }
         try Task.checkCancellation()
-        let items = Self.withInkGaps(RecognizedTextMerger.merge(candidates), in: cgImage)
+        let items = LineInkGaps.marking(RecognizedTextMerger.merge(candidates), in: GrayscaleImage(cgImage))
         return StillRecognitionResult(items: items, imagePixelSize: imageSize)
-    }
-
-    private static func withInkGaps(_ items: [RecognizedTextItem], in image: CGImage) -> [RecognizedTextItem] {
-        let hasDigits = { (item: RecognizedTextItem) in item.transcript.contains(where: \.isNumber) }
-        guard items.contains(where: hasDigits), let grayscale = GrayscaleImage(image) else { return items }
-        return items.map { hasDigits($0) ? $0.with(inkGaps: LineInkGaps.gaps(along: $0.quad, in: grayscale)) : $0 }
     }
 
     private static func candidates(
@@ -55,52 +48,10 @@ nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
         request.regionOfInterest = regionOfInterest
         request.minimumTextHeightFraction = region.minimumTextHeightFraction
         return try await request.perform(on: image).compactMap { observation in
-            let readings = observation.topCandidates(maximumReadings)
-            guard let topCandidate = readings.first else { return nil }
             let bounds = observation.boundingBox.toImageCoordinates(from: regionOfInterest, imageSize: imageSize, origin: .upperLeft)
             guard region.keeps(bounds) else { return nil }
-            func imagePoint(_ point: NormalizedPoint) -> CGPoint {
-                point.toImageCoordinates(from: regionOfInterest, imageSize: imageSize, origin: .upperLeft)
-            }
-            let item = RecognizedTextItem(
-                id: observation.uuid,
-                transcript: topCandidate.string,
-                quad: Quad(
-                    topLeft: imagePoint(observation.topLeft),
-                    topRight: imagePoint(observation.topRight),
-                    bottomRight: imagePoint(observation.bottomRight),
-                    bottomLeft: imagePoint(observation.bottomLeft)
-                ),
-                characterSpans: characterSpans(of: topCandidate, along: Quad(normalized: observation)),
-                alternateTranscripts: readings.dropFirst().map(\.string)
-            )
-            return RecognizedTextCandidate(item: item, confidence: topCandidate.confidence)
+            return RecognizedTextCandidate(observation, regionOfInterest: regionOfInterest, imageSize: imageSize)
         }
-    }
-
-    private static func characterSpans(of text: RecognizedText, along line: Quad) -> [ClosedRange<CGFloat>]? {
-        let transcript = text.string
-        guard transcript.contains(where: \.isNumber) else { return nil }
-        var spans: [ClosedRange<CGFloat>] = []
-        var index = transcript.startIndex
-        while index < transcript.endIndex {
-            let next = transcript.index(after: index)
-            guard let glyph = text.boundingBox(for: index ..< next) else { return nil }
-            spans.append(line.baselineSpan(of: Quad(normalized: glyph)))
-            index = next
-        }
-        return spans
-    }
-}
-
-private nonisolated extension Quad {
-    init(normalized region: some QuadrilateralProviding) {
-        self.init(
-            topLeft: CGPoint(x: region.topLeft.x, y: region.topLeft.y),
-            topRight: CGPoint(x: region.topRight.x, y: region.topRight.y),
-            bottomRight: CGPoint(x: region.bottomRight.x, y: region.bottomRight.y),
-            bottomLeft: CGPoint(x: region.bottomLeft.x, y: region.bottomLeft.y)
-        )
     }
 }
 

@@ -76,57 +76,57 @@ struct LiveDetectionStabilizerTests {
         #expect(stabilizer.items == [reading(1200, isPrice: true, bounds: moved)])
     }
 
-    @Test func jitteringLineTextStaysAtItsMedianPosition() {
-        var stabilizer = LiveDetectionStabilizer()
-        let line = CGRect(x: 0, y: 80, width: 200, height: 30)
-        let name = CGRect(x: 0, y: 80, width: 100, height: 30)
-
-        for offset in [0, 4, -3, 0, 2] as [CGFloat] {
-            stabilizer.record([DetectedItem(
-                id: id,
-                lineID: id,
-                transcript: "Ramen ¥980",
-                tokenQuad: Quad(CGRect(x: 140, y: 80, width: 60, height: 30)),
-                lineQuad: Quad(line),
-                lineTextQuads: [Quad(name.offsetBy(dx: 0, dy: offset))],
-                perUnitSuffix: nil,
-                conversion: .init(amount: 980, converted: 6.5, isPrice: true)
-            )])
-        }
-
-        #expect(stabilizer.items.first?.lineTextQuads.map(\.boundingBox) == [name])
+    private func ramen(_ amount: Decimal, movedBy offset: CGFloat) -> DetectedItem {
+        DetectedItem(
+            id: id,
+            lineID: id,
+            transcript: "Ramen ¥\(amount)",
+            tokenQuad: Quad(CGRect(x: 140 + offset, y: 80, width: 60, height: 30)),
+            lineQuad: Quad(CGRect(x: offset, y: 80, width: 200, height: 30)),
+            lineTextQuads: [Quad(CGRect(x: offset, y: 80, width: 100, height: 30))],
+            rowNeighbourCenter: CGPoint(x: 40 + offset, y: 95),
+            perUnitSuffix: nil,
+            conversion: .init(amount: amount, converted: amount / 150, isPrice: true)
+        )
     }
 
-    @Test func jitteringRowNeighbourStaysAtItsMedianPosition() {
+    @Test func aMovingLabelTakesItsPlaceFromTheNewestReadingAndItsAmountFromTheVote() throws {
         var stabilizer = LiveDetectionStabilizer()
-        let neighbour = CGPoint(x: 40, y: 95)
-
-        for offset in [0, 4, -3, 0, 2] as [CGFloat] {
-            stabilizer.record([DetectedItem(
-                id: id,
-                lineID: id,
-                transcript: "680円",
-                tokenQuad: Quad(CGRect(x: 140, y: 80, width: 60, height: 30)),
-                lineQuad: Quad(CGRect(x: 140, y: 80, width: 60, height: 30)),
-                lineTextQuads: [],
-                rowNeighbourCenter: CGPoint(x: neighbour.x + offset, y: neighbour.y - offset),
-                perUnitSuffix: nil,
-                conversion: .init(amount: 680, converted: 4.5, isPrice: true)
-            )])
+        for offset in [0, 4, -3] as [CGFloat] {
+            stabilizer.record([ramen(980, movedBy: offset)])
         }
 
-        #expect(stabilizer.items.first?.rowNeighbourCenter == neighbour)
+        stabilizer.record([ramen(989, movedBy: 12)])
+
+        let shown = try #require(stabilizer.items.first)
+        let newest = ramen(989, movedBy: 12)
+        #expect(shown.conversion.amount == 980)
+        #expect(shown.tokenQuad == newest.tokenQuad)
+        #expect(shown.lineQuad == newest.lineQuad)
+        #expect(shown.lineTextQuads == newest.lineTextQuads)
+        #expect(shown.rowNeighbourCenter == newest.rowNeighbourCenter)
     }
 
-    @Test func aJitteringTokenStaysAtItsMedianPosition() {
+    @Test func movingTheLabelsMovesShownAndLingeringLabelsAlike() throws {
         var stabilizer = LiveDetectionStabilizer()
-        let steady = CGRect(x: 40, y: 80, width: 100, height: 30)
+        let lingering = DetectedItem(
+            id: UUID(),
+            transcript: "¥450",
+            bounds: CGRect(x: 10, y: 300, width: 50, height: 20),
+            conversion: .init(amount: 450, converted: 3, isPrice: true)
+        )
+        stabilizer.record([ramen(980, movedBy: 0), lingering])
+        stabilizer.record([ramen(980, movedBy: 0)])
 
-        for offset in [0, 4, -3, 0, 2] as [CGFloat] {
-            stabilizer.record([reading(1200, isPrice: true, bounds: steady.offsetBy(dx: offset, dy: -offset))])
-        }
+        stabilizer.transform(by: CGAffineTransform(translationX: 10, y: -5))
 
-        #expect(stabilizer.items.first?.bounds == steady)
+        let shown = try #require(stabilizer.items.first { $0.id == id })
+        let moved = try #require(stabilizer.items.first { $0.id == lingering.id })
+        #expect(shown.tokenQuad.boundingBox == CGRect(x: 150, y: 75, width: 60, height: 30))
+        #expect(shown.lineQuad.boundingBox == CGRect(x: 10, y: 75, width: 200, height: 30))
+        #expect(shown.lineTextQuads.map(\.boundingBox) == [CGRect(x: 10, y: 75, width: 100, height: 30)])
+        #expect(shown.rowNeighbourCenter == CGPoint(x: 50, y: 90))
+        #expect(moved.bounds == CGRect(x: 20, y: 295, width: 50, height: 20))
     }
 
     @Test func onlyTheLastFiveReadingsVote() {

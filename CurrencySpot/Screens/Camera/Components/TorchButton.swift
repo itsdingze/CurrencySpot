@@ -8,31 +8,56 @@ struct TorchButton: View {
     @State private var holdTimer: Task<Void, Never>?
     @State private var buzzes = 0
     @State private var size = CGSize.zero
-    @GestureState private var isTouching = false
 
-    private static let heldScale: CGFloat = 1.15
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private static let heldScale: CGFloat = 1.35
+    private static let springDurationPerPeakTime = 1.73
 
     var body: some View {
-        ControlButtonChrome(glass: true, isInteractive: false, isPressed: press.isHeld, growth: press.isHeld ? Self.heldScale : 1) {
+        ControlButtonChrome(glass: true, isInteractive: false, isPressed: press.isHeld, growth: growth) {
             Image(systemName: symbol)
-                .scaleEffect(press.isHeld ? Self.heldScale : 1)
+                .scaleEffect(growth)
         }
-        .foregroundStyle(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.primary))
-        .animation(press.isHeld ? .linear(duration: HoldToToggle.holdDuration) : .appQuickFade, value: press.isHeld)
+        .overlay { litFace }
+        .animation(pressAnimation, value: press.isHeld)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-        .gesture(hold)
-        .onChange(of: isTouching) { _, isTouching in
-            if !isTouching { Task { abandonUnfinishedPress() } }
+        .overlay {
+            ImmediatePressArea(
+                largeContentTitle: String(localized: .cameraFlashlight),
+                largeContentSymbol: symbol,
+                onChange: touch,
+                onEnd: release,
+                onCancel: abandonUnfinishedPress
+            )
         }
-        .sensoryFeedback(.impact(weight: .medium), trigger: buzzes)
+        .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: buzzes)
         .accessibilityRepresentation {
             Toggle(isOn: isOnBinding) {
                 Text(.cameraFlashlight)
             }
         }
-        .accessibilityShowsLargeContentViewer {
-            Label(.cameraFlashlight, systemImage: symbol)
+    }
+
+    private var litFace: some View {
+        Image(systemName: "flashlight.on.fill")
+            .font(.appHeadline)
+            .foregroundStyle(.indigo)
+            .scaleEffect(growth)
+            .frame(width: size.width * growth, height: size.height * growth)
+            .background(.white, in: .circle)
+            .opacity(isOn ? 1 : 0)
+    }
+
+    private var growth: CGFloat {
+        press.isHeld ? Self.heldScale : 1
+    }
+
+    private var pressAnimation: Animation {
+        if reduceMotion {
+            return press.isHeld ? .linear(duration: HoldToToggle.holdDuration) : .appQuickFade
         }
+        return .bouncy(duration: HoldToToggle.holdDuration * Self.springDurationPerPeakTime, extraBounce: 0.2)
     }
 
     private var heldBounds: CGRect {
@@ -44,18 +69,15 @@ struct TorchButton: View {
         isOn ? "flashlight.on.fill" : "flashlight.off.fill"
     }
 
-    private var hold: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .updating($isTouching) { _, isTouching, _ in isTouching = true }
-            .onChanged { value in
-                let isNewPress = press.phase == .idle
-                press.touch(at: value.location, in: heldBounds)
-                if isNewPress { startHoldTimer() }
-            }
-            .onEnded { _ in
-                holdTimer?.cancel()
-                if press.release() { toggle() }
-            }
+    private func touch(at location: CGPoint) {
+        let isNewPress = press.phase == .idle
+        press.touch(at: location, in: heldBounds)
+        if isNewPress { startHoldTimer() }
+    }
+
+    private func release() {
+        holdTimer?.cancel()
+        if press.release() { toggle() }
     }
 
     private func startHoldTimer() {

@@ -5,6 +5,8 @@ struct NormalizedTranscript {
     let characters: [Character]
     private let originalIndices: [String.Index]
 
+    private static let raisedDots: Set<Character> = ["\u{00B7}", "\u{2022}"]
+
     private static let replacements: [Character: Character] = {
         var table: [Character: Character] = [
             "，": ",", "．": ".", "：": ":", "／": "/", "％": "%", "（": "(", "）": ")",
@@ -23,7 +25,7 @@ struct NormalizedTranscript {
 
     init(_ transcript: String) {
         self.transcript = transcript
-        characters = transcript.map(Self.normalized)
+        characters = TranscriptOCRRepair.repaired(Self.readingRaisedDotsAsDecimalPoints(transcript.map(Self.normalized)))
         originalIndices = Array(transcript.indices) + [transcript.endIndex]
     }
 
@@ -36,6 +38,23 @@ struct NormalizedTranscript {
         return character.isWhitespace && !character.isNewline ? " " : character
     }
 
+    private static func readingRaisedDotsAsDecimalPoints(_ characters: [Character]) -> [Character] {
+        var result = characters
+        for index in characters.indices.dropFirst().dropLast()
+        where raisedDots.contains(characters[index]) && isDigit(characters[index - 1]) && hasCents(after: index, in: characters) {
+            result[index] = "."
+        }
+        return result
+    }
+
+    private static func hasCents(after index: Int, in characters: [Character]) -> Bool {
+        (1...2).contains(characters[(index + 1)...].prefix(while: isDigit).count)
+    }
+
+    static func isDigit(_ character: Character) -> Bool {
+        character.isASCII && character.isNumber
+    }
+
     var count: Int { characters.count }
 
     func character(at offset: Int) -> Character? {
@@ -43,8 +62,7 @@ struct NormalizedTranscript {
     }
 
     func isDigit(_ offset: Int) -> Bool {
-        guard let character = character(at: offset) else { return false }
-        return character.isASCII && character.isNumber
+        character(at: offset).map(Self.isDigit) ?? false
     }
 
     func isSpace(_ offset: Int) -> Bool {

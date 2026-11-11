@@ -1,0 +1,191 @@
+{
+  "fill": {
+    "automatic-gradient": "extended-gray:1.00000,1.00000"
+  },
+  "groups": [
+    {
+      "hidden": false,
+      "layers": [
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "extended-gray:0.25000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "extended-gray:0.50000,1.00000"
+              }
+            }
+          ],
+          "image-name": "lower-arrow.png",
+          "name": "Lower Arrow"
+        },
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "extended-gray:0.25000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "extended-gray:0.50000,1.00000"
+              }
+            }
+          ],
+          "image-name": "upper-arrow.png",
+          "name": "Upper Arrow"
+        }
+      ],
+      "name": "Arrows",
+      "opacity": 1,
+      "position": {
+        "scale": 1.1,
+        "translation-in-points": [
+          0,
+          0
+        ]
+      },
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.3
+      }
+    },
+    {
+      "layers": [
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "extended-gray:1.00000,1.00000"
+              }
+            }
+          ],
+          "image-name": "won-sign.svg",
+          "name": "Won Sign",
+          "position": {
+            "scale": 0.45312,
+            "translation-in-points": [
+              -135.0,
+              -133.68
+            ]
+          }
+        },
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "extended-srgb:1.00000,0.55294,0.15686,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "extended-srgb:1.00000,0.55294,0.15686,1.00000"
+              }
+            }
+          ],
+          "image-name": "top-coin.png",
+          "name": "Won Coin"
+        }
+      ],
+      "name": "Won Coin",
+      "position": {
+        "scale": 1.25,
+        "translation-in-points": [
+          0,
+          0
+        ]
+      },
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.3
+      }
+    },
+    {
+      "layers": [
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "extended-gray:1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "extended-gray:1.00000,1.00000"
+              }
+            }
+          ],
+          "image-name": "yen-sign.svg",
+          "name": "Yen Sign",
+          "position": {
+            "scale": 0.45312,
+            "translation-in-points": [
+              135.0,
+              134.63
+            ]
+          }
+        },
+        {
+          "fill-specializations": [
+            {
+              "value": {
+                "automatic-gradient": "extended-srgb:1.00000,0.21961,0.23529,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "automatic-gradient": "extended-srgb:1.00000,0.21961,0.23529,1.00000"
+              }
+            }
+          ],
+          "image-name": "bottom-coin.png",
+          "name": "Yen Coin"
+        }
+      ],
+      "name": "Yen Coin",
+      "position": {
+        "scale": 1.25,
+        "translation-in-points": [
+          0,
+          0
+        ]
+      },
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.3
+      }
+    }
+  ],
+  "supported-platforms": {
+    "circles": [
+      "watchOS"
+    ],
+    "squares": "shared"
+  }
+}

@@ -18,7 +18,6 @@ struct AppIconPickerSheet: View {
                 selectedIcon: settingsViewModel.appIcon,
                 onSelect: selectAppIcon
             )
-            .presentationDetents([.fraction(0.25)])
         }
     }
 
@@ -61,12 +60,14 @@ private struct AppIconSelectionSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var displaySelection: AppIconOption?
+    @State private var centeredIcon: AppIconOption?
+    @State private var isConfirmed = false
 
-    private let iconSpacing: CGFloat = 32
-    private let iconSide: CGFloat = 64
-    private let selectionRingGap: CGFloat = 4
-    private let selectionRingWidth: CGFloat = 3
+    init(selectedIcon: AppIconOption, onSelect: @escaping (AppIconOption) -> Void) {
+        self.selectedIcon = selectedIcon
+        self.onSelect = onSelect
+        _centeredIcon = State(initialValue: selectedIcon)
+    }
 
     var body: some View {
         sheetContent
@@ -76,51 +77,129 @@ private struct AppIconSelectionSheet: View {
     @ViewBuilder
     private var sheetContent: some View {
         NavigationStack {
-            HStack(spacing: iconSpacing) {
-                ForEach(AppIconOption.allCases) { icon in
-                    iconItem(for: icon)
-                }
+            SheetFittingScrollView(padding: .vertical) {
+                AppIconCarousel(centeredIcon: $centeredIcon)
             }
-            .padding()
             .navigationTitle(.settingsAppIconTitle)
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(.settingsAppIconDone) { dismiss() }
+                    Button(.settingsAppIconDone, action: confirm)
                 }
             }
         }
     }
 
+    // MARK: - Private Methods
+
+    private func confirm() {
+        isConfirmed = true
+        dismiss()
+    }
+
+    private func commitSelection() {
+        guard isConfirmed, let centeredIcon, centeredIcon != selectedIcon else { return }
+        onSelect(centeredIcon)
+    }
+}
+
+// MARK: - App Icon Carousel
+
+private struct AppIconCarousel: View {
+    @Binding var centeredIcon: AppIconOption?
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var viewportWidth: CGFloat = 0
+
+    private let iconSide: CGFloat = 64
+    private let itemSpacing: CGFloat = 20
+    private let selectionRingGap: CGFloat = 4
+    private let selectionRingWidth: CGFloat = 3
+
+    private var itemSide: CGFloat { iconSide + 2 * selectionRingGap }
+    private var itemStep: CGFloat { itemSide + itemSpacing }
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            LazyHStack(spacing: itemSpacing) {
+                ForEach(AppIconOption.allCases) { icon in
+                    item(for: icon)
+                        .visualEffect { [itemStep] content, proxy in
+                            AppIconCarouselCurve.bend(content, at: AppIconCarouselCurve.stepsFromCenter(of: proxy, step: itemStep))
+                        }
+                }
+            }
+            .padding(.bottom, AppIconCarouselCurve.arcDepth)
+            .scrollTargetLayout()
+        }
+        .contentMargins(.horizontal, max(0, (viewportWidth - itemSide) / 2), for: .scrollContent)
+        .scrollTargetBehavior(.viewAligned)
+        .scrollPosition(id: $centeredIcon)
+        .scrollIndicators(.hidden)
+        .scrollClipDisabled()
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { viewportWidth = $0 }
+        .mask(edgeFade)
+        .overlay(alignment: .top) { selectionRing }
+        .sensoryFeedback(.selection, trigger: centeredIcon)
+    }
+
     // MARK: - Private Views
 
-    @ViewBuilder
-    private func iconItem(for icon: AppIconOption) -> some View {
-        let isSelected = (displaySelection ?? selectedIcon) == icon
-        let ringRadius = AppIconArtwork.cornerRadius(forSide: iconSide) + selectionRingGap
+    private var selectionRing: some View {
+        RoundedRectangle(cornerRadius: AppIconArtwork.cornerRadius(forSide: iconSide) + selectionRingGap)
+            .stroke(.tint, lineWidth: selectionRingWidth)
+            .frame(width: itemSide, height: itemSide)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
 
-        Button(action: { displaySelection = icon }) {
+    private var edgeFade: some View {
+        LinearGradient(
+            stops: [
+                .init(color: .clear, location: 0),
+                .init(color: .black, location: 0.2),
+                .init(color: .black, location: 0.8),
+                .init(color: .clear, location: 1),
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    private func item(for icon: AppIconOption) -> some View {
+        Button(action: { center(icon) }) {
             AppIconPreview(icon: icon, side: iconSide)
                 .padding(selectionRingGap)
-                .overlay {
-                    if isSelected {
-                        RoundedRectangle(cornerRadius: ringRadius)
-                            .stroke(.tint, lineWidth: selectionRingWidth)
-                    }
-                }
-                .scaleEffect(isSelected ? 1.1 : 1.0)
-                .animation(.snappy(duration: 0.3), value: isSelected)
         }
         .accessibilityLabel(icon.displayName)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityAddTraits(centeredIcon == icon ? .isSelected : [])
     }
 
     // MARK: - Private Methods
 
-    private func commitSelection() {
-        if let displaySelection, displaySelection != selectedIcon {
-            onSelect(displaySelection)
-        }
+    private func center(_ icon: AppIconOption) {
+        withAnimation(reduceMotion ? nil : .appSelect) { centeredIcon = icon }
+    }
+}
+
+// MARK: - App Icon Carousel Curve
+
+private nonisolated enum AppIconCarouselCurve {
+    static let arcDepth: CGFloat = 8
+    private static let dropPerStep: CGFloat = 4
+    private static let shrinkPerStep: CGFloat = 0.05
+    private static let smallestScale: CGFloat = 0.5
+
+    static func stepsFromCenter(of proxy: GeometryProxy, step: CGFloat) -> CGFloat {
+        guard let viewport = proxy.bounds(of: .scrollView) else { return 0 }
+        return abs(proxy.frame(in: .scrollView).midX - viewport.midX) / step
+    }
+
+    static func bend(_ content: EmptyVisualEffect, at steps: CGFloat) -> some VisualEffect {
+        content
+            .scaleEffect(max(1 - shrinkPerStep * steps, smallestScale))
+            .offset(y: dropPerStep * steps)
     }
 }
 
@@ -150,5 +229,11 @@ private struct AppIconPreview: View {
         }
     }
     .withDependencyContainer(container)
+}
+
+#Preview("Carousel") {
+    @Previewable @State var centeredIcon: AppIconOption? = .dollar
+
+    AppIconCarousel(centeredIcon: $centeredIcon)
 }
 #endif

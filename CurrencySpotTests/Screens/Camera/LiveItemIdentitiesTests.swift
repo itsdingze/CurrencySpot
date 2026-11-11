@@ -33,6 +33,16 @@ struct LiveItemIdentitiesTests {
         #expect(second.id == first.id)
     }
 
+    @Test func aPriceFollowedThroughALargeCameraMoveKeepsItsID() throws {
+        var identities = LiveItemIdentities()
+        let first = try #require(identities.identify([item(at: CGPoint(x: 100, y: 100))]).first)
+
+        identities.transform(by: CGAffineTransform(translationX: 300, y: 0))
+        let second = try #require(identities.identify([item(at: CGPoint(x: 400, y: 100))]).first)
+
+        #expect(second.id == first.id)
+    }
+
     @Test func aNewPriceGetsANewID() throws {
         var identities = LiveItemIdentities()
         let first = try #require(identities.identify([item(at: CGPoint(x: 100, y: 100))]).first)

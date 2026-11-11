@@ -43,7 +43,7 @@ struct PriceClassifierMarkerTests {
     }
 
     @Test func strayZeroBesideAMarkerIsNeverPriced() throws {
-        #expect(classifier.classify("Soup of the day 6,5 0 €") == (try .outline("6.5")))
+        #expect(classifier.classify("Soup of the day 6 0 €") == (try .outline("6")))
     }
 
     @Test(arguments: [
@@ -87,6 +87,36 @@ struct PriceClassifierMarkerTests {
     @Test(arguments: [("CAD 12.00", "12"), ("TRY 89,90", "89.9"), ("CAD 1,299", "1299")])
     func wordLikeCurrencyCodeBesideAMoneyShapedAmountIsAPrice(transcript: String, amount: String) throws {
         #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test(arguments: [("PHP 8.3 Workshop", "8.3"), ("SAR 8.5", "8.5"), ("CNY 2026 Sale", "2026")])
+    func acronymLikeCodeLeavesAVersionOrAYearBeforeAWordAsAnOutline(transcript: String, amount: String) throws {
+        #expect(classifier.classify(transcript) == (try .outline(amount)))
+    }
+
+    @Test(arguments: [
+        ("PHP 150", "150"), ("PHP 260.00", "260"), ("CNY 88", "88"), ("CNY 28.00", "28"), ("CNY 2026", "2026"),
+        ("SAR 25", "25"), ("SAR 1.18", "1.18"),
+    ])
+    func acronymLikeCodeBesideAnyOtherAmountIsAPrice(transcript: String, amount: String) throws {
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test(arguments: [
+        ("Hotel 2000 CNY", "2000"), ("Room 1950 PHP", "1950"), ("Phone 1999 SAR", "1999"), ("Coffee 18.5 SAR", "18.5"),
+    ])
+    func acronymLikeCodeAfterItsAmountIsAPrice(transcript: String, amount: String) throws {
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test(arguments: [("USD 2.5", "2.5"), ("AED 7.5", "7.5"), ("EUR 1999 incl. VAT", "1999")])
+    func ordinaryCodeBindsAOneDecimalOrAYearBeforeAWord(transcript: String, amount: String) throws {
+        #expect(classifier.classify(transcript) == (try .price(amount)))
+    }
+
+    @Test(arguments: ["SAR 1.18 W/kg", "1.6 W/kg", "$1.18 W/kg", "1.18W/Kg", "5€99 W/kg"])
+    func powerDensityIsNeverANumber(transcript: String) {
+        #expect(classifier.classify(transcript) == nil)
     }
 
     @Test(arguments: [
