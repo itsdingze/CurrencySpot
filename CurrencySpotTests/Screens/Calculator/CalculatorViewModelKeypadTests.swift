@@ -40,6 +40,16 @@ struct CalculatorViewModelKeypadTests {
         #expect(viewModel.inputAmountString == "12")
     }
 
+    @Test("a third fraction digit is rejected, so the From field never rounds a typed number")
+    func thirdFractionDigitIsRejected() throws {
+        let viewModel = try makeViewModel()
+        viewModel.showKeypad(.calculator)
+        calculate("1.99", in: viewModel)
+
+        #expect(viewModel.press(.digit(9)) == .rejected)
+        #expect(viewModel.formattedInputAmount == "1.99")
+    }
+
     @Test("equals settles the calculation and reports it as settled")
     func equalsReportsSettled() throws {
         let viewModel = try makeViewModel()

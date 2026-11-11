@@ -34,6 +34,18 @@ struct CalculatorExpressionTests {
         #expect(entering("1250+8*").result == 1258)
     }
 
+    @Test("a number takes at most two fraction digits, in every number of the calculation")
+    func numbersStopAtTwoFractionDigits() {
+        var expression = entering("1.99")
+        #expect(expression.apply(.digit(9)) == false)
+        #expect(expression.result == Decimal(string: "1.99"))
+
+        expression = entering("2+1.55")
+        #expect(expression.apply(.digit(5)) == false)
+        #expect(expression.result == Decimal(string: "3.55"))
+        #expect(expression.steps(locale: Locale(identifier: "en_US")) == "2 + 1.55")
+    }
+
     @Test("a decimal point starts a fraction once per number")
     func decimalPointOncePerNumber() throws {
         #expect(entering("12.5+.25").result == Decimal(string: "12.75"))

@@ -66,6 +66,7 @@ nonisolated struct CalculatorExpression: Codable, Equatable, Sendable {
     private static let posix = Locale(identifier: "en_US_POSIX")
     private static let percentSign = "%"
     private static let maxDigitsPerNumber = 12
+    private static let maxFractionDigits = 2
 
     var hasOperator: Bool { !operators.isEmpty }
 
@@ -100,7 +101,8 @@ nonisolated struct CalculatorExpression: Codable, Equatable, Sendable {
         switch input {
         case let .digit(digit):
             guard !current.hasSuffix(Self.percentSign),
-                  current.filter(\.isNumber).count < Self.maxDigitsPerNumber
+                  current.filter(\.isNumber).count < Self.maxDigitsPerNumber,
+                  Self.fractionDigitCount(in: current) < Self.maxFractionDigits
             else { return false }
             operands[operands.count - 1] = current == "0" ? "\(digit)" : current + "\(digit)"
         case .decimalPoint:
@@ -164,6 +166,11 @@ nonisolated struct CalculatorExpression: Codable, Equatable, Sendable {
             }
         }
         return finishedTerms + termSign * term
+    }
+
+    private static func fractionDigitCount(in operand: String) -> Int {
+        guard let point = operand.firstIndex(of: ".") else { return 0 }
+        return operand[operand.index(after: point)...].count
     }
 
     private static func number(in operand: String) -> (value: Decimal, isPercent: Bool)? {
