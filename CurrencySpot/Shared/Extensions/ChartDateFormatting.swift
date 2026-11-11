@@ -12,7 +12,11 @@ extension Date {
     }
 
     var lastUpdatedDisplay: String {
-        formatted(.dateTime.year().month().day().hour().minute().locale(Locale.current))
+        lastUpdatedDisplay(in: .current)
+    }
+
+    func lastUpdatedDisplay(in locale: Locale) -> String {
+        formatted(.dateTime.year().month().day().hour().minute().locale(locale))
     }
 
     func savedRatesDisplay(relativeTo now: Date) -> String {

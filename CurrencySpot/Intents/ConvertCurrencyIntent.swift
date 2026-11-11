@@ -19,10 +19,10 @@ struct ConvertCurrencyIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<Double> & ProvidesDialog & ShowsSnippetView {
         let conversion = try await convertCurrency(amount: Decimal(amount), from: from.code, to: to.code)
-        let formatted = FormattedConversion(conversion)
+        let formatted = FormattedConversion(conversion, locale: .appLanguage(in: .appGroup))
         return .result(
             value: NSDecimalNumber(decimal: conversion.converted).doubleValue,
-            dialog: IntentDialog(.intentConvertResult(amount: formatted.amount, converted: formatted.converted)),
+            dialog: IntentDialog("\(formatted.dialog)"),
             view: ConversionSnippetView(conversion: formatted)
                 .environment(\.colorScheme, systemColorScheme)
         )
@@ -37,6 +37,14 @@ struct ConvertCurrencyIntent: AppIntent {
 
 extension ConvertCurrencyUseCase.Failure: CustomLocalizedStringResourceConvertible {
     var localizedStringResource: LocalizedStringResource {
+        "\(message(in: .appLanguage(in: .appGroup)))"
+    }
+
+    func message(in locale: Locale) -> String {
+        String(localized: resource, in: locale)
+    }
+
+    private var resource: LocalizedStringResource {
         switch self {
         case let .ratesUnavailable(error): error?.message ?? .errorNetworkMessage
         case let .noRate(currency): .intentConvertNoRate(currency: currency.rawValue)

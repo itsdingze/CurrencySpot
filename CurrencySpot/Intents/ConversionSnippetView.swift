@@ -11,8 +11,8 @@ struct ConversionSnippetView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
 
-            if let ratesDate = conversion.ratesDate {
-                Text(.calculatorRateInfoLastUpdated(date: ratesDate))
+            if let lastUpdated = conversion.lastUpdated {
+                Text(lastUpdated)
                     .font(.appCaption)
                     .foregroundStyle(.secondary)
             }
