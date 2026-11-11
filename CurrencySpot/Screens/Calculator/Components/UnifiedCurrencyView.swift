@@ -57,6 +57,8 @@ struct UnifiedCurrencyView: View {
     let currencyCode: CurrencyCode
     var caption: String?
     var unavailableReason: LocalizedStringResource?
+    var copyableAmount: String?
+    var onPaste: ((String) -> Void)?
     let onPress: () -> Void
 
     @Environment(\.appAccent) private var accent
@@ -109,6 +111,26 @@ struct UnifiedCurrencyView: View {
         .accessibilityLabel(accessibilityAmountLabel)
         .accessibilityValue(accessibilityAmountValue)
         .accessibilityAddTraits(.updatesFrequently)
+        .contentShape(.rect)
+        .contextMenu { amountMenu }
+    }
+
+    @ViewBuilder
+    private var amountMenu: some View {
+        Button(action: copyAmount) {
+            Label { Text(.calculatorHistoryCopy) } icon: { Image(systemName: "doc.on.doc") }
+        }
+        .disabled(copyableAmount == nil)
+        if let onPaste {
+            PasteButton(payloadType: String.self) { strings in
+                guard let text = strings.first else { return }
+                onPaste(text)
+            }
+        }
+    }
+
+    private func copyAmount() {
+        UIPasteboard.general.string = copyableAmount
     }
 
     private func amountLabel(_ text: String) -> some View {

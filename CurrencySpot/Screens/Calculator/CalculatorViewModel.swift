@@ -35,6 +35,8 @@ final class CalculatorViewModel {
 
     private var calculator = CalculatorSession()
 
+    private let pastedAmountParser = PastedAmountParser(locale: .autoupdatingCurrent)
+
     @ObservationIgnored private var conversionShownSince: Date
     @ObservationIgnored private var lastSaved: ConversionRecord?
     private let conversionSettlesAfter: TimeInterval = 2
@@ -241,6 +243,27 @@ final class CalculatorViewModel {
 
     private func amountDigits(for result: Decimal) -> String {
         calculateConversionUseCase.impliedCentsDigits(for: max(result, 0))
+    }
+
+    // MARK: - Clipboard Intents
+
+    var copyableInputAmount: String? {
+        isCalculationUndefined ? nil : formattedInputAmount
+    }
+
+    var copyableConvertedAmount: String? {
+        isCalculationUndefined ? nil : convertedAmount
+    }
+
+    @discardableResult
+    func paste(_ text: String) -> KeyPress {
+        guard let amount = pastedAmountParser.amount(in: text) else { return .rejected }
+        let digits = amountDigits(for: amount)
+        guard digits.count <= maxInputLength else { return .rejected }
+        saveSettledConversion()
+        inputAmountString = digits
+        calculator.restore(nil, amount: amount, amountDigits: digits)
+        return .accepted
     }
 
     // MARK: - History Intents

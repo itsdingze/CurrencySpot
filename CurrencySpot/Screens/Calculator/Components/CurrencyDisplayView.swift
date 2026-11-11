@@ -3,6 +3,9 @@ import SwiftUI
 struct CurrencyDisplayView: View {
     @Environment(CalculatorViewModel.self) private var calculatorViewModel: CalculatorViewModel
 
+    @State private var acceptedPastes = 0
+    @State private var rejectedPastes = 0
+
     var body: some View {
         VStack(spacing: Spacing.tight) {
             sourceCurrencyView
@@ -11,6 +14,8 @@ struct CurrencyDisplayView: View {
         }
         .padding(Spacing.cardPadding)
         .background(Color.secondaryBackground, in: .rect(cornerRadius: Radius.container))
+        .sensoryFeedback(.selection, trigger: acceptedPastes)
+        .sensoryFeedback(.warning, trigger: rejectedPastes)
     }
 
     // MARK: - Private Views
@@ -24,6 +29,8 @@ struct CurrencyDisplayView: View {
             currencyCode: calculatorViewModel.baseCurrency,
             caption: calculatorViewModel.calculationSteps,
             unavailableReason: sourceUnavailableReason,
+            copyableAmount: calculatorViewModel.copyableInputAmount,
+            onPaste: paste,
             onPress: selectSourceCurrency
         )
     }
@@ -36,6 +43,7 @@ struct CurrencyDisplayView: View {
             compactAmount: compactConvertedAmount ?? Self.noAmountPlaceholder,
             currencyCode: calculatorViewModel.targetCurrency,
             unavailableReason: targetUnavailableReason,
+            copyableAmount: calculatorViewModel.copyableConvertedAmount,
             onPress: selectTargetCurrency
         )
     }
@@ -72,6 +80,14 @@ struct CurrencyDisplayView: View {
     }
 
     // MARK: - Private Methods
+
+    private func paste(_ text: String) {
+        if calculatorViewModel.paste(text) == .accepted {
+            acceptedPastes += 1
+        } else {
+            rejectedPastes += 1
+        }
+    }
 
     private func selectSourceCurrency() {
         calculatorViewModel.destination = .basePicker
