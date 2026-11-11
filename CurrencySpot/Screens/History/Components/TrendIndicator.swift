@@ -3,14 +3,11 @@ import SwiftUI
 struct TrendIndicator: View {
     let value: String
     let direction: TrendDirection
+    var alignsIconInColumn = true
 
     var body: some View {
         HStack(spacing: 2) {
-            Image(systemName: "circle")
-                .opacity(0)
-                .overlay(alignment: .trailing) {
-                    Image(systemName: direction.systemImage)
-                }
+            icon
                 .accessibilityHidden(true)
 
             Text(value)
@@ -20,6 +17,19 @@ struct TrendIndicator: View {
         .foregroundStyle(direction.color)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(changeAccessibilityLabel)
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        if alignsIconInColumn {
+            Image(systemName: "circle")
+                .opacity(0)
+                .overlay(alignment: .trailing) {
+                    Image(systemName: direction.systemImage)
+                }
+        } else {
+            Image(systemName: direction.systemImage)
+        }
     }
 
     private var changeAccessibilityLabel: LocalizedStringResource {
