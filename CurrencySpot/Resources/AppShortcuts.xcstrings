@@ -3,38 +3,206 @@
   "strings" : {
     "Convert currency to ${to} with ${applicationName}" : {
       "localizations" : {
-        "de" : { "stringSet" : { "state" : "translated", "values" : [ "Mit ${applicationName} in ${to} umrechnen" ] } },
-        "es" : { "stringSet" : { "state" : "translated", "values" : [ "Convertir a ${to} con ${applicationName}" ] } },
-        "es-419" : { "stringSet" : { "state" : "translated", "values" : [ "Convertir a ${to} con ${applicationName}" ] } },
-        "fr" : { "stringSet" : { "state" : "translated", "values" : [ "Convertir en ${to} avec ${applicationName}" ] } },
-        "ja" : { "stringSet" : { "state" : "translated", "values" : [ "${applicationName}で${to}に換算" ] } },
-        "ko" : { "stringSet" : { "state" : "translated", "values" : [ "${applicationName}에서 ${to}(으)로 환산" ] } },
-        "zh-Hans" : { "stringSet" : { "state" : "translated", "values" : [ "用${applicationName}换算成${to}" ] } },
-        "zh-Hant" : { "stringSet" : { "state" : "translated", "values" : [ "用${applicationName}換算成${to}" ] } }
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Mit ${applicationName} in ${to} umrechnen"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Convertir a ${to} con ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Convertir a ${to} con ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Convertir en ${to} avec ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}で${to}に換算"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에서 ${to} 단위로 환산"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "用${applicationName}换算成${to}"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "用${applicationName}換算成${to}"
+            ]
+          }
+        }
       }
     },
     "Convert currency with ${applicationName}" : {
       "localizations" : {
-        "de" : { "stringSet" : { "state" : "translated", "values" : [ "Währung mit ${applicationName} umrechnen" ] } },
-        "es" : { "stringSet" : { "state" : "translated", "values" : [ "Convertir divisa con ${applicationName}" ] } },
-        "es-419" : { "stringSet" : { "state" : "translated", "values" : [ "Convertir divisa con ${applicationName}" ] } },
-        "fr" : { "stringSet" : { "state" : "translated", "values" : [ "Convertir une devise avec ${applicationName}" ] } },
-        "ja" : { "stringSet" : { "state" : "translated", "values" : [ "${applicationName}で通貨を換算" ] } },
-        "ko" : { "stringSet" : { "state" : "translated", "values" : [ "${applicationName}에서 통화 환산" ] } },
-        "zh-Hans" : { "stringSet" : { "state" : "translated", "values" : [ "用${applicationName}换算币种" ] } },
-        "zh-Hant" : { "stringSet" : { "state" : "translated", "values" : [ "用${applicationName}換算幣別" ] } }
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Währung mit ${applicationName} umrechnen"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Convertir divisa con ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Convertir divisa con ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Convertir une devise avec ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}で通貨を換算"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에서 통화 환산"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "用${applicationName}换算货币"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "用${applicationName}換算貨幣"
+            ]
+          }
+        }
       }
     },
     "Scan prices with ${applicationName}" : {
       "localizations" : {
-        "de" : { "stringSet" : { "state" : "translated", "values" : [ "Preise mit ${applicationName} scannen" ] } },
-        "es" : { "stringSet" : { "state" : "translated", "values" : [ "Escanear precios con ${applicationName}" ] } },
-        "es-419" : { "stringSet" : { "state" : "translated", "values" : [ "Escanear precios con ${applicationName}" ] } },
-        "fr" : { "stringSet" : { "state" : "translated", "values" : [ "Scanner les prix avec ${applicationName}" ] } },
-        "ja" : { "stringSet" : { "state" : "translated", "values" : [ "${applicationName}で価格をスキャン" ] } },
-        "ko" : { "stringSet" : { "state" : "translated", "values" : [ "${applicationName}에서 가격 스캔" ] } },
-        "zh-Hans" : { "stringSet" : { "state" : "translated", "values" : [ "用${applicationName}扫描价格" ] } },
-        "zh-Hant" : { "stringSet" : { "state" : "translated", "values" : [ "用${applicationName}掃描價格" ] } }
+        "de" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Preise mit ${applicationName} scannen"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Escanear precios con ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Escanear precios con ${applicationName}"
+            ]
+          }
+        },
+        "fr" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Scanner les prix avec ${applicationName}"
+            ]
+          }
+        },
+        "ja" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}で価格をスキャン"
+            ]
+          }
+        },
+        "ko" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "${applicationName}에서 가격 스캔"
+            ]
+          }
+        },
+        "zh-Hans" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "用${applicationName}扫描价格"
+            ]
+          }
+        },
+        "zh-Hant" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "用${applicationName}掃描價格"
+            ]
+          }
+        }
       }
     }
   },

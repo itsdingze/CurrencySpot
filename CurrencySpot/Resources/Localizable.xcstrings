@@ -223,7 +223,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "履歴"
+            "value" : "為替推移"
           }
         },
         "ko" : {
@@ -1795,13 +1795,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "所有换算都将被删除。此操作无法撤销。"
+            "value" : "所有换算记录都将被删除。此操作无法撤销。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "所有換算都將被刪除。此操作無法還原。"
+            "value" : "所有換算記錄都將被刪除。此操作無法還原。"
           }
         }
       }
@@ -2308,7 +2308,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "删除 %(count)lld 条换算"
+                  "value" : "删除 %(count)lld 条换算记录"
                 }
               }
             }
@@ -2320,7 +2320,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "刪除 %(count)lld 筆換算"
+                  "value" : "刪除 %(count)lld 筆換算記錄"
                 }
               }
             }
@@ -2470,7 +2470,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld 条换算将被删除。此操作无法撤销。"
+                  "value" : "%(count)lld 条换算记录将被删除。此操作无法撤销。"
                 }
               }
             }
@@ -2482,7 +2482,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%(count)lld 筆換算將被刪除。此操作無法還原。"
+                  "value" : "%(count)lld 筆換算記錄將被刪除。此操作無法還原。"
                 }
               }
             }
@@ -2599,13 +2599,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你的换算会保存在这里。"
+            "value" : "换算记录会保存在这里。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你的換算會儲存在這裡。"
+            "value" : "換算記錄會儲存在這裡。"
           }
         }
       }
@@ -4141,7 +4141,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hors ligne · Dernière mise à jour : %(date)@"
+            "value" : "Hors ligne · Dernière mise à jour : %(date)@"
           }
         },
         "ja" : {
@@ -4201,7 +4201,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Échec de la mise à jour · Dernière mise à jour : %(date)@"
+            "value" : "Échec de la mise à jour · Dernière mise à jour : %(date)@"
           }
         },
         "ja" : {
@@ -4711,7 +4711,7 @@
       }
     },
     "camera.announcement.noPricesFound" : {
-      "comment" : "VoiceOver announcement when a frozen camera frame contains no prices. Resume camera is the shutter button label.",
+      "comment" : "VoiceOver announcement when a frozen camera frame contains no prices. Resume scanning is the shutter button label.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -4729,13 +4729,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se han encontrado precios. Selecciona “Reanudar cámara” y toca dos veces para intentarlo de nuevo."
+            "value" : "No se han encontrado precios. Selecciona “Reanudar escaneo” y toca dos veces para intentarlo de nuevo."
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se encontraron precios. Selecciona “Reanudar cámara” y toca dos veces para intentarlo de nuevo."
+            "value" : "No se encontraron precios. Selecciona “Reanudar escaneo” y toca dos veces para intentarlo de nuevo."
           }
         },
         "fr" : {
@@ -6283,7 +6283,7 @@
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lámpara"
+            "value" : "Linterna"
           }
         },
         "fr" : {
@@ -6757,13 +6757,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reanudar cámara"
+            "value" : "Reanudar escaneo"
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reanudar cámara"
+            "value" : "Reanudar escaneo"
           }
         },
         "fr" : {
@@ -7183,7 +7183,7 @@
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OK"
+            "value" : "Listo"
           }
         },
         "fr" : {
@@ -7477,13 +7477,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se han podido validar los datos de los tipos de cambio. Inténtalo de nuevo."
+            "value" : "No se pueden usar los datos de los tipos de cambio recibidos. Inténtalo de nuevo."
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se pudieron validar los datos de las tasas de cambio. Inténtalo de nuevo."
+            "value" : "No se pueden usar los datos de las tasas de cambio recibidos. Inténtalo de nuevo."
           }
         },
         "fr" : {
@@ -7537,13 +7537,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Error de validación de datos"
+            "value" : "No se pueden usar los tipos de cambio"
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Error de validación de datos"
+            "value" : "No se pueden usar las tasas de cambio"
           }
         },
         "fr" : {
@@ -7657,13 +7657,13 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Error al procesar la fecha"
+            "value" : "No se puede calcular el periodo"
           }
         },
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Error al procesar la fecha"
+            "value" : "No se puede calcular el período"
           }
         },
         "fr" : {
@@ -11479,7 +11479,7 @@
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OK"
+            "value" : "Listo"
           }
         },
         "fr" : {
@@ -12145,7 +12145,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "履歴"
+            "value" : "為替推移"
           }
         },
         "ko" : {
@@ -14371,7 +14371,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$(amount)@은(는) %2$(converted)@예요"
+            "value" : "%1$(amount)@의 환산 금액은 %2$(converted)@입니다."
           }
         },
         "zh-Hans" : {
@@ -14437,13 +14437,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "换算币种"
+            "value" : "货币换算"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "換算幣別"
+            "value" : "貨幣換算"
           }
         }
       }
@@ -14551,7 +14551,7 @@
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%(currency)@(으)로 환산"
+            "value" : "%(currency)@ 단위로 환산"
           }
         },
         "zh-Hans" : {
@@ -17953,7 +17953,7 @@
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OK"
+            "value" : "Listo"
           }
         },
         "fr" : {
@@ -19033,7 +19033,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Icône de l’app : %1$(icon)@"
+            "value" : "Icône de l’app : %1$(icon)@"
           }
         },
         "ja" : {
@@ -19387,7 +19387,7 @@
         "es-419" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OK"
+            "value" : "Listo"
           }
         },
         "fr" : {
@@ -24673,7 +24673,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mis à jour : %(date)@"
+            "value" : "Mis à jour : %(date)@"
           }
         },
         "ja" : {
@@ -24811,13 +24811,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关注一组币种汇率。"
+            "value" : "查看两种货币之间的汇率。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關注一組幣別匯率。"
+            "value" : "追蹤兩種幣別之間的匯率。"
           }
         }
       }
@@ -25297,7 +25297,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關注多個幣別相對同一基準幣別的匯率。"
+            "value" : "追蹤多個幣別相對同一基準幣別的匯率。"
           }
         }
       }
