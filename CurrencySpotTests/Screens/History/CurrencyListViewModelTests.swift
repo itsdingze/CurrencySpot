@@ -144,6 +144,65 @@ struct CurrencyListViewModelTests {
         #expect(abs(gbp.rate - 0.625) < 0.0001)
     }
 
+    @Test("the list follows a new default base currency from Settings", .timeLimit(.minutes(1)))
+    func followsSettingsDefaultBase() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: ["EUR", "GBP"])
+        let viewModel = graph.makeListViewModel()
+        Self.publishRates(to: graph)
+        await waitUntil { viewModel.displayedCurrencies.count == 2 }
+
+        graph.preferences.defaultBaseCurrency = "EUR"
+        await waitUntil(timeout: .seconds(2)) { viewModel.displayedCurrencies.count == 1 }
+
+        #expect(viewModel.baseCurrency == "EUR")
+        #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP"])
+    }
+
+    @Test("a base picked in History is kept after relaunch and no longer follows Settings", .timeLimit(.minutes(1)))
+    func pickedBaseOutlastsRelaunchAndSettings() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: ["EUR", "GBP"])
+        graph.makeListViewModel().selectBase("GBP")
+
+        let relaunched = graph.makeListViewModel()
+        Self.publishRates(to: graph)
+        graph.preferences.defaultBaseCurrency = "EUR"
+        await waitUntil { relaunched.displayedCurrencies.count == 1 }
+
+        #expect(relaunched.baseCurrency == "GBP")
+        #expect(relaunched.displayedCurrencies.map(\.code) == ["EUR"])
+    }
+
+    @Test("once History's base pick is cleared, the list follows the Settings default again", .timeLimit(.minutes(1)))
+    func clearedPickFollowsDefaultAgain() async throws {
+        let graph = try HistoryTestGraph(
+            watchlistSeed: ["EUR", "GBP"],
+            preferences: InMemoryPreferencesStore(defaultBaseCurrency: "EUR")
+        )
+        let viewModel = graph.makeListViewModel()
+        Self.publishRates(to: graph)
+        viewModel.selectBase("USD")
+        await waitUntil { viewModel.displayedCurrencies.count == 2 }
+
+        graph.historyBase.clear()
+        await waitUntil { viewModel.displayedCurrencies.count == 1 }
+
+        #expect(viewModel.baseCurrency == "EUR")
+        #expect(viewModel.displayedCurrencies.map(\.code) == ["GBP"])
+    }
+
+    @Test("a saved base the rates no longer list falls back to the Settings default", .timeLimit(.minutes(1)))
+    func pickMissingFromRatesFallsBackToDefault() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: ["EUR", "GBP"])
+        graph.historyBase.pick("NZD")
+        let viewModel = graph.makeListViewModel()
+        Self.publishRates(to: graph)
+
+        await waitUntil(timeout: .seconds(2)) { viewModel.displayedCurrencies.count == 2 }
+
+        #expect(viewModel.baseCurrency == "USD")
+        #expect(viewModel.displayedCurrencies.map(\.code) == ["EUR", "GBP"])
+    }
+
     @Test("picking a base currency re-expresses the list against it", .timeLimit(.minutes(1)))
     func selectingBaseReexpressesList() async throws {
         let graph = try HistoryTestGraph(watchlistSeed: ["EUR", "GBP"])

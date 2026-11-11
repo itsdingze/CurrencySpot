@@ -9,6 +9,7 @@ struct SettingsViewModelTests {
     private let preferences = InMemoryPreferencesStore()
     private let favorites: CurrencyCodeListStore
     private let watchlist: CurrencyCodeListStore
+    private let historyBase: HistoryBaseCurrencyStore
     private let language = InMemoryAppLanguageStore(systemIdentifier: "en")
     private let appState = AppState(networkMonitor: NetworkMonitor(isConnected: true))
     private let appIcons = InMemoryAppIconService()
@@ -22,11 +23,13 @@ struct SettingsViewModelTests {
             seed: ["USD", "EUR", "GBP", "JPY"]
         )
         watchlist = CurrencyCodeListStore(defaults: defaults, key: UserDefaultsKeys.historyWatchlist, seed: ["CHF", "NZD"])
+        historyBase = HistoryBaseCurrencyStore(defaults: defaults)
         viewModel = Self.makeViewModel(
             refresh: GatedRefresh(),
             preferences: preferences,
             favorites: favorites,
             watchlist: watchlist,
+            historyBase: historyBase,
             language: language,
             appIcons: appIcons,
             appState: appState,
@@ -39,6 +42,7 @@ struct SettingsViewModelTests {
         preferences: PreferencesStore,
         favorites: CurrencyCodeListStore,
         watchlist: CurrencyCodeListStore,
+        historyBase: HistoryBaseCurrencyStore,
         language: AppLanguageStore,
         appIcons: AppIconService,
         appState: AppState,
@@ -50,6 +54,7 @@ struct SettingsViewModelTests {
                 preferences: preferences,
                 favorites: favorites,
                 watchlist: watchlist,
+                historyBase: historyBase,
                 language: language
             ),
             manageFavoritesUseCase: ManageFavoritesUseCase(favorites: favorites),
@@ -80,6 +85,7 @@ struct SettingsViewModelTests {
             preferences: preferences,
             favorites: favorites,
             watchlist: watchlist,
+            historyBase: historyBase,
             language: language,
             appIcons: appIcons,
             appState: appState,

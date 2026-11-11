@@ -38,7 +38,12 @@ final class CurrencyListViewModel {
 
     var isWatchlistEmpty: Bool { watchlist.codes.allSatisfy { $0 == baseCurrency } }
 
-    private(set) var baseCurrency: CurrencyCode
+    var baseCurrency: CurrencyCode {
+        guard let picked = historyBase.pickedBase, isListedInRates(picked) else {
+            return preferences.defaultBaseCurrency
+        }
+        return picked
+    }
 
     var destination: Destination?
 
@@ -48,6 +53,8 @@ final class CurrencyListViewModel {
 
     // MARK: - Dependencies
 
+    private let preferences: PreferencesStore
+    private let historyBase: HistoryBaseCurrencyStore
     private let ratesStore: ExchangeRatesStore
     private let favorites: CurrencyCodeListStore
     private let watchlist: CurrencyCodeListStore
@@ -65,7 +72,8 @@ final class CurrencyListViewModel {
     // MARK: - Initialization
 
     init(
-        baseCurrency: CurrencyCode,
+        preferences: PreferencesStore,
+        historyBase: HistoryBaseCurrencyStore,
         ratesStore: ExchangeRatesStore,
         favorites: CurrencyCodeListStore,
         watchlist: CurrencyCodeListStore,
@@ -77,7 +85,8 @@ final class CurrencyListViewModel {
         appState: AppState,
         makeHistoryViewModel: @escaping @MainActor (HistoryLink) -> CurrencyHistoryViewModel
     ) {
-        self.baseCurrency = baseCurrency
+        self.preferences = preferences
+        self.historyBase = historyBase
         self.ratesStore = ratesStore
         self.favorites = favorites
         self.watchlist = watchlist
@@ -124,8 +133,12 @@ final class CurrencyListViewModel {
     }
 
     func selectBase(_ code: CurrencyCode) {
-        baseCurrency = code
+        historyBase.pick(code)
         updateDisplayedCurrencies()
+    }
+
+    private func isListedInRates(_ code: CurrencyCode) -> Bool {
+        ratesStore.rates.isEmpty || ratesStore.rates.contains { $0.currencyCode == code }
     }
 
     // MARK: - Navigation
@@ -203,6 +216,7 @@ final class CurrencyListViewModel {
             _ = ratesStore.rates
             _ = watchlist.codes
             _ = trendsStore.trends
+            _ = baseCurrency
         } onChange: { [weak self] in
             Task { @MainActor [weak self] in
                 guard let self else { return }

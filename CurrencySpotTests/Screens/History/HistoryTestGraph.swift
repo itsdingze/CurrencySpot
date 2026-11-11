@@ -12,6 +12,7 @@ struct HistoryTestGraph {
     let preferences: InMemoryPreferencesStore
     let watchlist: CurrencyCodeListStore
     let favorites: CurrencyCodeListStore
+    let historyBase: HistoryBaseCurrencyStore
     let loadHistoricalRates: LoadHistoricalRatesUseCase
     let trendDataUseCase: TrendDataUseCase
 
@@ -60,6 +61,7 @@ struct HistoryTestGraph {
             key: UserDefaultsKeys.favoriteCurrencies,
             seed: favoritesSeed
         )
+        historyBase = HistoryBaseCurrencyStore(defaults: try isolatedDefaults.make())
         loadHistoricalRates = LoadHistoricalRatesUseCase(
             repository: repository,
             archive: repository,
@@ -91,7 +93,8 @@ struct HistoryTestGraph {
 
     func makeListViewModel() -> CurrencyListViewModel {
         CurrencyListViewModel(
-            baseCurrency: preferences.defaultBaseCurrency,
+            preferences: preferences,
+            historyBase: historyBase,
             ratesStore: ratesStore,
             favorites: favorites,
             watchlist: watchlist,

@@ -105,6 +105,7 @@ final class DependencyContainer {
         let favoritesStore = CurrencyCodeListStore.favorites(in: userDefaults)
         let watchlistStore = CurrencyCodeListStore.watchlist(in: userDefaults, seededFrom: favoritesStore)
         let conversionHistoryStore = ConversionHistoryStore(defaults: userDefaults)
+        let historyBaseStore = HistoryBaseCurrencyStore(defaults: userDefaults)
 
         let makeHistoryViewModel: @MainActor (HistoryLink) -> CurrencyHistoryViewModel = {
             [ratesStore, favoritesStore, trendsStore, loadHistoricalRatesUseCase, chartDataPreparationUseCase, trendDataUseCase, preferences, appState, clockService] link in
@@ -146,7 +147,8 @@ final class DependencyContainer {
         }
 
         currencyListViewModel = CurrencyListViewModel(
-            baseCurrency: preferences.defaultBaseCurrency,
+            preferences: preferences,
+            historyBase: historyBaseStore,
             ratesStore: ratesStore,
             favorites: favoritesStore,
             watchlist: watchlistStore,
@@ -165,6 +167,7 @@ final class DependencyContainer {
                 preferences: preferences,
                 favorites: favoritesStore,
                 watchlist: watchlistStore,
+                historyBase: historyBaseStore,
                 language: languageStore
             ),
             manageFavoritesUseCase: ManageFavoritesUseCase(favorites: favoritesStore),

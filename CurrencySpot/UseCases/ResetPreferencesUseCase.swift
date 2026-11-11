@@ -6,17 +6,20 @@ final class ResetPreferencesUseCase {
     private let preferences: PreferencesStore
     private let favorites: CurrencyCodeListStore
     private let watchlist: CurrencyCodeListStore
+    private let historyBase: HistoryBaseCurrencyStore
     private let language: AppLanguageStore
 
     init(
         preferences: PreferencesStore,
         favorites: CurrencyCodeListStore,
         watchlist: CurrencyCodeListStore,
+        historyBase: HistoryBaseCurrencyStore,
         language: AppLanguageStore
     ) {
         self.preferences = preferences
         self.favorites = favorites
         self.watchlist = watchlist
+        self.historyBase = historyBase
         self.language = language
     }
 
@@ -30,6 +33,7 @@ final class ResetPreferencesUseCase {
 
         favorites.reset(to: CurrencyDefaults.favoriteCurrencies)
         watchlist.reset(to: CurrencyDefaults.favoriteCurrencies)
+        historyBase.clear()
         language.resetToSystem()
     }
 }

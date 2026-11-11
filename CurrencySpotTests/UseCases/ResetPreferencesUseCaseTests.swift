@@ -17,6 +17,7 @@ struct ResetPreferencesUseCaseTests {
     )
     private let favorites: CurrencyCodeListStore
     private let watchlist: CurrencyCodeListStore
+    private let historyBase: HistoryBaseCurrencyStore
     private let language = InMemoryAppLanguageStore(systemIdentifier: "en")
     private let useCase: ResetPreferencesUseCase
 
@@ -24,8 +25,16 @@ struct ResetPreferencesUseCaseTests {
         defaults = try isolatedDefaults.make()
         favorites = CurrencyCodeListStore(defaults: defaults, key: UserDefaultsKeys.favoriteCurrencies, seed: ["CHF"])
         watchlist = CurrencyCodeListStore(defaults: defaults, key: UserDefaultsKeys.historyWatchlist, seed: ["NZD", "SEK"])
+        historyBase = HistoryBaseCurrencyStore(defaults: defaults)
+        historyBase.pick("CHF")
         language.selectedLanguage = AppLanguage(identifier: "zh-Hans")
-        useCase = ResetPreferencesUseCase(preferences: preferences, favorites: favorites, watchlist: watchlist, language: language)
+        useCase = ResetPreferencesUseCase(
+            preferences: preferences,
+            favorites: favorites,
+            watchlist: watchlist,
+            historyBase: historyBase,
+            language: language
+        )
     }
 
     @Test("every preference returns to its out-of-box value")
@@ -54,6 +63,14 @@ struct ResetPreferencesUseCaseTests {
 
         #expect(watchlist.codes.elements == CurrencyDefaults.favoriteCurrencies)
         #expect(defaults.stringArray(forKey: UserDefaultsKeys.historyWatchlist) == CurrencyDefaults.favoriteCurrencies.map(\.rawValue))
+    }
+
+    @Test("History forgets its own base pick, so it follows the default base again")
+    func historyBasePickIsForgotten() {
+        useCase.execute()
+
+        #expect(historyBase.pickedBase == nil)
+        #expect(HistoryBaseCurrencyStore(defaults: defaults).pickedBase == nil)
     }
 
     @Test("a chosen app language goes back to the system language")

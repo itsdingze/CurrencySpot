@@ -13,6 +13,7 @@ nonisolated enum UserDefaultsKeys {
     static let sharedRatesUpdatedAt = "SharedRatesUpdatedAt"
 
     static let historyWatchlist = "HistoryWatchlist"
+    static let historyBaseCurrency = "HistoryBaseCurrency"
     static let conversionHistory = "ConversionHistory"
     
     // MARK: - Appearance Settings
