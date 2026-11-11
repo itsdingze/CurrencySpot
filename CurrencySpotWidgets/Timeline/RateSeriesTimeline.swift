@@ -26,7 +26,7 @@ enum RateSeriesTimeline {
         let load = context.isPreview
             ? RateSeriesLoad(snapshot: SampleRateSeries.entry(for: request).snapshot, isFresh: true)
             : await loadRateSeries(request, now: now)
-        return (RateSeriesEntry(date: now, request: request, snapshot: load.snapshot), load.nextRefresh(after: now))
+        return (RateSeriesEntry(date: now, request: request, snapshot: load.snapshot, isFresh: load.isFresh), load.nextRefresh(after: now))
     }
 }
 

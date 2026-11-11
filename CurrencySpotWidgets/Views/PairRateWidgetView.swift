@@ -97,7 +97,13 @@ struct PairRateWidgetView: View {
     }
 
     private var header: some View {
-        WidgetHeader(base: entry.request.base, target: series?.currency, period: entry.request.period)
+        WidgetHeader(
+            base: entry.request.base,
+            target: series?.currency,
+            period: entry.request.period,
+            entryDate: entry.date,
+            outdatedFetchDate: entry.outdatedFetchDate
+        )
     }
 
     private var rateSummary: some View {
@@ -123,7 +129,8 @@ struct PairRateWidgetView: View {
 } timeline: {
     SampleRateSeries.entry(for: RateSeriesRequest(base: .usd, currencies: [.eur], period: .oneMonth))
     SampleRateSeries.entry(for: RateSeriesRequest(base: .usd, currencies: [.jpy], period: .oneYear))
-    RateSeriesEntry(date: .now, request: RateSeriesRequest(base: .usd, currencies: [.eur], period: .oneMonth), snapshot: nil)
+    RateSeriesEntry(date: .now, request: RateSeriesRequest(base: .usd, currencies: [.eur], period: .oneMonth), snapshot: nil, isFresh: false)
+    SampleRateSeries.outdatedEntry(for: RateSeriesRequest(base: .usd, currencies: [.eur], period: .oneMonth))
     SampleRateSeries.entry(for: RateSeriesRequest(base: .usd, currencies: [.usd], period: .oneMonth))
 }
 
@@ -131,4 +138,5 @@ struct PairRateWidgetView: View {
     PairRateWidget()
 } timeline: {
     SampleRateSeries.entry(for: RateSeriesRequest(base: .usd, currencies: [.eur], period: .threeMonths))
+    SampleRateSeries.outdatedEntry(for: RateSeriesRequest(base: .usd, currencies: [.eur], period: .threeMonths))
 }

@@ -24101,6 +24101,66 @@
         }
       }
     },
+    "widget.header.updated" : {
+      "comment" : "Widget header text shown in place of the time range when the widget couldn't download new rates and shows saved ones. date: when the saved rates were downloaded, a time such as 9:41 AM for today or a short date such as Nov 9.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualisiert: %(date)@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated %(date)@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizado: %(date)@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizado: %(date)@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mis à jour : %(date)@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新: %(date)@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "업데이트: %(date)@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新于 %(date)@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新於 %(date)@"
+          }
+        }
+      }
+    },
     "widget.pairRate.accessibilityLabel" : {
       "comment" : "VoiceOver label of the currency pair in the Exchange Rate widget. base and target: currency names, for example US Dollar and Euro.",
       "extractionState" : "manual",

@@ -4,18 +4,38 @@ struct WidgetHeader: View {
     let base: CurrencyCode
     var target: CurrencyCode?
     let period: TimeRange
+    let entryDate: Date
+    let outdatedFetchDate: Date?
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: Spacing.hairline) {
-                titleText
+        Group {
+            if let outdatedFetchDate {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: Spacing.hairline) {
+                        titleText
+                        updatedText(outdatedFetchDate)
+                            .layoutPriority(1)
+                    }
 
-                Text(period.shortName)
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel(period.displayName)
+                    VStack(alignment: .leading, spacing: 0) {
+                        titleText
+                        updatedText(outdatedFetchDate)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: Spacing.hairline) {
+                        titleText
+
+                        Text(period.shortName)
+                            .foregroundStyle(.secondary)
+                            .accessibilityLabel(period.displayName)
+                    }
+
+                    titleText
+                }
             }
-
-            titleText
         }
         .font(.appFootnote.weight(.semibold))
     }
@@ -25,6 +45,14 @@ struct WidgetHeader: View {
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityLabel(accessibilityLabel)
+    }
+
+    private func updatedText(_ fetchDate: Date) -> some View {
+        let format: Date.FormatStyle = Calendar.current.isDate(fetchDate, inSameDayAs: entryDate)
+            ? .dateTime.hour().minute()
+            : .dateTime.month(.abbreviated).day()
+        return Text(.widgetHeaderUpdated(date: fetchDate.formatted(format)))
+            .foregroundStyle(.secondary)
     }
 
     private var title: AttributedString {

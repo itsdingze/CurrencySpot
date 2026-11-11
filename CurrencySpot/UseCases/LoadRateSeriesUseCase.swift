@@ -18,6 +18,7 @@ nonisolated struct RateSeriesRequest: Hashable, Sendable {
 
 nonisolated struct RateSeriesSnapshot: Equatable, Sendable, Codable {
     let series: [RateSeries]
+    let fetchedAt: Date?
 }
 
 nonisolated struct RateSeriesLoad: Equatable, Sendable {
@@ -41,7 +42,7 @@ nonisolated struct LoadRateSeriesUseCase: Sendable {
 
     func callAsFunction(_ request: RateSeriesRequest, now: Date) async -> RateSeriesLoad {
         guard !request.quotes.isEmpty else {
-            let snapshot = RateSeriesSnapshot(series: request.currencies.map { RateSeries(currency: $0, rates: [1, 1]) })
+            let snapshot = RateSeriesSnapshot(series: request.currencies.map { RateSeries(currency: $0, rates: [1, 1]) }, fetchedAt: now)
             return RateSeriesLoad(snapshot: snapshot, isFresh: true)
         }
         do {
@@ -63,6 +64,6 @@ nonisolated struct LoadRateSeriesUseCase: Sendable {
         guard !response.rates.isEmpty else {
             throw AppError.dataValidationError("Rate series response contained no days")
         }
-        return RateSeriesSnapshot(series: RateSeries.series(for: request.currencies, in: response))
+        return RateSeriesSnapshot(series: RateSeries.series(for: request.currencies, in: response), fetchedAt: now)
     }
 }

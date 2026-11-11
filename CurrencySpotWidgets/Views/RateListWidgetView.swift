@@ -48,7 +48,12 @@ struct RateListWidgetView: View {
     }
 
     private var header: some View {
-        WidgetHeader(base: entry.request.base, period: entry.request.period)
+        WidgetHeader(
+            base: entry.request.base,
+            period: entry.request.period,
+            entryDate: entry.date,
+            outdatedFetchDate: entry.outdatedFetchDate
+        )
     }
 
     private func list(_ arrangement: Arrangement) -> some View {
@@ -114,10 +119,12 @@ struct RateListWidgetView: View {
     RateListWidget()
 } timeline: {
     SampleRateSeries.entry(for: RateSeriesRequest(base: .usd, currencies: [.eur, .gbp], period: .oneMonth))
+    SampleRateSeries.outdatedEntry(for: RateSeriesRequest(base: .usd, currencies: [.eur, .gbp], period: .oneMonth))
 }
 
 #Preview(as: .systemLarge) {
     RateListWidget()
 } timeline: {
     SampleRateSeries.entry(for: RateSeriesRequest(base: .usd, currencies: [.eur, .jpy, .gbp, .cny, .inr, .chf, .aud], period: .oneMonth))
+    SampleRateSeries.outdatedEntry(for: RateSeriesRequest(base: .usd, currencies: [.eur, .jpy, .gbp, .cny, .inr, .chf, .aud], period: .oneMonth))
 }

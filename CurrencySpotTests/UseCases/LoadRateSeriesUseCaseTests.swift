@@ -48,6 +48,34 @@ struct LoadRateSeriesUseCaseTests {
         #expect(await offline(request, now: now) == RateSeriesLoad(snapshot: saved, isFresh: false))
     }
 
+    @Test("saved rates shown offline are dated when they were downloaded, not when they were shown")
+    func offlineRatesKeepTheirDownloadDate() async throws {
+        _ = await LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .success(response)), cache: cache)(request, now: now)
+        let offline = LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .failure(URLError(.notConnectedToInternet))), cache: cache)
+
+        let load = await offline(request, now: now.addingTimeInterval(30 * 60 * 60))
+
+        #expect(!load.isFresh)
+        #expect(load.snapshot?.fetchedAt == now)
+    }
+
+    @Test("rates saved by the earlier version still load offline, dated when they were saved")
+    func earlierVersionsSavedRatesStillLoad() async throws {
+        _ = await LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .success(response)), cache: cache)(request, now: now)
+        let folder = directory.storeURL.deletingLastPathComponent()
+        let savedFile = try #require(FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil).first)
+        try Data(#"{"series":[{"currency":"JPY","rates":[160,150]},{"currency":"USD","rates":[1,1]},{"currency":"EUR","rates":[0.8,0.88]}]}"#.utf8)
+            .write(to: savedFile)
+        let savedAt = Date(timeIntervalSince1970: 1_790_000_000)
+        try FileManager.default.setAttributes([.modificationDate: savedAt], ofItemAtPath: savedFile.path(percentEncoded: false))
+        let offline = LoadRateSeriesUseCase(fetcher: StubHistoricalRatesFetcher(result: .failure(URLError(.notConnectedToInternet))), cache: cache)
+
+        let snapshot = try #require(await offline(request, now: now).snapshot)
+
+        #expect(snapshot.series.map(\.rates) == [[160, 150], [1, 1], [0.8, 0.88]])
+        #expect(snapshot.fetchedAt == savedAt)
+    }
+
     @Test("after a successful download the widget refreshes when the app would treat the rates as stale, weekends included")
     func freshDownloadRefreshesWithTheApp() async throws {
         let saturday = try #require(createCETDate(year: 2026, month: 10, day: 31))

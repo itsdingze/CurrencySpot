@@ -7,8 +7,13 @@ nonisolated struct RateSeriesCache: Sendable {
     let directory: URL
 
     func load(for request: RateSeriesRequest) -> RateSeriesSnapshot? {
-        guard let data = try? Data(contentsOf: fileURL(for: request)) else { return nil }
-        return try? JSONDecoder().decode(RateSeriesSnapshot.self, from: data)
+        let file = fileURL(for: request)
+        guard let data = try? Data(contentsOf: file),
+              let snapshot = try? JSONDecoder().decode(RateSeriesSnapshot.self, from: data)
+        else { return nil }
+        guard snapshot.fetchedAt == nil else { return snapshot }
+        let savedAt = try? file.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+        return RateSeriesSnapshot(series: snapshot.series, fetchedAt: savedAt)
     }
 
     func save(_ snapshot: RateSeriesSnapshot, for request: RateSeriesRequest) {

@@ -7,10 +7,19 @@ enum SampleRateSeries {
     ]
 
     static func entry(for request: RateSeriesRequest) -> RateSeriesEntry {
+        entry(for: request, fetchedAt: .now, isFresh: true)
+    }
+
+    static func outdatedEntry(for request: RateSeriesRequest) -> RateSeriesEntry {
+        entry(for: request, fetchedAt: .now.addingTimeInterval(-2 * 24 * 60 * 60), isFresh: false)
+    }
+
+    private static func entry(for request: RateSeriesRequest, fetchedAt: Date, isFresh: Bool) -> RateSeriesEntry {
         RateSeriesEntry(
             date: .now,
             request: request,
-            snapshot: RateSeriesSnapshot(series: request.currencies.map { series(for: $0, base: request.base) })
+            snapshot: RateSeriesSnapshot(series: request.currencies.map { series(for: $0, base: request.base) }, fetchedAt: fetchedAt),
+            isFresh: isFresh
         )
     }
 
