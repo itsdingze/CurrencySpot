@@ -40,7 +40,7 @@ nonisolated struct RetryPolicy: Sendable {
     private static func isRetryable(_ error: URLError) -> Bool {
         switch error.code {
         case .timedOut, .cannotConnectToHost, .networkConnectionLost,
-             .notConnectedToInternet, .cannotFindHost, .dnsLookupFailed:
+             .cannotFindHost, .dnsLookupFailed:
             true
         default:
             false
@@ -49,7 +49,7 @@ nonisolated struct RetryPolicy: Sendable {
 
     private static func isRetryable(_ error: AppError) -> Bool {
         switch error {
-        case .networkError, .noInternetConnection:
+        case .networkError:
             true
         case let .httpError(statusCode):
             (500 ... 599).contains(statusCode)

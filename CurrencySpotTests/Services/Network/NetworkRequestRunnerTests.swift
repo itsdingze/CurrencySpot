@@ -64,6 +64,23 @@ private nonisolated final class ServerErrorURLProtocol: URLProtocol {
     override func stopLoading() {}
 }
 
+private nonisolated final class OfflineURLProtocol: URLProtocol {
+    private static let attempts = Mutex(0)
+
+    static var attemptCount: Int {
+        attempts.withLock { $0 }
+    }
+
+    override class func canInit(with _: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        Self.attempts.withLock { $0 += 1 }
+        client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
+    }
+
+    override func stopLoading() {}
+}
+
 private func makeSession(_ protocolClass: URLProtocol.Type) -> URLSession {
     let configuration = URLSessionConfiguration.ephemeral
     configuration.protocolClasses = [protocolClass]
@@ -128,6 +145,25 @@ struct NetworkRequestRunnerTests {
             return
         }
         #expect(attempts == 3)
+    }
+
+    @Test("with no connection the request fails at once and says the device is offline", .timeLimit(.minutes(1)))
+    func offlineFailsAtOnceAsNoConnection() async throws {
+        let url = try #require(URL(string: "https://stub.test/offline"))
+
+        let error = await #expect(throws: (any Error).self) {
+            let _: [String] = try await NetworkRequestRunner.performRequestWithRetry(
+                url: url,
+                urlSession: makeSession(OfflineURLProtocol.self),
+                responseType: [String].self,
+                endpoint: "offline-endpoint",
+                retryPolicy: Self.retryPolicy,
+                clock: ImmediateClock()
+            )
+        }
+
+        #expect(error.flatMap(AppError.from) == .noInternetConnection)
+        #expect(OfflineURLProtocol.attemptCount == 1)
     }
 
     @Test("a request after an exhausted one gets its own full set of retries", .timeLimit(.minutes(1)))

@@ -11,11 +11,16 @@ struct RetryPolicyTests {
         #expect(RetryPolicy().shouldRetry(AppError.httpError(statusCode: statusCode)) == isRetryable)
     }
 
-    @Test("transient connection failures are retried, a bad URL is not", arguments: [
-        (URLError.Code.timedOut, true), (.networkConnectionLost, true), (.notConnectedToInternet, true), (.badURL, false),
+    @Test("transient connection failures are retried, being offline and a bad URL are not", arguments: [
+        (URLError.Code.timedOut, true), (.networkConnectionLost, true), (.notConnectedToInternet, false), (.badURL, false),
     ])
     func retriesTransientURLErrors(code: URLError.Code, isRetryable: Bool) {
         #expect(RetryPolicy().shouldRetry(URLError(code)) == isRetryable)
+    }
+
+    @Test("the app's own no-connection error is not retried")
+    func noConnectionIsNotRetried() {
+        #expect(!RetryPolicy().shouldRetry(AppError.noInternetConnection))
     }
 
     @Test("delays never shrink from one retry to the next and stay within the cap")
