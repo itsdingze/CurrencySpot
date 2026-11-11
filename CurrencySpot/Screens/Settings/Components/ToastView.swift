@@ -3,13 +3,14 @@ import SwiftUI
 struct ToastView: View {
     let message: LocalizedStringResource
     let icon: String
+    let tint: Color
 
     var body: some View {
         Label {
             Text(message)
         } icon: {
             Image(systemName: icon)
-                .foregroundStyle(Color.success)
+                .foregroundStyle(tint)
                 .imageScale(.large)
         }
         .font(.appSubheadline.weight(.semibold))
@@ -20,5 +21,5 @@ struct ToastView: View {
 }
 
 #Preview {
-    ToastView(message: ToastData(type: .preferencesReset).message, icon: "house")
+    ToastView(message: ToastData(type: .preferencesReset).message, icon: "house", tint: .success)
 }

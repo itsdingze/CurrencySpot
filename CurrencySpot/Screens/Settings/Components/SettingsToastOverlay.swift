@@ -18,7 +18,7 @@ struct SettingsToastOverlay: View {
     var body: some View {
         Group {
             if let toast = settingsViewModel.toast {
-                ToastView(message: toast.message, icon: toast.icon)
+                ToastView(message: toast.message, icon: toast.icon, tint: toast.isFailure ? .warning : .success)
                     .padding(.top, Spacing.hairline)
                     .scaleEffect(dragScale, anchor: .top)
                     .blur(radius: dragBlur)

@@ -16,6 +16,10 @@ nonisolated struct ToastData: Identifiable, Sendable {
         }
     }
 
+    var isFailure: Bool {
+        type == .appIconUnchanged
+    }
+
     var icon: String {
         switch type {
         case .dataRefreshing: "arrow.clockwise.circle.fill"
