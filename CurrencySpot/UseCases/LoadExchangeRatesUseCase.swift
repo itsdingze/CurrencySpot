@@ -26,11 +26,17 @@ struct LoadExchangeRatesUseCase {
     }
 
     func refresh() async -> Outcome {
+        let outcome = await download()
+        guard case let .unavailable(error) = outcome else { return outcome }
+        return await saved(surfacing: error)
+    }
+
+    func download() async -> Outcome {
         do {
             let rates = try await repository.fetchExchangeRates()
             return .rates(rates, lastUpdated: repository.lastFetchDate(), refreshFailed: false)
         } catch {
-            return await saved(surfacing: AppError.from(error))
+            return .unavailable(AppError.from(error))
         }
     }
 
