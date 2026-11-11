@@ -70,7 +70,7 @@ struct CurrencyRow: View {
                 rateText
 
                 if let trend {
-                    trendIndicator(trend)
+                    trendIndicator(trend, alignsIconInColumn: false)
                 }
             }
             .opacity(metricsHidden ? 0 : 1)
@@ -96,10 +96,11 @@ struct CurrencyRow: View {
             .monospacedDigit()
     }
 
-    private func trendIndicator(_ trend: Trend) -> some View {
+    private func trendIndicator(_ trend: Trend, alignsIconInColumn: Bool = true) -> some View {
         TrendIndicator(
             value: viewModel.trendDisplayValue(rate: entry.rate, weeklyChange: trend.weeklyChange),
-            direction: trend.direction
+            direction: trend.direction,
+            alignsIconInColumn: alignsIconInColumn
         )
         .font(.appSubheadline.weight(.semibold))
     }
