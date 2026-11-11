@@ -18,6 +18,10 @@
             set { savedLanguage = newValue }
         }
 
+        var followsSystemLanguage: Bool {
+            savedLanguage == nil
+        }
+
         func resetToSystem() {
             savedLanguage = nil
         }

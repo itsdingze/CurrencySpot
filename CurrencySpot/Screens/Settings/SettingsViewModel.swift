@@ -51,7 +51,7 @@ final class SettingsViewModel {
 
     private var refreshTask: Task<Void, Never>?
 
-    private var selectedLanguage: AppLanguage
+    private var selectedLanguage: AppLanguage?
 
     // MARK: - Private Properties
 
@@ -82,7 +82,7 @@ final class SettingsViewModel {
         self.manageFavoritesUseCase = manageFavoritesUseCase
         self.preferences = preferences
         self.languageStore = languageStore
-        selectedLanguage = languageStore.selectedLanguage
+        selectedLanguage = languageStore.followsSystemLanguage ? nil : languageStore.selectedLanguage
         self.appIconService = appIconService
         appIcon = AppIconOption(alternateIconName: appIconService.alternateIconName)
         self.appState = appState
@@ -131,7 +131,7 @@ final class SettingsViewModel {
             }
         case .resetPreferences:
             resetPreferencesUseCase.execute()
-            selectedLanguage = languageStore.selectedLanguage
+            selectedLanguage = nil
             showToast(.preferencesReset)
         }
     }
@@ -208,14 +208,22 @@ final class SettingsViewModel {
         languageStore.availableLanguages
     }
 
-    var language: AppLanguage {
+    var language: AppLanguage? {
         get { selectedLanguage }
         set {
             guard newValue != selectedLanguage else { return }
-            languageStore.selectedLanguage = newValue
+            if let newValue {
+                languageStore.selectedLanguage = newValue
+            } else {
+                languageStore.resetToSystem()
+            }
             selectedLanguage = newValue
             destination = .languageChangeNotice
         }
+    }
+
+    var nextLaunchLanguage: AppLanguage {
+        languageStore.selectedLanguage
     }
 
     // MARK: - App Icon

@@ -28,6 +28,10 @@ final class UserDefaultsAppLanguageStore: AppLanguageStore {
         set { userDefaults.set([newValue.identifier], forKey: Self.preferredLanguagesKey) }
     }
 
+    var followsSystemLanguage: Bool {
+        savedPreferences == nil
+    }
+
     func resetToSystem() {
         userDefaults.removeObject(forKey: Self.preferredLanguagesKey)
     }

@@ -306,9 +306,35 @@ struct SettingsViewModelTests {
         #expect(viewModel.addableCurrencies(from: rates, matching: "").map(\.currencyCode) == ["CHF"])
     }
 
-    @Test("the language row starts on the language the app runs in")
-    func languageStartsOnRunningLanguage() {
-        #expect(viewModel.language == AppLanguage(identifier: "en"))
+    @Test("the language row starts on System when no language is saved")
+    func languageStartsOnSystem() {
+        #expect(viewModel.language == nil)
+    }
+
+    @Test("the language row starts on the saved language")
+    func languageStartsOnSavedLanguage() {
+        language.selectedLanguage = AppLanguage(identifier: "ja")
+
+        #expect(makeViewModel(appIcons: appIcons).language == AppLanguage(identifier: "ja"))
+    }
+
+    @Test("choosing System over a saved language removes it and names the system language for the next launch")
+    func choosingSystemRemovesSavedLanguage() {
+        viewModel.language = AppLanguage(identifier: "zh-Hans")
+        viewModel.dismissDestination()
+
+        viewModel.language = nil
+
+        #expect(language.followsSystemLanguage)
+        #expect(viewModel.destination == .languageChangeNotice)
+        #expect(viewModel.nextLaunchLanguage == AppLanguage(identifier: "en"))
+    }
+
+    @Test("choosing System while already following the system shows no notice")
+    func choosingSystemAgainIsSilent() {
+        viewModel.language = nil
+
+        #expect(viewModel.destination == nil)
     }
 
     @Test("choosing another language saves it and tells the user it applies on the next launch")
@@ -317,23 +343,27 @@ struct SettingsViewModelTests {
 
         #expect(language.selectedLanguage == AppLanguage(identifier: "zh-Hans"))
         #expect(viewModel.destination == .languageChangeNotice)
+        #expect(viewModel.nextLaunchLanguage == AppLanguage(identifier: "zh-Hans"))
     }
 
     @Test("picking the language already selected shows no notice")
     func pickingSameLanguageIsSilent() {
-        viewModel.language = AppLanguage(identifier: "en")
+        viewModel.language = AppLanguage(identifier: "ko")
+        viewModel.dismissDestination()
+
+        viewModel.language = AppLanguage(identifier: "ko")
 
         #expect(viewModel.destination == nil)
     }
 
-    @Test("resetting preferences moves the language row back to the system language")
+    @Test("resetting preferences moves the language row back to System")
     func resetMovesLanguageBackToSystem() {
         viewModel.language = AppLanguage(identifier: "zh-Hans")
         viewModel.dismissDestination()
 
         viewModel.confirmAlert(.resetPreferences)
 
-        #expect(viewModel.language == AppLanguage(identifier: "en"))
+        #expect(viewModel.language == nil)
     }
 
     @Test("the App Icon row starts on the icon the Home Screen shows")

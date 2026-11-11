@@ -38,7 +38,7 @@ struct SettingsView: View {
         .alert(.settingsLanguageChangedTitle, isPresented: bindableViewModel.destination.isPresenting(.languageChangeNotice)) {
             Button(.settingsLanguageChangedOk) {}
         } message: {
-            Text(.settingsLanguageChangedMessage(language: settingsViewModel.language.displayName))
+            Text(.settingsLanguageChangedMessage(language: settingsViewModel.nextLaunchLanguage.displayName))
         }
     }
 
@@ -117,10 +117,14 @@ struct SettingsView: View {
 
     private var languagePicker: some View {
         Picker(selection: bindableViewModel.language) {
+            Text(.settingsAppearanceModeSystem)
+                .fontDesign(.rounded)
+                .tag(nil as AppLanguage?)
+            Divider()
             ForEach(settingsViewModel.availableLanguages) { language in
                 Text(language.displayName)
                     .fontDesign(.rounded)
-                    .tag(language)
+                    .tag(language as AppLanguage?)
             }
         } label: {
             languageLabel

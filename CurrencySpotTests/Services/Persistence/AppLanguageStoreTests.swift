@@ -34,6 +34,18 @@ struct AppLanguageStoreTests {
         #expect(makeStore().selectedLanguage == AppLanguage(identifier: "de"))
     }
 
+    @Test("the store follows the system language until a language is chosen, and again after a reset")
+    func followsSystemUntilChosen() {
+        let store = makeStore()
+        #expect(store.followsSystemLanguage)
+
+        store.selectedLanguage = AppLanguage(identifier: "de")
+        #expect(makeStore().followsSystemLanguage == false)
+
+        store.resetToSystem()
+        #expect(makeStore().followsSystemLanguage)
+    }
+
     @Test("resetting removes the app language override")
     func resetRemovesSavedChoice() {
         let store = makeStore()
