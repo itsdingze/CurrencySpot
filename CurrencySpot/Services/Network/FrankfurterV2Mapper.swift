@@ -1,7 +1,10 @@
 import Foundation
 
 nonisolated enum FrankfurterV2Mapper {
+    private static let isoCurrencyCodes = Set(Locale.Currency.isoCurrencies.map(\.identifier))
+
     static func latest(from entries: [FrankfurterV2Rate], base: String) throws -> ExchangeRatesResponse {
+        let entries = currencies(in: entries)
         guard !entries.isEmpty else {
             throw AppError.dataValidationError("Rate response contained no entries")
         }
@@ -12,6 +15,7 @@ nonisolated enum FrankfurterV2Mapper {
     }
 
     static func historical(from entries: [FrankfurterV2Rate], base: String, startingOn firstDay: String) throws -> HistoricalRatesResponse {
+        let entries = currencies(in: entries)
         try validate(entries)
         var grouped: [String: [String: Double]] = [:]
         for entry in entries {
@@ -43,6 +47,10 @@ nonisolated enum FrankfurterV2Mapper {
             endDate: requestedDates.last ?? "",
             rates: rates
         )
+    }
+
+    private static func currencies(in entries: [FrankfurterV2Rate]) -> [FrankfurterV2Rate] {
+        entries.filter { isoCurrencyCodes.contains($0.quote) }
     }
 
     private static func validate(_ entries: [FrankfurterV2Rate]) throws {
