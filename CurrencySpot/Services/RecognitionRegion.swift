@@ -16,10 +16,14 @@ nonisolated struct RecognitionRegion: Equatable, Sendable {
         Float(Self.smallestReadableTextHeight / rect.height)
     }
 
+    static func whole(_ imageSize: CGSize) -> RecognitionRegion {
+        RecognitionRegion(rect: CGRect(origin: .zero, size: imageSize), isCutAtTop: false, isCutAtBottom: false, minimumLineHeight: 0)
+    }
+
     static func regions(covering imageSize: CGSize) -> [RecognitionRegion] {
         let frame = CGRect(origin: .zero, size: imageSize)
         guard imageSize.height >= minimumBandedImageHeight else {
-            return [RecognitionRegion(rect: frame, isCutAtTop: false, isCutAtBottom: false, minimumLineHeight: 0)]
+            return [whole(imageSize)]
         }
         let bandHeight = (imageSize.height / CGFloat(bandCount) * (1 + bandOverlapFraction)).rounded()
         let lastBandTop = imageSize.height - bandHeight
