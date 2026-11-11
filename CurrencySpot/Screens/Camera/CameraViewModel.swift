@@ -82,6 +82,7 @@ final class CameraViewModel {
     private var freezeRequestID = 0
 
     private var stillRecognition = StillRecognitionResult.empty
+    @ObservationIgnored private var stillItemIdentities = LiveItemIdentities()
     private var stillViewportSize = CGSize.zero
 
     // MARK: - Dependencies
@@ -206,7 +207,10 @@ final class CameraViewModel {
         do {
             let result = try await recognizeStillImageTextUseCase.recognizeText(in: image, menuCurrency: baseCurrency)
             guard !Task.isCancelled, frozenImage === image else { return }
-            stillRecognition = result
+            stillRecognition = StillRecognitionResult(
+                items: stillItemIdentities.identify(result.items),
+                imagePixelSize: result.imagePixelSize
+            )
             pushStillItems()
             isRecognizingStill = false
         } catch is CancellationError {
@@ -280,6 +284,7 @@ final class CameraViewModel {
         isScanning = false
         isRecognizingStill = true
         stillRecognition = .empty
+        stillItemIdentities = LiveItemIdentities()
         resetLiveSmoothing()
         updateRecognizedItems([])
     }

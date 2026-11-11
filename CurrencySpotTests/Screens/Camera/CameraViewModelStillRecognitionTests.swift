@@ -1,4 +1,5 @@
 import Foundation
+import IdentifiedCollections
 import Testing
 import UIKit
 @testable import CurrencySpot
@@ -118,6 +119,55 @@ struct CameraViewModelStillRecognitionTests {
         #expect(viewModel.isRecognizingStill == true)
         yenRead.cancel()
         await yenRead.value
+    }
+
+    private static let dollarMenu = FreshlyIdentifiedStillRecognizer(
+        lines: [
+            ("Ramen $12.50", CGRect(x: 10, y: 10, width: 80, height: 10)),
+            ("Gyoza $8.50", CGRect(x: 10, y: 40, width: 80, height: 10)),
+            ("Table 12", CGRect(x: 10, y: 70, width: 60, height: 10)),
+        ],
+        imagePixelSize: CGSize(width: 100, height: 100)
+    )
+
+    private static func frozenMenu(readIn currency: CurrencyCode) async -> (CameraViewModel, UIImage) {
+        let viewModel = makeViewModel(stillRecognizer: dollarMenu)
+        viewModel.baseCurrency = currency
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        await viewModel.recognizeStill(in: image)
+        return (viewModel, image)
+    }
+
+    private static func item(_ transcript: String, in viewModel: CameraViewModel) throws -> DetectedItem {
+        try #require(viewModel.detectedItems.first { $0.transcript == transcript })
+    }
+
+    @Test func badgeEditsSurviveReadingTheFrozenStillInAnotherMenuLanguage() async throws {
+        let (viewModel, image) = await Self.frozenMenu(readIn: "EUR")
+        viewModel.hideConversion(for: try Self.item("Ramen $12.50", in: viewModel).id)
+        viewModel.toggleConversion(for: try Self.item("Table 12", in: viewModel).id)
+        let editedIDs = viewModel.detectedItems.ids
+
+        viewModel.baseCurrency = "JPY"
+        await viewModel.recognizeStill(in: image)
+
+        #expect(try Self.item("Ramen $12.50", in: viewModel).conversion.isPrice == false)
+        #expect(try Self.item("Gyoza $8.50", in: viewModel).conversion.isPrice == true)
+        #expect(try Self.item("Table 12", in: viewModel).conversion.isPrice == true)
+        #expect(viewModel.detectedItems.ids == editedIDs)
+    }
+
+    @Test func aNewPhotoOfTheSameLayoutStartsWithoutTheLastPhotosEdits() async throws {
+        let (viewModel, _) = await Self.frozenMenu(readIn: "EUR")
+        viewModel.hideConversion(for: try Self.item("Ramen $12.50", in: viewModel).id)
+
+        let nextPhoto = UIImage()
+        await viewModel.freezeFrame(capturing: { nextPhoto })
+        await viewModel.recognizeStill(in: nextPhoto)
+
+        #expect(try Self.item("Ramen $12.50", in: viewModel).conversion.isPrice == true)
     }
 
     @Test func importedPhotoLargerThanTheCapFreezesAtTheCappedSize() async throws {
