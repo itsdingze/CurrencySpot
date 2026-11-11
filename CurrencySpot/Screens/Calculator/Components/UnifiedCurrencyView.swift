@@ -121,6 +121,7 @@ struct UnifiedCurrencyView: View {
             Label { Text(.calculatorHistoryCopy) } icon: { Image(systemName: "doc.on.doc") }
         }
         .disabled(copyableAmount == nil)
+        .tint(Color.primary)
         if let onPaste {
             PasteButton(payloadType: String.self) { strings in
                 guard let text = strings.first else { return }
