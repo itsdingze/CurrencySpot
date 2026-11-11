@@ -90,6 +90,29 @@ struct CurrencyHistoryViewModelTests {
         #expect(repository.fetchHistoricalRatesCallCount == 0)
     }
 
+    @Test("going offline mid-download and picking another range shows the offline status, not Updating", .timeLimit(.minutes(1)))
+    func rangeChangeAfterGoingOfflineMidDownloadShowsOffline() async throws {
+        let repository = MockHistoricalRateRepository()
+        let gate = AsyncGate()
+        repository.fetchBarrier = { await gate.wait() }
+        let graph = try HistoryTestGraph(historicalRepository: repository)
+        repository.storedRows = try Self.snapshots(rates: [1, 2, 3], endingBefore: graph.today)
+        let viewModel = graph.makeHistoryViewModel()
+        let firstLoad = Task { await viewModel.loadChart() }
+        await waitUntil { repository.fetchHistoricalRatesCallCount == 1 }
+        #expect(viewModel.updateStatus == .updating)
+
+        try await graph.goOffline()
+        viewModel.selectedTimeRange = .oneMonth
+        await viewModel.loadChart()
+
+        #expect(viewModel.updateStatus == .offlineSaved)
+
+        gate.open()
+        await firstLoad.value
+        #expect(viewModel.updateStatus == .offlineSaved)
+    }
+
     @Test("offline with nothing stored, the chart waits for a connection at once, then loads when it returns", .timeLimit(.minutes(1)))
     func offlineWithNothingStoredLoadsOnReconnect() async throws {
         let repository = MockHistoricalRateRepository()

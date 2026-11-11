@@ -278,6 +278,7 @@ final class CurrencyHistoryViewModel {
         lastUpdated = await loadHistoricalRates.lastDownloaded()
         guard isCurrent(generation) else { return }
         guard isConnected else {
+            isDownloading = false
             if storedPoints.isEmpty {
                 publishChart(.failed(.noInternetConnection, previous: nil))
             }
