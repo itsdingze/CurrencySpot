@@ -200,9 +200,11 @@ final class DependencyContainer {
             favorites: favoritesStore,
             preferences: preferences,
             ratesStore: ratesStore,
+            language: languageStore,
             shared: sharedDefaults,
             favoritesChanged: { CurrencySpotShortcuts.updateAppShortcutParameters() },
-            ratesRefreshed: { WidgetCenter.shared.reloadAllTimelines() }
+            ratesRefreshed: { WidgetCenter.shared.reloadAllTimelines() },
+            languageChanged: { WidgetCenter.shared.reloadAllTimelines() }
         )
     }
 

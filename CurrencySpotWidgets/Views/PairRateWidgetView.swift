@@ -5,6 +5,7 @@ struct PairRateWidgetView: View {
     let entry: RateSeriesEntry
 
     @Environment(\.widgetFamily) private var family
+    @Environment(\.locale) private var locale
 
     private let textDescentInset: CGFloat = 3
     private let summaryMinWidth: CGFloat = 112
@@ -108,13 +109,13 @@ struct PairRateWidgetView: View {
 
     private var rateSummary: some View {
         VStack(alignment: .leading, spacing: Spacing.hairline) {
-            Text(series?.rateText ?? String(localized: .widgetRateUnavailable))
+            Text(series?.rateText(in: locale) ?? String(localized: .widgetRateUnavailable, in: locale))
                 .font(.appTitle2)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
 
-            if let series, let changeText = series.changeText, let direction = series.direction {
+            if let series, let changeText = series.changeText(in: locale), let direction = series.direction {
                 TrendIndicator(value: changeText, direction: direction, alignsIconInColumn: false)
                     .font(.appFootnote.weight(.semibold))
                     .imageScale(.small)

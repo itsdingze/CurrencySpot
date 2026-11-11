@@ -95,6 +95,7 @@
 				Services/Network/NetworkRequestRunner.swift,
 				Services/Network/RetryPolicy.swift,
 				Services/Persistence/AppGroupDefaults.swift,
+				Services/Persistence/AppLanguageLocalization.swift,
 				Services/Persistence/UserDefaultsKeys.swift,
 				Services/Time/ClockService.swift,
 				Shared/Extensions/ChartAccessibilityHidden.swift,

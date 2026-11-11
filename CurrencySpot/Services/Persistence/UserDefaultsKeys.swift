@@ -20,6 +20,7 @@ nonisolated enum UserDefaultsKeys {
     
     static let accentColor = "SelectedAccentColor"
     static let appearanceMode = "AppearanceMode"
+    static let appLanguage = "AppLanguage"
     
     // MARK: - Network & Data Settings
     

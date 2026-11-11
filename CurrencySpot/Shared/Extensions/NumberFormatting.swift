@@ -5,8 +5,12 @@ extension Double {
         rateText(matching: self)
     }
 
-    func rateText(matching rate: Double) -> String {
-        formatted(.number.precision(.fractionLength(rate.rateFractionDigits)))
+    func rateText(in locale: Locale) -> String {
+        rateText(matching: self, locale: locale)
+    }
+
+    func rateText(matching rate: Double, locale: Locale = .autoupdatingCurrent) -> String {
+        formatted(.number.precision(.fractionLength(rate.rateFractionDigits)).locale(locale))
     }
 
     private var rateFractionDigits: Int {

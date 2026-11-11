@@ -8,16 +8,20 @@ struct SharedSettingsMirrorTests {
     private let favorites: CurrencyCodeListStore
     private let preferences: UserDefaultsPreferencesStore
     private let ratesStore = ExchangeRatesStore()
+    private let language: UserDefaultsAppLanguageStore
     private let favoritesChanges = Counter()
     private let ratesRefreshes = Counter()
+    private let languageChanges = Counter()
 
     init() throws {
-        let appDefaults = try #require(UserDefaults(suiteName: "SharedSettingsMirrorTests-app-\(UUID().uuidString)"))
+        let appDomain = "SharedSettingsMirrorTests-app-\(UUID().uuidString)"
+        let appDefaults = try #require(UserDefaults(suiteName: appDomain))
         shared = try #require(UserDefaults(suiteName: "SharedSettingsMirrorTests-shared-\(UUID().uuidString)"))
         favorites = CurrencyCodeListStore(defaults: appDefaults, key: UserDefaultsKeys.favoriteCurrencies, seed: ["CHF", "JPY"])
         preferences = UserDefaultsPreferencesStore(userDefaults: appDefaults)
         preferences.defaultBaseCurrency = "EUR"
         preferences.defaultTargetCurrency = "GBP"
+        language = UserDefaultsAppLanguageStore(userDefaults: appDefaults, domainName: appDomain, availableIdentifiers: ["de", "en", "ja"])
     }
 
     private func makeMirror() -> SharedSettingsMirror {
@@ -25,10 +29,42 @@ struct SharedSettingsMirrorTests {
             favorites: favorites,
             preferences: preferences,
             ratesStore: ratesStore,
+            language: language,
             shared: shared,
             favoritesChanged: { [favoritesChanges] in favoritesChanges.value += 1 },
-            ratesRefreshed: { [ratesRefreshes] in ratesRefreshes.value += 1 }
+            ratesRefreshed: { [ratesRefreshes] in ratesRefreshes.value += 1 },
+            languageChanged: { [languageChanges] in languageChanges.value += 1 }
         )
+    }
+
+    @Test("the language chosen in the app is shared, and choosing System clears it", .timeLimit(.minutes(1)))
+    func chosenLanguageIsShared() async {
+        language.selectedLanguage = AppLanguage(identifier: "de")
+        let mirror = makeMirror()
+        mirror.start()
+        #expect(shared.string(forKey: UserDefaultsKeys.appLanguage) == "de")
+
+        language.resetToSystem()
+
+        await waitUntil { shared.string(forKey: UserDefaultsKeys.appLanguage) == nil }
+    }
+
+    @Test("widgets reload when the shared language changes, and not on a launch that leaves it unchanged", .timeLimit(.minutes(1)))
+    func languageChangeReloadsWidgets() async {
+        makeMirror().start()
+        #expect(languageChanges.value == 0)
+
+        language.selectedLanguage = AppLanguage(identifier: "ja")
+        let relaunched = makeMirror()
+        relaunched.start()
+        #expect(languageChanges.value == 1)
+
+        language.selectedLanguage = AppLanguage(identifier: "de")
+        await waitUntil { languageChanges.value == 2 }
+
+        language.resetToSystem()
+        await waitUntil { languageChanges.value == 3 }
+        withExtendedLifetime(relaunched) {}
     }
 
     @Test("starting shares the favorites, the default pair and the currencies that have rates")

@@ -1,11 +1,11 @@
 import Foundation
 
 extension RateSeries {
-    var rateText: String {
-        latestRate?.rateText ?? String(localized: .widgetRateUnavailable)
+    func rateText(in locale: Locale) -> String {
+        latestRate?.rateText(in: locale) ?? String(localized: .widgetRateUnavailable, in: locale)
     }
 
-    var changeText: String? {
-        percentChange.map { (abs($0) / 100).formatted(.percent.precision(.fractionLength(2))) }
+    func changeText(in locale: Locale) -> String? {
+        percentChange.map { (abs($0) / 100).formatted(.percent.precision(.fractionLength(2)).locale(locale)) }
     }
 }

@@ -14,7 +14,11 @@ extension CurrencyCode {
     }
 
     nonisolated var uncachedLocalizedName: String {
-        Locale.current.localizedString(forCurrencyCode: rawValue)
+        localizedName(in: .current)
+    }
+
+    nonisolated func localizedName(in locale: Locale) -> String {
+        locale.localizedString(forCurrencyCode: rawValue)
             ?? Locale(identifier: "en_US").localizedString(forCurrencyCode: rawValue)
             ?? rawValue
     }

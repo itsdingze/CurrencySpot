@@ -7,6 +7,8 @@ struct WidgetHeader: View {
     let entryDate: Date
     let outdatedFetchDate: Date?
 
+    @Environment(\.locale) private var locale
+
     var body: some View {
         Group {
             if let outdatedFetchDate {
@@ -49,7 +51,7 @@ struct WidgetHeader: View {
         let format: Date.FormatStyle = Calendar.current.isDate(fetchDate, inSameDayAs: entryDate)
             ? .dateTime.hour().minute()
             : .dateTime.month(.abbreviated).day()
-        let date = fetchDate.formatted(format)
+        let date = fetchDate.formatted(format.locale(locale))
         return Text(date)
             .foregroundStyle(.secondary)
             .accessibilityLabel(.widgetHeaderUpdated(date: date))
@@ -65,10 +67,10 @@ struct WidgetHeader: View {
     }
 
     private var accessibilityLabel: String {
-        guard let target else { return base.uncachedLocalizedName }
+        guard let target else { return base.localizedName(in: locale) }
         return String(localized: .widgetPairRateAccessibilityLabel(
-            base: base.uncachedLocalizedName,
-            target: target.uncachedLocalizedName
-        ))
+            base: base.localizedName(in: locale),
+            target: target.localizedName(in: locale)
+        ), in: locale)
     }
 }

@@ -6,6 +6,7 @@ struct RateListWidget: Widget {
         AppIntentConfiguration(kind: "RateListWidget", intent: RateListConfiguration.self, provider: RateListProvider()) { entry in
             RateListWidgetView(entry: entry)
                 .containerBackground(.background, for: .widget)
+                .environment(\.locale, .appLanguage(in: .appGroup))
         }
         .configurationDisplayName(.widgetRateListName)
         .description(.widgetRateListDescription)

@@ -3,6 +3,8 @@ import SwiftUI
 struct PairRangeSummary: View {
     let series: RateSeries
 
+    @Environment(\.locale) private var locale
+
     var body: some View {
         if let highest = series.rates.max(), let lowest = series.rates.min(), let average = series.averageRate {
             VStack(alignment: .leading, spacing: 2) {
@@ -20,7 +22,7 @@ struct PairRangeSummary: View {
 
             Spacer(minLength: Spacing.hairline)
 
-            Text(value.rateText)
+            Text(value.rateText(in: locale))
                 .monospacedDigit()
         }
         .font(.appCaption)

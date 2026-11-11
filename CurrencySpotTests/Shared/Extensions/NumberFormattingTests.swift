@@ -1,4 +1,5 @@
 @testable import CurrencySpot
+import Foundation
 import Testing
 
 struct NumberFormattingTests {
@@ -28,6 +29,11 @@ struct NumberFormattingTests {
         #expect(157.458.rateText == "157.46")
         #expect(1338.12.rateText == "1,338.1")
         #expect(123_456.7.rateText == "123,457")
+    }
+
+    @Test func rateFollowsTheRequestedLocale() {
+        #expect(1338.12.rateText(in: Locale(identifier: "de_DE")) == "1.338,1")
+        #expect(1338.12.rateText(in: Locale(identifier: "fr_FR")) == "1\u{202F}338,1")
     }
 
     @Test func zeroRateShowsAsZero() {

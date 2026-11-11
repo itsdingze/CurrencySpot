@@ -5,6 +5,7 @@ struct RateListRow: View {
     let series: RateSeries
 
     @Environment(\.widgetFamily) private var family
+    @Environment(\.locale) private var locale
 
     private let metricsMinWidth: CGFloat = 72
 
@@ -19,7 +20,7 @@ struct RateListRow: View {
                 Text(series.currency.rawValue)
                     .font(primaryFont)
 
-                Text(series.currency.uncachedLocalizedName)
+                Text(series.currency.localizedName(in: locale))
                     .font(secondaryFont)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -33,13 +34,13 @@ struct RateListRow: View {
             }
 
             VStack(alignment: .trailing, spacing: 1) {
-                Text(series.rateText)
+                Text(series.rateText(in: locale))
                     .font(primaryFont)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
-                if let changeText = series.changeText, let direction = series.direction {
+                if let changeText = series.changeText(in: locale), let direction = series.direction {
                     TrendIndicator(value: changeText, direction: direction)
                         .font(.appCaption2.weight(.semibold))
                         .imageScale(.small)

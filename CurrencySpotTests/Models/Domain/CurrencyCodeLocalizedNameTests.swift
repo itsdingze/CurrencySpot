@@ -12,6 +12,14 @@ struct CurrencyCodeLocalizedNameTests {
         #expect(name != code.rawValue)
     }
 
+    @Test("a name resolves in the language it is asked for", arguments: [
+        ("de", "Japanischer Yen"),
+        ("ja", "日本円"),
+    ])
+    func nameFollowsRequestedLanguage(language: String, expected: String) {
+        #expect(CurrencyCode.jpy.localizedName(in: Locale(identifier: language)) == expected)
+    }
+
     @Test("an unresolvable code round-trips as the raw code")
     func unresolvableCodeRoundTrips() {
         let unknown: CurrencyCode = "ZZZ"
