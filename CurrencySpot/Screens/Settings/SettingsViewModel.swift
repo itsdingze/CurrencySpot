@@ -137,11 +137,11 @@ final class SettingsViewModel {
     }
 
     private func resetPreferences() {
-        let languageWasSaved = !languageStore.followsSystemLanguage
+        let languageBeforeReset = nextLaunchLanguage
         resetPreferencesUseCase.execute()
         selectedLanguage = nil
         showToast(.preferencesReset)
-        if languageWasSaved {
+        if nextLaunchLanguage != languageBeforeReset {
             restoresIconAfterLanguageNotice = true
             presentAfterConfirmationCloses(.languageChangeNotice)
         } else {
@@ -243,13 +243,16 @@ final class SettingsViewModel {
         get { selectedLanguage }
         set {
             guard newValue != selectedLanguage else { return }
+            let languageBeforeChange = nextLaunchLanguage
             if let newValue {
                 languageStore.selectedLanguage = newValue
             } else {
                 languageStore.resetToSystem()
             }
             selectedLanguage = newValue
-            destination = .languageChangeNotice
+            if nextLaunchLanguage != languageBeforeChange {
+                destination = .languageChangeNotice
+            }
         }
     }
 

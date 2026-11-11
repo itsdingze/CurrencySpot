@@ -337,6 +337,26 @@ struct SettingsViewModelTests {
         #expect(viewModel.destination == nil)
     }
 
+    @Test("choosing the language the system already uses saves it without a notice, since the next launch looks the same")
+    func choosingTheSystemsOwnLanguageIsSilent() {
+        viewModel.language = AppLanguage(identifier: "en")
+
+        #expect(language.followsSystemLanguage == false)
+        #expect(viewModel.language == AppLanguage(identifier: "en"))
+        #expect(viewModel.destination == nil)
+    }
+
+    @Test("a reset over a saved language equal to the system language shows no language notice", .timeLimit(.minutes(1)))
+    func resetOverTheSystemsOwnLanguageShowsNoNotice() async {
+        viewModel.language = AppLanguage(identifier: "en")
+
+        viewModel.confirmAlert(.resetPreferences)
+
+        await waitUntil { viewModel.toast == nil }
+        #expect(viewModel.language == nil)
+        #expect(viewModel.destination == nil)
+    }
+
     @Test("choosing another language saves it and tells the user it applies on the next launch")
     func choosingLanguageSavesAndNotifies() {
         viewModel.language = AppLanguage(identifier: "zh-Hans")
