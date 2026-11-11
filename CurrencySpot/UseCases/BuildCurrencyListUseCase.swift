@@ -15,12 +15,10 @@ struct BuildCurrencyListUseCase {
 
         let catalog = rates
             .filter { $0.currencyCode != base }
-            .map { rate in
-                CurrencyListEntry(
-                    code: rate.currencyCode,
-                    name: rate.currencyCode.localizedName,
-                    rate: table.crossRate(from: base, to: rate.currencyCode)
-                )
+            .compactMap { rate in
+                table.crossRate(from: base, to: rate.currencyCode).map {
+                    CurrencyListEntry(code: rate.currencyCode, name: rate.currencyCode.localizedName, rate: $0)
+                }
             }
 
         if isSearching {

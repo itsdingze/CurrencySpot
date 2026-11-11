@@ -46,6 +46,11 @@ struct BuildCurrencyListUseCaseTests {
         #expect(abs(jpyFromEur.rate - (110.0 / 0.85)) < 0.0001)
     }
 
+    @Test("a base currency without a rate lists no rates instead of rates against the dollar")
+    func baseWithoutRateListsNothing() {
+        #expect(entries(base: .gbp).isEmpty)
+    }
+
     @Test("without a search, only watchlisted currencies survive")
     func filtersToWatchlist() {
         #expect(entries(watchlist: [.jpy]).map(\.code) == [.jpy])

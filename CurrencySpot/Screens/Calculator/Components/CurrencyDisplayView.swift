@@ -23,7 +23,7 @@ struct CurrencyDisplayView: View {
             compactAmount: sourceCompactAmount,
             currencyCode: calculatorViewModel.baseCurrency,
             caption: calculatorViewModel.calculationSteps,
-            unavailableReason: unavailableReason,
+            unavailableReason: sourceUnavailableReason,
             onPress: selectSourceCurrency
         )
     }
@@ -32,10 +32,10 @@ struct CurrencyDisplayView: View {
     private var targetCurrencyView: some View {
         UnifiedCurrencyView(
             type: .converted,
-            amount: isUndefined ? Self.noAmountPlaceholder : calculatorViewModel.convertedAmount,
-            compactAmount: isUndefined ? Self.noAmountPlaceholder : calculatorViewModel.compactConvertedAmount,
+            amount: convertedAmount ?? Self.noAmountPlaceholder,
+            compactAmount: compactConvertedAmount ?? Self.noAmountPlaceholder,
             currencyCode: calculatorViewModel.targetCurrency,
-            unavailableReason: unavailableReason,
+            unavailableReason: targetUnavailableReason,
             onPress: selectTargetCurrency
         )
     }
@@ -46,8 +46,21 @@ struct CurrencyDisplayView: View {
         calculatorViewModel.isCalculationUndefined
     }
 
-    private var unavailableReason: LocalizedStringResource? {
+    private var convertedAmount: String? {
+        isUndefined ? nil : calculatorViewModel.convertedAmount
+    }
+
+    private var compactConvertedAmount: String? {
+        isUndefined ? nil : calculatorViewModel.compactConvertedAmount
+    }
+
+    private var sourceUnavailableReason: LocalizedStringResource? {
         isUndefined ? .calculatorCalculationDivideByZero : nil
+    }
+
+    private var targetUnavailableReason: LocalizedStringResource? {
+        if isUndefined { return .calculatorCalculationDivideByZero }
+        return calculatorViewModel.convertedAmount == nil ? .cameraRatesNoticeMissingPair : nil
     }
 
     private var sourceAmount: String {

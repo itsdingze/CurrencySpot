@@ -149,6 +149,11 @@ struct CalculatorViewModelHistoryTests {
         press("10000", in: withSampleRates)
         withSampleRates.saveConversion()
 
+        let withoutPairRate = try await makeViewModel()
+        withoutPairRate.targetCurrency = "ZZZ"
+        press("10000", in: withoutPairRate)
+        withoutPairRate.saveConversion()
+
         #expect(history.records.isEmpty)
     }
 

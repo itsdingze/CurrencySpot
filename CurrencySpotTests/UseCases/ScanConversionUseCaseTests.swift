@@ -80,6 +80,13 @@ struct ScanConversionUseCaseTests {
         #expect(result.foundPrices == false)
     }
 
+    @Test func aPairWithoutARateDetectsNoConversions() {
+        let result = detect([item("¥1,200")], rates: [ExchangeRate(currencyCode: "USD", rate: 1)])
+
+        #expect(result.items.isEmpty)
+        #expect(result.foundPrices == false)
+    }
+
     @Test func transcriptWithoutANumberIsIgnored() {
         let result = detect([item("Daily specials")])
 
@@ -101,10 +108,11 @@ struct ScanConversionUseCaseTests {
 
     @Test func classificationFollowsTheBaseCurrency() throws {
         let ringgit = item("RM 12")
+        let rates = rates + [ExchangeRate(currencyCode: "MYR", rate: 4.7)]
 
-        let underRinggit = try #require(detect([ringgit], base: "MYR").items.first)
-        let underDollar = try #require(detect([ringgit], base: "USD").items.first)
-        let underRinggitAgain = try #require(detect([ringgit], base: "MYR").items.first)
+        let underRinggit = try #require(detect([ringgit], base: "MYR", rates: rates).items.first)
+        let underDollar = try #require(detect([ringgit], base: "USD", rates: rates).items.first)
+        let underRinggitAgain = try #require(detect([ringgit], base: "MYR", rates: rates).items.first)
 
         #expect(underRinggit.conversion.isPrice)
         #expect(underDollar.conversion.isPrice == false)

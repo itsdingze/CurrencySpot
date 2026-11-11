@@ -111,7 +111,7 @@ struct CalculatorViewModelTests {
         ])
         viewModel.baseCurrency = "EUR"
         viewModel.targetCurrency = "GBP"
-        #expect(abs(viewModel.conversionRate - 0.625) < 0.0001)
+        #expect(abs(try #require(viewModel.conversionRate) - 0.625) < 0.0001)
     }
 
     @Test("conversionRate is 1.0 when base and target are the same currency")
@@ -122,12 +122,20 @@ struct CalculatorViewModelTests {
         #expect(viewModel.conversionRate == 1.0)
     }
 
-    @Test("a currency missing from availableRates falls back to a rate of 1.0")
-    func conversionRateMissingCurrencyFallsBack() async throws {
-        let viewModel = await makeViewModel(fetching: [ExchangeRate(currencyCode: "USD", rate: 1.0)])
+    @Test("a currency missing from availableRates leaves the pair with no rate and no converted amount")
+    func missingCurrencyHasNoRateOrConversion() async throws {
+        let viewModel = await makeViewModel(fetching: [
+            ExchangeRate(currencyCode: "USD", rate: 1.0),
+            ExchangeRate(currencyCode: "EUR", rate: 0.85),
+        ])
         viewModel.baseCurrency = "USD"
         viewModel.targetCurrency = "ZZZ"
-        #expect(viewModel.conversionRate == 1.0)
+        viewModel.inputAmountString = "10000"
+
+        #expect(viewModel.conversionRate == nil)
+        #expect(viewModel.convertedAmount == nil)
+        #expect(viewModel.compactConvertedAmount == nil)
+        #expect(viewModel.formattedInputAmount == "100.00")
     }
 
     @Test("convertedAmount formats with exactly two fraction digits")
@@ -336,6 +344,44 @@ struct CalculatorViewModelTests {
             return
         }
         #expect(viewModel.rateBanner == .hidden)
+    }
+
+    @Test("an empty list of saved rates shows the error state, not a conversion")
+    func emptySavedRatesShowErrorState() async throws {
+        let viewModel = makeViewModel()
+        repository.ratesAreStale = true
+        await setConnected(false)
+        repository.loadExchangeRatesResult = .success([])
+
+        await viewModel.checkIfShouldFetch()
+
+        guard case .failed(_, previous: nil) = viewModel.loadState else {
+            Issue.record("expected .failed with nothing shown, got \(viewModel.loadState)")
+            return
+        }
+        #expect(viewModel.rateBanner == .hidden)
+    }
+
+    @Test("a data reset whose download fails shows the error state", .timeLimit(.minutes(1)))
+    func dataResetWithFailedDownloadShowsErrorState() async throws {
+        let viewModel = makeViewModel()
+        await setConnected(true)
+        repository.ratesAreStale = true
+        repository.fetchExchangeRatesResult = .success([ExchangeRate(currencyCode: "EUR", rate: 0.9)])
+        await viewModel.checkIfShouldFetch()
+        await waitUntilSettled(viewModel)
+        repository.ratesAreStale = true
+        repository.fetchExchangeRatesResult = .failure(.networkError("down"))
+        repository.loadExchangeRatesResult = .failure(.networkError("down"))
+
+        appState.dataWasReset()
+        await waitUntil { repository.fetchExchangeRatesCallCount == 2 }
+        await waitUntilSettled(viewModel)
+
+        guard case .failed(_, previous: nil) = viewModel.loadState else {
+            Issue.record("expected .failed with nothing shown, got \(viewModel.loadState)")
+            return
+        }
     }
 
     @Test("a failed load offers Try Again while online and sample rates while offline")
@@ -561,7 +607,7 @@ struct CalculatorViewModelTests {
         await waitUntil { repository.fetchExchangeRatesCallCount == 2 }
 
         #expect(viewModel.availableRates.isEmpty)
-        #expect(viewModel.loadState == .loading(previous: []))
+        #expect(viewModel.loadState == .loading(previous: nil))
         #expect(viewModel.lastRefreshFailed == false)
         #expect(viewModel.isShowingSampleRates == false)
         #expect(viewModel.rateBanner == .hidden)

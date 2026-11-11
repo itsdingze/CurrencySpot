@@ -39,11 +39,12 @@ final class ConvertCurrencyUseCase {
         for currency in [from, to] where rates.table.usdRate(for: currency) == nil {
             throw .noRate(currency)
         }
+        guard let converted = rates.table.convert(amount, from: from, to: to) else { throw .noRate(from) }
         return Conversion(
             amount: amount,
             from: from,
             to: to,
-            converted: rates.table.convert(amount, from: from, to: to),
+            converted: converted,
             ratesDate: rates.date
         )
     }

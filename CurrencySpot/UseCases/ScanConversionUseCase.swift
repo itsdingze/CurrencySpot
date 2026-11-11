@@ -44,12 +44,13 @@ final class ScanConversionUseCase {
         on item: RecognizedTextItem,
         reading readings: [LinePriceReader.Reading],
         rowNeighbourCenter: CGPoint?,
-        convert: (Decimal) -> Decimal
+        convert: (Decimal) -> Decimal?
     ) -> [DetectedItem] {
         let anchoredReadings = anchored(readings, on: item)
         let lineText = textQuads(of: item, outside: anchoredReadings)
-        return anchoredReadings.enumerated().map { ordinal, anchored in
-            DetectedItem(
+        return anchoredReadings.enumerated().compactMap { ordinal, anchored in
+            guard let converted = convert(anchored.reading.amount) else { return nil }
+            return DetectedItem(
                 id: Self.itemID(line: item.id, ordinal: ordinal),
                 lineID: item.id,
                 transcript: anchoredReadings.count > 1
@@ -62,7 +63,7 @@ final class ScanConversionUseCase {
                 perUnitSuffix: anchored.perUnitSuffix?.text,
                 conversion: ScannedConversion(
                     amount: anchored.reading.amount,
-                    converted: convert(anchored.reading.amount),
+                    converted: converted,
                     isPrice: anchored.reading.isPrice
                 )
             )
@@ -115,7 +116,7 @@ final class ScanConversionUseCase {
         from base: CurrencyCode,
         to target: CurrencyCode,
         in rates: [ExchangeRate]
-    ) -> Decimal {
+    ) -> Decimal? {
         guard base != target else { return amount }
         if rates != cachedRates {
             cachedRates = rates

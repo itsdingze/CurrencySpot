@@ -5,8 +5,8 @@ import Foundation
 nonisolated struct CalculateConversionUseCase: Sendable {
     struct Conversion: Equatable, Sendable {
         let amount: Decimal
-        let rate: Double
-        let converted: Decimal
+        let rate: Double?
+        let converted: Decimal?
     }
 
     func callAsFunction(

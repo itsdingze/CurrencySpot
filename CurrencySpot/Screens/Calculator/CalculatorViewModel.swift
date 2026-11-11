@@ -74,9 +74,14 @@ final class CalculatorViewModel {
     var lastUpdated: Date? { ratesStore.lastUpdated }
     var isShowingSampleRates: Bool { ratesStore.isShowingSampleRates }
 
+    private var shownRates: [ExchangeRate]? {
+        guard let rates = loadState.value, !rates.isEmpty else { return nil }
+        return rates
+    }
+
     var rateBanner: RateBanner {
-        if loadState.isLoading, loadState.value?.isEmpty == false { return .updating }
-        guard loadState.value?.isEmpty == false else { return .hidden }
+        if loadState.isLoading, shownRates != nil { return .updating }
+        guard shownRates != nil else { return .hidden }
         if isShowingSampleRates { return .sample }
         if !appState.networkMonitor.isConnected { return .offlineSaved }
         if lastRefreshFailed { return .updateFailed }
@@ -146,7 +151,7 @@ final class CalculatorViewModel {
         conversion.amount
     }
 
-    var conversionRate: Double {
+    var conversionRate: Double? {
         conversion.rate
     }
 
@@ -158,12 +163,12 @@ final class CalculatorViewModel {
         inputAmount.formatted(.compactAmount)
     }
 
-    var convertedAmount: String {
-        conversion.converted.formatted(.number.precision(.fractionLength(2)))
+    var convertedAmount: String? {
+        conversion.converted?.formatted(.number.precision(.fractionLength(2)))
     }
 
-    var compactConvertedAmount: String {
-        conversion.converted.formatted(.compactAmount)
+    var compactConvertedAmount: String? {
+        conversion.converted?.formatted(.compactAmount)
     }
 
     // MARK: - Computed Properties (Formatted Display Values)
@@ -263,25 +268,21 @@ final class CalculatorViewModel {
     }
 
     private func save(calculation: CalculatorExpression?) {
-        guard inputAmount > 0, baseCurrency != targetCurrency, !isCalculationUndefined, hasLiveRates else { return }
+        guard inputAmount > 0, baseCurrency != targetCurrency, !isCalculationUndefined, !isShowingSampleRates,
+              let converted = conversion.converted
+        else { return }
         let record = ConversionRecord(
             id: UUID(),
             calculation: calculation,
             amount: inputAmount,
             base: baseCurrency,
             target: targetCurrency,
-            converted: conversion.converted,
+            converted: converted,
             date: dateProvider.now()
         )
         guard lastSaved?.isSameConversion(as: record) != true else { return }
         history.add(record)
         lastSaved = record
-    }
-
-    private var hasLiveRates: Bool {
-        !isShowingSampleRates
-            && rateTable.usdRate(for: baseCurrency) != nil
-            && rateTable.usdRate(for: targetCurrency) != nil
     }
 
     // MARK: - Currency Pair Intents
@@ -338,7 +339,7 @@ final class CalculatorViewModel {
         guard fetchTask == nil else { return }
 
         let shouldRefresh = await loadExchangeRatesUseCase.shouldRefreshOnReconnect(
-            hasRates: loadState.value != nil,
+            hasRates: shownRates != nil,
             isShowingSample: isShowingSampleRates,
             lastRefreshFailed: lastRefreshFailed
         )
@@ -385,7 +386,7 @@ final class CalculatorViewModel {
 
     private func reloadAfterDataReset() async {
         publish(rates: [], lastUpdated: nil, isShowingSampleRates: false)
-        loadState = .loaded([])
+        loadState = .loading(previous: nil)
         lastRefreshFailed = false
         await checkIfShouldFetch()
     }
@@ -393,27 +394,30 @@ final class CalculatorViewModel {
     // MARK: - Data Fetching Methods
 
     func fetchExchangeRates() async {
-        loadState = .loading(previous: loadState.value)
+        loadState = .loading(previous: shownRates)
 
         apply(await loadExchangeRatesUseCase.refresh())
     }
 
     private func apply(_ outcome: LoadExchangeRatesUseCase.Outcome) {
         switch outcome {
-        case let .rates(rates, lastUpdated, refreshFailed):
+        case let .rates(rates, lastUpdated, refreshFailed) where !rates.isEmpty:
             publish(rates: rates, lastUpdated: lastUpdated, isShowingSampleRates: false)
             lastRefreshFailed = refreshFailed
             loadState = .loaded(rates)
-
+        case .rates:
+            showRatesUnavailable(nil)
         case let .unavailable(error):
-            if let shown = loadState.value {
-                lastRefreshFailed = true
-                loadState = .loaded(shown)
-            } else if let error {
-                loadState = .failed(error, previous: nil)
-            } else {
-                loadState = .loaded([])
-            }
+            showRatesUnavailable(error)
+        }
+    }
+
+    private func showRatesUnavailable(_ error: AppError?) {
+        if let shown = shownRates {
+            lastRefreshFailed = true
+            loadState = .loaded(shown)
+        } else {
+            loadState = .failed(error ?? .dataValidationError("No exchange rates"), previous: nil)
         }
     }
 

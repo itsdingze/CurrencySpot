@@ -13,16 +13,25 @@ struct RateInfoView: View {
         }
     }
 
+    @ViewBuilder
     private var rateAndLastUpdated: some View {
-        VStack(spacing: Spacing.hairline) {
-            if shouldShowConversionRate {
+        if isRateUnavailable {
+            VStack(spacing: Spacing.hairline) {
                 conversionRateText
+                lastUpdatedText
             }
-            lastUpdatedText
+            .accessibilityElement(children: .contain)
+        } else {
+            VStack(spacing: Spacing.hairline) {
+                if shouldShowConversionRate {
+                    conversionRateText
+                }
+                lastUpdatedText
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(accessibilityContainerLabel)
+            .accessibilityAddTraits(.updatesFrequently)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityContainerLabel)
-        .accessibilityAddTraits(.updatesFrequently)
     }
 
     private func rateAndStatus(_ banner: RateBanner) -> some View {
@@ -42,15 +51,15 @@ struct RateInfoView: View {
     }
 
     private var accessibilityContainerLabel: LocalizedStringResource {
-        let rate = String(localized: conversionRate)
-        switch (shouldShowConversionRate, viewModel.lastUpdated) {
-        case let (true, lastUpdated?):
+        let shownRate = shouldShowConversionRate ? viewModel.conversionRate : nil
+        switch (shownRate.map { String(localized: conversionRate($0)) }, viewModel.lastUpdated) {
+        case let (rate?, lastUpdated?):
             return .calculatorRateInfoAccessibilityLabelRateUpdated(rate: rate, date: lastUpdated.lastUpdatedDisplay)
-        case (true, nil):
+        case let (rate?, nil):
             return .calculatorRateInfoAccessibilityLabelRateNotUpdated(rate: rate)
-        case let (false, lastUpdated?):
+        case let (nil, lastUpdated?):
             return .calculatorRateInfoAccessibilityLabelUpdated(date: lastUpdated.lastUpdatedDisplay)
-        case (false, nil):
+        case (nil, nil):
             return .calculatorRateInfoAccessibilityLabelNotUpdated
         }
     }
@@ -59,9 +68,15 @@ struct RateInfoView: View {
 
     @ViewBuilder
     private var conversionRateText: some View {
-        Text(conversionRate)
-            .font(.appCaption)
-            .foregroundStyle(.secondary)
+        Group {
+            if let rate = viewModel.conversionRate {
+                Text(conversionRate(rate))
+            } else {
+                Text(.cameraRatesNoticeMissingPair)
+            }
+        }
+        .font(.appCaption)
+        .foregroundStyle(.secondary)
     }
 
     @ViewBuilder
@@ -77,10 +92,14 @@ struct RateInfoView: View {
         viewModel.baseCurrency != viewModel.targetCurrency
     }
 
-    private var conversionRate: LocalizedStringResource {
+    private var isRateUnavailable: Bool {
+        shouldShowConversionRate && viewModel.conversionRate == nil
+    }
+
+    private func conversionRate(_ rate: Double) -> LocalizedStringResource {
         .calculatorRateInfoConversionRate(
             base: viewModel.baseCurrency.rawValue,
-            rate: viewModel.conversionRate.rateText,
+            rate: rate.rateText,
             target: viewModel.targetCurrency.rawValue
         )
     }

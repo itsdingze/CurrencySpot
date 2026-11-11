@@ -156,6 +156,18 @@ struct ConvertCurrencyUseCaseTests {
         }
     }
 
+    @Test("a currency whose rate is zero fails instead of returning the amount unconverted")
+    func zeroRateFails() async throws {
+        repository.loadExchangeRatesResult = .success([
+            ExchangeRate(currencyCode: "USD", rate: 1.0),
+            ExchangeRate(currencyCode: "EUR", rate: 0),
+        ])
+
+        await #expect(throws: ConvertCurrencyUseCase.Failure.noRate("EUR")) {
+            try await convert(amount: 10, from: "EUR", to: "USD")
+        }
+    }
+
     @Test("no saved rates and no connection fails")
     func offlineWithoutRatesFails() async throws {
         repository.fetchExchangeRatesResult = .failure(.noInternetConnection)

@@ -24,24 +24,25 @@ nonisolated struct RateTable: Equatable, Sendable {
     }
 
     func canConvert(from base: CurrencyCode, to target: CurrencyCode) -> Bool {
-        guard base != target else { return true }
-        guard let baseRate = usdRate(for: base), usdRate(for: target) != nil else { return false }
-        return abs(baseRate) > .ulpOfOne
+        crossRate(from: base, to: target) != nil
     }
 
-    func crossRate(from base: CurrencyCode, to target: CurrencyCode) -> Double {
+    func crossRate(from base: CurrencyCode, to target: CurrencyCode) -> Double? {
         guard base != target else { return 1.0 }
-        let targetRate = usdRate(for: target) ?? 1.0
-        let baseRate = usdRate(for: base) ?? 1.0
-        guard abs(baseRate) > .ulpOfOne else { return targetRate }
+        guard let (baseRate, targetRate) = usdRates(from: base, to: target) else { return nil }
         return targetRate / baseRate
     }
 
-    func convert(_ amount: Decimal, from base: CurrencyCode, to target: CurrencyCode) -> Decimal {
+    func convert(_ amount: Decimal, from base: CurrencyCode, to target: CurrencyCode) -> Decimal? {
         guard base != target else { return amount }
-        let targetRate = usdRate(for: target) ?? 1.0
-        let baseRate = usdRate(for: base) ?? 1.0
-        guard abs(baseRate) > .ulpOfOne else { return amount }
+        guard let (baseRate, targetRate) = usdRates(from: base, to: target) else { return nil }
         return amount * Decimal(targetRate) / Decimal(baseRate)
+    }
+
+    private func usdRates(from base: CurrencyCode, to target: CurrencyCode) -> (base: Double, target: Double)? {
+        guard let baseRate = usdRate(for: base), let targetRate = usdRate(for: target),
+              abs(baseRate) > .ulpOfOne
+        else { return nil }
+        return (baseRate, targetRate)
     }
 }
