@@ -5,8 +5,8 @@ struct CurrencyChart: View {
     @Environment(CurrencyHistoryViewModel.self) private var viewModel
     @Environment(\.appAccent) private var accent
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @State private var rawSelectedDate: Date?
-    @State private var axSelectionIndex: Int?
+    @State private var selection = ChartSelection()
+    @AccessibilityFocusState private var isChartFocused: Bool
     let statistics: ChartStatistics
     @Binding var isChartSelectionActive: Bool
 
@@ -27,7 +27,7 @@ struct CurrencyChart: View {
     private let animationDuration: Double = 0.5
 
     private var trendColor: Color {
-        if rawSelectedDate == nil {
+        if !selection.isActive {
             statistics.trendDirection.color
         } else {
             accent
@@ -64,9 +64,9 @@ struct CurrencyChart: View {
     }
 
     private var selectedDate: ChartDataPoint? {
-        guard let rawSelectedDate else { return nil }
+        guard let date = selection.date else { return nil }
 
-        return viewModel.displayedChartDataPoints.closestPoint(to: rawSelectedDate)
+        return viewModel.displayedChartDataPoints.closestPoint(to: date)
     }
 
     var body: some View {
@@ -172,18 +172,29 @@ struct CurrencyChart: View {
         .chartYScale(domain: statistics.chartYDomain)
         .environment(\.calendar, CETCalendar.calendar)
         .environment(\.timeZone, CETCalendar.timeZone)
-        .chartXSelection(value: isSelectionEnabled ? $rawSelectedDate : .constant(nil))
+        .chartXSelection(value: isSelectionEnabled ? $selection.date : .constant(nil))
         .accessibilityRepresentation {
             Color.clear
                 .accessibilityLabel(chartAccessibilityLabel)
                 .accessibilityValue(chartAccessibilityValue)
                 .accessibilityHint(chartAccessibilityHint)
                 .accessibilityAdjustableAction { direction in
-                    adjustSelection(direction)
+                    selection.step(direction, through: viewModel.displayedChartDataPoints)
                 }
         }
-        .onChange(of: rawSelectedDate) { _, newValue in
-            isChartSelectionActive = newValue != nil
+        .accessibilityFocused($isChartFocused)
+        .onChange(of: isChartFocused) { _, isFocused in
+            if !isFocused { selection.endAccessibilitySelection() }
+        }
+        .onChange(of: viewModel.displayedChartDataPoints) {
+            selection.endAccessibilitySelection()
+        }
+        .onChange(of: selection.isActive) { _, isActive in
+            isChartSelectionActive = isActive
+        }
+        .onDisappear {
+            selection.clear()
+            isChartSelectionActive = false
         }
         .task {
             do { try await Task.sleep(for: .seconds(animationDelay)) } catch { return }
@@ -209,7 +220,7 @@ struct CurrencyChart: View {
     private var chartAccessibilityValue: LocalizedStringResource {
         let dataPoints = viewModel.displayedChartDataPoints
 
-        if let index = axSelectionIndex, dataPoints.indices.contains(index) {
+        if let index = selection.accessibilityIndex, dataPoints.indices.contains(index) {
             let point = dataPoints[index]
             return .historyChartAccessibilityValueSelectedPoint(
                 date: point.date.rateDayDisplay,
@@ -242,25 +253,6 @@ struct CurrencyChart: View {
 
     private var chartAccessibilityHint: LocalizedStringResource {
         .historyChartAccessibilityHint
-    }
-
-    private func adjustSelection(_ direction: AccessibilityAdjustmentDirection) {
-        let dataPoints = viewModel.displayedChartDataPoints
-        guard !dataPoints.isEmpty else { return }
-
-        let current = axSelectionIndex ?? dataPoints.count - 1
-        let next: Int
-        switch direction {
-        case .increment:
-            next = min(current + 1, dataPoints.count - 1)
-        case .decrement:
-            next = max(current - 1, 0)
-        @unknown default:
-            next = current
-        }
-
-        axSelectionIndex = next
-        rawSelectedDate = dataPoints[next].date
     }
 }
 
