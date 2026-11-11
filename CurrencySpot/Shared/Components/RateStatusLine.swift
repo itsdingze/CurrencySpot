@@ -59,9 +59,10 @@ struct RateStatusLine: View {
                 messageLabel
                     .fixedSize()
             }
-            VStack(alignment: stackAlignment, spacing: Spacing.hairline) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.hairline) {
                 icon
                 messageLabel
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
