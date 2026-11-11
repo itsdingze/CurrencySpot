@@ -55,7 +55,8 @@ final class DependencyContainer {
                 api: FrankfurterAPI(
                     session: FrankfurterAPI.makeDefaultSession(),
                     retryPolicy: retryPolicy,
-                    clock: clockService
+                    clock: clockService,
+                    now: { dateProvider.now() }
                 )
             ),
             persistenceService: persistenceService ?? SwiftDataPersistenceService(

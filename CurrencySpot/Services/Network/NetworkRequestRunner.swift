@@ -9,6 +9,7 @@ nonisolated enum NetworkRequestRunner {
     @concurrent
     static func performRequestWithRetry<T: Codable & Sendable>(
         url: URL,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy,
         urlSession: URLSession,
         responseType: T.Type,
         endpoint: String? = nil,
@@ -16,11 +17,14 @@ nonisolated enum NetworkRequestRunner {
         clock: ClockService
     ) async throws -> T {
         let endpointKey = endpoint ?? url.path
+        var request = URLRequest(url: url)
+        request.cachePolicy = cachePolicy
+        request.timeoutInterval = urlSession.configuration.timeoutIntervalForRequest
         var retry = 0
 
         while true {
             do {
-                let result = try await performRequest(url: url, urlSession: urlSession, responseType: responseType)
+                let result = try await performRequest(request, urlSession: urlSession, responseType: responseType)
                 if retry > 0 {
                     logger.info("Request to \(endpointKey, privacy: .public) succeeded on retry \(retry, privacy: .public)")
                 }
@@ -52,14 +56,14 @@ nonisolated enum NetworkRequestRunner {
 
     @concurrent
     private static func performRequest<T: Codable & Sendable>(
-        url: URL,
+        _ request: URLRequest,
         urlSession: URLSession,
         responseType _: T.Type
     ) async throws -> T {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await urlSession.data(from: url)
+            (data, response) = try await urlSession.data(for: request)
         } catch let urlError as URLError where urlError.code == .cancelled {
             throw CancellationError()
         }

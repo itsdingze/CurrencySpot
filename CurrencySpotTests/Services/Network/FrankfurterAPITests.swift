@@ -12,9 +12,14 @@ private nonisolated final class StubURLProtocol: URLProtocol {
     }
 
     private static let stubs = Mutex<[String: Stub]>([:])
+    private static let cachePolicies = Mutex<[String: URLRequest.CachePolicy]>([:])
 
     static func register(_ stub: Stub, for url: String) {
         stubs.withLock { $0[url] = stub }
+    }
+
+    static func cachePolicy(requestedFor url: String) -> URLRequest.CachePolicy? {
+        cachePolicies.withLock { $0[url] }
     }
 
     private static func stub(for url: String) -> Stub? {
@@ -31,6 +36,9 @@ private nonisolated final class StubURLProtocol: URLProtocol {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
+        if let url = request.url {
+            Self.cachePolicies.withLock { $0[url.absoluteString] = request.cachePolicy }
+        }
         guard let url = request.url,
               let stub = Self.stub(for: url.absoluteString),
               let response = HTTPURLResponse(url: url, statusCode: stub.statusCode, httpVersion: "HTTP/1.1", headerFields: nil)
@@ -53,7 +61,8 @@ struct FrankfurterAPITests {
     private let api = FrankfurterAPI(
         session: StubURLProtocol.makeSession(),
         retryPolicy: RetryPolicy(jitter: { _ in 1.0 }),
-        clock: ImmediateClock()
+        clock: ImmediateClock(),
+        now: { .now }
     )
 
     private static func v2JSON(_ entries: [(date: String, quote: String, rate: Double)], base: String = "USD") -> Data {
@@ -71,7 +80,8 @@ struct FrankfurterAPITests {
         let api = FrankfurterAPI(
             session: URLSession(configuration: configuration),
             retryPolicy: RetryPolicy(jitter: { _ in 1.0 }),
-            clock: ImmediateClock()
+            clock: ImmediateClock(),
+            now: { .now }
         )
         let url = try #require(URL(string: "https://api.frankfurter.dev/v2/rates?base=USD"))
         let request = URLRequest(url: url)
@@ -99,6 +109,47 @@ struct FrankfurterAPITests {
         #expect(response.base == "CHF")
         #expect(response.date == "2025-03-14")
         #expect(response.rates == ["EUR": 0.91, "GBP": 0.78])
+    }
+
+    @Test("latest rates are checked with the server instead of answered from the local cache")
+    func latestRatesRevalidate() async throws {
+        let url = "https://api.frankfurter.dev/v2/rates?base=HUF"
+        StubURLProtocol.register(
+            .init(statusCode: 200, data: Self.v2JSON([(date: "2025-03-14", quote: "EUR", rate: 0.0025)], base: "HUF")),
+            for: url
+        )
+
+        _ = try await api.fetchExchangeRates(baseCurrency: "HUF")
+
+        #expect(StubURLProtocol.cachePolicy(requestedFor: url) == .reloadRevalidatingCacheData)
+    }
+
+    @Test("a range ending today is checked with the server, a range that ended earlier may come from the local cache")
+    func onlyRangesEndingTodayRevalidate() async throws {
+        let today = try #require(createCETDate(year: 2025, month: 5, day: 20)).addingTimeInterval(15 * 60 * 60)
+        let api = FrankfurterAPI(
+            session: StubURLProtocol.makeSession(),
+            retryPolicy: RetryPolicy(jitter: { _ in 1.0 }),
+            clock: ImmediateClock(),
+            now: { today }
+        )
+        let endingToday = "https://api.frankfurter.dev/v2/rates?base=USD&from=2025-05-19&to=2025-05-20"
+        let endedYesterday = "https://api.frankfurter.dev/v2/rates?base=USD&from=2025-05-18&to=2025-05-19"
+        for url in [endingToday, endedYesterday] {
+            StubURLProtocol.register(.init(statusCode: 200, data: Self.v2JSON([(date: "2025-05-19", quote: "EUR", rate: 0.9)])), for: url)
+        }
+
+        _ = try await api.fetchHistoricalRatesForRange(
+            startDate: try #require(createCETDate(year: 2025, month: 5, day: 19)),
+            endDate: today
+        )
+        _ = try await api.fetchHistoricalRatesForRange(
+            startDate: try #require(createCETDate(year: 2025, month: 5, day: 18)),
+            endDate: try #require(createCETDate(year: 2025, month: 5, day: 19)).addingTimeInterval(23 * 60 * 60)
+        )
+
+        #expect(StubURLProtocol.cachePolicy(requestedFor: endingToday) == .reloadRevalidatingCacheData)
+        #expect(StubURLProtocol.cachePolicy(requestedFor: endedYesterday) == .useProtocolCachePolicy)
     }
 
     @Test("fetchHistoricalRatesForRange builds the range endpoint URL and decodes the series")

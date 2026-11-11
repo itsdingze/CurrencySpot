@@ -6,7 +6,8 @@ enum RateSeriesTimeline {
         fetcher: FrankfurterAPI(
             session: FrankfurterAPI.makeDefaultSession(),
             retryPolicy: RetryPolicy(maxRetries: 1),
-            clock: ContinuousClockService()
+            clock: ContinuousClockService(),
+            now: { .now }
         ),
         cache: RateSeriesCache(directory: URL.cachesDirectory.appending(path: "RateSeries", directoryHint: .isDirectory))
     )

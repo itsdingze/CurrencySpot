@@ -6,11 +6,13 @@ nonisolated final class FrankfurterAPI: Sendable {
     private let urlSession: URLSession
     private let retryPolicy: RetryPolicy
     private let clock: ClockService
+    private let now: @Sendable () -> Date
 
-    init(session: URLSession, retryPolicy: RetryPolicy, clock: ClockService) {
+    init(session: URLSession, retryPolicy: RetryPolicy, clock: ClockService, now: @escaping @Sendable () -> Date) {
         urlSession = session
         self.retryPolicy = retryPolicy
         self.clock = clock
+        self.now = now
     }
 
     static func makeDefaultSession() -> URLSession {
@@ -37,6 +39,7 @@ nonisolated final class FrankfurterAPI: Sendable {
 
         let entries = try await NetworkRequestRunner.performRequestWithRetry(
             url: url,
+            cachePolicy: .reloadRevalidatingCacheData,
             urlSession: urlSession,
             responseType: [FrankfurterV2Rate].self,
             endpoint: "exchange-rates-latest",
@@ -63,6 +66,7 @@ nonisolated final class FrankfurterAPI: Sendable {
 
         let entries = try await NetworkRequestRunner.performRequestWithRetry(
             url: url,
+            cachePolicy: endDateString >= CETCalendar.dayString(for: now()) ? .reloadRevalidatingCacheData : .useProtocolCachePolicy,
             urlSession: urlSession,
             responseType: [FrankfurterV2Rate].self,
             endpoint: "historical-rates-range-\(startDateString)-\(endDateString)\(quotes.isEmpty ? "" : "-" + quotes.sorted().joined(separator: "-"))",
