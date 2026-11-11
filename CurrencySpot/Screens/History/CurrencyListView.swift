@@ -56,6 +56,10 @@ struct CurrencyListView: View {
             }
         } else if viewModel.isWatchlistEmpty {
             emptyWatchlist
+        } else if viewModel.isWaitingForConnection {
+            waitingForConnection
+        } else if viewModel.isLoadingRates {
+            ProgressView(.calculatorLoading)
         } else {
             watchlistList
         }
@@ -109,6 +113,14 @@ struct CurrencyListView: View {
             Label(.historyListEmptyTitle, systemImage: "chart.line.uptrend.xyaxis")
         } description: {
             Text(.historyListEmptyDescription)
+        }
+    }
+
+    private var waitingForConnection: some View {
+        ContentUnavailableView {
+            Label(.errorNoInternetTitle, systemImage: "wifi.slash")
+        } description: {
+            Text(.calculatorErrorMessageOffline)
         }
     }
 

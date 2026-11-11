@@ -99,6 +99,47 @@ struct CurrencyListViewModelTests {
         #expect(viewModel.isWatchlistEmpty == true)
     }
 
+    @Test("offline with no rates, a saved watchlist waits for a connection, then shows once rates arrive", .timeLimit(.minutes(1)))
+    func offlineWithoutRatesWaitsForConnection() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: ["EUR", "GBP"])
+        try await graph.goOffline()
+        let viewModel = graph.makeListViewModel()
+
+        #expect(viewModel.isWatchlistEmpty == false)
+        #expect(viewModel.isWaitingForConnection)
+
+        Self.publishRates(to: graph)
+        await waitUntil { viewModel.displayedCurrencies.count == 2 }
+
+        #expect(viewModel.isWaitingForConnection == false)
+    }
+
+    @Test("online with no rates yet, a saved watchlist shows rates loading until they arrive", .timeLimit(.minutes(1)))
+    func onlineWithoutRatesShowsLoading() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: ["EUR", "GBP"])
+        try await graph.goOnline()
+        let viewModel = graph.makeListViewModel()
+
+        #expect(viewModel.isLoadingRates)
+        #expect(viewModel.isWaitingForConnection == false)
+
+        Self.publishRates(to: graph)
+        await waitUntil { viewModel.displayedCurrencies.count == 2 }
+
+        #expect(viewModel.isLoadingRates == false)
+    }
+
+    @Test("an empty watchlist shows its own empty state even without rates", .timeLimit(.minutes(1)))
+    func emptyWatchlistWithoutRatesStaysEmptyWatchlist() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: [])
+        try await graph.goOffline()
+        let viewModel = graph.makeListViewModel()
+
+        #expect(viewModel.isWatchlistEmpty)
+        #expect(viewModel.isWaitingForConnection == false)
+        #expect(viewModel.isLoadingRates == false)
+    }
+
     @Test("moveWatchlist reorders by displayed offset while the hidden base stays put", .timeLimit(.minutes(1)))
     func moveReorders() async throws {
         let graph = try HistoryTestGraph(watchlistSeed: ["USD", "EUR", "GBP", "JPY"])

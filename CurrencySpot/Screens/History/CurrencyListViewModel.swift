@@ -38,6 +38,12 @@ final class CurrencyListViewModel {
 
     var isWatchlistEmpty: Bool { watchlist.codes.allSatisfy { $0 == baseCurrency } }
 
+    var isWaitingForConnection: Bool { isMissingRates && !appState.networkMonitor.isConnected }
+
+    var isLoadingRates: Bool { isMissingRates && appState.networkMonitor.isConnected }
+
+    private var isMissingRates: Bool { !isWatchlistEmpty && ratesStore.rates.isEmpty }
+
     var baseCurrency: CurrencyCode {
         guard let picked = historyBase.pickedBase, isListedInRates(picked) else {
             return preferences.defaultBaseCurrency
