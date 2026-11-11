@@ -13,14 +13,12 @@ struct WidgetHeader: View {
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: Spacing.hairline) {
                         titleText
-                        updatedText(outdatedFetchDate)
-                            .layoutPriority(1)
+                        fetchDateText(outdatedFetchDate)
                     }
 
                     VStack(alignment: .leading, spacing: 0) {
                         titleText
-                        updatedText(outdatedFetchDate)
-                            .fixedSize(horizontal: false, vertical: true)
+                        fetchDateText(outdatedFetchDate)
                     }
                 }
             } else {
@@ -47,12 +45,14 @@ struct WidgetHeader: View {
             .accessibilityLabel(accessibilityLabel)
     }
 
-    private func updatedText(_ fetchDate: Date) -> some View {
+    private func fetchDateText(_ fetchDate: Date) -> some View {
         let format: Date.FormatStyle = Calendar.current.isDate(fetchDate, inSameDayAs: entryDate)
             ? .dateTime.hour().minute()
             : .dateTime.month(.abbreviated).day()
-        return Text(.widgetHeaderUpdated(date: fetchDate.formatted(format)))
+        let date = fetchDate.formatted(format)
+        return Text(date)
             .foregroundStyle(.secondary)
+            .accessibilityLabel(.widgetHeaderUpdated(date: date))
     }
 
     private var title: AttributedString {
