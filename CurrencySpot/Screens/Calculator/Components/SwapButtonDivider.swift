@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SwapButtonDivider: View {
     @Environment(CalculatorViewModel.self) private var viewModel: CalculatorViewModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isFlipped = false
 
     private let dividerHeight: CGFloat = 2
@@ -50,8 +51,8 @@ struct SwapButtonDivider: View {
     // MARK: - Private Methods
 
     private func performSwap() {
-        withAnimation(.appFlip) {
-            isFlipped.toggle()
+        withAnimation(reduceMotion ? .appQuickFade : .appFlip) {
+            if !reduceMotion { isFlipped.toggle() }
             viewModel.swapCurrencies()
             AccessibilityNotification.Announcement(String(localized: swapAnnouncement)).post()
         }

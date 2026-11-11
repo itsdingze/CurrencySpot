@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CurrencyPairControl: View {
     @Environment(CameraViewModel.self) private var viewModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isFlipped = false
 
     var body: some View {
@@ -61,8 +62,8 @@ struct CurrencyPairControl: View {
 
     private var swapButton: some View {
         Button {
-            withAnimation(.appFlip) {
-                isFlipped.toggle()
+            withAnimation(reduceMotion ? .appQuickFade : .appFlip) {
+                if !reduceMotion { isFlipped.toggle() }
                 viewModel.swapCurrencies()
             }
         } label: {
