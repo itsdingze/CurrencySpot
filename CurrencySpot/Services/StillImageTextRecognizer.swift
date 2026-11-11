@@ -53,6 +53,7 @@ nonisolated struct StillImageTextRecognizer: StillTextRecognitionService {
         var request = request
         let regionOfInterest = region.normalizedRect(in: imageSize)
         request.regionOfInterest = regionOfInterest
+        request.minimumTextHeightFraction = region.minimumTextHeightFraction
         return try await request.perform(on: image).compactMap { observation in
             let readings = observation.topCandidates(maximumReadings)
             guard let topCandidate = readings.first else { return nil }

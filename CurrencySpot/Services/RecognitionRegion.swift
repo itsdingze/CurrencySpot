@@ -5,11 +5,16 @@ nonisolated struct RecognitionRegion: Equatable, Sendable {
     private static let bandCount = 3
     private static let bandOverlapFraction: CGFloat = 0.15
     private static let cutEdgeToleranceFraction: CGFloat = 0.02
+    private static let smallestReadableTextHeight: CGFloat = 16
 
     let rect: CGRect
     private let isCutAtTop: Bool
     private let isCutAtBottom: Bool
     private let minimumLineHeight: CGFloat
+
+    var minimumTextHeightFraction: Float {
+        Float(max(minimumLineHeight, Self.smallestReadableTextHeight) / rect.height)
+    }
 
     static func regions(covering imageSize: CGSize) -> [RecognitionRegion] {
         let frame = CGRect(origin: .zero, size: imageSize)
