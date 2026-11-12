@@ -4,6 +4,7 @@ import TipKit
 
 @main
 struct CurrencySpotApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let dependencyContainer: DependencyContainer
 
     init() {

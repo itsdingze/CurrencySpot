@@ -41,6 +41,7 @@ struct ContentView: View {
                 Label(.appTabSettings, systemImage: "gearshape")
             }
         }
+        .providesScreenLayout()
         .alert(
             errorAlertTitle,
             isPresented: Bindable(appState.errorHandler).isPresentingError,
