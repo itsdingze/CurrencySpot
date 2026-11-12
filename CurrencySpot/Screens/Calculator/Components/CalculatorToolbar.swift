@@ -15,9 +15,8 @@ struct CalculatorToolbar: ToolbarContent {
     var body: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
             Button { viewModel.showHistory() } label: {
-                Image(systemName: "clock")
+                Label(.calculatorHistoryAccessibilityLabel, systemImage: "clock")
             }
-            .accessibilityLabel(.calculatorHistoryAccessibilityLabel)
         }
 
         ToolbarItem(placement: .topBarTrailing) {
@@ -31,10 +30,13 @@ struct CalculatorToolbar: ToolbarContent {
                     Text(.calculatorNumberPadAccessibilityLabel)
                 }
             } label: {
-                viewModel.keypadMode.icon
-                    .contentTransition(.symbolEffect(.replace))
+                Label {
+                    Text(.calculatorNumberPadAccessibilityLabel)
+                } icon: {
+                    viewModel.keypadMode.icon
+                        .contentTransition(.symbolEffect(.replace))
+                }
             }
-            .accessibilityLabel(.calculatorNumberPadAccessibilityLabel)
             .accessibilityValue(Text(viewModel.keypadMode.title))
         }
     }

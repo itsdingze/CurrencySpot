@@ -1567,7 +1567,7 @@
       }
     },
     "calculator.history.accessibilityLabel" : {
-      "comment" : "VoiceOver label for the toolbar button that opens the list of saved conversions on the converter screen.",
+      "comment" : "Title of the toolbar button that opens the list of saved conversions on the converter screen. VoiceOver reads it, and it shows when the button moves into the toolbar's overflow menu.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -1579,7 +1579,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conversion history"
+            "value" : "Conversion History"
           }
         },
         "es" : {
@@ -2911,7 +2911,7 @@
       }
     },
     "calculator.numberPad.accessibilityLabel" : {
-      "comment" : "VoiceOver label for the converter screen number pad container.",
+      "comment" : "Name of the converter screen number pad. VoiceOver reads it for the keypad, its page dots and its mode menu, and it titles that menu and the toolbar's overflow menu item.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
@@ -2923,7 +2923,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Number pad"
+            "value" : "Number Pad"
           }
         },
         "es" : {
