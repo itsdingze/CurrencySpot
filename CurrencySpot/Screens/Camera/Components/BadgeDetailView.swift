@@ -36,7 +36,7 @@ struct BadgeDetailView: View {
                         )
                     }
 
-                    VStack(spacing: Spacing.section) {
+                    VStack(spacing: Spacing.hairline) {
                         Button(action: openInConverter) {
                             Label(.cameraBadgeDetailOpenInConvert, systemImage: "arrow.left.arrow.right")
                                 .frame(maxWidth: .infinity)
@@ -46,6 +46,8 @@ struct BadgeDetailView: View {
                         Button(action: hideConversion) {
                             Label(.cameraBadgeDetailHide, systemImage: "eye.slash")
                                 .font(.appSubheadline)
+                                .frame(maxWidth: .infinity)
+                                .minimumHitTarget()
                         }
                         .foregroundStyle(Color.secondary)
                     }
