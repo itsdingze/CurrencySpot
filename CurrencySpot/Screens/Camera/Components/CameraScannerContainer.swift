@@ -8,9 +8,13 @@ struct CameraScannerContainer: View {
     @Environment(AppState.self) private var appState
     @Environment(SettingsViewModel.self) private var settingsViewModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.screenLayout) private var screenLayout
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var containerHeight: CGFloat = 0
     @State private var suggestsFreezing = false
     @State private var isVisible = false
+
+    @ScaledMetric(relativeTo: .headline) private var tabletopControlsWidth: CGFloat = 248
 
     private static let fittedSheetHeightLimit: CGFloat = 0.75
 
@@ -21,51 +25,20 @@ struct CameraScannerContainer: View {
             Color.black
                 .ignoresSafeArea()
 
-            ZStack {
-                if let frozenImage = viewModel.frozenImage {
-                    ZoomableScrollView {
-                        ZStack {
-                            StillFrameView(image: frozenImage)
-                            detectionOverlay(isLive: false)
-                        }
-                        .environment(viewModel)
-                        .appAccent(settingsViewModel.accentColor.color)
-                        .environment(\.colorScheme, .dark)
-                    }
-                    .id(ObjectIdentifier(frozenImage))
-                } else {
-                    LiveViewfinder(overlay: detectionOverlay(isLive: true))
+            if screenLayout == .wide {
+                openLayout
+            } else if screenLayout == .compact, horizontalSizeClass == .regular {
+                uprightOpenLayout
+            } else {
+                FoldAdaptiveLayout {
+                    phoneLayout
+                } top: {
+                    viewfinder
+                        .padding(Spacing.screenInset)
+                } bottom: {
+                    stackedControls
                 }
             }
-            .onGeometryChange(for: CGSize.self) { $0.size } action: { liveCamera.previewSizeChanged($0) }
-            .clipShape(.rect(cornerRadius: 32))
-            .overlay(alignment: .top) {
-                VStack(spacing: Spacing.element) {
-                    CurrencyPairControl()
-                    if let notice = viewModel.ratesNotice {
-                        RatesNoticeCapsule(notice: notice)
-                            .padding(.horizontal, Spacing.screenInset)
-                    }
-                }
-                .padding(.top, Spacing.screenInset)
-            }
-            .overlay(alignment: .bottom) {
-                VStack(spacing: Spacing.section) {
-                    if viewModel.canConvertPrices {
-                        ScanStatusCapsule(
-                            isLive: viewModel.frozenImage == nil,
-                            hasPrices: viewModel.hasSettledPrices,
-                            hasOutlines: viewModel.hasSettledNumbers,
-                            isRecognizingStill: viewModel.isRecognizingStill,
-                            suggestsFreezing: suggestsFreezing
-                        )
-                    }
-                    CameraControlsBar(capturePhoto: { try await liveCamera.capturePhoto() })
-                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
-                }
-                .padding(.bottom, Spacing.screenInset)
-            }
-            .padding(.bottom, Spacing.screenInset)
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { containerHeight = $0 }
         .task {
@@ -126,6 +99,119 @@ struct CameraScannerContainer: View {
             currencyPicker(for: destination)
                 .preferredColorScheme(.dark)
         }
+    }
+
+    private var phoneLayout: some View {
+        viewfinder
+            .overlay(alignment: .top) {
+                pairControls
+                    .padding(.top, Spacing.screenInset)
+            }
+            .overlay(alignment: .bottom) {
+                captureControls
+                    .frame(maxWidth: screenLayout == .tent ? tabletopControlsWidth : nil)
+                    .padding(.bottom, Spacing.screenInset)
+            }
+            .padding(.bottom, Spacing.screenInset)
+    }
+
+    private var openLayout: some View {
+        viewfinder
+            .overlay(alignment: .topTrailing) {
+                pairControls
+                    .padding([.top, .trailing], Spacing.screenInset)
+            }
+            .overlay(alignment: .trailing) {
+                sideCaptureControls
+            }
+            .ignoresSafeArea(edges: .bottom)
+    }
+
+    private var uprightOpenLayout: some View {
+        viewfinder
+            .overlay(alignment: .top) {
+                pairControls
+                    .padding(.top, Spacing.screenInset)
+            }
+            .overlay(alignment: .trailing) {
+                sideCaptureControls
+            }
+            .padding(.bottom, Spacing.screenInset)
+    }
+
+    private var stackedControls: some View {
+        VStack(spacing: Spacing.section) {
+            pairControls
+            Spacer()
+            captureControls
+                .frame(maxWidth: tabletopControlsWidth)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.screenInset)
+    }
+
+    private var viewfinder: some View {
+        ZStack {
+            if let frozenImage = viewModel.frozenImage {
+                ZoomableScrollView {
+                    ZStack {
+                        StillFrameView(image: frozenImage)
+                        detectionOverlay(isLive: false)
+                    }
+                    .environment(viewModel)
+                    .appAccent(settingsViewModel.accentColor.color)
+                    .environment(\.colorScheme, .dark)
+                }
+                .id(ObjectIdentifier(frozenImage))
+            } else {
+                LiveViewfinder(overlay: detectionOverlay(isLive: true))
+            }
+        }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { liveCamera.previewSizeChanged($0) }
+        .clipShape(.rect(cornerRadius: 32))
+    }
+
+    private var pairControls: some View {
+        VStack(spacing: Spacing.element) {
+            CurrencyPairControl()
+            if let notice = viewModel.ratesNotice {
+                RatesNoticeCapsule(notice: notice)
+                    .padding(.horizontal, Spacing.screenInset)
+            }
+        }
+    }
+
+    private var captureControls: some View {
+        VStack(spacing: Spacing.section) {
+            scanStatus
+            controlsBar(axis: .horizontal)
+        }
+    }
+
+    private var sideCaptureControls: some View {
+        HStack(spacing: Spacing.section) {
+            scanStatus
+            controlsBar(axis: .vertical)
+        }
+        .padding(.trailing, Spacing.screenInset)
+    }
+
+    @ViewBuilder
+    private var scanStatus: some View {
+        if viewModel.canConvertPrices {
+            ScanStatusCapsule(
+                isLive: viewModel.frozenImage == nil,
+                hasPrices: viewModel.hasSettledPrices,
+                hasOutlines: viewModel.hasSettledNumbers,
+                isRecognizingStill: viewModel.isRecognizingStill,
+                suggestsFreezing: suggestsFreezing
+            )
+        }
+    }
+
+    private func controlsBar(axis: Axis) -> some View {
+        CameraControlsBar(axis: axis, capturePhoto: { try await liveCamera.capturePhoto() })
+            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     private var frozenEmptyAnnouncement: LocalizedStringResource {

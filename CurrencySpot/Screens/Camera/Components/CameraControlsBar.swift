@@ -3,6 +3,7 @@ import SwiftUI
 import TipKit
 
 struct CameraControlsBar: View {
+    var axis: Axis = .horizontal
     let capturePhoto: () async throws -> UIImage?
 
     @Environment(CameraViewModel.self) private var viewModel
@@ -13,6 +14,22 @@ struct CameraControlsBar: View {
     private let freezeFrameTip = FreezeFrameTip()
 
     var body: some View {
+        Group {
+            switch axis {
+            case .horizontal: row
+            case .vertical: column
+            }
+        }
+        .onChange(of: pickedPhoto) { _, item in
+            guard let item else { return }
+            Task {
+                await viewModel.importPhoto(loading: { try await item.loadTransferable(type: Data.self) })
+                if pickedPhoto == item { pickedPhoto = nil }
+            }
+        }
+    }
+
+    private var row: some View {
         ZStack {
             AdaptiveGlassContainer {
                 ZStack {
@@ -23,18 +40,31 @@ struct CameraControlsBar: View {
                 }
             }
             if viewModel.frozenImage == nil {
-                TorchButton(isOn: viewModel.isTorchOn, toggle: viewModel.toggleTorch)
+                torchButton
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .padding(.horizontal, 32)
             }
         }
-        .onChange(of: pickedPhoto) { _, item in
-            guard let item else { return }
-            Task {
-                await viewModel.importPhoto(loading: { try await item.loadTransferable(type: Data.self) })
-                if pickedPhoto == item { pickedPhoto = nil }
+    }
+
+    private var column: some View {
+        VStack(spacing: Spacing.block) {
+            if viewModel.frozenImage == nil {
+                torchButton
+            } else {
+                torchButton.hidden()
+            }
+            AdaptiveGlassContainer {
+                VStack(spacing: Spacing.block) {
+                    shutterButton
+                    photoImportButton
+                }
             }
         }
+    }
+
+    private var torchButton: some View {
+        TorchButton(isOn: viewModel.isTorchOn, toggle: viewModel.toggleTorch)
     }
 
     private func shutterTapped() {

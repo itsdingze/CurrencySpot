@@ -9,29 +9,27 @@ struct CameraStateScreen: View {
     let action: () -> Void
 
     var body: some View {
+        FoldAdaptiveLayout {
+            centered
+        } top: {
+            info
+                .safeAreaPadding(.horizontal, Spacing.instructionInset)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } bottom: {
+            actionButton
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.background.ignoresSafeArea())
+    }
+
+    private var centered: some View {
         AccessibilitySizeOverflowScrollView {
             VStack(spacing: 0) {
                 Spacer()
 
                 VStack(spacing: Spacing.block) {
-                    VStack(spacing: Spacing.element) {
-                        Image(systemName: icon)
-                            .font(.appLargeTitle.weight(.regular))
-                            .imageScale(.large)
-                            .foregroundStyle(.tint)
-                            .accessibilityHidden(true)
-
-                        Text(title)
-                            .font(.appTitle2)
-                            .multilineTextAlignment(.center)
-                            .accessibilityAddTraits(.isHeader)
-
-                        Text(message)
-                            .font(.appSubheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-
+                    info
                     actionButton
                 }
 
@@ -39,8 +37,26 @@ struct CameraStateScreen: View {
             }
         }
         .safeAreaPadding(.horizontal, Spacing.instructionInset)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.background.ignoresSafeArea())
+    }
+
+    private var info: some View {
+        VStack(spacing: Spacing.element) {
+            Image(systemName: icon)
+                .font(.appLargeTitle.weight(.regular))
+                .imageScale(.large)
+                .foregroundStyle(.tint)
+                .accessibilityHidden(true)
+
+            Text(title)
+                .font(.appTitle2)
+                .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
+
+            Text(message)
+                .font(.appSubheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
     }
 
     @ViewBuilder
