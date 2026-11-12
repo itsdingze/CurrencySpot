@@ -1,5 +1,6 @@
 @testable import CurrencySpot
 import Foundation
+import SQLite3
 import SwiftData
 import Testing
 
@@ -153,10 +154,20 @@ struct ModelContainerFactoryTests {
     private static let coveredThrough = Date(timeIntervalSince1970: 1_730_000_000)
 
     private func writeEarlierVersionStore() throws {
-        let context = ModelContext(try ModelContainer.currencySpot(storeURL: legacyStore.storeURL))
+        let seed = try TemporaryStoreDirectory()
+        let context = ModelContext(try ModelContainer.currencySpot(storeURL: seed.storeURL))
         context.insert(ExchangeRateData(currencyCode: "EUR", rate: 0.86))
         context.insert(try HistoricalRateData(date: try #require(CETCalendar.date(fromDayString: "2026-09-24")), rates: ["EUR": 0.86]))
         try context.save()
+        // SwiftData closes a store's SQLite connection some time after release, and moving files it still holds fails with SQLITE_IOERR_VNODE.
+        try Self.copyStore(at: seed.storeURL, to: legacyStore.storeURL)
+    }
+
+    private static func copyStore(at source: URL, to destination: URL) throws {
+        var database: OpaquePointer?
+        defer { sqlite3_close(database) }
+        try #require(sqlite3_open(source.path(percentEncoded: false), &database) == SQLITE_OK)
+        try #require(sqlite3_exec(database, "VACUUM INTO '\(destination.path(percentEncoded: false))'", nil, nil, nil) == SQLITE_OK)
     }
 
     private func legacyStoreFiles() throws -> [String] {
