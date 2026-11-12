@@ -167,7 +167,9 @@ struct CameraScannerContainer: View {
                 LiveViewfinder(overlay: detectionOverlay(isLive: true))
             }
         }
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { liveCamera.previewSizeChanged($0) }
+        .onViewportEvent { event, viewport in
+            liveCamera.previewViewportEvent(event, from: viewport)
+        }
         .clipShape(.rect(cornerRadius: 32))
     }
 

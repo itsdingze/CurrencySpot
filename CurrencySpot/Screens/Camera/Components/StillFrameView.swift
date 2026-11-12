@@ -12,10 +12,8 @@ struct StillFrameView: View {
                 .scaledToFit()
                 .accessibilityHidden(true)
         }
-        .onGeometryChange(for: CGSize.self) { proxy in
-            proxy.size
-        } action: { size in
-            viewModel.stillViewportChanged(size)
+        .onViewportEvent { event, viewport in
+            viewModel.stillViewportEvent(event, from: viewport)
         }
         .task(id: StillRecognitionTrigger(image: image, languages: viewModel.stillRecognitionLanguages)) {
             await viewModel.recognizeStill(in: image)

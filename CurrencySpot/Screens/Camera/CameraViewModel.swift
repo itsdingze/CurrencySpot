@@ -84,6 +84,7 @@ final class CameraViewModel {
     private var stillRecognition = StillRecognitionResult.empty
     @ObservationIgnored private var stillItemIdentities = LiveItemIdentities()
     private var stillViewportSize = CGSize.zero
+    @ObservationIgnored private var stillViewports = ViewportStack()
 
     // MARK: - Dependencies
 
@@ -235,7 +236,9 @@ final class CameraViewModel {
         }
     }
 
-    func stillViewportChanged(_ size: CGSize) {
+    func stillViewportEvent(_ event: ViewportEvent, from viewport: UUID) {
+        stillViewports.record(event, from: viewport)
+        guard let size = stillViewports.frontSize, size != stillViewportSize else { return }
         stillViewportSize = size
         pushStillItems()
     }

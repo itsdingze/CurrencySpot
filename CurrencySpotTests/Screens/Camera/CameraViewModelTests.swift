@@ -547,7 +547,7 @@ struct CameraViewModelTests {
         await waitUntil { clock.pendingSleepCount == 1 }
         let image = UIImage()
         await viewModel.freezeFrame(capturing: { image })
-        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 100, height: 100)), from: UUID())
         await viewModel.recognizeStill(in: image)
 
         clock.advance(by: .seconds(1))
@@ -611,7 +611,7 @@ struct CameraViewModelTests {
         await viewModel.freezeFrame(capturing: { image })
         #expect(viewModel.hasSettledNumbers == false)
 
-        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 100, height: 100)), from: UUID())
         await viewModel.recognizeStill(in: image)
         #expect(viewModel.hasSettledPrices)
     }
@@ -700,7 +700,7 @@ struct CameraViewModelTests {
         )
         let image = UIImage()
         await viewModel.freezeFrame(capturing: { image })
-        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 100, height: 100)), from: UUID())
 
         await viewModel.recognizeStill(in: image)
 
@@ -750,7 +750,7 @@ struct CameraViewModelTests {
         let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
         let image = UIImage()
         await viewModel.freezeFrame(capturing: { image })
-        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 100, height: 100)), from: UUID())
         await viewModel.recognizeStill(in: image)
         #expect(viewModel.detectedItems.count == 1)
 
@@ -794,7 +794,7 @@ struct CameraViewModelTests {
         let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
         let image = UIImage()
         await viewModel.freezeFrame(capturing: { image })
-        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 100, height: 100)), from: UUID())
 
         await viewModel.recognizeStill(in: image)
 
@@ -807,12 +807,56 @@ struct CameraViewModelTests {
         let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
         let image = UIImage()
         await viewModel.freezeFrame(capturing: { image })
-        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        let viewport = UUID()
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 100, height: 100)), from: viewport)
         await viewModel.recognizeStill(in: image)
 
-        viewModel.stillViewportChanged(CGSize(width: 200, height: 100))
+        viewModel.stillViewportEvent(.resized(CGSize(width: 200, height: 100)), from: viewport)
 
         #expect(viewModel.detectedItems.first?.bounds == CGRect(x: 60, y: 10, width: 80, height: 20))
+    }
+
+    @Test func outgoingStillViewReportsAreIgnored() async {
+        let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+        let outgoing = UUID()
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 200, height: 100)), from: outgoing)
+        await viewModel.recognizeStill(in: image)
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 100, height: 100)), from: UUID())
+
+        viewModel.stillViewportEvent(.resized(CGSize(width: 200, height: 100)), from: outgoing)
+
+        #expect(viewModel.detectedItems.first?.bounds == CGRect(x: 10, y: 10, width: 80, height: 20))
+    }
+
+    @Test func aStillViewThatComesAndGoesHandsTheViewportBack() async {
+        let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+        let remaining = UUID()
+        let passing = UUID()
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 200, height: 100)), from: remaining)
+        await viewModel.recognizeStill(in: image)
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 300, height: 300)), from: passing)
+
+        viewModel.stillViewportEvent(.resized(CGSize(width: 100, height: 100)), from: remaining)
+        viewModel.stillViewportEvent(.disappeared, from: passing)
+
+        #expect(viewModel.detectedItems.first?.bounds == CGRect(x: 10, y: 10, width: 80, height: 20))
+    }
+
+    @Test func collapsedStillViewportKeepsItemsInPlace() async {
+        let viewModel = Self.makeViewModel(stillRecognizer: StubStillTextRecognizer(result: Self.yenPriceResult))
+        let image = UIImage()
+        await viewModel.freezeFrame(capturing: { image })
+        let viewport = UUID()
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 100, height: 100)), from: viewport)
+        await viewModel.recognizeStill(in: image)
+
+        viewModel.stillViewportEvent(.resized(CGSize(width: 100, height: 0)), from: viewport)
+
+        #expect(viewModel.detectedItems.first?.bounds == CGRect(x: 10, y: 10, width: 80, height: 20))
     }
 
     @Test func stillRecognitionFailureSurfacesScanError() async {

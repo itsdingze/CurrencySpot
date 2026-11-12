@@ -11,6 +11,7 @@ final class LiveCameraController {
     @ObservationIgnored private let camera: any LiveCameraService
     @ObservationIgnored private let viewModel: CameraViewModel
     @ObservationIgnored private var identities = LiveItemIdentities()
+    @ObservationIgnored private var viewports = ViewportStack()
     @ObservationIgnored private var viewSize = CGSize.zero
     @ObservationIgnored private var frameSize = CGSize.zero
     @ObservationIgnored private var isRunning = false
@@ -56,8 +57,11 @@ final class LiveCameraController {
         send { await $0.stop() }
     }
 
-    func previewSizeChanged(_ size: CGSize) {
-        viewSize = size
+    func previewViewportEvent(_ event: ViewportEvent, from viewport: UUID) {
+        viewports.record(event, from: viewport)
+        if let size = viewports.frontSize {
+            viewSize = size
+        }
     }
 
     func setLanguages(_ languages: [Locale.Language]) {

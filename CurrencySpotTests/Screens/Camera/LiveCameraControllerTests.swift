@@ -8,6 +8,7 @@ import UIKit
 struct LiveCameraControllerTests {
     private static let frameSize = CGSize(width: 1000, height: 2000)
     private static let previewSize = CGSize(width: 400, height: 1000)
+    private static let previewViewport = UUID()
 
     private let clock = ManualClock()
     private let camera = InMemoryLiveCamera(maximumZoomRatio: 10, photo: UIImage())
@@ -40,7 +41,7 @@ struct LiveCameraControllerTests {
             clock: clock
         )
         controller = LiveCameraController(camera: camera, viewModel: viewModel)
-        controller.previewSizeChanged(Self.previewSize)
+        controller.previewViewportEvent(.appeared(Self.previewSize), from: Self.previewViewport)
     }
 
     private func startCamera() async {
@@ -63,6 +64,19 @@ struct LiveCameraControllerTests {
             ],
             frameSize: Self.frameSize
         )
+
+        await waitUntil { !viewModel.detectedItems.isEmpty }
+        #expect(viewModel.detectedItems.map(\.bounds) == [CGRect(x: 200, y: 500, width: 100, height: 20)])
+    }
+
+    @Test("a viewfinder that comes and goes during a fold hands the preview back")
+    func passingViewfinderHandsThePreviewBack() async {
+        await startCamera()
+        let passing = UUID()
+        controller.previewViewportEvent(.appeared(CGSize(width: 200, height: 200)), from: passing)
+        controller.previewViewportEvent(.disappeared, from: passing)
+
+        camera.emitRead([price(framed: CGRect(x: 500, y: 1000, width: 200, height: 40))], frameSize: Self.frameSize)
 
         await waitUntil { !viewModel.detectedItems.isEmpty }
         #expect(viewModel.detectedItems.map(\.bounds) == [CGRect(x: 200, y: 500, width: 100, height: 20)])

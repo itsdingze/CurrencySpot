@@ -74,7 +74,7 @@ struct CameraViewModelStillRecognitionTests {
         viewModel.baseCurrency = "USD"
         let image = UIImage()
         await viewModel.freezeFrame(capturing: { image })
-        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 100, height: 100)), from: UUID())
         let dollarRead = Task { await viewModel.recognizeStill(in: image) }
         for await _ in recognizer.stalledCurrencies { break }
 
@@ -135,7 +135,7 @@ struct CameraViewModelStillRecognitionTests {
         viewModel.baseCurrency = currency
         let image = UIImage()
         await viewModel.freezeFrame(capturing: { image })
-        viewModel.stillViewportChanged(CGSize(width: 100, height: 100))
+        viewModel.stillViewportEvent(.appeared(CGSize(width: 100, height: 100)), from: UUID())
         await viewModel.recognizeStill(in: image)
         return (viewModel, image)
     }
