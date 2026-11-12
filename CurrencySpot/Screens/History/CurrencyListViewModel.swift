@@ -32,7 +32,32 @@ final class CurrencyListViewModel {
 
     var trendDisplayMode: TrendDisplayMode = .percentChange
 
-    var path: [HistoryRoute] = []
+    var selection: HistoryRoute? {
+        didSet {
+            if selection != oldValue { currentHistory = nil }
+        }
+    }
+
+    var selectedCurrency: CurrencyCode? {
+        get { selection?.link.target }
+        set {
+            guard newValue != selectedCurrency else { return }
+            if let newValue {
+                openHistory(for: newValue)
+            } else {
+                selection = nil
+            }
+        }
+    }
+
+    var chartLink: HistoryLink? {
+        selection?.link ?? displayedCurrencies.first.map { HistoryLink(base: baseCurrency, target: $0.code) }
+    }
+
+    var path: [HistoryRoute] {
+        get { selection.map { [$0] } ?? [] }
+        set { selection = newValue.last }
+    }
 
     var isSearching: Bool { !searchText.isEmpty }
 
@@ -74,6 +99,7 @@ final class CurrencyListViewModel {
     private let logger = Logger(category: .viewModel)
 
     @ObservationIgnored private var warmUpTask: Task<Void, Never>?
+    @ObservationIgnored private var currentHistory: (link: HistoryLink, viewModel: CurrencyHistoryViewModel)?
 
     // MARK: - Initialization
 
@@ -150,17 +176,22 @@ final class CurrencyListViewModel {
     // MARK: - Navigation
 
     func openHistory(for code: CurrencyCode) {
-        path.append(HistoryRoute(HistoryLink(base: baseCurrency, target: code)))
+        selection = HistoryRoute(HistoryLink(base: baseCurrency, target: code))
     }
 
     func open(_ link: HistoryLink) {
         appState.selectedTab = .history
         destination = nil
-        path = [HistoryRoute(link)]
+        selection = HistoryRoute(link)
     }
 
     func historyViewModel(for link: HistoryLink) -> CurrencyHistoryViewModel {
-        makeHistoryViewModel(link)
+        if let currentHistory, currentHistory.link == link {
+            return currentHistory.viewModel
+        }
+        let viewModel = makeHistoryViewModel(link)
+        currentHistory = (link, viewModel)
+        return viewModel
     }
 
     // MARK: - Trends

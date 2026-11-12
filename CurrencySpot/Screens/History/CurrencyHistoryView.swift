@@ -24,20 +24,10 @@ struct CurrencyHistoryView: View {
     }
 
     var body: some View {
-        AccessibilitySizeScrollView {
-            VStack(spacing: Spacing.section) {
-                HeaderSection(isChartSelectionActive: $isChartSelectionActive)
+        ViewThatFits(in: .vertical) {
+            sections
 
-                ChartSection(isChartSelectionActive: $isChartSelectionActive)
-
-                StatisticsSection()
-
-                if isShowingChart {
-                    ChartUpdateStatus()
-                }
-
-                Spacer()
-            }
+            ScrollView { sections }
         }
         .safeAreaPadding()
         .toolbar {
@@ -87,6 +77,22 @@ struct CurrencyHistoryView: View {
             await viewModel.presentChartOnboardingIfNeeded()
         }
         .environment(viewModel)
+    }
+
+    private var sections: some View {
+        VStack(spacing: Spacing.section) {
+            HeaderSection(isChartSelectionActive: $isChartSelectionActive)
+
+            ChartSection(isChartSelectionActive: $isChartSelectionActive)
+
+            StatisticsSection()
+
+            if isShowingChart {
+                ChartUpdateStatus()
+            }
+
+            Spacer()
+        }
     }
 }
 

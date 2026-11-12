@@ -434,15 +434,92 @@ struct CurrencyListViewModelTests {
 
     // MARK: - Navigation
 
-    @Test("opening a currency pushes it, paired with the list's base, onto the navigation path")
-    func openHistoryPushes() throws {
+    @Test("opening a currency shows its chart, paired with the list's base")
+    func openHistoryShowsChart() throws {
         let graph = try HistoryTestGraph()
         let viewModel = graph.makeListViewModel()
         viewModel.selectBase("EUR")
 
         viewModel.openHistory(for: "GBP")
 
-        #expect(viewModel.path.map(\.link) == [HistoryLink(base: "EUR", target: "GBP")])
+        #expect(viewModel.selection?.link == HistoryLink(base: "EUR", target: "GBP"))
+    }
+
+    @Test("picking a currency in the list shows its chart, paired with the list's base")
+    func pickingCurrencyShowsChart() throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+        viewModel.selectBase("EUR")
+
+        viewModel.selectedCurrency = "GBP"
+
+        #expect(viewModel.selection?.link == HistoryLink(base: "EUR", target: "GBP"))
+    }
+
+    @Test("picking the currency already showing keeps its chart instead of reloading it")
+    func pickingShownCurrencyKeepsChart() throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+        viewModel.openHistory(for: "GBP")
+        let shown = viewModel.selection
+
+        viewModel.selectedCurrency = "GBP"
+
+        #expect(viewModel.selection == shown)
+    }
+
+    @Test("clearing the list's pick closes the chart")
+    func clearingPickClosesChart() throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+        viewModel.openHistory(for: "GBP")
+
+        viewModel.selectedCurrency = nil
+
+        #expect(viewModel.selection == nil)
+    }
+
+    @Test("on a tall screen the open chart is the one screen pushed over the list")
+    func pathHoldsOpenChart() throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+
+        viewModel.openHistory(for: "GBP")
+
+        #expect(viewModel.path.map(\.link) == [HistoryLink(base: "USD", target: "GBP")])
+    }
+
+    @Test("going back to the list on a tall screen closes the chart")
+    func poppingPathClosesChart() throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+        viewModel.openHistory(for: "GBP")
+
+        viewModel.path = []
+
+        #expect(viewModel.selection == nil)
+    }
+
+    @Test("with nothing picked, the always-visible chart shows the first listed currency on the list's base", .timeLimit(.minutes(1)))
+    func chartDefaultsToFirstListedCurrency() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: ["GBP", "EUR"])
+        let viewModel = graph.makeListViewModel()
+        Self.publishRates(to: graph)
+        await waitUntil { viewModel.displayedCurrencies.count == 2 }
+        viewModel.selectBase("CHF")
+
+        #expect(viewModel.chartLink == HistoryLink(base: "CHF", target: "GBP"))
+    }
+
+    @Test("the always-visible chart shows the picked currency")
+    func chartShowsPickedCurrency() throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+
+        viewModel.open(HistoryLink(base: "JPY", target: "EUR"))
+
+        #expect(viewModel.chartLink == HistoryLink(base: "JPY", target: "EUR"))
+    }
+
+    @Test("with nothing picked and an empty list, there is no chart to show")
+    func noChartForEmptyList() throws {
+        let viewModel = try HistoryTestGraph(watchlistSeed: []).makeListViewModel()
+
+        #expect(viewModel.chartLink == nil)
     }
 
     @Test("the chart screen's model shows the pair it was opened for")
@@ -466,13 +543,50 @@ struct CurrencyListViewModelTests {
         #expect(history.chartSeriesID == CurrencyHistoryViewModel.ChartSeriesID(currency: "IDR", range: .oneWeek))
     }
 
+    @Test("recreating the selected chart's view keeps its range, base, and chart options")
+    func recreatingChartViewKeepsItsState() async throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+        let link = HistoryLink(base: "USD", target: "GBP")
+        viewModel.open(link)
+        let chart = viewModel.historyViewModel(for: link)
+        chart.selectedTimeRange = .oneYear
+        chart.selectBase("JPY")
+        chart.showAverageLine = true
+        await chart.loadChart()
+
+        let recreated = viewModel.historyViewModel(for: link)
+
+        #expect(recreated.selectedTimeRange == .oneYear)
+        #expect(recreated.baseCurrency == "JPY")
+        #expect(recreated.showAverageLine)
+    }
+
+    @Test("an explicit new visit to the same chart starts on the link's base, range, and default options")
+    func reopeningChartStartsFresh() async throws {
+        let viewModel = try HistoryTestGraph().makeListViewModel()
+        let link = HistoryLink(base: "USD", target: "GBP")
+        viewModel.open(link)
+        let chart = viewModel.historyViewModel(for: link)
+        chart.selectedTimeRange = .oneYear
+        chart.selectBase("JPY")
+        chart.showAverageLine = true
+        await chart.loadChart()
+
+        viewModel.open(link)
+        let reopened = viewModel.historyViewModel(for: link)
+
+        #expect(reopened.selectedTimeRange == .threeMonths)
+        #expect(reopened.baseCurrency == "USD")
+        #expect(reopened.showAverageLine == false)
+    }
+
     @Test("a base picked on the chart screen stays there, and the next chart opens on the list's base")
     func chartBaseStaysOnChartScreen() async throws {
         let graph = try HistoryTestGraph()
         let viewModel = graph.makeListViewModel()
         viewModel.selectBase("EUR")
         viewModel.openHistory(for: "GBP")
-        let link = try #require(viewModel.path.first?.link)
+        let link = try #require(viewModel.selection?.link)
         let chart = viewModel.historyViewModel(for: link)
 
         chart.selectBase("JPY")
@@ -481,7 +595,7 @@ struct CurrencyListViewModelTests {
 
         #expect(chart.baseCurrency == "JPY")
         #expect(viewModel.baseCurrency == "EUR")
-        #expect(viewModel.path.last?.link == HistoryLink(base: "EUR", target: "CHF"))
+        #expect(viewModel.selection?.link == HistoryLink(base: "EUR", target: "CHF"))
     }
 
     // MARK: - Base Picker
@@ -517,7 +631,7 @@ struct CurrencyListViewModelTests {
         viewModel.open(link)
 
         #expect(graph.appState.selectedTab == .history)
-        #expect(viewModel.path.map(\.link) == [link])
+        #expect(viewModel.selection?.link == link)
     }
 
     @Test("a link for the chart already showing opens it again fresh, on the link's base")
@@ -525,12 +639,12 @@ struct CurrencyListViewModelTests {
         let viewModel = try HistoryTestGraph().makeListViewModel()
         let link = HistoryLink(base: "EUR", target: "GBP")
         viewModel.open(link)
-        let shown = viewModel.path
+        let shown = viewModel.selection
 
         viewModel.open(link)
 
-        #expect(viewModel.path != shown)
-        #expect(viewModel.path.map(\.link) == [link])
+        #expect(viewModel.selection != shown)
+        #expect(viewModel.selection?.link == link)
     }
 
     @Test("a link closes the base picker so the chart it opens is visible")

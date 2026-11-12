@@ -3,13 +3,62 @@ import SwiftUI
 struct CurrencyListView: View {
     @Environment(CurrencyListViewModel.self) private var viewModel
     @State private var editMode: EditMode = .inactive
+    @Environment(\.screenLayout) private var screenLayout
 
     private var isEditing: Bool { editMode == .active }
 
     var body: some View {
         @Bindable var viewModel = viewModel
-        NavigationStack(path: $viewModel.path) {
-            content
+        Group {
+            if screenLayout.isWide {
+                NavigationSplitView {
+                    currencyList
+                        .navigationSplitViewColumnWidth(min: 320, ideal: 400)
+                } detail: {
+                    detail
+                }
+            } else if #available(iOS 27.1, *), screenLayout == .tabletop {
+                tabletopContent
+            } else {
+                NavigationStack(path: $viewModel.path) {
+                    currencyList
+                        .navigationDestination(for: HistoryRoute.self) { historyView(for: $0) }
+                }
+            }
+        }
+    }
+
+    // MARK: - View Components
+
+    @available(iOS 27.1, *)
+    private var tabletopContent: some View {
+        TabletopSplit {
+            NavigationStack {
+                tabletopChart
+                    .toolbarTitleDisplayMode(.inline)
+            }
+        } bottom: {
+            NavigationStack {
+                currencyList
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var tabletopChart: some View {
+        if let route = viewModel.selection {
+            historyView(for: route)
+        } else if let link = viewModel.chartLink {
+            CurrencyHistoryView(viewModel: viewModel.historyViewModel(for: link))
+                .id(link)
+        } else {
+            ContentUnavailableView(.historyDetailEmptyTitle, systemImage: "chart.line.uptrend.xyaxis")
+        }
+    }
+
+    private var currencyList: some View {
+        @Bindable var viewModel = viewModel
+        return content
             .navigationTitle(.historyListTitle)
             .toolbarTitleDisplayMode(.inlineLarge)
             .searchable(
@@ -18,10 +67,6 @@ struct CurrencyListView: View {
                 prompt: .historyListSearchPrompt
             )
             .autocorrectionDisabled()
-            .navigationDestination(for: HistoryRoute.self) { route in
-                CurrencyHistoryView(viewModel: viewModel.historyViewModel(for: route.link))
-                    .id(route)
-            }
             .toolbar {
                 trailingToolbarItems
             }
@@ -41,10 +86,21 @@ struct CurrencyListView: View {
                 if cannotEdit { editMode = .inactive }
             }
             .environment(\.editMode, $editMode)
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        if let route = viewModel.selection {
+            historyView(for: route)
+        } else {
+            ContentUnavailableView(.historyDetailEmptyTitle, systemImage: "chart.line.uptrend.xyaxis")
         }
     }
 
-    // MARK: - View Components
+    private func historyView(for route: HistoryRoute) -> some View {
+        CurrencyHistoryView(viewModel: viewModel.historyViewModel(for: route.link))
+            .id(route)
+    }
 
     @ViewBuilder
     private var content: some View {
@@ -66,18 +122,19 @@ struct CurrencyListView: View {
     }
 
     private var watchlistList: some View {
-        List {
+        @Bindable var viewModel = viewModel
+        return List(selection: $viewModel.selectedCurrency) {
             let currencies = viewModel.displayedCurrencies
             ForEach(currencies) { entry in
-                Button(action: { viewModel.openHistory(for: entry.code) }) {
-                    CurrencyRow(entry: entry, metricsHidden: isEditing)
-                        .padding(.vertical, Spacing.element)
-                        .padding(.horizontal, Spacing.cardPadding)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .rowSeparator(isLast: entry.id == currencies.last?.id)
+                CurrencyRow(entry: entry, metricsHidden: isEditing)
+                    .padding(.vertical, Spacing.element)
+                    .padding(.horizontal, Spacing.cardPadding)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .accessibilityAddTraits(isEditing ? [] : .isButton)
+                    .rowSeparator(isLast: entry.id == currencies.last?.id)
+                    .tag(entry.code)
+                    .selectionDisabled(isEditing)
             }
             .onDelete { viewModel.removeFromWatchlist(atOffsets: $0) }
             .onMove(perform: viewModel.sortOption == .manual
@@ -88,7 +145,8 @@ struct CurrencyListView: View {
     }
 
     private var searchResultsList: some View {
-        List {
+        @Bindable var viewModel = viewModel
+        return List(selection: $viewModel.selectedCurrency) {
             ForEach(viewModel.displayedCurrencies) { entry in
                 HStack(spacing: Spacing.element) {
                     WatchlistToggleButton(
@@ -96,12 +154,11 @@ struct CurrencyListView: View {
                         action: { viewModel.toggleWatchlist(entry.code) }
                     )
 
-                    Button { viewModel.openHistory(for: entry.code) } label: {
-                        CurrencyRow(entry: entry, showsTrendChart: false)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
+                    CurrencyRow(entry: entry, showsTrendChart: false)
+                        .contentShape(Rectangle())
+                        .accessibilityAddTraits(.isButton)
                 }
+                .tag(entry.code)
             }
             .listSectionSeparator(.hidden)
         }
