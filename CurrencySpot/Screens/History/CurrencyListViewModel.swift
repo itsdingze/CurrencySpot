@@ -51,8 +51,10 @@ final class CurrencyListViewModel {
     }
 
     var chartLink: HistoryLink? {
-        selection?.link ?? displayedCurrencies.first.map { HistoryLink(base: baseCurrency, target: $0.code) }
+        selection?.link ?? defaultChartCurrency.map { HistoryLink(base: baseCurrency, target: $0) }
     }
+
+    private var defaultChartCurrency: CurrencyCode?
 
     var path: [HistoryRoute] {
         get { selection.map { [$0] } ?? [] }
@@ -279,10 +281,15 @@ final class CurrencyListViewModel {
     // MARK: - Currency List
 
     private func updateDisplayedCurrencies() {
-        displayedCurrencies = buildCurrencyList(
+        displayedCurrencies = currencyList(searchText: searchText, sortOption: sortOption)
+        defaultChartCurrency = currencyList(searchText: "", sortOption: .manual).first?.code
+    }
+
+    private func currencyList(searchText: String, sortOption: CurrencySortOption) -> [CurrencyListEntry] {
+        buildCurrencyList(
             rates: ratesStore.rates,
             base: baseCurrency,
-            isSearching: isSearching,
+            isSearching: !searchText.isEmpty,
             searchText: searchText,
             isWatchlisted: { self.watchlist.contains($0) },
             watchlistOrder: watchlist.codes.elements,

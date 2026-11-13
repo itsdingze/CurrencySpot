@@ -506,6 +506,31 @@ struct CurrencyListViewModelTests {
         #expect(viewModel.chartLink == HistoryLink(base: "CHF", target: "GBP"))
     }
 
+    @Test("searching the list leaves the always-visible chart on the first watchlisted currency", .timeLimit(.minutes(1)))
+    func searchingKeepsDefaultChart() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: ["GBP", "EUR"])
+        let viewModel = graph.makeListViewModel()
+        Self.publishRates(to: graph)
+        await waitUntil { viewModel.displayedCurrencies.count == 2 }
+
+        viewModel.searchText = "CHF"
+
+        #expect(viewModel.chartLink == HistoryLink(base: "USD", target: "GBP"))
+    }
+
+    @Test("sorting the list leaves the always-visible chart on the first watchlisted currency", .timeLimit(.minutes(1)))
+    func sortingKeepsDefaultChart() async throws {
+        let graph = try HistoryTestGraph(watchlistSeed: ["GBP", "EUR"])
+        let viewModel = graph.makeListViewModel()
+        Self.publishRates(to: graph)
+        await waitUntil { viewModel.displayedCurrencies.count == 2 }
+
+        viewModel.sortOption = .symbol
+
+        #expect(viewModel.displayedCurrencies.first?.code == "EUR")
+        #expect(viewModel.chartLink == HistoryLink(base: "USD", target: "GBP"))
+    }
+
     @Test("the always-visible chart shows the picked currency")
     func chartShowsPickedCurrency() throws {
         let viewModel = try HistoryTestGraph().makeListViewModel()
