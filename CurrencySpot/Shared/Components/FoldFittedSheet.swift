@@ -34,18 +34,15 @@ private struct FoldFittedSheet: ViewModifier {
     @Environment(\.sheetHeightLimit) private var sheetHeightLimit
 
     func body(content: Content) -> some View {
-        fitted(content)
+        content
+            // Branching around `content` itself gives it a new identity and restarts the sheet when the limit changes.
+            .background {
+                if sheetHeightLimit != nil {
+                    Color.clear.presentationBackground(BackgroundStyle())
+                }
+            }
             .presentationDetents(FoldedSheetFit.detents(heightLimit: sheetHeightLimit))
             .staysOnOnePageWhenFolded()
-    }
-
-    @ViewBuilder
-    private func fitted(_ content: Content) -> some View {
-        if sheetHeightLimit == nil {
-            content
-        } else {
-            content.presentationBackground(BackgroundStyle())
-        }
     }
 }
 
