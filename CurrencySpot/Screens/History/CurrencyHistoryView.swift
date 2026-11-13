@@ -61,6 +61,7 @@ struct CurrencyHistoryView: View {
         .sheet(isPresented: $viewModel.destination.isPresenting(.chartOnboarding)) {
             ChartOnboardingView()
                 .environment(viewModel)
+                .fitsFoldedScreen()
         }
         .sheet(isPresented: $viewModel.destination.isPresenting(.basePicker)) {
             BasePickerSheet(

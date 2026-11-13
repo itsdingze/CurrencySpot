@@ -39,6 +39,7 @@ struct FavoriteCurrenciesView: View {
         .environment(\.editMode, $editMode)
         .sheet(isPresented: Bindable(viewModel).destination.isPresenting(.addFavoriteCurrency)) {
             AddCurrencyView()
+                .fitsFoldedScreen()
         }
     }
 }

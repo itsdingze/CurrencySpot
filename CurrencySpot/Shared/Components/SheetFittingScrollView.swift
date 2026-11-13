@@ -6,6 +6,7 @@ struct SheetFittingScrollView<Content: View>: View {
     private let content: Content
 
     @State private var fittedHeight: CGFloat?
+    @Environment(\.sheetHeightLimit) private var sheetHeightLimit
 
     init(
         padding paddedEdges: Edge.Set = .all,
@@ -28,15 +29,30 @@ struct SheetFittingScrollView<Content: View>: View {
         } action: { _, height in
             fittedHeight = height
         }
-        .presentationDetents(SheetFittingDetents.detents(fittedHeight: fittedHeight, fullHeightThreshold: fullHeightThreshold))
+        .presentationDetents(
+            SheetFittingDetents.detents(
+                fittedHeight: fittedHeight,
+                fullHeightThreshold: fullHeightThreshold,
+                heightLimit: sheetHeightLimit
+            )
+        )
+        .staysOnOnePageWhenFolded()
     }
 }
 
 nonisolated enum SheetFittingDetents {
-    static func detents(fittedHeight: CGFloat?, fullHeightThreshold: CGFloat) -> Set<PresentationDetent> {
-        guard let fittedHeight else { return [.medium] }
-        guard fittedHeight <= fullHeightThreshold else { return [.large] }
-        return [.height(fittedHeight)]
+    static func detents(
+        fittedHeight: CGFloat?,
+        fullHeightThreshold: CGFloat,
+        heightLimit: CGFloat? = nil
+    ) -> Set<PresentationDetent> {
+        guard let heightLimit else {
+            guard let fittedHeight else { return [.medium] }
+            guard fittedHeight <= fullHeightThreshold else { return [.large] }
+            return [.height(fittedHeight)]
+        }
+        guard let fittedHeight else { return [.height(heightLimit)] }
+        return [.height(min(fittedHeight, heightLimit))]
     }
 }
 

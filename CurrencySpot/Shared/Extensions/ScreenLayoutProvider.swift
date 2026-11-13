@@ -2,6 +2,8 @@ import SwiftUI
 
 extension EnvironmentValues {
     @Entry var screenLayout = ScreenLayout.compact
+    @Entry var sheetHeightLimit: CGFloat?
+    @Entry var sheetOpenerPage: HorizontalEdge?
 }
 
 extension View {
@@ -14,11 +16,20 @@ private struct ScreenLayoutProvider: ViewModifier {
     @State private var tracker = WideLayoutTracker()
     @State private var isHalfOpen = false
     @State private var isTent = false
+    @State private var screenHeight: CGFloat = 0
+
+    private var screenLayout: ScreenLayout {
+        ScreenLayout(isWide: tracker.isWide, isHalfOpen: isHalfOpen, isTent: isTent)
+    }
 
     func body(content: Content) -> some View {
         content
-            .environment(\.screenLayout, ScreenLayout(isWide: tracker.isWide, isHalfOpen: isHalfOpen, isTent: isTent))
-            .onGeometryChange(for: CGSize.self) { $0.size } action: { tracker.update(for: $0) }
+            .environment(\.screenLayout, screenLayout)
+            .environment(\.sheetHeightLimit, FoldedSheetFit.heightLimit(for: screenLayout, screenHeight: screenHeight))
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+                tracker.update(for: size)
+                screenHeight = size.height
+            }
             .modifier(HingeObserver(isHalfOpen: $isHalfOpen, isTent: $isTent))
     }
 }

@@ -105,8 +105,10 @@ struct CalculatorView: View {
                         favoriteCurrencies: calculatorViewModel.favoriteCurrencies
                     )
                 }
+                .fitsFoldedScreen()
             case .history:
                 ConversionHistoryView()
+                    .fitsFoldedScreen()
             }
         }
     }

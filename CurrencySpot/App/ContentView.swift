@@ -43,7 +43,6 @@ struct ContentView: View {
                 Label(.appTabSettings, systemImage: "gearshape")
             }
         }
-        .providesScreenLayout()
         .alert(
             errorAlertTitle,
             isPresented: Bindable(appState.errorHandler).isPresentingError,
@@ -61,7 +60,9 @@ struct ContentView: View {
                 .onDisappear {
                     settingsViewModel.completeOnboarding()
                 }
+                .fitsFoldedScreen()
         }
+        .providesScreenLayout()
     }
 
     // MARK: - Error Alert

@@ -14,8 +14,10 @@ struct CurrencyListView: View {
                 NavigationSplitView {
                     currencyList
                         .navigationSplitViewColumnWidth(min: 320, ideal: 400)
+                        .environment(\.sheetOpenerPage, .leading)
                 } detail: {
                     detail
+                        .environment(\.sheetOpenerPage, .trailing)
                 }
             } else if #available(iOS 27.1, *), screenLayout == .tabletop {
                 tabletopContent

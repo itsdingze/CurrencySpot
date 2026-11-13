@@ -21,4 +21,23 @@ struct SheetFittingDetentsTests {
 
         #expect(detents == [.large])
     }
+
+    @Test func unmeasuredSheetOpensAtTheHeightLimit() {
+        let detents = SheetFittingDetents.detents(fittedHeight: nil, fullHeightThreshold: 600, heightLimit: 475)
+
+        #expect(detents == [.height(475)])
+    }
+
+    @Test func contentShorterThanTheHeightLimitKeepsItsOwnHeight() {
+        let detents = SheetFittingDetents.detents(fittedHeight: 300, fullHeightThreshold: 600, heightLimit: 475)
+
+        #expect(detents == [.height(300)])
+    }
+
+    @Test(arguments: [CGFloat(500), 601])
+    func contentTallerThanTheHeightLimitStopsAtTheLimit(fittedHeight: CGFloat) {
+        let detents = SheetFittingDetents.detents(fittedHeight: fittedHeight, fullHeightThreshold: 600, heightLimit: 475)
+
+        #expect(detents == [.height(475)])
+    }
 }

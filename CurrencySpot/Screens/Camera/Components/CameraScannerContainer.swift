@@ -248,6 +248,7 @@ struct CameraScannerContainer: View {
                     favoriteCurrencies: settingsViewModel.favoriteCurrencies
                 )
             }
+            .fitsFoldedScreen()
         case .targetPicker:
             NavigationStack {
                 CurrencyPickerView(
@@ -256,6 +257,7 @@ struct CameraScannerContainer: View {
                     favoriteCurrencies: settingsViewModel.favoriteCurrencies
                 )
             }
+            .fitsFoldedScreen()
         case let .badgeDetail(snapshot):
             badgeDetail(for: snapshot)
         }
