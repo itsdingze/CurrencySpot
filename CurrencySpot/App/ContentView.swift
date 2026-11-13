@@ -33,7 +33,7 @@ struct ContentView: View {
 
             Tab(value: AppTab.settings) {
                 BookPageLayout {
-                    NavigationStack {
+                    NavigationStack(path: Bindable(settingsViewModel).navigationPath) {
                         SettingsView()
                     }
                 }

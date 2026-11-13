@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import OSLog
+import SwiftUI
 
 // MARK: - SettingsViewModel
 
@@ -44,6 +45,8 @@ final class SettingsViewModel {
     }
 
     var destination: Destination?
+
+    var navigationPath = NavigationPath()
 
     private(set) var toast: ToastData?
 
