@@ -6,6 +6,8 @@ struct CalculatorView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
 
+    @Environment(\.screenLayout) private var screenLayout
+
     @AccessibilityFocusState private var focusResult: Bool
 
     private var bindableViewModel: Bindable<CalculatorViewModel> {
@@ -41,14 +43,16 @@ struct CalculatorView: View {
         ZStack {
             Color.background.ignoresSafeArea()
 
-            AccessibilitySizeScrollView {
-                VStack(spacing: Spacing.element) {
-                    switch calculatorViewModel.loadState {
-                    case .idle, .loading(previous: nil):
+            VStack(spacing: Spacing.element) {
+                switch calculatorViewModel.loadState {
+                case .idle, .loading(previous: nil):
+                    AccessibilitySizeScrollView {
                         ProgressView(.calculatorLoading)
-                    case .loaded, .loading(previous: .some):
-                        mainContentView()
-                    case .failed:
+                    }
+                case .loaded, .loading(previous: .some):
+                    mainContentView()
+                case .failed:
+                    AccessibilitySizeScrollView {
                         CalculatorErrorView()
                     }
                 }
@@ -107,16 +111,81 @@ struct CalculatorView: View {
         }
     }
 
+    @ViewBuilder
     private func mainContentView() -> some View {
+        if screenLayout == .tent {
+            AccessibilitySizeScrollView {
+                HStack(spacing: Spacing.block) {
+                    amountsWithRate
+                    CalculatorKeypadView()
+                }
+            }
+        } else if #available(iOS 27.1, *), screenLayout == .wide {
+            CalculatorPage {
+                AccessibilitySizeScrollView { converter }
+            }
+        } else {
+            foldLayout
+        }
+    }
+
+    private var foldLayout: some View {
+        FoldAdaptiveLayout {
+            AccessibilitySizeScrollView { converter }
+        } top: {
+            AccessibilitySizeScrollView { amountsWithRate }
+        } bottom: {
+            AccessibilitySizeScrollView { CalculatorKeypadView() }
+        }
+    }
+
+    private var converter: some View {
         VStack(spacing: Spacing.element) {
-            CurrencyDisplayView()
-                .accessibilityFocused($focusResult)
+            amounts
                 .layoutPriority(1)
 
             RateInfoView()
 
             CalculatorKeypadView()
                 .layoutPriority(2)
+        }
+    }
+
+    private var amountsWithRate: some View {
+        VStack(spacing: Spacing.element) {
+            amounts
+            RateInfoView()
+        }
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private var amounts: some View {
+        CurrencyDisplayView()
+            .accessibilityFocused($focusResult)
+    }
+}
+
+@available(iOS 27.1, *)
+private struct CalculatorPage<Content: View>: View {
+    @Environment(\.toolbarVerticalEdge) private var barEdge
+
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        if barEdge == .leading {
+            ArrangementView {
+                content.padding(.trailing, Spacing.element)
+            } secondary: {
+                Color.clear
+            }
+            .arrangementViewStyle(.split.axes(.horizontal))
+        } else {
+            ArrangementView {
+                Color.clear
+            } secondary: {
+                content.padding(.leading, Spacing.element)
+            }
+            .arrangementViewStyle(.split.axes(.horizontal))
         }
     }
 }
