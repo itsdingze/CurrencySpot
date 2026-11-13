@@ -123,7 +123,7 @@ struct CalculatorView: View {
                 }
             }
         } else if #available(iOS 27.1, *), screenLayout == .wide {
-            CalculatorPage {
+            StatusBarPage(foldInset: Spacing.element) {
                 AccessibilitySizeScrollView { converter }
             }
         } else {
@@ -164,31 +164,6 @@ struct CalculatorView: View {
     private var amounts: some View {
         CurrencyDisplayView()
             .accessibilityFocused($focusResult)
-    }
-}
-
-@available(iOS 27.1, *)
-private struct CalculatorPage<Content: View>: View {
-    @Environment(\.toolbarVerticalEdge) private var barEdge
-
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        if barEdge == .leading {
-            ArrangementView {
-                content.padding(.trailing, Spacing.element)
-            } secondary: {
-                Color.clear
-            }
-            .arrangementViewStyle(.split.axes(.horizontal))
-        } else {
-            ArrangementView {
-                Color.clear
-            } secondary: {
-                content.padding(.leading, Spacing.element)
-            }
-            .arrangementViewStyle(.split.axes(.horizontal))
-        }
     }
 }
 

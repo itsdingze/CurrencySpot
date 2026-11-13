@@ -39,17 +39,18 @@ struct BookPageLayout<Content: View>: View {
 }
 
 @available(iOS 27.1, *)
-private struct StatusBarPage<Content: View>: View {
+struct StatusBarPage<Content: View>: View {
     @Environment(\.toolbarVerticalEdge) private var statusBarEdge
 
+    var foldInset: CGFloat = 0
     @ViewBuilder let content: Content
 
     var body: some View {
         if statusBarEdge == .leading {
-            ArrangementView { content } secondary: { Color.clear }
+            ArrangementView { content.padding(.trailing, foldInset) } secondary: { Color.clear }
                 .arrangementViewStyle(.split.axes(.horizontal))
         } else {
-            ArrangementView { Color.clear } secondary: { content }
+            ArrangementView { Color.clear } secondary: { content.padding(.leading, foldInset) }
                 .arrangementViewStyle(.split.axes(.horizontal))
         }
     }
