@@ -14,12 +14,26 @@ struct FoldAdaptiveLayout<Phone: View, Top: View, Bottom: View>: View {
             } bottom: {
                 bottom
             }
-        } else if #available(iOS 27.1, *), screenLayout == .book {
-            StatusBarPage {
+        } else {
+            BookPageLayout {
                 phone
             }
+        }
+    }
+}
+
+struct BookPageLayout<Content: View>: View {
+    @Environment(\.screenLayout) private var screenLayout
+
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        if #available(iOS 27.1, *), screenLayout == .book {
+            StatusBarPage {
+                content
+            }
         } else {
-            phone
+            content
         }
     }
 }

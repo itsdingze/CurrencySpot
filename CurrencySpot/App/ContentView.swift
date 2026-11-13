@@ -32,8 +32,10 @@ struct ContentView: View {
             }
 
             Tab(value: AppTab.settings) {
-                NavigationStack {
-                    SettingsView()
+                BookPageLayout {
+                    NavigationStack {
+                        SettingsView()
+                    }
                 }
                 .overlay { SettingsToastOverlay() }
                 .toolbarBackground(.visible, for: .tabBar)
