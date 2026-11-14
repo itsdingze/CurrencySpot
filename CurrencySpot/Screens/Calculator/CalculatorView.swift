@@ -125,6 +125,8 @@ struct CalculatorView: View {
         } else if #available(iOS 27.1, *), screenLayout == .wide {
             StatusBarPage(foldInset: Spacing.element) {
                 AccessibilitySizeScrollView { converter }
+            } spare: {
+                ConverterChartCard()
             }
         } else {
             foldLayout
@@ -138,6 +140,8 @@ struct CalculatorView: View {
             AccessibilitySizeScrollView { amountsWithRate }
         } bottom: {
             AccessibilitySizeScrollView { CalculatorKeypadView() }
+        } spare: {
+            ConverterChartCard()
         }
     }
 

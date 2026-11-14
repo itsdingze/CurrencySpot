@@ -12,6 +12,7 @@ final class DependencyContainer {
     let ratesStore: ExchangeRatesStore
     let calculatorViewModel: CalculatorViewModel
     let conversionHistoryViewModel: ConversionHistoryViewModel
+    let converterChartViewModel: ConverterChartViewModel
     let currencyListViewModel: CurrencyListViewModel
     let settingsViewModel: SettingsViewModel
     let cameraViewModel: CameraViewModel
@@ -148,6 +149,8 @@ final class DependencyContainer {
         conversionHistoryViewModel = ConversionHistoryViewModel(store: conversionHistoryStore) {
             [calculatorViewModel] record in calculatorViewModel.restore(record)
         }
+
+        converterChartViewModel = ConverterChartViewModel(makeHistoryViewModel: makeHistoryViewModel)
 
         currencyListViewModel = CurrencyListViewModel(
             preferences: preferences,

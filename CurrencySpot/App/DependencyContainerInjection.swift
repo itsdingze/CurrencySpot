@@ -6,6 +6,7 @@ extension View {
             .environment(container.ratesStore)
             .environment(container.calculatorViewModel)
             .environment(container.conversionHistoryViewModel)
+            .environment(container.converterChartViewModel)
             .environment(container.currencyListViewModel)
             .environment(container.settingsViewModel)
             .environment(container.cameraViewModel)
