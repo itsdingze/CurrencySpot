@@ -24,6 +24,15 @@ struct FoldedSheetFitTests {
         #expect(FoldedSheetFit.detents(heightLimit: nil) == [.large])
     }
 
+    @Test("a sheet's own background is solid in the folded poses, where the system's would show through as a different color")
+    func foldedPosesUseASolidBackground() {
+        #expect(FoldedSheetFit.usesSolidBackground(in: .tabletop))
+        #expect(FoldedSheetFit.usesSolidBackground(in: .book))
+        #expect(!FoldedSheetFit.usesSolidBackground(in: .compact))
+        #expect(!FoldedSheetFit.usesSolidBackground(in: .wide))
+        #expect(!FoldedSheetFit.usesSolidBackground(in: .tent))
+    }
+
     @Test("a sheet sits on one page only when the screen is half open like a book")
     func onlyBookKeepsSheetsOnOnePage() {
         #expect(FoldedSheetFit.staysOnOnePage(in: .book))

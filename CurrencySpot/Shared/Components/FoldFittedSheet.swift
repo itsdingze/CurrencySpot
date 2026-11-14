@@ -21,6 +21,10 @@ enum FoldedSheetFit {
         return [.height(heightLimit)]
     }
 
+    static func usesSolidBackground(in layout: ScreenLayout) -> Bool {
+        layout == .tabletop || layout == .book
+    }
+
     static func staysOnOnePage(in layout: ScreenLayout) -> Bool {
         layout == .book
     }
@@ -32,12 +36,13 @@ enum FoldedSheetFit {
 
 private struct FoldFittedSheet: ViewModifier {
     @Environment(\.sheetHeightLimit) private var sheetHeightLimit
+    @Environment(\.screenLayout) private var screenLayout
 
     func body(content: Content) -> some View {
         content
-            // Branching around `content` itself gives it a new identity and restarts the sheet when the limit changes.
+            // Branching around `content` itself gives it a new identity and restarts the sheet when the pose changes.
             .background {
-                if sheetHeightLimit != nil {
+                if FoldedSheetFit.usesSolidBackground(in: screenLayout) {
                     Color.clear.presentationBackground(BackgroundStyle())
                 }
             }
