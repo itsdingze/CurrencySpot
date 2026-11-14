@@ -37,6 +37,7 @@ struct ContentView: View {
                         SettingsView()
                     }
                 }
+                .background(settingsSparePageGround.ignoresSafeArea())
                 .overlay { SettingsToastOverlay() }
                 .toolbarBackground(.visible, for: .tabBar)
             } label: {
@@ -63,6 +64,12 @@ struct ContentView: View {
                 .fitsFoldedScreen()
         }
         .providesScreenLayout()
+    }
+
+    // MARK: - Settings
+
+    private var settingsSparePageGround: Color {
+        settingsViewModel.navigationPath.isEmpty ? Color(.systemGroupedBackground) : .clear
     }
 
     // MARK: - Error Alert
